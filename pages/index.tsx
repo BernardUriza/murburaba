@@ -1,127 +1,24 @@
 import Head from 'next/head'
-import { useState, useRef, useEffect } from 'react'
-
-interface AudioChunk {
-  id: number
-  url: string
-  timestamp: Date
-}
+import { useAudioRecorder } from '../hooks/useAudioRecorder'
+import { WaveformAnalyzer } from '../components/WaveformAnalyzer'
+import { RNNoiseDebug } from '../components/RNNoiseDebug'
 
 export default function Home() {
-  const [isRecording, setIsRecording] = useState(false)
-  const [audioChunks, setAudioChunks] = useState<AudioChunk[]>([])
-  const [chunkDuration, setChunkDuration] = useState(2)
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const streamRef = useRef<MediaStream | null>(null)
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
-  const chunkIdRef = useRef(0)
-  const isStillRecordingRef = useRef(false)
-
-  const handleAudioChunk = (currentChunks: Blob[]) => {
-    if (currentChunks.length > 0) {
-      const audioBlob = new Blob(currentChunks, { type: 'audio/webm' })
-      const url = URL.createObjectURL(audioBlob)
-      
-      setAudioChunks(prev => [...prev, {
-        id: chunkIdRef.current++,
-        url,
-        timestamp: new Date()
-      }])
-    }
-  }
-
-  const scheduleChunkStop = (mediaRecorder: MediaRecorder) => {
-    setTimeout(() => {
-      if (mediaRecorder.state === 'recording') {
-        mediaRecorder.stop()
-      }
-    }, chunkDuration * 1000)
-  }
-
-  const createMediaRecorder = (stream: MediaStream): MediaRecorder | null => {
-    if (!isStillRecordingRef.current || !streamRef.current || !streamRef.current.active) {
-      return null
-    }
-    
-    const mediaRecorder = new MediaRecorder(stream)
-    mediaRecorderRef.current = mediaRecorder
-    const currentChunks: Blob[] = []
-    
-    mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        currentChunks.push(event.data)
-      }
-    }
-    
-    mediaRecorder.onstop = () => {
-      handleAudioChunk(currentChunks)
-      
-      // Iniciar el siguiente chunk si seguimos grabando
-      if (isStillRecordingRef.current && streamRef.current && streamRef.current.active) {
-        setTimeout(() => startNextChunk(stream), 100)
-      }
-    }
-    
-    return mediaRecorder
-  }
-
-  const startNextChunk = (stream: MediaStream) => {
-    const mediaRecorder = createMediaRecorder(stream)
-    if (mediaRecorder) {
-      mediaRecorder.start()
-      scheduleChunkStop(mediaRecorder)
-    }
-  }
-
-  const initializeRecording = async (): Promise<MediaStream | null> => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      streamRef.current = stream
-      setAudioChunks([])
-      chunkIdRef.current = 0
-      setIsRecording(true)
-      isStillRecordingRef.current = true
-      return stream
-    } catch (error) {
-      console.error('Error al acceder al micrófono:', error)
-      alert('No se pudo acceder al micrófono. Por favor, verifica los permisos.')
-      return null
-    }
-  }
-
-  const startRecording = async () => {
-    const stream = await initializeRecording()
-    if (stream) {
-      startNextChunk(stream)
-    }
-  }
-
-  const cleanupStream = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop())
-      streamRef.current = null
-    }
-  }
-
-  const stopRecording = () => {
-    isStillRecordingRef.current = false
-    
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop()
-    }
-    
-    cleanupStream()
-    setIsRecording(false)
-  }
-  
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-      }
-      cleanupStream()
-    }
-  }, [])
+  const {
+    isRecording,
+    audioChunks,
+    chunkDuration,
+    startRecording,
+    stopRecording,
+    setChunkDuration,
+    clearChunks,
+    isNoiseSuppressionEnabled,
+    setNoiseSuppressionEnabled,
+    isRNNoiseInitialized,
+    isRNNoiseLoading,
+    rnnoiseError,
+    initializeRNNoise
+  } = useAudioRecorder({ initialChunkDuration: 2, enableNoiseSupression: true })
 
   return (
     <>
@@ -136,6 +33,13 @@ export default function Home() {
         
         <section className="audio-recorder">
           <h2>Grabador de Audio</h2>
+          <RNNoiseDebug 
+            isInitialized={isRNNoiseInitialized}
+            isLoading={isRNNoiseLoading}
+            isRecording={isRecording}
+            noiseSuppressionEnabled={isNoiseSuppressionEnabled}
+            error={rnnoiseError}
+          />
           <div className="controls-container">
             <div className="button-group">
               <button 
@@ -169,6 +73,32 @@ export default function Home() {
                 className="duration-input"
               />
             </div>
+            
+            <div className="noise-reduction-control">
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={isNoiseSuppressionEnabled}
+                  onChange={(e) => setNoiseSuppressionEnabled(e.target.checked)}
+                  disabled={isRecording}
+                />
+                <span className="slider"></span>
+              </label>
+              <span className="control-label">
+                Reducción de ruido
+                {isNoiseSuppressionEnabled && ' ✓'}
+              </span>
+            </div>
+            
+            {isNoiseSuppressionEnabled && !isRNNoiseInitialized && !isRecording && (
+              <button 
+                onClick={initializeRNNoise} 
+                disabled={isRNNoiseLoading}
+                className={`btn ${isRNNoiseLoading ? 'btn-disabled' : 'btn-secondary'}`}
+              >
+                {isRNNoiseLoading ? '⏳ Inicializando...' : '🔧 Inicializar RNNoise'}
+              </button>
+            )}
           </div>
           
           {isRecording && (
@@ -189,7 +119,37 @@ export default function Home() {
                       {chunk.timestamp.toLocaleTimeString()}
                     </span>
                   </div>
-                  <audio controls src={chunk.url} />
+                  {isNoiseSuppressionEnabled && chunk.urlWithoutNR ? (
+                    <div className="audio-comparison">
+                      <div className="audio-item">
+                        <label>Con reducción de ruido:</label>
+                        <audio controls src={chunk.url} />
+                        <WaveformAnalyzer 
+                          audioUrl={chunk.url} 
+                          label="Señal con RNNoise" 
+                          color="#00ff00"
+                        />
+                      </div>
+                      <div className="audio-item">
+                        <label>Sin reducción de ruido:</label>
+                        <audio controls src={chunk.urlWithoutNR} />
+                        <WaveformAnalyzer 
+                          audioUrl={chunk.urlWithoutNR} 
+                          label="Señal original" 
+                          color="#ff0000"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <audio controls src={chunk.url} />
+                      <WaveformAnalyzer 
+                        audioUrl={chunk.url} 
+                        label="Señal de audio" 
+                        color="#00ff00"
+                      />
+                    </>
+                  )}
                 </div>
               ))}
             </div>

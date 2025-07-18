@@ -100,7 +100,8 @@
       "Bash(npx postcss:*)",
       "Bash(netlify dev:*)",
       "Bash(tail:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(dir:*)"
     ],
     "deny": []
   }
