@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 
-export const useRNNoiseSimple = () => {
+export const useRNNoiseAggressive = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const rnnoiseRef = useRef<any>(null);
+  
+  // Noise gate parameters
+  const noiseFloor = useRef(0.01); // Estimated noise floor
+  const smoothingFactor = 0.95; // For noise floor estimation
 
   const initializeRNNoise = async () => {
     if (isInitialized || isLoading) return;
@@ -15,7 +19,7 @@ export const useRNNoiseSimple = () => {
     setError(null);
     
     try {
-      console.log('[RNNoise Simple] Starting initialization...');
+      console.log('[RNNoise Aggressive] Starting initialization...');
       
       // Load script
       const script = document.createElement('script');
@@ -25,8 +29,6 @@ export const useRNNoiseSimple = () => {
         script.onerror = reject;
         document.head.appendChild(script);
       });
-      
-      console.log('[RNNoise Simple] Script loaded');
       
       // Create module
       const createRNNWasmModule = (window as any).createRNNWasmModule;
@@ -39,8 +41,6 @@ export const useRNNoiseSimple = () => {
         }
       });
       
-      console.log('[RNNoise Simple] Module created');
-      
       // Create state
       const state = RNNoiseModule._rnnoise_create(0);
       if (!state) {
@@ -51,37 +51,33 @@ export const useRNNoiseSimple = () => {
       const inputPtr = RNNoiseModule._malloc(480 * 4);
       const outputPtr = RNNoiseModule._malloc(480 * 4);
       
-      if (!inputPtr || !outputPtr) {
-        throw new Error('Failed to allocate memory');
-      }
-      
-      console.log('[RNNoise Simple] State:', state, 'Ptrs:', inputPtr, outputPtr);
-      
-      // Initialize RNNoise with some warm-up frames
+      // Warm up with silent frames
       const silentFrame = new Float32Array(480);
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 20; i++) {
         RNNoiseModule.HEAPF32.set(silentFrame, inputPtr >> 2);
         RNNoiseModule._rnnoise_process_frame(state, outputPtr, inputPtr);
       }
-      console.log('[RNNoise Simple] Warmed up with 10 silent frames');
       
-      // Store everything - reuse the allocated memory
+      // Store everything
       rnnoiseRef.current = {
         module: RNNoiseModule,
         state,
         inputPtr,
         outputPtr,
         inputBuffer: [],
-        outputBuffer: []
+        outputBuffer: [],
+        previousFrame: new Float32Array(480), // For smoothing
+        vadHistory: new Array(10).fill(0), // VAD history for smoothing
+        vadHistoryIndex: 0
       };
       
-      console.log('[RNNoise Simple] Ready for processing with state:', state);
+      console.log('[RNNoise Aggressive] Ready for processing');
       
       // Create audio context
       audioContextRef.current = new AudioContext({ sampleRate: 48000 });
       
-      // Create processor
-      const processor = audioContextRef.current.createScriptProcessor(4096, 1, 1);
+      // Create processor with larger buffer for better processing
+      const processor = audioContextRef.current.createScriptProcessor(8192, 1, 1);
       
       processor.onaudioprocess = (e) => {
         const input = e.inputBuffer.getChannelData(0);
@@ -100,71 +96,83 @@ export const useRNNoiseSimple = () => {
         // Process chunks of 480 samples
         while (rnnoiseRef.current.inputBuffer.length >= 480) {
           const frame = rnnoiseRef.current.inputBuffer.splice(0, 480);
-          
-          // Copy float32 data directly to WASM heap
           const floatFrame = new Float32Array(frame);
-          rnnoiseRef.current.module.HEAPF32.set(floatFrame, rnnoiseRef.current.inputPtr >> 2);
           
-          // Process
+          // Pre-process: Apply high-pass filter to remove low-frequency noise
+          const highpassFrame = applyHighPassFilter(floatFrame, 80); // 80Hz cutoff
+          
+          // Copy to WASM heap
+          rnnoiseRef.current.module.HEAPF32.set(highpassFrame, rnnoiseRef.current.inputPtr >> 2);
+          
+          // Process with RNNoise
           const vadProb = rnnoiseRef.current.module._rnnoise_process_frame(
             rnnoiseRef.current.state, 
             rnnoiseRef.current.outputPtr, 
             rnnoiseRef.current.inputPtr
           );
           
-          // Get output - read from HEAPF32 directly
+          // Get output
           const outputData = new Float32Array(480);
           for (let i = 0; i < 480; i++) {
             outputData[i] = rnnoiseRef.current.module.HEAPF32[(rnnoiseRef.current.outputPtr >> 2) + i];
           }
           
-          // Apply VAD-based gating - if VAD is low, reduce volume significantly
-          const vadThreshold = 0.3; // Lower threshold for more aggressive gating
-          if (vadProb < vadThreshold) {
-            // Strong attenuation when no voice is detected
-            const attenuation = Math.pow(vadProb / vadThreshold, 3) * 0.05; // More aggressive curve
-            for (let i = 0; i < 480; i++) {
-              outputData[i] *= attenuation;
-            }
-          } else if (vadProb < 0.6) {
-            // Medium attenuation for uncertain voice activity
-            const attenuation = 0.05 + 0.95 * ((vadProb - vadThreshold) / (0.6 - vadThreshold));
-            for (let i = 0; i < 480; i++) {
-              outputData[i] *= attenuation;
-            }
+          // Update VAD history for smoothing
+          rnnoiseRef.current.vadHistory[rnnoiseRef.current.vadHistoryIndex] = vadProb;
+          rnnoiseRef.current.vadHistoryIndex = (rnnoiseRef.current.vadHistoryIndex + 1) % 10;
+          
+          // Calculate smoothed VAD
+          const smoothedVAD = rnnoiseRef.current.vadHistory.reduce((a: number, b: number) => a + b, 0) / 10;
+          
+          // Estimate noise floor during silence
+          const frameEnergy = calculateRMS(outputData);
+          if (smoothedVAD < 0.1) {
+            noiseFloor.current = noiseFloor.current * smoothingFactor + frameEnergy * (1 - smoothingFactor);
           }
           
-          // Log occasionally with more detail
+          // Apply multiple noise reduction techniques
+          let processedFrame = outputData;
+          
+          // 1. VAD-based gating with hysteresis
+          const vadThresholdHigh = 0.6;
+          const vadThresholdLow = 0.3;
+          if (smoothedVAD < vadThresholdLow) {
+            // Strong attenuation when no voice
+            const attenuation = Math.pow(smoothedVAD / vadThresholdLow, 2) * 0.1;
+            processedFrame = processedFrame.map(s => s * attenuation);
+          } else if (smoothedVAD < vadThresholdHigh) {
+            // Gradual attenuation
+            const attenuation = 0.1 + 0.9 * ((smoothedVAD - vadThresholdLow) / (vadThresholdHigh - vadThresholdLow));
+            processedFrame = processedFrame.map(s => s * attenuation);
+          }
+          
+          // 2. Spectral subtraction based on noise floor
+          if (frameEnergy < noiseFloor.current * 2) {
+            const attenuation = Math.max(0, 1 - (noiseFloor.current / frameEnergy));
+            processedFrame = processedFrame.map(s => s * attenuation);
+          }
+          
+          // 3. Smooth transitions to avoid artifacts
+          for (let i = 0; i < 480; i++) {
+            const smoothing = 0.1;
+            processedFrame[i] = processedFrame[i] * (1 - smoothing) + rnnoiseRef.current.previousFrame[i] * smoothing;
+            rnnoiseRef.current.previousFrame[i] = processedFrame[i];
+          }
+          
+          // Log occasionally
           if (Math.random() < 0.02) {
             const maxIn = Math.max(...floatFrame.map(Math.abs));
-            const maxOut = Math.max(...outputData.map(Math.abs));
-            
-            // Check first few samples of input and output
-            const inputSamples = [];
-            const outputSamples = [];
-            for (let i = 0; i < 5; i++) {
-              inputSamples.push(floatFrame[i]);
-              outputSamples.push(outputData[i]);
-            }
-            
-            // Also check what's in the heap before and after
-            const heapInput = [];
-            const heapOutput = [];
-            for (let i = 0; i < 5; i++) {
-              heapInput.push(rnnoiseRef.current.module.HEAPF32[(rnnoiseRef.current.inputPtr >> 2) + i]);
-              heapOutput.push(rnnoiseRef.current.module.HEAPF32[(rnnoiseRef.current.outputPtr >> 2) + i]);
-            }
-            
-            console.log('[RNNoise Simple] Processing:',
-                       '\n  VAD:', vadProb.toFixed(3), 
-                       '\n  Max Input:', maxIn.toFixed(4), 'Max Output:', maxOut.toFixed(4),
-                       '\n  Gate Applied:', vadProb < vadThreshold ? `Yes (${(vadProb * 2).toFixed(2)}x)` : 'No',
+            const maxOut = Math.max(...processedFrame.map(Math.abs));
+            console.log('[RNNoise Aggressive]',
+                       '\n  VAD:', vadProb.toFixed(3), '(Smoothed:', smoothedVAD.toFixed(3) + ')',
+                       '\n  Noise Floor:', noiseFloor.current.toFixed(4),
+                       '\n  Frame Energy:', frameEnergy.toFixed(4),
                        '\n  Reduction:', maxIn > 0 ? ((1 - maxOut/maxIn) * 100).toFixed(1) + '%' : 'N/A');
           }
           
-          // Add processed float32 samples to output buffer
+          // Add to output buffer
           for (let i = 0; i < 480; i++) {
-            rnnoiseRef.current.outputBuffer.push(outputData[i]);
+            rnnoiseRef.current.outputBuffer.push(processedFrame[i]);
           }
         }
         
@@ -180,10 +188,10 @@ export const useRNNoiseSimple = () => {
       
       processorRef.current = processor;
       setIsInitialized(true);
-      console.log('[RNNoise Simple] Initialization complete!');
+      console.log('[RNNoise Aggressive] Initialization complete!');
       
     } catch (err) {
-      console.error('[RNNoise Simple] Error:', err);
+      console.error('[RNNoise Aggressive] Error:', err);
       setError(err instanceof Error ? err.message : String(err));
       throw err;
     } finally {
@@ -233,3 +241,27 @@ export const useRNNoiseSimple = () => {
     initializeRNNoise
   };
 };
+
+// Helper functions
+function calculateRMS(frame: Float32Array): number {
+  let sum = 0;
+  for (let i = 0; i < frame.length; i++) {
+    sum += frame[i] * frame[i];
+  }
+  return Math.sqrt(sum / frame.length);
+}
+
+function applyHighPassFilter(frame: Float32Array, cutoffHz: number): Float32Array {
+  // Simple first-order high-pass filter
+  const output = new Float32Array(frame.length);
+  const rc = 1.0 / (2.0 * Math.PI * cutoffHz);
+  const dt = 1.0 / 48000; // sample rate
+  const alpha = rc / (rc + dt);
+  
+  output[0] = frame[0];
+  for (let i = 1; i < frame.length; i++) {
+    output[i] = alpha * (output[i-1] + frame[i] - frame[i-1]);
+  }
+  
+  return output;
+}

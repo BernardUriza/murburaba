@@ -122,12 +122,21 @@ export const useAudioRecorder = ({
       
       originalRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
+          console.log('[Audio Recorder] Original recorder data available, size:', event.data.size);
           currentOriginalChunksRef.current.push(event.data);
         }
       };
       
-      mediaRecorder.onstop = () => {
-        console.log('[Audio Recorder] MediaRecorder stopped, chunks:', currentChunksRef.current.length);
+      let processedStopped = false;
+      let originalStopped = false;
+      
+      const createChunkWhenBothStopped = () => {
+        if (!processedStopped || !originalStopped) return;
+        
+        console.log('[Audio Recorder] Both recorders stopped, creating chunk');
+        console.log('[Audio Recorder] Processed chunks:', currentChunksRef.current.length);
+        console.log('[Audio Recorder] Original chunks:', currentOriginalChunksRef.current.length);
+        
         if (currentChunksRef.current.length > 0) {
           const audioBlob = new Blob(currentChunksRef.current, { type: 'audio/webm' });
           const url = URL.createObjectURL(audioBlob);
@@ -136,9 +145,11 @@ export const useAudioRecorder = ({
           if (currentOriginalChunksRef.current.length > 0) {
             const originalBlob = new Blob(currentOriginalChunksRef.current, { type: 'audio/webm' });
             urlWithoutNR = URL.createObjectURL(originalBlob);
+            console.log('[Audio Recorder] Created urlWithoutNR:', urlWithoutNR);
+          } else {
+            console.log('[Audio Recorder] No original chunks available!');
           }
           
-          console.log('[Audio Recorder] Creating audio chunk with URLs');
           setAudioChunks(prev => [...prev, {
             id: chunkIdRef.current++,
             url,
@@ -146,15 +157,23 @@ export const useAudioRecorder = ({
             timestamp: new Date()
           }]);
         }
-        
-        // Stop original recorder if it's still recording
-        if (originalRecorderRef.current && originalRecorderRef.current.state === 'recording') {
-          originalRecorderRef.current.stop();
-        }
+      };
+      
+      mediaRecorder.onstop = () => {
+        console.log('[Audio Recorder] MediaRecorder stopped');
+        processedStopped = true;
+        createChunkWhenBothStopped();
+      };
+      
+      originalRecorder.onstop = () => {
+        console.log('[Audio Recorder] Original recorder stopped');
+        originalStopped = true;
+        createChunkWhenBothStopped();
       };
       
       mediaRecorder.start();
       originalRecorder.start();
+      console.log('[Audio Recorder] Both recorders started');
     } else {
       // No noise reduction - just record the raw stream
       console.log('[Audio Recorder] Recording without noise suppression');
@@ -216,12 +235,12 @@ export const useAudioRecorder = ({
       chunkIntervalRef.current = setInterval(() => {
         console.log('[Audio Recorder] Chunk interval fired');
         
-        // Stop current recording
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-          mediaRecorderRef.current.stop();
-        }
+        // Stop both recorders
         if (originalRecorderRef.current && originalRecorderRef.current.state === 'recording') {
           originalRecorderRef.current.stop();
+        }
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          mediaRecorderRef.current.stop();
         }
         
         // Start new chunk

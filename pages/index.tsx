@@ -2,6 +2,7 @@ import Head from 'next/head'
 import { useAudioRecorder } from '../hooks/useAudioRecorder'
 import { WaveformAnalyzer } from '../components/WaveformAnalyzer'
 import { RNNoiseDebug } from '../components/RNNoiseDebug'
+import RNNoiseToggle from '../components/RNNoiseToggle'
 
 export default function Home() {
   const {
@@ -119,37 +120,26 @@ export default function Home() {
                       {chunk.timestamp.toLocaleTimeString()}
                     </span>
                   </div>
-                  {isNoiseSuppressionEnabled && chunk.urlWithoutNR ? (
                     <div className="audio-comparison">
                       <div className="audio-item">
-                        <label>Con reducción de ruido:</label>
+                        <label>✅ CON RNNOISE</label>
                         <audio controls src={chunk.url} />
                         <WaveformAnalyzer 
                           audioUrl={chunk.url} 
-                          label="Señal con RNNoise" 
-                          color="#00ff00"
+                          label="Señal procesada" 
+                          color="#4CAF50"
                         />
                       </div>
                       <div className="audio-item">
-                        <label>Sin reducción de ruido:</label>
+                        <label>❌ SIN RNNOISE</label>
                         <audio controls src={chunk.urlWithoutNR} />
                         <WaveformAnalyzer 
                           audioUrl={chunk.urlWithoutNR} 
                           label="Señal original" 
-                          color="#ff0000"
+                          color="#FF5722"
                         />
                       </div>
                     </div>
-                  ) : (
-                    <>
-                      <audio controls src={chunk.url} />
-                      <WaveformAnalyzer 
-                        audioUrl={chunk.url} 
-                        label="Señal de audio" 
-                        color="#00ff00"
-                      />
-                    </>
-                  )}
                 </div>
               ))}
             </div>
