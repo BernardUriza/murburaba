@@ -1,11 +1,27 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRNNoise } from '../lib/audio/useRNNoise';
 
+export interface ProcessingStats {
+  inputSamples: number
+  outputSamples: number
+  noiseReductionLevel: number // 0-100%
+  silenceFrames: number
+  activeFrames: number
+  averageInputEnergy: number
+  averageOutputEnergy: number
+  peakInputLevel: number
+  peakOutputLevel: number
+  processingTimeMs: number
+  chunkOffset: number
+  totalFramesProcessed: number
+}
+
 export interface AudioChunk {
   id: number;
   url: string;
   urlWithoutNR?: string;
   timestamp: Date;
+  stats?: ProcessingStats;
 }
 
 interface UseAudioRecorderProps {
@@ -54,7 +70,9 @@ export const useAudioRecorder = ({
     isLoading: isRNNoiseLoading, 
     error: rnnoiseError,
     cleanup: cleanupRNNoise,
-    initializeRNNoise 
+    initializeRNNoise,
+    getMetrics,
+    resetMetrics
   } = useRNNoise();
   
   useEffect(() => {
@@ -103,6 +121,11 @@ export const useAudioRecorder = ({
     currentChunksRef.current = [];
     currentOriginalChunksRef.current = [];
     
+    // Reset metrics for new chunk
+    if (resetMetrics) {
+      resetMetrics();
+    }
+    
     // If noise suppression is enabled and we have a processed stream, record both
     if (isNoiseSuppressionEnabled && processedStreamRef.current) {
       console.log('[Audio Recorder] Recording with noise suppression');
@@ -150,11 +173,14 @@ export const useAudioRecorder = ({
             console.log('[Audio Recorder] No original chunks available!');
           }
           
+          const stats = getMetrics ? getMetrics() : undefined;
+          
           setAudioChunks(prev => [...prev, {
             id: chunkIdRef.current++,
             url,
             urlWithoutNR,
-            timestamp: new Date()
+            timestamp: new Date(),
+            stats
           }]);
         }
       };
@@ -195,14 +221,15 @@ export const useAudioRecorder = ({
           setAudioChunks(prev => [...prev, {
             id: chunkIdRef.current++,
             url,
-            timestamp: new Date()
+            timestamp: new Date(),
+            stats: undefined // No stats when noise suppression is disabled
           }]);
         }
       };
       
       mediaRecorder.start();
     }
-  }, [isNoiseSuppressionEnabled]);
+  }, [isNoiseSuppressionEnabled, getMetrics, resetMetrics]);
   
   const startRecording = async () => {
     try {

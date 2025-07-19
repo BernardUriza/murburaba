@@ -21,11 +21,15 @@ export default function Home() {
     initializeRNNoise
   } = useAudioRecorder({ initialChunkDuration: 2, enableNoiseSupression: true })
 
-  const [currentTime, setCurrentTime] = useState(new Date())
+  const [currentTime, setCurrentTime] = useState<Date | null>(null)
   const [recordingTime, setRecordingTime] = useState(0)
   const [showComparison, setShowComparison] = useState(true)
+  const [expandedChunks, setExpandedChunks] = useState<Set<number>>(new Set())
 
   useEffect(() => {
+    // Set initial time on client side only
+    setCurrentTime(new Date())
+    
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
@@ -47,6 +51,18 @@ export default function Home() {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+
+  const toggleChunkExpanded = (chunkId: number) => {
+    setExpandedChunks(prev => {
+      const next = new Set(prev)
+      if (next.has(chunkId)) {
+        next.delete(chunkId)
+      } else {
+        next.add(chunkId)
+      }
+      return next
+    })
   }
 
   const totalProcessedTime = audioChunks.reduce((acc, chunk) => acc + (chunk.duration || chunkDuration), 0)
@@ -83,8 +99,17 @@ export default function Home() {
               </div>
             </div>
             <div className="time-display">
-              <div className="time">{currentTime.toLocaleTimeString()}</div>
-              <div className="date">{currentTime.toLocaleDateString()}</div>
+              {currentTime ? (
+                <>
+                  <div className="time">{currentTime.toLocaleTimeString()}</div>
+                  <div className="date">{currentTime.toLocaleDateString()}</div>
+                </>
+              ) : (
+                <>
+                  <div className="time">--:--:--</div>
+                  <div className="date">--/--/----</div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -345,6 +370,120 @@ export default function Home() {
                         <span>AI Processed</span>
                       </div>
                     </div>
+                  )}
+                  
+                  {chunk.stats && (
+                    <>
+                      <button
+                        onClick={() => toggleChunkExpanded(chunk.id)}
+                        className="stats-toggle-btn"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                          <path d="M12 2V12M12 12L17 7M12 12L7 7" stroke="currentColor" strokeWidth="2" transform={expandedChunks.has(chunk.id) ? "rotate(180 12 12)" : ""}/>
+                        </svg>
+                        <span>{expandedChunks.has(chunk.id) ? 'Hide Details' : 'View Processing Details'}</span>
+                      </button>
+                      
+                      {expandedChunks.has(chunk.id) && (
+                        <div className="stats-details">
+                          <h4>Processing Statistics</h4>
+                          
+                          <div className="stats-grid-detail">
+                            <div className="stat-detail">
+                              <span className="stat-detail-label">Input Samples</span>
+                              <span className="stat-detail-value">{chunk.stats.inputSamples.toLocaleString()}</span>
+                            </div>
+                            
+                            <div className="stat-detail">
+                              <span className="stat-detail-label">Output Samples</span>
+                              <span className="stat-detail-value">{chunk.stats.outputSamples.toLocaleString()}</span>
+                            </div>
+                            
+                            <div className="stat-detail">
+                              <span className="stat-detail-label">Noise Reduction</span>
+                              <span className="stat-detail-value highlight">{chunk.stats.noiseReductionLevel.toFixed(1)}%</span>
+                            </div>
+                            
+                            <div className="stat-detail">
+                              <span className="stat-detail-label">Processing Time</span>
+                              <span className="stat-detail-value">{(chunk.stats.processingTimeMs / 1000).toFixed(2)}s</span>
+                            </div>
+                          </div>
+                          
+                          <div className="stats-section">
+                            <h5>Frame Analysis</h5>
+                            <div className="stats-grid-detail">
+                              <div className="stat-detail">
+                                <span className="stat-detail-label">Total Frames</span>
+                                <span className="stat-detail-value">{chunk.stats.totalFramesProcessed}</span>
+                              </div>
+                              <div className="stat-detail">
+                                <span className="stat-detail-label">Active Frames</span>
+                                <span className="stat-detail-value">{chunk.stats.activeFrames}</span>
+                              </div>
+                              <div className="stat-detail">
+                                <span className="stat-detail-label">Silence Frames</span>
+                                <span className="stat-detail-value">{chunk.stats.silenceFrames}</span>
+                              </div>
+                              <div className="stat-detail">
+                                <span className="stat-detail-label">Activity Ratio</span>
+                                <span className="stat-detail-value">
+                                  {chunk.stats.totalFramesProcessed > 0 
+                                    ? ((chunk.stats.activeFrames / chunk.stats.totalFramesProcessed) * 100).toFixed(1) 
+                                    : 0}%
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="stats-section">
+                            <h5>Energy Levels</h5>
+                            <div className="energy-bars">
+                              <div className="energy-bar-container">
+                                <span className="energy-label">Input</span>
+                                <div className="energy-bar">
+                                  <div 
+                                    className="energy-fill input" 
+                                    style={{width: `${Math.min(100, chunk.stats.averageInputEnergy * 1000)}%`}}
+                                  ></div>
+                                </div>
+                                <span className="energy-value">{chunk.stats.averageInputEnergy.toFixed(4)}</span>
+                              </div>
+                              <div className="energy-bar-container">
+                                <span className="energy-label">Output</span>
+                                <div className="energy-bar">
+                                  <div 
+                                    className="energy-fill output" 
+                                    style={{width: `${Math.min(100, chunk.stats.averageOutputEnergy * 1000)}%`}}
+                                  ></div>
+                                </div>
+                                <span className="energy-value">{chunk.stats.averageOutputEnergy.toFixed(4)}</span>
+                              </div>
+                            </div>
+                            
+                            <div className="peak-levels">
+                              <div className="peak-level">
+                                <span>Peak Input:</span>
+                                <span className="peak-value">{(chunk.stats.peakInputLevel * 100).toFixed(1)}%</span>
+                              </div>
+                              <div className="peak-level">
+                                <span>Peak Output:</span>
+                                <span className="peak-value">{(chunk.stats.peakOutputLevel * 100).toFixed(1)}%</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="stats-section">
+                            <h5>Processing Details</h5>
+                            <div className="processing-info">
+                              <p>RNNoise processed <strong>{chunk.stats.totalFramesProcessed}</strong> frames of 480 samples each.</p>
+                              <p>The algorithm identified <strong>{((chunk.stats.silenceFrames / chunk.stats.totalFramesProcessed) * 100).toFixed(1)}%</strong> as silence/noise.</p>
+                              <p>Average noise reduction achieved: <strong className="highlight">{chunk.stats.noiseReductionLevel.toFixed(1)}%</strong></p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               ))}

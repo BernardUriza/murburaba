@@ -1,5 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 
+interface ProcessingMetrics {
+  inputSamples: number;
+  outputSamples: number;
+  silenceFrames: number;
+  activeFrames: number;
+  totalInputEnergy: number;
+  totalOutputEnergy: number;
+  peakInput: number;
+  peakOutput: number;
+  startTime: number;
+  totalFrames: number;
+}
+
 export const useRNNoise = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -7,6 +20,18 @@ export const useRNNoise = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const rnnoiseRef = useRef<any>(null);
+  const metricsRef = useRef<ProcessingMetrics>({
+    inputSamples: 0,
+    outputSamples: 0,
+    silenceFrames: 0,
+    activeFrames: 0,
+    totalInputEnergy: 0,
+    totalOutputEnergy: 0,
+    peakInput: 0,
+    peakOutput: 0,
+    startTime: 0,
+    totalFrames: 0
+  });
 
   const initializeRNNoise = async () => {
     if (isInitialized || isLoading) return;
@@ -83,9 +108,13 @@ export const useRNNoise = () => {
           return;
         }
         
+        // Track input metrics
+        metricsRef.current.inputSamples += input.length;
+        
         // Add to input buffer
         for (let i = 0; i < input.length; i++) {
           rnnoiseRef.current.inputBuffer.push(input[i]);
+          metricsRef.current.peakInput = Math.max(metricsRef.current.peakInput, Math.abs(input[i]));
         }
         
         // Process chunks of 480 samples
@@ -113,6 +142,11 @@ export const useRNNoise = () => {
           const frameEnergy = calculateRMS(floatFrame);
           const outputEnergy = calculateRMS(outputData);
           
+          // Track frame metrics
+          metricsRef.current.totalFrames++;
+          metricsRef.current.totalInputEnergy += frameEnergy;
+          metricsRef.current.totalOutputEnergy += outputEnergy;
+          
           // Update energy history
           rnnoiseRef.current.energyHistory[rnnoiseRef.current.energyIndex] = frameEnergy;
           rnnoiseRef.current.energyIndex = (rnnoiseRef.current.energyIndex + 1) % 20;
@@ -124,15 +158,21 @@ export const useRNNoise = () => {
           let processedFrame = outputData;
           const silenceThreshold = 0.001;
           const speechThreshold = 0.005;
+          let wasSilenced = false;
           
           if (avgEnergy < silenceThreshold) {
             // Very quiet - attenuate heavily
             processedFrame = processedFrame.map(s => s * 0.1);
+            wasSilenced = true;
+            metricsRef.current.silenceFrames++;
           } else if (avgEnergy < speechThreshold) {
             // Quiet - moderate attenuation
             const factor = (avgEnergy - silenceThreshold) / (speechThreshold - silenceThreshold);
             const attenuation = 0.1 + 0.9 * factor;
             processedFrame = processedFrame.map(s => s * attenuation);
+            metricsRef.current.activeFrames++;
+          } else {
+            metricsRef.current.activeFrames++;
           }
           
           // Additional noise gate based on RNNoise output vs input ratio
@@ -140,6 +180,7 @@ export const useRNNoise = () => {
           if (reductionRatio < 0.3 && avgEnergy < speechThreshold) {
             // RNNoise reduced significantly - likely noise
             processedFrame = processedFrame.map(s => s * reductionRatio);
+            if (!wasSilenced) metricsRef.current.silenceFrames++;
           }
           
           // Log occasionally
@@ -163,7 +204,10 @@ export const useRNNoise = () => {
         // Output
         for (let i = 0; i < output.length; i++) {
           if (rnnoiseRef.current.outputBuffer.length > 0) {
-            output[i] = rnnoiseRef.current.outputBuffer.shift();
+            const sample = rnnoiseRef.current.outputBuffer.shift();
+            output[i] = sample;
+            metricsRef.current.outputSamples++;
+            metricsRef.current.peakOutput = Math.max(metricsRef.current.peakOutput, Math.abs(sample));
           } else {
             output[i] = 0;
           }
@@ -183,6 +227,44 @@ export const useRNNoise = () => {
     }
   };
 
+  const resetMetrics = () => {
+    metricsRef.current = {
+      inputSamples: 0,
+      outputSamples: 0,
+      silenceFrames: 0,
+      activeFrames: 0,
+      totalInputEnergy: 0,
+      totalOutputEnergy: 0,
+      peakInput: 0,
+      peakOutput: 0,
+      startTime: Date.now(),
+      totalFrames: 0
+    };
+  };
+
+  const getMetrics = () => {
+    const metrics = metricsRef.current;
+    const processingTime = Date.now() - metrics.startTime;
+    const avgInputEnergy = metrics.totalFrames > 0 ? metrics.totalInputEnergy / metrics.totalFrames : 0;
+    const avgOutputEnergy = metrics.totalFrames > 0 ? metrics.totalOutputEnergy / metrics.totalFrames : 0;
+    const noiseReduction = avgInputEnergy > 0 ? (1 - avgOutputEnergy / avgInputEnergy) * 100 : 0;
+    
+    return {
+      inputSamples: metrics.inputSamples,
+      outputSamples: metrics.outputSamples,
+      noiseReductionLevel: Math.max(0, Math.min(100, noiseReduction)),
+      silenceFrames: metrics.silenceFrames,
+      activeFrames: metrics.activeFrames,
+      averageInputEnergy: avgInputEnergy,
+      averageOutputEnergy: avgOutputEnergy,
+      peakInputLevel: metrics.peakInput,
+      peakOutputLevel: metrics.peakOutput,
+      processingTimeMs: processingTime,
+      chunkOffset: 0,
+      totalFramesProcessed: metrics.totalFrames
+    };
+  };
+
   const processStream = async (stream: MediaStream): Promise<MediaStream> => {
     if (!isInitialized) {
       await initializeRNNoise();
@@ -191,6 +273,9 @@ export const useRNNoise = () => {
     if (!audioContextRef.current || !processorRef.current) {
       throw new Error('Not initialized');
     }
+    
+    // Reset metrics when starting new stream
+    resetMetrics();
     
     const source = audioContextRef.current.createMediaStreamSource(stream);
     const destination = audioContextRef.current.createMediaStreamDestination();
@@ -222,7 +307,9 @@ export const useRNNoise = () => {
     error,
     processStream,
     cleanup,
-    initializeRNNoise
+    initializeRNNoise,
+    getMetrics,
+    resetMetrics
   };
 };
 
