@@ -35,7 +35,7 @@ export default function Home() {
 
   const [isRecording, setIsRecording] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
-  const [chunkDuration, setChunkDuration] = useState(4)
+  const [chunkDuration, setChunkDuration] = useState(8)
   const [processedChunks, setProcessedChunks] = useState<ProcessedChunk[]>([])
   const [currentStream, setCurrentStream] = useState<MediaStream | null>(null)
   const [originalStream, setOriginalStream] = useState<MediaStream | null>(null)
@@ -363,7 +363,7 @@ export default function Home() {
               <div className="setting-group">
                 <label>⏱️ Chunk Duration</label>
                 <div className="duration-buttons">
-                  {[2, 4, 5, 10].map(duration => (
+                  {[5, 8, 10, 15, 20, 30].map(duration => (
                     <button 
                       key={duration}
                       className={`duration-btn ${chunkDuration === duration ? 'active' : ''}`}
@@ -417,6 +417,18 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Recording Status Bar */}
+        {isRecording && (
+          <div className="recording-status-bar">
+            <div className="recording-indicator pulse">
+              <span className="recording-dot"></span>
+              <span className="recording-label">Recording</span>
+              <span className="recording-time">{formatTime(recordingTime)}</span>
+            </div>
+            {isPaused && <span className="pause-badge">PAUSED</span>}
+          </div>
+        )}
+
         {/* Real-time Metrics Dashboard */}
         {metrics && isRecording && (
           <section className="metrics-dashboard glass-panel">
@@ -468,16 +480,11 @@ export default function Home() {
         )}
 
         {/* Control Panel */}
-        <section className="control-panel glass-panel">
-          <div className="controls-header">
-            <h2 className="section-title">🎛️ Audio Controls</h2>
-            {isRecording && (
-              <div className="recording-indicator pulse">
-                <span className="recording-dot"></span>
-                <span className="recording-time">{formatTime(recordingTime)}</span>
-              </div>
-            )}
-          </div>
+        {!isRecording && (
+          <section className="control-panel glass-panel">
+            <div className="controls-header">
+              <h2 className="section-title">🎛️ Audio Controls</h2>
+            </div>
 
           <div className="controls-grid">
             {!isInitialized && !isLoading && (
@@ -510,7 +517,7 @@ export default function Home() {
                 <div className="quick-settings">
                   <span className="setting-label">⏱️ Chunks:</span>
                   <div className="chunk-duration-pills">
-                    {[2, 4, 5, 10].map(duration => (
+                    {[5, 8, 10, 15].map(duration => (
                       <button
                         key={duration}
                         className={`pill ${chunkDuration === duration ? 'active' : ''}`}
@@ -565,13 +572,14 @@ export default function Home() {
             )}
           </div>
 
-          {error && (
-            <div className="error-message shake">
-              <span>⚠️ {error}</span>
-              <button onClick={resetError} className="error-dismiss">✕</button>
-            </div>
-          )}
-        </section>
+            {error && (
+              <div className="error-message shake">
+                <span>⚠️ {error}</span>
+                <button onClick={resetError} className="error-dismiss">✕</button>
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Waveform Visualizer */}
         {currentStream && (
@@ -613,72 +621,99 @@ export default function Home() {
               </div>
             </div>
             
-            <div className="chunks-grid">
+            <div className="chunks-list">
               {processedChunks.map((chunk, index) => (
                 <div 
                   key={chunk.id} 
-                  className={`chunk-card ${chunk.isExpanded ? 'expanded' : ''} ${chunk.isPlaying ? 'playing' : ''}`}
+                  className={`chunk-item ${chunk.isExpanded ? 'expanded' : ''} ${chunk.isPlaying ? 'playing' : ''}`}
                 >
-                  <div className="chunk-header" onClick={() => toggleChunkExpansion(chunk.id)} style={{ cursor: 'pointer' }}>
-                    <span className="chunk-number">
-                      <span className="chunk-icon">🎼</span>
-                      Chunk #{index + 1}
-                    </span>
-                    <span className="chunk-duration">
-                      ⏱️ {(chunk.duration / 1000).toFixed(1)}s
-                    </span>
-                  </div>
-                  
-                  <div className="chunk-metrics" onClick={() => toggleChunkExpansion(chunk.id)} style={{ cursor: 'pointer' }}>
-                    <div className="metric-row">
-                      <span className="metric-icon">🔇</span>
-                      <span className="metric-text">
-                        {chunk.noiseRemoved.toFixed(1)}% noise removed
+                  <div className="chunk-main">
+                    {/* Chunk Info */}
+                    <div className="chunk-info">
+                      <span className="chunk-number">
+                        <span className="chunk-icon">🎼</span>
+                        #{index + 1}
                       </span>
+                      <span className="chunk-duration">⏱️ {(chunk.duration / 1000).toFixed(1)}s</span>
                     </div>
-                    <div className="metric-row">
-                      <span className="metric-icon">⚡</span>
-                      <span className="metric-text">
-                        {chunk.metrics.processingLatency.toFixed(0)}ms latency
-                      </span>
+                    
+                    {/* Metrics */}
+                    <div className="chunk-stats">
+                      <div className="stat-item">
+                        <span className="stat-icon">🔇</span>
+                        <span className="stat-value">{chunk.noiseRemoved.toFixed(1)}%</span>
+                        <span className="stat-label">reduced</span>
+                      </div>
+                      <div className="stat-item">
+                        <span className="stat-icon">⚡</span>
+                        <span className="stat-value">{chunk.metrics.processingLatency.toFixed(0)}ms</span>
+                        <span className="stat-label">latency</span>
+                      </div>
+                    </div>
+                    
+                    {/* Noise Meter */}
+                    <div className="chunk-noise-meter">
+                      <div className="noise-bar">
+                        <div 
+                          className="noise-fill"
+                          style={{
+                            width: `${chunk.noiseRemoved}%`,
+                            background: `linear-gradient(90deg, 
+                              hsl(${120 - chunk.noiseRemoved * 1.2}, 70%, 50%) 0%, 
+                              hsl(${120 - chunk.noiseRemoved * 0.6}, 70%, 60%) 100%)`
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="chunk-actions">
+                      <button 
+                        className={`action-btn play-original ${chunk.isPlaying && selectedChunk === chunk.id ? 'active' : ''}`}
+                        onClick={() => toggleChunkPlayback(chunk.id, 'original')}
+                        disabled={!chunk.originalAudioUrl}
+                        title="Play Original"
+                      >
+                        <span className="btn-icon">🔊</span>
+                        <span className="btn-text">Original</span>
+                      </button>
+                      <button 
+                        className={`action-btn play-processed ${chunk.isPlaying && selectedChunk === chunk.id ? 'active' : ''}`}
+                        onClick={() => toggleChunkPlayback(chunk.id, 'processed')}
+                        disabled={!chunk.processedAudioUrl}
+                        title="Play Enhanced"
+                      >
+                        <span className="btn-icon">🎵</span>
+                        <span className="btn-text">Enhanced</span>
+                      </button>
+                      <button 
+                        className="action-btn expand-btn"
+                        onClick={() => toggleChunkExpansion(chunk.id)}
+                        title={chunk.isExpanded ? 'Collapse' : 'Expand'}
+                      >
+                        <span className="btn-icon">{chunk.isExpanded ? '▲' : '▼'}</span>
+                      </button>
                     </div>
                   </div>
                   
-                  <div className="chunk-visualization" onClick={() => toggleChunkExpansion(chunk.id)} style={{ cursor: 'pointer' }}>
-                    <div className="noise-meter">
-                      <div 
-                        className="noise-fill"
-                        style={{
-                          width: `${chunk.noiseRemoved}%`,
-                          background: `linear-gradient(90deg, 
-                            hsl(${120 - chunk.noiseRemoved * 1.2}, 70%, 50%) 0%, 
-                            hsl(${120 - chunk.noiseRemoved * 0.6}, 70%, 60%) 100%)`
-                        }}
-                      ></div>
-                      <span className="noise-label">{chunk.noiseRemoved.toFixed(0)}%</span>
-                    </div>
-                  </div>
-                  
+                  {/* Expanded Details */}
                   {chunk.isExpanded && (
-                    <div className="chunk-controls">
-                      <h4>🎧 Compare Audio</h4>
-                      <div className="audio-comparison">
-                        <button 
-                          className={`audio-btn original ${chunk.isPlaying && selectedChunk === chunk.id ? 'active' : ''}`}
-                          onClick={() => toggleChunkPlayback(chunk.id, 'original')}
-                          disabled={!chunk.originalAudioUrl}
-                        >
-                          <span className="audio-icon">🔊</span>
-                          <span>Original</span>
-                        </button>
-                        <button 
-                          className={`audio-btn processed ${chunk.isPlaying && selectedChunk === chunk.id ? 'active' : ''}`}
-                          onClick={() => toggleChunkPlayback(chunk.id, 'processed')}
-                          disabled={!chunk.processedAudioUrl}
-                        >
-                          <span className="audio-icon">🎵</span>
-                          <span>Enhanced</span>
-                        </button>
+                    <div className="chunk-details">
+                      <div className="detail-item">
+                        <span className="detail-label">Start Time:</span>
+                        <span className="detail-value">{new Date(chunk.startTime).toLocaleTimeString()}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">End Time:</span>
+                        <span className="detail-value">{new Date(chunk.endTime).toLocaleTimeString()}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">Processing Time:</span>
+                        <span className="detail-value">{chunk.metrics.processingLatency.toFixed(2)}ms</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">Frame Count:</span>
+                        <span className="detail-value">{chunk.metrics.frameCount} frames</span>
                       </div>
                     </div>
                   )}
@@ -690,6 +725,59 @@ export default function Home() {
 
         {/* Floating Action Buttons */}
         <div className="floating-button-group">
+          {/* Audio Control Buttons */}
+          {isInitialized && !isRecording && (
+            <button 
+              className="floating-btn record-fab pulse"
+              onClick={startRecording}
+              title="Start Recording"
+            >
+              <span className="fab-icon">🎙️</span>
+            </button>
+          )}
+          
+          {isRecording && !isPaused && (
+            <>
+              <button 
+                className="floating-btn pause-fab"
+                onClick={pauseRecording}
+                title="Pause Recording"
+              >
+                <span className="fab-icon">⏸️</span>
+              </button>
+              <button 
+                className="floating-btn stop-fab"
+                onClick={stopRecording}
+                title="Stop Recording"
+              >
+                <span className="fab-icon">⏹️</span>
+              </button>
+            </>
+          )}
+          
+          {isRecording && isPaused && (
+            <>
+              <button 
+                className="floating-btn resume-fab pulse"
+                onClick={resumeRecording}
+                title="Resume Recording"
+              >
+                <span className="fab-icon">▶️</span>
+              </button>
+              <button 
+                className="floating-btn stop-fab"
+                onClick={stopRecording}
+                title="Stop Recording"
+              >
+                <span className="fab-icon">⏹️</span>
+              </button>
+            </>
+          )}
+          
+          {/* Divider */}
+          {isInitialized && <div className="fab-divider"></div>}
+          
+          {/* Settings and Metrics */}
           <button 
             className="floating-btn settings-fab"
             onClick={() => setShowSettings(!showSettings)}
@@ -888,7 +976,8 @@ export default function Home() {
         }
 
         .duration-buttons {
-          display: flex;
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
           gap: 0.5rem;
         }
 
@@ -1231,6 +1320,36 @@ export default function Home() {
           border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
+        .recording-status-bar {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 2rem;
+          margin-bottom: 2rem;
+          padding: 1rem 2rem;
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(10px);
+          border-radius: 20px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .recording-label {
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin: 0 1rem;
+        }
+
+        .pause-badge {
+          background: #ff9800;
+          color: white;
+          padding: 0.25rem 1rem;
+          border-radius: 20px;
+          font-weight: 600;
+          font-size: 0.875rem;
+          animation: pulse 2s infinite;
+        }
+
         .btn-icon {
           font-size: 1.2rem;
         }
@@ -1367,52 +1486,165 @@ export default function Home() {
           color: #667eea;
         }
 
-        .chunks-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-          gap: 1.5rem;
+        /* Chunks List */
+        .chunks-list {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
         }
 
-        .chunk-card {
+        .chunk-item {
           background: rgba(0, 0, 0, 0.3);
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 15px;
-          padding: 1.5rem;
+          overflow: hidden;
           transition: all 0.3s ease;
-          cursor: pointer;
-          position: relative;
+        }
+        
+        .chunk-item.playing {
+          border-color: #4caf50;
+          box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+        }
+        
+        .chunk-main {
+          display: grid;
+          grid-template-columns: 150px 200px 1fr 300px;
+          align-items: center;
+          padding: 1rem 1.5rem;
+          gap: 1.5rem;
+        }
+        
+        .chunk-info {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+        }
+        
+        .chunk-number {
+          font-weight: 700;
+          color: #667eea;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 1rem;
+        }
+        
+        .chunk-duration {
+          color: #888;
+          font-size: 0.875rem;
+        }
+        
+        .chunk-stats {
+          display: flex;
+          gap: 2rem;
+        }
+        
+        .stat-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.25rem;
+        }
+        
+        .stat-icon {
+          font-size: 1.2rem;
+        }
+        
+        .stat-value {
+          font-weight: 700;
+          color: #fff;
+          font-size: 1.1rem;
+        }
+        
+        .stat-label {
+          font-size: 0.75rem;
+          color: #888;
+          text-transform: uppercase;
+        }
+        
+        .chunk-noise-meter {
+          flex: 1;
+        }
+        
+        .noise-bar {
+          height: 8px;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 4px;
           overflow: hidden;
         }
-
-        .chunk-card::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(135deg, transparent 0%, rgba(102, 126, 234, 0.1) 100%);
-          opacity: 0;
-          transition: opacity 0.3s;
+        
+        .chunk-actions {
+          display: flex;
+          gap: 0.75rem;
+          justify-content: flex-end;
         }
-
-        .chunk-card:hover::before {
-          opacity: 1;
+        
+        .action-btn {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem 1rem;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          color: #fff;
+          cursor: pointer;
+          transition: all 0.3s;
+          font-size: 0.875rem;
         }
-
-        .chunk-card:hover {
-          transform: translateY(-5px);
-          border-color: rgba(102, 126, 234, 0.5);
-          box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        
+        .action-btn:hover:not(:disabled) {
+          background: rgba(255, 255, 255, 0.1);
+          transform: translateY(-1px);
         }
-
-        .chunk-card.expanded {
-          grid-column: span 2;
+        
+        .action-btn:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
         }
-
-        .chunk-card.playing {
-          border-color: #4caf50;
-          animation: pulse 2s infinite;
+        
+        .action-btn.active {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-color: transparent;
+        }
+        
+        .expand-btn {
+          padding: 0.5rem;
+          min-width: 40px;
+        }
+        
+        .btn-icon {
+          font-size: 1rem;
+        }
+        
+        .btn-text {
+          font-weight: 500;
+        }
+        
+        .chunk-details {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 1rem;
+          padding: 1rem 1.5rem;
+          background: rgba(0, 0, 0, 0.3);
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .detail-item {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+        }
+        
+        .detail-label {
+          font-size: 0.75rem;
+          color: #888;
+          text-transform: uppercase;
+        }
+        
+        .detail-value {
+          font-weight: 600;
+          color: #fff;
         }
 
         .chunk-header {
@@ -1590,9 +1822,36 @@ export default function Home() {
           color: white;
         }
 
+        .record-fab {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+        }
+
+        .pause-fab {
+          background: linear-gradient(135deg, #ffa726 0%, #fb8c00 100%);
+          color: white;
+        }
+
+        .stop-fab {
+          background: linear-gradient(135deg, #ef5350 0%, #e53935 100%);
+          color: white;
+        }
+
+        .resume-fab {
+          background: linear-gradient(135deg, #66bb6a 0%, #4caf50 100%);
+          color: white;
+        }
+
         .fab-icon {
           font-size: 1.5rem;
           z-index: 1;
+        }
+
+        .fab-divider {
+          width: 40px;
+          height: 1px;
+          background: rgba(255, 255, 255, 0.2);
+          margin: 0.5rem auto;
         }
 
         .metrics-panel {
@@ -1655,12 +1914,30 @@ export default function Home() {
         }
 
         @media (max-width: 768px) {
-          .chunks-grid {
+          .chunk-main {
             grid-template-columns: 1fr;
+            gap: 1rem;
           }
           
-          .chunk-card.expanded {
-            grid-column: span 1;
+          .chunk-info {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+          }
+          
+          .chunk-stats {
+            justify-content: center;
+            margin: 1rem 0;
+          }
+          
+          .chunk-actions {
+            justify-content: center;
+            flex-wrap: wrap;
+          }
+          
+          .action-btn {
+            flex: 1;
+            min-width: 120px;
           }
           
           .studio-title {
