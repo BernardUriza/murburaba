@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRNNoiseSimple } from '../lib/audio/useRNNoiseSimple';
 import { useRNNoiseAggressive } from '../lib/audio/useRNNoiseAggressive';
+import { useRNNoiseNoVAD } from '../lib/audio/useRNNoiseNoVAD';
 
 export interface AudioChunk {
   id: number;
@@ -56,9 +57,10 @@ export const useAudioRecorder = ({
   
   const simpleRNNoise = useRNNoiseSimple();
   const aggressiveRNNoise = useRNNoiseAggressive();
+  const noVADRNNoise = useRNNoiseNoVAD();
   
-  // Use the appropriate hook based on mode
-  const rnNoise = isAggressiveMode ? aggressiveRNNoise : simpleRNNoise;
+  // Use NoVAD version since VAD always returns 0
+  const rnNoise = isAggressiveMode ? noVADRNNoise : noVADRNNoise;
   const { 
     processStream, 
     isInitialized, 
