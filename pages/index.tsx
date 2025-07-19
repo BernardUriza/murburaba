@@ -1,51 +1,134 @@
 import Head from 'next/head'
-import { useAudioRecorder } from '../hooks/useAudioRecorder'
+import { useMurmubaraEngine } from '../hooks/useMurmubaraEngine'
 import { WaveformAnalyzer } from '../components/WaveformAnalyzer'
-import AudioEngineToggle from '../components/AudioEngineToggle'
-import { useState, useEffect } from 'react'
+import { BuildInfo } from '../components/BuildInfo'
+import { useState, useEffect, useRef } from 'react'
+import type { StreamController, ChunkMetrics } from '../types'
 
 export default function Home() {
   const {
-    isRecording,
-    audioChunks,
-    chunkDuration,
-    startRecording,
-    stopRecording,
-    setChunkDuration,
-    clearChunks,
-    isNoiseSuppressionEnabled,
-    setNoiseSuppressionEnabled,
-    isAudioEngineInitialized,
-    isAudioEngineLoading,
-    audioEngineError,
-    initializeAudioEngine
-  } = useAudioRecorder({ initialChunkDuration: 2, enableNoiseSupression: true })
+    isInitialized,
+    isLoading,
+    error,
+    engineState,
+    metrics,
+    diagnostics,
+    initialize,
+    destroy,
+    processStream,
+    processStreamChunked,
+    resetError
+  } = useMurmubaraEngine({
+    autoInitialize: false,
+    logLevel: 'info',
+    noiseReductionLevel: 'high',
+    bufferSize: 2048
+  })
 
-  const [currentTime, setCurrentTime] = useState<Date | null>(null)
+  const [isRecording, setIsRecording] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
-  const [showComparison, setShowComparison] = useState(true)
-  const [expandedChunks, setExpandedChunks] = useState<Set<number>>(new Set())
-
-  useEffect(() => {
-    // Set initial time on client side only
-    setCurrentTime(new Date())
-    
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
+  const [chunkDuration, setChunkDuration] = useState(4)
+  const [processedChunks, setProcessedChunks] = useState<ChunkMetrics[]>([])
+  const [currentStream, setCurrentStream] = useState<MediaStream | null>(null)
+  const [streamController, setStreamController] = useState<StreamController | null>(null)
+  const [isPaused, setIsPaused] = useState(false)
+  const [showAdvancedMetrics, setShowAdvancedMetrics] = useState(false)
+  
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioUrlsRef = useRef<string[]>([])
 
   useEffect(() => {
     let interval: NodeJS.Timeout
-    if (isRecording) {
-      const startTime = Date.now()
+    if (isRecording && !isPaused) {
+      const startTime = Date.now() - recordingTime * 1000
       interval = setInterval(() => {
         setRecordingTime(Math.floor((Date.now() - startTime) / 1000))
       }, 100)
-    } else {
-      setRecordingTime(0)
     }
     return () => clearInterval(interval)
-  }, [isRecording])
+  }, [isRecording, isPaused, recordingTime])
+
+  const startRecording = async () => {
+    try {
+      if (!isInitialized) {
+        await initialize()
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: false, // We handle this
+          autoGainControl: true
+        } 
+      })
+
+      setCurrentStream(stream)
+
+      // Process with chunking
+      const controller = await processStreamChunked(stream, {
+        chunkDuration: chunkDuration * 1000,
+        onChunkProcessed: (chunk) => {
+          setProcessedChunks(prev => [...prev, chunk])
+        }
+      })
+
+      setStreamController(controller)
+
+      // Also record the processed audio
+      const processedStream = controller.stream
+      const recorder = new MediaRecorder(processedStream)
+      
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          const url = URL.createObjectURL(event.data)
+          audioUrlsRef.current.push(url)
+        }
+      }
+
+      recorder.start()
+      mediaRecorderRef.current = recorder
+      setIsRecording(true)
+      setRecordingTime(0)
+    } catch (err) {
+      console.error('Error starting recording:', err)
+    }
+  }
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop()
+    }
+    if (streamController) {
+      streamController.stop()
+    }
+    if (currentStream) {
+      currentStream.getTracks().forEach(track => track.stop())
+    }
+    setIsRecording(false)
+    setIsPaused(false)
+    setStreamController(null)
+    setCurrentStream(null)
+  }
+
+  const pauseRecording = () => {
+    if (streamController && !isPaused) {
+      streamController.pause()
+      setIsPaused(true)
+    }
+  }
+
+  const resumeRecording = () => {
+    if (streamController && isPaused) {
+      streamController.resume()
+      setIsPaused(false)
+    }
+  }
+
+  const clearRecordings = () => {
+    audioUrlsRef.current.forEach(url => URL.revokeObjectURL(url))
+    audioUrlsRef.current = []
+    setProcessedChunks([])
+  }
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -53,454 +136,703 @@ export default function Home() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
-  const toggleChunkExpanded = (chunkId: number) => {
-    setExpandedChunks(prev => {
-      const next = new Set(prev)
-      if (next.has(chunkId)) {
-        next.delete(chunkId)
-      } else {
-        next.add(chunkId)
-      }
-      return next
-    })
-  }
-
-  const totalProcessedTime = audioChunks.reduce((acc, chunk) => acc + (chunk.duration || chunkDuration), 0)
-  const avgNoiseReduction = audioChunks.reduce((acc, chunk) => {
-    if (chunk.stats) {
-      return acc + chunk.stats.noiseReductionLevel
-    }
-    return acc
-  }, 0) / (audioChunks.filter(c => c.stats).length || 1)
+  const averageNoiseReduction = processedChunks.length > 0
+    ? processedChunks.reduce((acc, chunk) => acc + chunk.noiseRemoved, 0) / processedChunks.length
+    : 0
 
   return (
     <>
       <Head>
-        <title>Murmuraba Studio | AI-Powered Audio Enhancement</title>
-        <meta name="description" content="Professional real-time noise reduction powered by neural networks" />
+        <title>Murmuraba Studio v0.1.2 | Next-Gen Audio Processing</title>
+        <meta name="description" content="Real-time neural audio enhancement with advanced chunk processing" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <main className="modern-container">
         <div className="glass-header">
           <div className="header-content">
-            <div className="logo-section">
-              <div className="logo-icon">
-                <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                  <circle cx="20" cy="20" r="18" stroke="url(#gradient1)" strokeWidth="2"/>
-                  <path d="M14 25V15L24 20L14 25Z" fill="url(#gradient1)"/>
-                  <path d="M26 17V23" stroke="url(#gradient1)" strokeWidth="2" strokeLinecap="round"/>
-                  <path d="M30 14V26" stroke="url(#gradient1)" strokeWidth="2" strokeLinecap="round"/>
-                  <defs>
-                    <linearGradient id="gradient1" x1="0" y1="0" x2="40" y2="40">
-                      <stop stopColor="#3B82F6"/>
-                      <stop offset="1" stopColor="#8B5CF6"/>
-                    </linearGradient>
-                  </defs>
-                </svg>
+            <h1 className="studio-title">
+              <span className="gradient-text">Murmuraba</span>
+              <span className="version-badge">v0.1.2</span>
+            </h1>
+            <p className="studio-subtitle">Neural Audio Processing Engine</p>
+          </div>
+          
+          {/* Engine Status */}
+          <div className="engine-status-bar">
+            <div className={`status-indicator ${engineState}`}>
+              <span className="status-dot"></span>
+              <span className="status-text">{engineState.toUpperCase()}</span>
+            </div>
+            {diagnostics && (
+              <div className="engine-info">
+                <span>WASM: {diagnostics.wasmLoaded ? '✓' : '✗'}</span>
+                <span>Processors: {diagnostics.activeProcessors}</span>
+                <span>Memory: {(diagnostics.memoryUsage / 1024 / 1024).toFixed(1)}MB</span>
               </div>
-              <div>
-                <h1 className="modern-title">Murmuraba Studio</h1>
-                <p className="modern-subtitle">Neural Audio Processing</p>
-              </div>
-            </div>
-            <div className="time-display">
-              {currentTime ? (
-                <>
-                  <div className="time">{currentTime.toLocaleTimeString()}</div>
-                  <div className="date">{currentTime.toLocaleDateString()}</div>
-                </>
-              ) : (
-                <>
-                  <div className="time">--:--:--</div>
-                  <div className="date">--/--/----</div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-        
-        <div className="stats-grid">
-          <div className="stat-card gradient-1">
-            <div className="stat-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" strokeWidth="2"/>
-              </svg>
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{audioChunks.length}</div>
-              <div className="stat-label">Audio Chunks</div>
-            </div>
-          </div>
-          
-          <div className="stat-card gradient-2">
-            <div className="stat-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                <path d="M12 6V12L16 16" stroke="currentColor" strokeWidth="2"/>
-              </svg>
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{formatTime(totalProcessedTime)}</div>
-              <div className="stat-label">Total Processed</div>
-            </div>
-          </div>
-          
-          <div className="stat-card gradient-3">
-            <div className="stat-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" strokeWidth="2"/>
-              </svg>
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{avgNoiseReduction.toFixed(1)}%</div>
-              <div className="stat-label">Avg Noise Reduced</div>
-            </div>
-          </div>
-          
-          <div className="stat-card gradient-4">
-            <div className="stat-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M9 11L12 14L22 4" stroke="currentColor" strokeWidth="2"/>
-                <path d="M21 12V19C21 20 20 21 19 21H5C4 21 3 20 3 19V5C3 4 4 3 5 3H16" stroke="currentColor" strokeWidth="2"/>
-              </svg>
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{isAudioEngineInitialized ? 'Active' : 'Ready'}</div>
-              <div className="stat-label">Audio Engine</div>
-            </div>
+            )}
           </div>
         </div>
 
-        <section className="recording-section">
-          <div className="recording-panel">
-            <div className="panel-header">
-              <h2 className="panel-title">Audio Recording Studio</h2>
-              <div className="panel-badges">
-                {isRecording && (
-                  <div className="badge badge-recording">
-                    <span className="recording-dot"></span>
-                    LIVE
-                  </div>
-                )}
-                {isNoiseSuppressionEnabled && (
-                  <div className="badge badge-active">AI Enhanced</div>
-                )}
+        {/* Real-time Metrics Dashboard */}
+        {metrics && (
+          <section className="metrics-dashboard glass-panel">
+            <h2 className="section-title">Real-time Processing Metrics</h2>
+            <div className="metrics-grid">
+              <div className="metric-card">
+                <div className="metric-value">{metrics.noiseReductionLevel.toFixed(1)}%</div>
+                <div className="metric-label">Noise Reduction</div>
+                <div className="metric-bar">
+                  <div 
+                    className="metric-fill noise-reduction" 
+                    style={{width: `${metrics.noiseReductionLevel}%`}}
+                  ></div>
+                </div>
+              </div>
+              
+              <div className="metric-card">
+                <div className="metric-value">{metrics.processingLatency.toFixed(2)}ms</div>
+                <div className="metric-label">Latency</div>
+                <div className="metric-bar">
+                  <div 
+                    className="metric-fill latency" 
+                    style={{width: `${Math.min(100, metrics.processingLatency * 2)}%`}}
+                  ></div>
+                </div>
+              </div>
+              
+              <div className="metric-card">
+                <div className="metric-value">{(metrics.inputLevel * 100).toFixed(0)}%</div>
+                <div className="metric-label">Input Level</div>
+                <div className="metric-bar">
+                  <div 
+                    className="metric-fill input" 
+                    style={{width: `${metrics.inputLevel * 100}%`}}
+                  ></div>
+                </div>
+              </div>
+              
+              <div className="metric-card">
+                <div className="metric-value">{metrics.frameCount}</div>
+                <div className="metric-label">Frames Processed</div>
               </div>
             </div>
-            
+          </section>
+        )}
+
+        {/* Control Panel */}
+        <section className="control-panel glass-panel">
+          <div className="controls-header">
+            <h2 className="section-title">Audio Controls</h2>
             {isRecording && (
-              <div className="recording-visualizer">
-                <div className="recording-timer">
-                  <div className="timer-display">{formatTime(recordingTime)}</div>
-                  <div className="timer-label">Recording Time</div>
-                </div>
-                <div className="waveform-bars">
-                  {[...Array(20)].map((_, i) => (
-                    <div key={i} className="waveform-bar" style={{
-                      animationDelay: `${i * 0.05}s`,
-                      height: `${20 + Math.random() * 60}%`
-                    }}></div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            <div className="controls-grid">
-              <button 
-                onClick={startRecording} 
-                disabled={isRecording}
-                className={`modern-btn ${isRecording ? 'btn-disabled' : 'btn-primary'}`}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 1C12 1 12 6 12 11C12 14 10 16 7 16C4 16 2 14 2 11V6C2 3 4 1 7 1C10 1 12 3 12 6V11Z" stroke="currentColor" strokeWidth="2"/>
-                  <path d="M7 16V20M7 20H3M7 20H11" stroke="currentColor" strokeWidth="2"/>
-                  <path d="M17 6V11C17 13 19 14 21 13" stroke="currentColor" strokeWidth="2"/>
-                </svg>
-                <span>Start Recording</span>
-              </button>
-              
-              {isRecording && (
-                <button 
-                  onClick={stopRecording}
-                  className="modern-btn btn-stop"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <rect x="6" y="6" width="12" height="12" fill="currentColor"/>
-                  </svg>
-                  <span>Stop Recording</span>
-                </button>
-              )}
-              
-              {audioChunks.length > 0 && !isRecording && (
-                <button 
-                  onClick={clearChunks}
-                  className="modern-btn btn-secondary"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M3 6H21M8 6V4C8 3 9 2 10 2H14C15 2 16 3 16 4V6M19 6V20C19 21 18 22 17 22H7C6 22 5 21 5 20V6" stroke="currentColor" strokeWidth="2"/>
-                  </svg>
-                  <span>Clear All</span>
-                </button>
-              )}
-            
-              <div className="control-card">
-                <div className="control-header">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 2V6M12 18V22M4.93 4.93L7.76 7.76M16.24 16.24L19.07 19.07M2 12H6M18 12H22M4.93 19.07L7.76 16.24M16.24 7.76L19.07 4.93" stroke="currentColor" strokeWidth="2"/>
-                  </svg>
-                  <span>Chunk Duration</span>
-                </div>
-                <div className="slider-control">
-                  <input
-                    type="range"
-                    min="1"
-                    max="10"
-                    value={chunkDuration}
-                    onChange={(e) => setChunkDuration(Number(e.target.value))}
-                    disabled={isRecording}
-                    className="modern-slider"
-                  />
-                  <div className="slider-value">{chunkDuration}s</div>
-                </div>
-              </div>
-            
-              <div className="control-card">
-                <div className="control-header">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M5 12H19M5 12C5 12 9 3 12 3C15 3 19 12 19 12C19 12 15 21 12 21C9 21 5 12 5 12Z" stroke="currentColor" strokeWidth="2"/>
-                  </svg>
-                  <span>Noise Reduction</span>
-                </div>
-                <AudioEngineToggle
-                  enabled={isNoiseSuppressionEnabled}
-                  onToggle={setNoiseSuppressionEnabled}
-                  disabled={isRecording}
-                  sourceStream={null}
-                  isRecording={isRecording}
-                />
-              </div>
-            
-              {isNoiseSuppressionEnabled && !isAudioEngineInitialized && !isRecording && (
-                <button 
-                  onClick={initializeAudioEngine} 
-                  disabled={isAudioEngineLoading}
-                  className="modern-btn btn-initialize"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className={isAudioEngineLoading ? 'spinning' : ''}>
-                    <path d="M21 12C21 16.97 16.97 21 12 21C7.03 21 3 16.97 3 12C3 7.03 7.03 3 12 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    <path d="M18 3L21 3L21 6" stroke="currentColor" strokeWidth="2"/>
-                  </svg>
-                  <span>{isAudioEngineLoading ? 'Initializing AI...' : 'Initialize Audio Engine'}</span>
-                </button>
-              )}
-            </div>
-          
-            {audioEngineError && (
-              <div className="error-card">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 9V13M12 17H12.01M12 3L2 20H22L12 3Z" stroke="currentColor" strokeWidth="2"/>
-                </svg>
-                <span>{audioEngineError}</span>
+              <div className="recording-indicator">
+                <span className="recording-dot"></span>
+                <span className="recording-time">{formatTime(recordingTime)}</span>
               </div>
             )}
           </div>
-        </section>
-          
-        {audioChunks.length > 0 && (
-          <section className="recordings-section">
-            <div className="section-header">
-              <h2 className="section-title">Recorded Samples</h2>
-              <button
-                onClick={() => setShowComparison(!showComparison)}
-                className="toggle-view-btn"
+
+          <div className="controls-grid">
+            {!isInitialized && !isLoading && (
+              <button 
+                className="control-btn primary initialize-btn"
+                onClick={initialize}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M1 12H11M11 12L7 8M11 12L7 16" stroke="currentColor" strokeWidth="2"/>
-                  <path d="M13 12H23M23 12L19 8M23 12L19 16" stroke="currentColor" strokeWidth="2"/>
-                </svg>
-                <span>{showComparison ? 'Hide Comparison' : 'Show Comparison'}</span>
+                <span className="btn-icon">⚡</span>
+                Initialize Engine
               </button>
+            )}
+
+            {isLoading && (
+              <div className="loading-state">
+                <div className="spinner"></div>
+                <span>Initializing Neural Engine...</span>
+              </div>
+            )}
+
+            {isInitialized && !isRecording && (
+              <>
+                <button 
+                  className="control-btn primary record-btn"
+                  onClick={startRecording}
+                >
+                  <span className="btn-icon">🎙️</span>
+                  Start Recording
+                </button>
+                
+                <div className="chunk-config">
+                  <label>Chunk Duration</label>
+                  <select 
+                    value={chunkDuration} 
+                    onChange={(e) => setChunkDuration(Number(e.target.value))}
+                    className="chunk-select"
+                  >
+                    <option value={2}>2 seconds</option>
+                    <option value={4}>4 seconds</option>
+                    <option value={5}>5 seconds</option>
+                    <option value={10}>10 seconds</option>
+                  </select>
+                </div>
+              </>
+            )}
+
+            {isRecording && (
+              <div className="recording-controls">
+                <button 
+                  className="control-btn stop"
+                  onClick={stopRecording}
+                >
+                  <span className="btn-icon">⏹️</span>
+                  Stop
+                </button>
+                
+                {!isPaused ? (
+                  <button 
+                    className="control-btn pause"
+                    onClick={pauseRecording}
+                  >
+                    <span className="btn-icon">⏸️</span>
+                    Pause
+                  </button>
+                ) : (
+                  <button 
+                    className="control-btn resume"
+                    onClick={resumeRecording}
+                  >
+                    <span className="btn-icon">▶️</span>
+                    Resume
+                  </button>
+                )}
+              </div>
+            )}
+
+            {isInitialized && (
+              <button 
+                className="control-btn danger destroy-btn"
+                onClick={() => destroy(true)}
+              >
+                <span className="btn-icon">🗑️</span>
+                Destroy Engine
+              </button>
+            )}
+          </div>
+
+          {error && (
+            <div className="error-message">
+              <span>{error}</span>
+              <button onClick={resetError} className="error-dismiss">✕</button>
+            </div>
+          )}
+        </section>
+
+        {/* Waveform Visualizer */}
+        {currentStream && (
+          <section className="waveform-section glass-panel">
+            <h2 className="section-title">Live Waveform Analysis</h2>
+            <WaveformAnalyzer 
+              stream={currentStream} 
+              isActive={isRecording && !isPaused}
+              isPaused={isPaused}
+            />
+          </section>
+        )}
+
+        {/* Chunk Processing Results */}
+        {processedChunks.length > 0 && (
+          <section className="chunks-section glass-panel">
+            <div className="chunks-header">
+              <h2 className="section-title">Processed Chunks ({processedChunks.length})</h2>
+              <div className="chunks-stats">
+                <span>Average Noise Reduction: {averageNoiseReduction.toFixed(1)}%</span>
+                <button 
+                  className="control-btn secondary clear-btn"
+                  onClick={clearRecordings}
+                >
+                  Clear All
+                </button>
+              </div>
             </div>
             
-            <div className="recordings-grid">
-              {audioChunks.map((chunk, index) => (
-                <div key={chunk.id} className="recording-card">
-                  <div className="recording-header">
-                    <div className="recording-info">
-                      <span className="recording-number">#{index + 1}</span>
-                      <span className="recording-time">{chunk.timestamp.toLocaleTimeString()}</span>
-                    </div>
-                    <div className="recording-duration">{chunkDuration}s</div>
+            <div className="chunks-timeline">
+              {processedChunks.map((chunk, index) => (
+                <div key={index} className="chunk-card">
+                  <div className="chunk-header">
+                    <span className="chunk-number">Chunk #{index + 1}</span>
+                    <span className="chunk-duration">{(chunk.duration / 1000).toFixed(1)}s</span>
                   </div>
                   
-                  {showComparison ? (
-                    <div className="audio-comparison-modern">
-                      <div className="audio-item-modern enhanced">
-                        <div className="audio-label">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                            <path d="M9 11L12 14L22 4" stroke="currentColor" strokeWidth="2"/>
-                          </svg>
-                          <span>AI Enhanced</span>
-                        </div>
-                        <audio controls src={chunk.url} className="modern-audio-player" />
-                        <WaveformAnalyzer 
-                          audioUrl={chunk.url} 
-                          label="Enhanced Signal" 
-                          color="#10B981"
-                        />
-                      </div>
-                      
-                      <div className="audio-item-modern original">
-                        <div className="audio-label">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" strokeWidth="2"/>
-                          </svg>
-                          <span>Original</span>
-                        </div>
-                        <audio controls src={chunk.urlWithoutNR} className="modern-audio-player" />
-                        <WaveformAnalyzer 
-                          audioUrl={chunk.urlWithoutNR} 
-                          label="Original Signal" 
-                          color="#EF4444"
-                        />
-                      </div>
+                  <div className="chunk-metrics">
+                    <div className="chunk-metric">
+                      <span className="metric-icon">🔇</span>
+                      <span className="metric-text">
+                        {chunk.noiseRemoved.toFixed(1)}% noise removed
+                      </span>
                     </div>
-                  ) : (
-                    <div className="audio-single">
-                      <audio controls src={chunk.url} className="modern-audio-player full-width" />
-                      <div className="processing-badge">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                          <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="currentColor"/>
-                        </svg>
-                        <span>AI Processed</span>
-                      </div>
+                    <div className="chunk-metric">
+                      <span className="metric-icon">⚡</span>
+                      <span className="metric-text">
+                        {chunk.metrics.processingLatency.toFixed(0)}ms latency
+                      </span>
                     </div>
-                  )}
+                  </div>
                   
-                  {chunk.stats && (
-                    <>
-                      <button
-                        onClick={() => toggleChunkExpanded(chunk.id)}
-                        className="stats-toggle-btn"
-                      >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                          <path d="M12 2V12M12 12L17 7M12 12L7 7" stroke="currentColor" strokeWidth="2" transform={expandedChunks.has(chunk.id) ? "rotate(180 12 12)" : ""}/>
-                        </svg>
-                        <span>{expandedChunks.has(chunk.id) ? 'Hide Details' : 'View Processing Details'}</span>
-                      </button>
-                      
-                      {expandedChunks.has(chunk.id) && (
-                        <div className="stats-details">
-                          <h4>Processing Statistics</h4>
-                          
-                          <div className="stats-grid-detail">
-                            <div className="stat-detail">
-                              <span className="stat-detail-label">Input Samples</span>
-                              <span className="stat-detail-value">{chunk.stats.inputSamples.toLocaleString()}</span>
-                            </div>
-                            
-                            <div className="stat-detail">
-                              <span className="stat-detail-label">Output Samples</span>
-                              <span className="stat-detail-value">{chunk.stats.outputSamples.toLocaleString()}</span>
-                            </div>
-                            
-                            <div className="stat-detail">
-                              <span className="stat-detail-label">Noise Reduction</span>
-                              <span className="stat-detail-value highlight">{chunk.stats.noiseReductionLevel.toFixed(1)}%</span>
-                            </div>
-                            
-                            <div className="stat-detail">
-                              <span className="stat-detail-label">Processing Time</span>
-                              <span className="stat-detail-value">{(chunk.stats.processingTimeMs / 1000).toFixed(2)}s</span>
-                            </div>
-                          </div>
-                          
-                          <div className="stats-section">
-                            <h5>Frame Analysis</h5>
-                            <div className="stats-grid-detail">
-                              <div className="stat-detail">
-                                <span className="stat-detail-label">Total Frames</span>
-                                <span className="stat-detail-value">{chunk.stats.totalFramesProcessed}</span>
-                              </div>
-                              <div className="stat-detail">
-                                <span className="stat-detail-label">Active Frames</span>
-                                <span className="stat-detail-value">{chunk.stats.activeFrames}</span>
-                              </div>
-                              <div className="stat-detail">
-                                <span className="stat-detail-label">Silence Frames</span>
-                                <span className="stat-detail-value">{chunk.stats.silenceFrames}</span>
-                              </div>
-                              <div className="stat-detail">
-                                <span className="stat-detail-label">Activity Ratio</span>
-                                <span className="stat-detail-value">
-                                  {chunk.stats.totalFramesProcessed > 0 
-                                    ? ((chunk.stats.activeFrames / chunk.stats.totalFramesProcessed) * 100).toFixed(1) 
-                                    : 0}%
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="stats-section">
-                            <h5>Energy Levels</h5>
-                            <div className="energy-bars">
-                              <div className="energy-bar-container">
-                                <span className="energy-label">Input</span>
-                                <div className="energy-bar">
-                                  <div 
-                                    className="energy-fill input" 
-                                    style={{width: `${Math.min(100, chunk.stats.averageInputEnergy * 1000)}%`}}
-                                  ></div>
-                                </div>
-                                <span className="energy-value">{chunk.stats.averageInputEnergy.toFixed(4)}</span>
-                              </div>
-                              <div className="energy-bar-container">
-                                <span className="energy-label">Output</span>
-                                <div className="energy-bar">
-                                  <div 
-                                    className="energy-fill output" 
-                                    style={{width: `${Math.min(100, chunk.stats.averageOutputEnergy * 1000)}%`}}
-                                  ></div>
-                                </div>
-                                <span className="energy-value">{chunk.stats.averageOutputEnergy.toFixed(4)}</span>
-                              </div>
-                            </div>
-                            
-                            <div className="peak-levels">
-                              <div className="peak-level">
-                                <span>Peak Input:</span>
-                                <span className="peak-value">{(chunk.stats.peakInputLevel * 100).toFixed(1)}%</span>
-                              </div>
-                              <div className="peak-level">
-                                <span>Peak Output:</span>
-                                <span className="peak-value">{(chunk.stats.peakOutputLevel * 100).toFixed(1)}%</span>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="stats-section">
-                            <h5>Processing Details</h5>
-                            <div className="processing-info">
-                              <p>Audio engine processed <strong>{chunk.stats.totalFramesProcessed}</strong> frames of 480 samples each.</p>
-                              <p>The algorithm identified <strong>{((chunk.stats.silenceFrames / chunk.stats.totalFramesProcessed) * 100).toFixed(1)}%</strong> as silence/noise.</p>
-                              <p>Energy change: <strong className={chunk.stats.averageOutputEnergy > chunk.stats.averageInputEnergy ? "highlight" : ""}>
-                                {chunk.stats.averageOutputEnergy > chunk.stats.averageInputEnergy ? "+" : ""}
-                                {(((chunk.stats.averageOutputEnergy - chunk.stats.averageInputEnergy) / chunk.stats.averageInputEnergy) * 100).toFixed(1)}%
-                              </strong> {chunk.stats.averageOutputEnergy > chunk.stats.averageInputEnergy ? "(speech enhanced)" : "(noise reduced)"}</p>
-                              <p>Processing rate: <strong>{((chunk.stats.inputSamples / 48000) / (chunk.stats.processingTimeMs / 1000)).toFixed(1)}x</strong> real-time</p>
-                              <p>Estimated noise reduction: <strong className="highlight">{chunk.stats.noiseReductionLevel.toFixed(1)}%</strong></p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
+                  <div className="chunk-visualization">
+                    <div 
+                      className="noise-reduction-bar"
+                      style={{
+                        background: `linear-gradient(to right, 
+                          var(--accent-color) ${chunk.noiseRemoved}%, 
+                          var(--panel-bg) ${chunk.noiseRemoved}%)`
+                      }}
+                    ></div>
+                  </div>
                 </div>
               ))}
             </div>
           </section>
         )}
+
+        {/* Advanced Metrics Toggle */}
+        <section className="advanced-section">
+          <button 
+            className="control-btn secondary"
+            onClick={() => setShowAdvancedMetrics(!showAdvancedMetrics)}
+          >
+            {showAdvancedMetrics ? 'Hide' : 'Show'} Advanced Metrics
+          </button>
+          
+          {showAdvancedMetrics && diagnostics && (
+            <div className="advanced-metrics glass-panel">
+              <h3>Engine Diagnostics</h3>
+              <pre>{JSON.stringify(diagnostics, null, 2)}</pre>
+            </div>
+          )}
+        </section>
       </main>
+      
+      <BuildInfo version="0.1.2" buildDate={new Date().toLocaleDateString()} />
+
+      <style jsx>{`
+        .modern-container {
+          min-height: 100vh;
+          padding: 2rem;
+          background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+          color: #ffffff;
+        }
+
+        .glass-header {
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 20px;
+          padding: 2rem;
+          margin-bottom: 2rem;
+        }
+
+        .header-content {
+          text-align: center;
+          margin-bottom: 1.5rem;
+        }
+
+        .studio-title {
+          font-size: 3rem;
+          font-weight: 900;
+          margin-bottom: 0.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 1rem;
+        }
+
+        .gradient-text {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .version-badge {
+          font-size: 1rem;
+          background: rgba(102, 126, 234, 0.2);
+          color: #667eea;
+          padding: 0.25rem 0.75rem;
+          border-radius: 20px;
+          font-weight: 600;
+        }
+
+        .studio-subtitle {
+          color: #888;
+          font-size: 1.2rem;
+        }
+
+        .engine-status-bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem;
+          background: rgba(0, 0, 0, 0.3);
+          border-radius: 10px;
+        }
+
+        .status-indicator {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .status-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: #4caf50;
+          animation: pulse 2s infinite;
+        }
+
+        .status-indicator.uninitialized .status-dot { background: #666; }
+        .status-indicator.initializing .status-dot { background: #ff9800; }
+        .status-indicator.ready .status-dot { background: #4caf50; }
+        .status-indicator.processing .status-dot { background: #2196f3; }
+        .status-indicator.error .status-dot { background: #f44336; }
+
+        @keyframes pulse {
+          0% { opacity: 1; }
+          50% { opacity: 0.5; }
+          100% { opacity: 1; }
+        }
+
+        .engine-info {
+          display: flex;
+          gap: 1rem;
+          font-size: 0.875rem;
+          color: #888;
+        }
+
+        .glass-panel {
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 20px;
+          padding: 2rem;
+          margin-bottom: 2rem;
+        }
+
+        .section-title {
+          font-size: 1.5rem;
+          font-weight: 700;
+          margin-bottom: 1.5rem;
+          color: #fff;
+        }
+
+        .metrics-dashboard {
+          animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .metrics-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 1.5rem;
+        }
+
+        .metric-card {
+          background: rgba(0, 0, 0, 0.3);
+          padding: 1.5rem;
+          border-radius: 15px;
+          text-align: center;
+        }
+
+        .metric-value {
+          font-size: 2rem;
+          font-weight: 900;
+          color: #667eea;
+          margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+          font-size: 0.875rem;
+          color: #888;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin-bottom: 1rem;
+        }
+
+        .metric-bar {
+          height: 8px;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 4px;
+          overflow: hidden;
+        }
+
+        .metric-fill {
+          height: 100%;
+          border-radius: 4px;
+          transition: width 0.3s ease;
+        }
+
+        .metric-fill.noise-reduction { background: linear-gradient(90deg, #667eea, #764ba2); }
+        .metric-fill.latency { background: linear-gradient(90deg, #f093fb, #f5576c); }
+        .metric-fill.input { background: linear-gradient(90deg, #4facfe, #00f2fe); }
+
+        .controls-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1.5rem;
+        }
+
+        .recording-indicator {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          background: rgba(255, 0, 0, 0.2);
+          padding: 0.5rem 1rem;
+          border-radius: 20px;
+        }
+
+        .recording-dot {
+          width: 12px;
+          height: 12px;
+          background: #ff0000;
+          border-radius: 50%;
+          animation: recordPulse 1s infinite;
+        }
+
+        @keyframes recordPulse {
+          0% { opacity: 1; }
+          50% { opacity: 0.3; }
+          100% { opacity: 1; }
+        }
+
+        .controls-grid {
+          display: flex;
+          gap: 1rem;
+          flex-wrap: wrap;
+          align-items: center;
+        }
+
+        .control-btn {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1.5rem;
+          border: none;
+          border-radius: 10px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          color: white;
+        }
+
+        .control-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-btn.primary {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .control-btn.secondary {
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .control-btn.stop {
+          background: #f44336;
+        }
+
+        .control-btn.pause {
+          background: #ff9800;
+        }
+
+        .control-btn.resume {
+          background: #4caf50;
+        }
+
+        .control-btn.danger {
+          background: rgba(244, 67, 54, 0.2);
+          border: 1px solid #f44336;
+          color: #f44336;
+        }
+
+        .btn-icon {
+          font-size: 1.2rem;
+        }
+
+        .chunk-config {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .chunk-select {
+          background: rgba(0, 0, 0, 0.3);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: white;
+          padding: 0.5rem 1rem;
+          border-radius: 5px;
+          cursor: pointer;
+        }
+
+        .loading-state {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .spinner {
+          width: 24px;
+          height: 24px;
+          border: 3px solid rgba(102, 126, 234, 0.3);
+          border-top-color: #667eea;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+          background: rgba(244, 67, 54, 0.2);
+          border: 1px solid #f44336;
+          color: #f44336;
+          padding: 1rem;
+          border-radius: 10px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 1rem;
+        }
+
+        .error-dismiss {
+          background: none;
+          border: none;
+          color: #f44336;
+          cursor: pointer;
+          font-size: 1.2rem;
+        }
+
+        .chunks-section {
+          animation: slideIn 0.5s ease-out;
+        }
+
+        .chunks-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1.5rem;
+        }
+
+        .chunks-stats {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          color: #888;
+        }
+
+        .chunks-timeline {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+          gap: 1rem;
+        }
+
+        .chunk-card {
+          background: rgba(0, 0, 0, 0.3);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 15px;
+          padding: 1.5rem;
+          transition: all 0.3s ease;
+        }
+
+        .chunk-card:hover {
+          transform: translateY(-2px);
+          border-color: rgba(102, 126, 234, 0.5);
+          box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .chunk-header {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 1rem;
+        }
+
+        .chunk-number {
+          font-weight: 700;
+          color: #667eea;
+        }
+
+        .chunk-duration {
+          color: #888;
+          font-size: 0.875rem;
+        }
+
+        .chunk-metrics {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          margin-bottom: 1rem;
+        }
+
+        .chunk-metric {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.875rem;
+        }
+
+        .metric-icon {
+          font-size: 1rem;
+        }
+
+        .chunk-visualization {
+          margin-top: 1rem;
+        }
+
+        .noise-reduction-bar {
+          height: 6px;
+          border-radius: 3px;
+          transition: all 0.3s ease;
+        }
+
+        .waveform-section {
+          animation: slideIn 0.5s ease-out;
+        }
+
+        .advanced-section {
+          text-align: center;
+          margin-top: 2rem;
+        }
+
+        .advanced-metrics {
+          margin-top: 1rem;
+          text-align: left;
+        }
+
+        .advanced-metrics pre {
+          background: rgba(0, 0, 0, 0.3);
+          padding: 1rem;
+          border-radius: 10px;
+          overflow-x: auto;
+          font-size: 0.875rem;
+          color: #888;
+        }
+
+        :root {
+          --accent-color: #667eea;
+          --panel-bg: rgba(255, 255, 255, 0.05);
+        }
+      `}</style>
     </>
   )
 }

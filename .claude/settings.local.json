@@ -101,7 +101,8 @@
       "Bash(netlify dev:*)",
       "Bash(tail:*)",
       "Bash(git fetch:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": []
   }

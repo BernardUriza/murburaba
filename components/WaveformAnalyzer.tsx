@@ -89,7 +89,13 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       ctx.stroke();
 
       // Draw amplitude meter
-      const amplitude = Math.max(...dataArray) - 128;
+      let maxValue = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        if (dataArray[i] > maxValue) {
+          maxValue = dataArray[i];
+        }
+      }
+      const amplitude = maxValue - 128;
       const normalizedAmplitude = amplitude / 128;
       
       ctx.fillStyle = color;

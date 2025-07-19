@@ -14,4 +14,4 @@ export function createAudioEngine(config: AudioEngineConfig): AudioEngine {
   }
 }
 
-export { AudioEngine, AudioEngineConfig } from './types';
+export type { AudioEngine, AudioEngineConfig } from './types';

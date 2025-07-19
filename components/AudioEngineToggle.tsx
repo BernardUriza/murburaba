@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAudioEngine } from '../lib/audio/useAudioEngine';
+import { useAudioEngine } from '../useAudioEngine';
 
 interface AudioEngineToggleProps {
   enabled: boolean;

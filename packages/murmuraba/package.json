@@ -1,7 +1,7 @@
 {
   "name": "murmuraba",
-  "version": "0.1.0",
-  "description": "Modular audio processing library with real-time noise reduction for web applications",
+  "version": "1.2.0",
+  "description": "Real-time audio noise reduction with advanced chunked processing for web applications",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
@@ -18,7 +18,11 @@
     "real-time",
     "audio-processing",
     "react",
-    "typescript"
+    "typescript",
+    "chunks",
+    "streaming",
+    "voice",
+    "noise-suppression"
   ],
   "author": "Bernard",
   "license": "MIT",

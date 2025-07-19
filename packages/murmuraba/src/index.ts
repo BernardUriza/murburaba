@@ -1,22 +1,16 @@
-// Main exports
-export { useAudioEngine } from './hooks/useAudioEngine';
+/**
+ * Murmuraba v1.2.0
+ * Real-time audio noise reduction with advanced chunked processing
+ */
 
-// Engine exports
-export { createAudioEngine } from './engines';
-export { RNNoiseEngine } from './engines/RNNoiseEngine';
+// Re-export everything from the root murmuraba module
+export * from '../../../murmuraba';
 
-// Type exports
-export type { 
-  AudioEngine, 
-  AudioEngineConfig, 
-  ProcessingMetrics 
-} from './engines/types';
+// Also export the React hook
+export { useMurmubaraEngine } from '../../../hooks/useMurmubaraEngine';
 
-// Utils exports
-export { MurmurabaProcessor } from './utils/MurmurabaProcessor';
-export { AudioStreamManager } from './utils/AudioStreamManager';
+// Export version
+export const VERSION = '1.2.0';
 
-// Constants
-export const MURMURABA_VERSION = '0.1.0';
-export const SUPPORTED_ENGINES = ['rnnoise', 'speex', 'custom'] as const;
-export type SupportedEngine = typeof SUPPORTED_ENGINES[number];
+// Export version
+export const MURMURABA_VERSION = VERSION;

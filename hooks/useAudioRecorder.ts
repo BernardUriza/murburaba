@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useAudioEngine } from '../lib/audio/useAudioEngine';
+import { useAudioEngine } from '../useAudioEngine';
 
 export interface ProcessingStats {
   inputSamples: number

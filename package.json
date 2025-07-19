@@ -1,12 +1,13 @@
 {
-  "name": "mi-proyecto-nextjs",
+  "name": "murmuraba-studio",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run generate-build-info && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "generate-build-info": "node scripts/generate-build-info.js"
   },
   "dependencies": {
     "@jitsi/rnnoise-wasm": "^0.2.1",
