@@ -1,25 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
+import { createAudioEngine, AudioEngine, AudioEngineConfig } from './engines';
+import { ProcessingMetrics } from './engines/types';
 
-interface ProcessingMetrics {
-  inputSamples: number;
-  outputSamples: number;
-  silenceFrames: number;
-  activeFrames: number;
-  totalInputEnergy: number;
-  totalOutputEnergy: number;
-  peakInput: number;
-  peakOutput: number;
-  startTime: number;
-  totalFrames: number;
-}
-
-export const useRNNoise = () => {
+export const useAudioEngine = (config: AudioEngineConfig = { engineType: 'rnnoise' }) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
-  const rnnoiseRef = useRef<any>(null);
+  const engineRef = useRef<AudioEngine | null>(null);
+  const engineDataRef = useRef<any>(null);
   const metricsRef = useRef<ProcessingMetrics>({
     inputSamples: 0,
     outputSamples: 0,
@@ -33,65 +23,29 @@ export const useRNNoise = () => {
     totalFrames: 0
   });
 
-  const initializeRNNoise = async () => {
+  const initializeAudioEngine = async () => {
     if (isInitialized || isLoading) return;
     
     setIsLoading(true);
     setError(null);
     
     try {
-      console.log('[RNNoise] Starting initialization...');
+      console.log('[AudioEngine] Creating audio engine with config:', config);
       
-      // Load script
-      const script = document.createElement('script');
-      script.src = '/rnnoise-fixed.js';
-      await new Promise((resolve, reject) => {
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-      });
+      // Create engine instance
+      const engine = createAudioEngine(config);
+      await engine.initialize();
+      engineRef.current = engine;
       
-      // Create module
-      const createRNNWasmModule = (window as any).createRNNWasmModule;
-      const RNNoiseModule = await createRNNWasmModule({
-        locateFile: (filename: string) => {
-          if (filename.endsWith('.wasm')) {
-            return `/dist/${filename}`;
-          }
-          return filename;
-        }
-      });
-      
-      // Create state
-      const state = RNNoiseModule._rnnoise_create(0);
-      if (!state) {
-        throw new Error('Failed to create RNNoise state');
-      }
-      
-      // Allocate memory for float32 samples
-      const inputPtr = RNNoiseModule._malloc(480 * 4);
-      const outputPtr = RNNoiseModule._malloc(480 * 4);
-      
-      // Warm up
-      const silentFrame = new Float32Array(480);
-      for (let i = 0; i < 10; i++) {
-        RNNoiseModule.HEAPF32.set(silentFrame, inputPtr >> 2);
-        RNNoiseModule._rnnoise_process_frame(state, outputPtr, inputPtr);
-      }
-      
-      // Store everything
-      rnnoiseRef.current = {
-        module: RNNoiseModule,
-        state,
-        inputPtr,
-        outputPtr,
+      // Initialize engine-specific data
+      engineDataRef.current = {
         inputBuffer: [],
         outputBuffer: [],
         energyHistory: new Array(20).fill(0),
         energyIndex: 0
       };
       
-      console.log('[RNNoise] Ready for processing');
+      console.log('[AudioEngine] Engine ready for processing');
       
       // Create audio context
       audioContextRef.current = new AudioContext({ sampleRate: 48000 });
@@ -103,7 +57,7 @@ export const useRNNoise = () => {
         const input = e.inputBuffer.getChannelData(0);
         const output = e.outputBuffer.getChannelData(0);
         
-        if (!rnnoiseRef.current) {
+        if (!engineRef.current || !engineDataRef.current) {
           output.set(input);
           return;
         }
@@ -113,30 +67,17 @@ export const useRNNoise = () => {
         
         // Add to input buffer
         for (let i = 0; i < input.length; i++) {
-          rnnoiseRef.current.inputBuffer.push(input[i]);
+          engineDataRef.current.inputBuffer.push(input[i]);
           metricsRef.current.peakInput = Math.max(metricsRef.current.peakInput, Math.abs(input[i]));
         }
         
         // Process chunks of 480 samples
-        while (rnnoiseRef.current.inputBuffer.length >= 480) {
-          const frame = rnnoiseRef.current.inputBuffer.splice(0, 480);
+        while (engineDataRef.current.inputBuffer.length >= 480) {
+          const frame = engineDataRef.current.inputBuffer.splice(0, 480);
           const floatFrame = new Float32Array(frame);
           
-          // Copy to WASM heap
-          rnnoiseRef.current.module.HEAPF32.set(floatFrame, rnnoiseRef.current.inputPtr >> 2);
-          
-          // Process with RNNoise
-          rnnoiseRef.current.module._rnnoise_process_frame(
-            rnnoiseRef.current.state, 
-            rnnoiseRef.current.outputPtr, 
-            rnnoiseRef.current.inputPtr
-          );
-          
-          // Get output
-          const outputData = new Float32Array(480);
-          for (let i = 0; i < 480; i++) {
-            outputData[i] = rnnoiseRef.current.module.HEAPF32[(rnnoiseRef.current.outputPtr >> 2) + i];
-          }
+          // Process with engine
+          const outputData = engineRef.current.process(floatFrame);
           
           // Calculate frame energy for gating
           const frameEnergy = calculateRMS(floatFrame);
@@ -148,11 +89,11 @@ export const useRNNoise = () => {
           metricsRef.current.totalOutputEnergy += outputEnergy;
           
           // Update energy history
-          rnnoiseRef.current.energyHistory[rnnoiseRef.current.energyIndex] = frameEnergy;
-          rnnoiseRef.current.energyIndex = (rnnoiseRef.current.energyIndex + 1) % 20;
+          engineDataRef.current.energyHistory[engineDataRef.current.energyIndex] = frameEnergy;
+          engineDataRef.current.energyIndex = (engineDataRef.current.energyIndex + 1) % 20;
           
           // Calculate average energy
-          const avgEnergy = rnnoiseRef.current.energyHistory.reduce((a: number, b: number) => a + b) / 20;
+          const avgEnergy = engineDataRef.current.energyHistory.reduce((a: number, b: number) => a + b) / 20;
           
           // Simple energy-based gating
           let processedFrame = outputData;
@@ -187,24 +128,24 @@ export const useRNNoise = () => {
           if (Math.random() < 0.02) {
             const gateStatus = avgEnergy < silenceThreshold ? 'SILENCE' : 
                              avgEnergy < speechThreshold ? 'TRANSITION' : 'SPEECH';
-            console.log('[RNNoise]',
+            console.log('[AudioEngine]',
                        '\n  Status:', gateStatus,
                        '\n  Avg Energy:', avgEnergy.toFixed(6),
                        '\n  Frame Energy:', frameEnergy.toFixed(6),
-                       '\n  RNNoise Reduction:', ((1 - reductionRatio) * 100).toFixed(1) + '%',
+                       '\n  Engine Reduction:', ((1 - reductionRatio) * 100).toFixed(1) + '%',
                        '\n  Gate Applied:', avgEnergy < speechThreshold ? 'Yes' : 'No');
           }
           
           // Add to output buffer
           for (let i = 0; i < 480; i++) {
-            rnnoiseRef.current.outputBuffer.push(processedFrame[i]);
+            engineDataRef.current.outputBuffer.push(processedFrame[i]);
           }
         }
         
         // Output
         for (let i = 0; i < output.length; i++) {
-          if (rnnoiseRef.current.outputBuffer.length > 0) {
-            const sample = rnnoiseRef.current.outputBuffer.shift();
+          if (engineDataRef.current.outputBuffer.length > 0) {
+            const sample = engineDataRef.current.outputBuffer.shift();
             output[i] = sample;
             metricsRef.current.outputSamples++;
             metricsRef.current.peakOutput = Math.max(metricsRef.current.peakOutput, Math.abs(sample));
@@ -216,10 +157,10 @@ export const useRNNoise = () => {
       
       processorRef.current = processor;
       setIsInitialized(true);
-      console.log('[RNNoise] Initialization complete!');
+      console.log('[AudioEngine] Initialization complete!');
       
     } catch (err) {
-      console.error('[RNNoise] Error:', err);
+      console.error('[AudioEngine] Error:', err);
       setError(err instanceof Error ? err.message : String(err));
       throw err;
     } finally {
@@ -247,7 +188,14 @@ export const useRNNoise = () => {
     const processingTime = Date.now() - metrics.startTime;
     const avgInputEnergy = metrics.totalFrames > 0 ? metrics.totalInputEnergy / metrics.totalFrames : 0;
     const avgOutputEnergy = metrics.totalFrames > 0 ? metrics.totalOutputEnergy / metrics.totalFrames : 0;
-    const noiseReduction = avgInputEnergy > 0 ? (1 - avgOutputEnergy / avgInputEnergy) * 100 : 0;
+    
+    // Calculate noise reduction differently - compare silence frames to total frames
+    // and consider the energy reduction ratio
+    const energyReduction = avgInputEnergy > 0 ? Math.abs(avgInputEnergy - avgOutputEnergy) / avgInputEnergy : 0;
+    const silenceRatio = metrics.totalFrames > 0 ? metrics.silenceFrames / metrics.totalFrames : 0;
+    
+    // Combine both metrics for a more accurate noise reduction estimate
+    const noiseReduction = ((energyReduction * 0.5) + (silenceRatio * 0.5)) * 100;
     
     return {
       inputSamples: metrics.inputSamples,
@@ -267,7 +215,7 @@ export const useRNNoise = () => {
 
   const processStream = async (stream: MediaStream): Promise<MediaStream> => {
     if (!isInitialized) {
-      await initializeRNNoise();
+      await initializeAudioEngine();
     }
     
     if (!audioContextRef.current || !processorRef.current) {
@@ -290,11 +238,9 @@ export const useRNNoise = () => {
     if (processorRef.current) {
       processorRef.current.disconnect();
     }
-    if (rnnoiseRef.current) {
-      const { module, state, inputPtr, outputPtr } = rnnoiseRef.current;
-      module._free(inputPtr);
-      module._free(outputPtr);
-      module._rnnoise_destroy(state);
+    if (engineRef.current) {
+      engineRef.current.cleanup();
+      engineRef.current = null;
     }
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
       audioContextRef.current.close();
@@ -307,7 +253,7 @@ export const useRNNoise = () => {
     error,
     processStream,
     cleanup,
-    initializeRNNoise,
+    initializeAudioEngine,
     getMetrics,
     resetMetrics
   };

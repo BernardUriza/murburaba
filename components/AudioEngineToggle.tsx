@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useRNNoise } from '../lib/audio/useRNNoise';
+import { useAudioEngine } from '../lib/audio/useAudioEngine';
 
-interface RNNoiseToggleProps {
+interface AudioEngineToggleProps {
   enabled: boolean;
   onToggle: (enabled: boolean) => void;
   disabled?: boolean;
@@ -10,15 +10,15 @@ interface RNNoiseToggleProps {
   isRecording?: boolean;
 }
 
-export default function RNNoiseToggle({ 
+export default function AudioEngineToggle({ 
   enabled, 
   onToggle, 
   disabled = false,
   onProcessedStream,
   sourceStream,
   isRecording = false
-}: RNNoiseToggleProps) {
-  const { isInitialized, isLoading, processStream, cleanup } = useRNNoise();
+}: AudioEngineToggleProps) {
+  const { isInitialized, isLoading, processStream, cleanup } = useAudioEngine();
   
   const [error, setError] = useState<string | null>(null);
   const [localProcessedStream, setLocalProcessedStream] = useState<MediaStream | null>(null);

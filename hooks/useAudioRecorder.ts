@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useRNNoise } from '../lib/audio/useRNNoise';
+import { useAudioEngine } from '../lib/audio/useAudioEngine';
 
 export interface ProcessingStats {
   inputSamples: number
@@ -39,10 +39,10 @@ interface UseAudioRecorderReturn {
   clearChunks: () => void;
   isNoiseSuppressionEnabled: boolean;
   setNoiseSuppressionEnabled: (enabled: boolean) => void;
-  isRNNoiseInitialized: boolean;
-  isRNNoiseLoading: boolean;
-  rnnoiseError: string | null;
-  initializeRNNoise: () => Promise<void>;
+  isAudioEngineInitialized: boolean;
+  isAudioEngineLoading: boolean;
+  audioEngineError: string | null;
+  initializeAudioEngine: () => Promise<void>;
 }
 
 export const useAudioRecorder = ({ 
@@ -67,13 +67,13 @@ export const useAudioRecorder = ({
   const { 
     processStream, 
     isInitialized, 
-    isLoading: isRNNoiseLoading, 
-    error: rnnoiseError,
-    cleanup: cleanupRNNoise,
-    initializeRNNoise,
+    isLoading: isAudioEngineLoading, 
+    error: audioEngineError,
+    cleanup: cleanupAudioEngine,
+    initializeAudioEngine,
     getMetrics,
     resetMetrics
-  } = useRNNoise();
+  } = useAudioEngine();
   
   useEffect(() => {
     console.log('[Audio Recorder] Creating worker...');
@@ -312,7 +312,7 @@ export const useAudioRecorder = ({
       processedStreamRef.current = null;
     }
     
-    cleanupRNNoise();
+    cleanupAudioEngine();
     
     setIsRecording(false);
   };
@@ -351,9 +351,9 @@ export const useAudioRecorder = ({
     clearChunks,
     isNoiseSuppressionEnabled,
     setNoiseSuppressionEnabled,
-    isRNNoiseInitialized: isInitialized,
-    isRNNoiseLoading,
-    rnnoiseError,
-    initializeRNNoise
+    isAudioEngineInitialized: isInitialized,
+    isAudioEngineLoading,
+    audioEngineError,
+    initializeAudioEngine
   };
 };

@@ -1,0 +1,63 @@
+{
+  "name": "murmuraba",
+  "version": "0.1.0",
+  "description": "Modular audio processing library with real-time noise reduction for web applications",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "audio",
+    "noise-reduction",
+    "rnnoise",
+    "webassembly",
+    "real-time",
+    "audio-processing",
+    "react",
+    "typescript"
+  ],
+  "author": "Bernard",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bernarducs/murburaba"
+  },
+  "scripts": {
+    "build": "npm run clean && npm run build:ts && npm run build:rollup",
+    "build:ts": "tsc",
+    "build:rollup": "rollup -c",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run build",
+    "test": "jest",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "peerDependencies": {
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.5",
+    "@types/react": "^18.2.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.54.0",
+    "jest": "^29.7.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "rimraf": "^5.0.5",
+    "rollup": "^4.6.0",
+    "rollup-plugin-copy": "^3.5.0",
+    "rollup-plugin-terser": "^7.0.2",
+    "tslib": "^2.6.2",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

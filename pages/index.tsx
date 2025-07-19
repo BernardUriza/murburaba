@@ -1,7 +1,7 @@
 import Head from 'next/head'
 import { useAudioRecorder } from '../hooks/useAudioRecorder'
 import { WaveformAnalyzer } from '../components/WaveformAnalyzer'
-import RNNoiseToggle from '../components/RNNoiseToggle'
+import AudioEngineToggle from '../components/AudioEngineToggle'
 import { useState, useEffect } from 'react'
 
 export default function Home() {
@@ -15,10 +15,10 @@ export default function Home() {
     clearChunks,
     isNoiseSuppressionEnabled,
     setNoiseSuppressionEnabled,
-    isRNNoiseInitialized,
-    isRNNoiseLoading,
-    rnnoiseError,
-    initializeRNNoise
+    isAudioEngineInitialized,
+    isAudioEngineLoading,
+    audioEngineError,
+    initializeAudioEngine
   } = useAudioRecorder({ initialChunkDuration: 2, enableNoiseSupression: true })
 
   const [currentTime, setCurrentTime] = useState<Date | null>(null)
@@ -66,12 +66,17 @@ export default function Home() {
   }
 
   const totalProcessedTime = audioChunks.reduce((acc, chunk) => acc + (chunk.duration || chunkDuration), 0)
-  const noiseReductionSavings = audioChunks.length > 0 ? Math.round((audioChunks.length * 15)) : 0
+  const avgNoiseReduction = audioChunks.reduce((acc, chunk) => {
+    if (chunk.stats) {
+      return acc + chunk.stats.noiseReductionLevel
+    }
+    return acc
+  }, 0) / (audioChunks.filter(c => c.stats).length || 1)
 
   return (
     <>
       <Head>
-        <title>RNNoise Studio | AI-Powered Audio Enhancement</title>
+        <title>Murmuraba Studio | AI-Powered Audio Enhancement</title>
         <meta name="description" content="Professional real-time noise reduction powered by neural networks" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
@@ -94,7 +99,7 @@ export default function Home() {
                 </svg>
               </div>
               <div>
-                <h1 className="modern-title">RNNoise Studio</h1>
+                <h1 className="modern-title">Murmuraba Studio</h1>
                 <p className="modern-subtitle">Neural Audio Processing</p>
               </div>
             </div>
@@ -147,8 +152,8 @@ export default function Home() {
               </svg>
             </div>
             <div className="stat-content">
-              <div className="stat-value">{noiseReductionSavings}%</div>
-              <div className="stat-label">Noise Reduced</div>
+              <div className="stat-value">{avgNoiseReduction.toFixed(1)}%</div>
+              <div className="stat-label">Avg Noise Reduced</div>
             </div>
           </div>
           
@@ -161,7 +166,7 @@ export default function Home() {
             </div>
             <div className="stat-content">
               <div className="stat-value">{isRNNoiseInitialized ? 'Active' : 'Ready'}</div>
-              <div className="stat-label">RNNoise Status</div>
+              <div className="stat-label">Audio Engine</div>
             </div>
           </div>
         </div>
@@ -266,7 +271,7 @@ export default function Home() {
                   </svg>
                   <span>Noise Reduction</span>
                 </div>
-                <RNNoiseToggle
+                <AudioEngineToggle
                   enabled={isNoiseSuppressionEnabled}
                   onToggle={setNoiseSuppressionEnabled}
                   disabled={isRecording}
@@ -275,27 +280,27 @@ export default function Home() {
                 />
               </div>
             
-              {isNoiseSuppressionEnabled && !isRNNoiseInitialized && !isRecording && (
+              {isNoiseSuppressionEnabled && !isAudioEngineInitialized && !isRecording && (
                 <button 
-                  onClick={initializeRNNoise} 
-                  disabled={isRNNoiseLoading}
+                  onClick={initializeAudioEngine} 
+                  disabled={isAudioEngineLoading}
                   className="modern-btn btn-initialize"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className={isRNNoiseLoading ? 'spinning' : ''}>
                     <path d="M21 12C21 16.97 16.97 21 12 21C7.03 21 3 16.97 3 12C3 7.03 7.03 3 12 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                     <path d="M18 3L21 3L21 6" stroke="currentColor" strokeWidth="2"/>
                   </svg>
-                  <span>{isRNNoiseLoading ? 'Initializing AI...' : 'Initialize RNNoise'}</span>
+                  <span>{isAudioEngineLoading ? 'Initializing AI...' : 'Initialize Audio Engine'}</span>
                 </button>
               )}
             </div>
           
-            {rnnoiseError && (
+            {audioEngineError && (
               <div className="error-card">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                   <path d="M12 9V13M12 17H12.01M12 3L2 20H22L12 3Z" stroke="currentColor" strokeWidth="2"/>
                 </svg>
-                <span>{rnnoiseError}</span>
+                <span>{audioEngineError}</span>
               </div>
             )}
           </div>
@@ -476,9 +481,14 @@ export default function Home() {
                           <div className="stats-section">
                             <h5>Processing Details</h5>
                             <div className="processing-info">
-                              <p>RNNoise processed <strong>{chunk.stats.totalFramesProcessed}</strong> frames of 480 samples each.</p>
+                              <p>Audio engine processed <strong>{chunk.stats.totalFramesProcessed}</strong> frames of 480 samples each.</p>
                               <p>The algorithm identified <strong>{((chunk.stats.silenceFrames / chunk.stats.totalFramesProcessed) * 100).toFixed(1)}%</strong> as silence/noise.</p>
-                              <p>Average noise reduction achieved: <strong className="highlight">{chunk.stats.noiseReductionLevel.toFixed(1)}%</strong></p>
+                              <p>Energy change: <strong className={chunk.stats.averageOutputEnergy > chunk.stats.averageInputEnergy ? "highlight" : ""}>
+                                {chunk.stats.averageOutputEnergy > chunk.stats.averageInputEnergy ? "+" : ""}
+                                {(((chunk.stats.averageOutputEnergy - chunk.stats.averageInputEnergy) / chunk.stats.averageInputEnergy) * 100).toFixed(1)}%
+                              </strong> {chunk.stats.averageOutputEnergy > chunk.stats.averageInputEnergy ? "(speech enhanced)" : "(noise reduced)"}</p>
+                              <p>Processing rate: <strong>{((chunk.stats.inputSamples / 48000) / (chunk.stats.processingTimeMs / 1000)).toFixed(1)}x</strong> real-time</p>
+                              <p>Estimated noise reduction: <strong className="highlight">{chunk.stats.noiseReductionLevel.toFixed(1)}%</strong></p>
                             </div>
                           </div>
                         </div>
