@@ -1,7 +1,6 @@
 import Head from 'next/head'
 import { useAudioRecorder } from '../hooks/useAudioRecorder'
 import { WaveformAnalyzer } from '../components/WaveformAnalyzer'
-import { RNNoiseDebug } from '../components/RNNoiseDebug'
 import RNNoiseToggle from '../components/RNNoiseToggle'
 
 export default function Home() {
@@ -18,9 +17,7 @@ export default function Home() {
     isRNNoiseInitialized,
     isRNNoiseLoading,
     rnnoiseError,
-    initializeRNNoise,
-    isAggressiveMode,
-    setAggressiveMode
+    initializeRNNoise
   } = useAudioRecorder({ initialChunkDuration: 2, enableNoiseSupression: true })
 
   return (
@@ -36,13 +33,6 @@ export default function Home() {
         
         <section className="audio-recorder">
           <h2>Grabador de Audio</h2>
-          <RNNoiseDebug 
-            isInitialized={isRNNoiseInitialized}
-            isLoading={isRNNoiseLoading}
-            isRecording={isRecording}
-            noiseSuppressionEnabled={isNoiseSuppressionEnabled}
-            error={rnnoiseError}
-          />
           <div className="controls-container">
             <div className="button-group">
               <button 
@@ -83,8 +73,6 @@ export default function Home() {
               disabled={isRecording}
               sourceStream={null}
               isRecording={isRecording}
-              useAggressive={isAggressiveMode}
-              onAggressiveToggle={setAggressiveMode}
             />
             
             {isNoiseSuppressionEnabled && !isRNNoiseInitialized && !isRecording && (
