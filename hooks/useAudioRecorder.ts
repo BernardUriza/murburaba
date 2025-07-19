@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useRNNoiseNoVAD } from '../lib/audio/useRNNoiseNoVAD';
+import { useRNNoise } from '../lib/audio/useRNNoise';
 
 export interface AudioChunk {
   id: number;
@@ -55,7 +55,7 @@ export const useAudioRecorder = ({
     error: rnnoiseError,
     cleanup: cleanupRNNoise,
     initializeRNNoise 
-  } = useRNNoiseNoVAD();
+  } = useRNNoise();
   
   useEffect(() => {
     console.log('[Audio Recorder] Creating worker...');

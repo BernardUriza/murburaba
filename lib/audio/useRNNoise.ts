@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-export const useRNNoiseNoVAD = () => {
+export const useRNNoise = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +15,7 @@ export const useRNNoiseNoVAD = () => {
     setError(null);
     
     try {
-      console.log('[RNNoise NoVAD] Starting initialization...');
+      console.log('[RNNoise] Starting initialization...');
       
       // Load script
       const script = document.createElement('script');
@@ -66,7 +66,7 @@ export const useRNNoiseNoVAD = () => {
         energyIndex: 0
       };
       
-      console.log('[RNNoise NoVAD] Ready for processing');
+      console.log('[RNNoise] Ready for processing');
       
       // Create audio context
       audioContextRef.current = new AudioContext({ sampleRate: 48000 });
@@ -96,7 +96,7 @@ export const useRNNoiseNoVAD = () => {
           // Copy to WASM heap
           rnnoiseRef.current.module.HEAPF32.set(floatFrame, rnnoiseRef.current.inputPtr >> 2);
           
-          // Process with RNNoise (ignore VAD since it's always 0)
+          // Process with RNNoise
           rnnoiseRef.current.module._rnnoise_process_frame(
             rnnoiseRef.current.state, 
             rnnoiseRef.current.outputPtr, 
@@ -109,7 +109,7 @@ export const useRNNoiseNoVAD = () => {
             outputData[i] = rnnoiseRef.current.module.HEAPF32[(rnnoiseRef.current.outputPtr >> 2) + i];
           }
           
-          // Calculate frame energy for our own VAD
+          // Calculate frame energy for gating
           const frameEnergy = calculateRMS(floatFrame);
           const outputEnergy = calculateRMS(outputData);
           
@@ -146,7 +146,7 @@ export const useRNNoiseNoVAD = () => {
           if (Math.random() < 0.02) {
             const gateStatus = avgEnergy < silenceThreshold ? 'SILENCE' : 
                              avgEnergy < speechThreshold ? 'TRANSITION' : 'SPEECH';
-            console.log('[RNNoise NoVAD]',
+            console.log('[RNNoise]',
                        '\n  Status:', gateStatus,
                        '\n  Avg Energy:', avgEnergy.toFixed(6),
                        '\n  Frame Energy:', frameEnergy.toFixed(6),
@@ -172,10 +172,10 @@ export const useRNNoiseNoVAD = () => {
       
       processorRef.current = processor;
       setIsInitialized(true);
-      console.log('[RNNoise NoVAD] Initialization complete!');
+      console.log('[RNNoise] Initialization complete!');
       
     } catch (err) {
-      console.error('[RNNoise NoVAD] Error:', err);
+      console.error('[RNNoise] Error:', err);
       setError(err instanceof Error ? err.message : String(err));
       throw err;
     } finally {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useRNNoiseNoVAD } from '../lib/audio/useRNNoiseNoVAD';
+import { useRNNoise } from '../lib/audio/useRNNoise';
 
 interface RNNoiseToggleProps {
   enabled: boolean;
@@ -18,7 +18,7 @@ export default function RNNoiseToggle({
   sourceStream,
   isRecording = false
 }: RNNoiseToggleProps) {
-  const { isInitialized, isLoading, processStream, cleanup } = useRNNoiseNoVAD();
+  const { isInitialized, isLoading, processStream, cleanup } = useRNNoise();
   
   const [error, setError] = useState<string | null>(null);
   const [localProcessedStream, setLocalProcessedStream] = useState<MediaStream | null>(null);

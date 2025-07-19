@@ -23,12 +23,12 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Mi Proyecto Next.js</title>
+        <title>Murmuraba RNNoise Next.js</title>
         <meta name="description" content="Proyecto sencillo creado con Next.js" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <main className="container">
-        <h1>Bienvenido a Next.js!</h1>
+        <h1>integra RNNoise en Next.js</h1>
         <p>Este es un proyecto sencillo de Next.js.</p>
         
         <section className="audio-recorder">
@@ -128,23 +128,6 @@ export default function Home() {
               ))}
             </div>
           )}
-        </section>
-        
-        <section className="grid">
-          <div className="card">
-            <h2>Documentación →</h2>
-            <p>Encuentra información detallada sobre las características y API de Next.js.</p>
-          </div>
-          
-          <div className="card">
-            <h2>Aprende →</h2>
-            <p>Aprende sobre Next.js con un tutorial interactivo!</p>
-          </div>
-          
-          <div className="card">
-            <h2>Ejemplos →</h2>
-            <p>Descubre y despliega proyectos de ejemplo con Next.js.</p>
-          </div>
         </section>
       </main>
     </>
