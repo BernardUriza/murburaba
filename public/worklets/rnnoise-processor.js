@@ -9,20 +9,52 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
     this.outputBuffer = [];
     
     this.port.onmessage = (event) => {
-      if (event.data.type === 'init' && event.data.wasmModule) {
-        this.initializeRNNoise(event.data.wasmModule);
+      if (event.data.type === 'init') {
+        this.initializeRNNoise();
       }
     };
   }
 
-  async initializeRNNoise(wasmModule) {
+  async initializeRNNoise() {
     try {
-      console.log('[RNNoise] Initializing WASM module...');
-      // The module is already initialized, we just need to use it
-      this.rnnoise = wasmModule;
+      console.log('[RNNoise Worklet] Starting initialization...');
+      
+      // Fetch and instantiate the WASM module directly
+      const wasmResponse = await fetch('/dist/rnnoise.wasm');
+      const wasmBuffer = await wasmResponse.arrayBuffer();
+      
+      console.log('[RNNoise Worklet] WASM binary loaded, size:', wasmBuffer.byteLength);
+      
+      // Create a minimal module interface for RNNoise
+      const wasmModule = await WebAssembly.instantiate(wasmBuffer, {
+        env: {
+          memory: new WebAssembly.Memory({ initial: 256, maximum: 32768 }),
+          __memory_base: 0,
+          __table_base: 0,
+          abort: () => { console.error('WASM abort called'); },
+          _abort: () => { console.error('WASM _abort called'); },
+          ___assert_fail: () => { console.error('WASM assert fail'); },
+          _emscripten_memcpy_big: (dest, src, num) => {
+            // Simple memory copy implementation
+            const heap = new Uint8Array(wasmModule.instance.exports.memory.buffer);
+            heap.copyWithin(dest, src, src + num);
+          },
+          _emscripten_resize_heap: () => { return 0; }
+        }
+      });
+      
+      console.log('[RNNoise Worklet] WASM module instantiated');
+      
+      // Get the exports
+      this.rnnoise = wasmModule.instance.exports;
+      
+      // Initialize the module
+      if (this.rnnoise.__wasm_call_ctors) {
+        this.rnnoise.__wasm_call_ctors();
+      }
       
       // Create noise suppression state
-      this.noiseSuppressionState = this.rnnoise._rnnoise_create(0);
+      this.noiseSuppressionState = this.rnnoise.rnnoise_create(0);
       
       if (!this.noiseSuppressionState) {
         throw new Error('Failed to create RNNoise state');
@@ -31,13 +63,16 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
       this.isInitialized = true;
       
       // Allocate memory for input/output buffers (float32 = 4 bytes)
-      this.inputPtr = this.rnnoise._malloc(this.bufferSize * 4);
-      this.outputPtr = this.rnnoise._malloc(this.bufferSize * 4);
+      this.inputPtr = this.rnnoise.malloc(this.bufferSize * 4);
+      this.outputPtr = this.rnnoise.malloc(this.bufferSize * 4);
       
-      console.log('[RNNoise] Initialized successfully');
+      // Store heap views
+      this.HEAP16 = new Int16Array(this.rnnoise.memory.buffer);
+      
+      console.log('[RNNoise Worklet] Initialized successfully');
       this.port.postMessage({ type: 'initialized' });
     } catch (error) {
-      console.error('[RNNoise] Initialization error:', error);
+      console.error('[RNNoise Worklet] Initialization error:', error);
       this.port.postMessage({ type: 'error', error: error.message });
     }
   }
@@ -67,18 +102,18 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
       }
       
       // Copy to WASM memory
-      this.rnnoise.HEAP16.set(pcmData, this.inputPtr >> 1);
+      this.HEAP16.set(pcmData, this.inputPtr >> 1);
       
       // Process with RNNoise
-      const vadProb = this.rnnoise._rnnoise_process_frame(
+      const vadProb = this.rnnoise.rnnoise_process_frame(
         this.noiseSuppressionState,
         this.outputPtr,
         this.inputPtr
       );
       
-      // Get processed data from output pointer (not input pointer)
+      // Get processed data from output pointer
       const processedPCM = new Int16Array(
-        this.rnnoise.HEAP16.buffer,
+        this.rnnoise.memory.buffer,
         this.outputPtr,
         this.bufferSize
       );

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useRNNoise } from '../lib/audio/useRNNoise';
+import { useRNNoiseSimple } from '../lib/audio/useRNNoiseSimple';
 
 export interface AudioChunk {
   id: number;
@@ -46,6 +46,7 @@ export const useAudioRecorder = ({
   const chunkIdRef = useRef(0);
   const currentChunksRef = useRef<Blob[]>([]);
   const currentOriginalChunksRef = useRef<Blob[]>([]);
+  const chunkIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   const { 
     processStream, 
@@ -54,16 +55,20 @@ export const useAudioRecorder = ({
     error: rnnoiseError,
     cleanup: cleanupRNNoise,
     initializeRNNoise 
-  } = useRNNoise();
+  } = useRNNoiseSimple();
   
   useEffect(() => {
+    console.log('[Audio Recorder] Creating worker...');
     workerRef.current = new Worker('/audio-recorder.worker.js');
+    console.log('[Audio Recorder] Worker created');
     
     workerRef.current.onmessage = (e) => {
       const { type } = e.data;
+      console.log('[Audio Recorder] Worker message received:', type);
       
       switch (type) {
         case 'CHUNK_END':
+          console.log('[Audio Recorder] Chunk end signal received');
           if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
             mediaRecorderRef.current.stop();
           }
@@ -73,6 +78,7 @@ export const useAudioRecorder = ({
           break;
           
         case 'CHUNK_START':
+          console.log('[Audio Recorder] Chunk start signal received');
           if (streamRef.current && streamRef.current.active && isRecording) {
             startNewChunk();
           }
@@ -88,13 +94,18 @@ export const useAudioRecorder = ({
   }, [isRecording]);
   
   const startNewChunk = useCallback(() => {
-    if (!streamRef.current || !streamRef.current.active) return;
+    console.log('[Audio Recorder] Starting new chunk...');
+    if (!streamRef.current || !streamRef.current.active) {
+      console.log('[Audio Recorder] No active stream, cannot start chunk');
+      return;
+    }
     
     currentChunksRef.current = [];
     currentOriginalChunksRef.current = [];
     
     // If noise suppression is enabled and we have a processed stream, record both
     if (isNoiseSuppressionEnabled && processedStreamRef.current) {
+      console.log('[Audio Recorder] Recording with noise suppression');
       // Main recorder with noise reduction
       const mediaRecorder = new MediaRecorder(processedStreamRef.current);
       mediaRecorderRef.current = mediaRecorder;
@@ -116,6 +127,7 @@ export const useAudioRecorder = ({
       };
       
       mediaRecorder.onstop = () => {
+        console.log('[Audio Recorder] MediaRecorder stopped, chunks:', currentChunksRef.current.length);
         if (currentChunksRef.current.length > 0) {
           const audioBlob = new Blob(currentChunksRef.current, { type: 'audio/webm' });
           const url = URL.createObjectURL(audioBlob);
@@ -126,6 +138,7 @@ export const useAudioRecorder = ({
             urlWithoutNR = URL.createObjectURL(originalBlob);
           }
           
+          console.log('[Audio Recorder] Creating audio chunk with URLs');
           setAudioChunks(prev => [...prev, {
             id: chunkIdRef.current++,
             url,
@@ -144,6 +157,7 @@ export const useAudioRecorder = ({
       originalRecorder.start();
     } else {
       // No noise reduction - just record the raw stream
+      console.log('[Audio Recorder] Recording without noise suppression');
       const mediaRecorder = new MediaRecorder(streamRef.current);
       mediaRecorderRef.current = mediaRecorder;
       currentChunksRef.current = [];
@@ -173,14 +187,18 @@ export const useAudioRecorder = ({
   
   const startRecording = async () => {
     try {
+      console.log('[Audio Recorder] Starting recording...');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
+      console.log('[Audio Recorder] Got user media stream');
       
       // Apply noise suppression if enabled
       if (isNoiseSuppressionEnabled) {
         try {
+          console.log('[Audio Recorder] Applying noise suppression...');
           const processedStream = await processStream(stream);
           processedStreamRef.current = processedStream;
+          console.log('[Audio Recorder] Noise suppression applied');
         } catch (error) {
           console.error('Failed to apply noise suppression:', error);
           // Continue without noise suppression
@@ -193,12 +211,24 @@ export const useAudioRecorder = ({
       
       startNewChunk();
       
-      if (workerRef.current) {
-        workerRef.current.postMessage({
-          type: 'START',
-          payload: { chunkDuration }
-        });
-      }
+      // Use direct interval instead of worker for now
+      console.log('[Audio Recorder] Starting chunk timer with interval, duration:', chunkDuration);
+      chunkIntervalRef.current = setInterval(() => {
+        console.log('[Audio Recorder] Chunk interval fired');
+        
+        // Stop current recording
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          mediaRecorderRef.current.stop();
+        }
+        if (originalRecorderRef.current && originalRecorderRef.current.state === 'recording') {
+          originalRecorderRef.current.stop();
+        }
+        
+        // Start new chunk
+        if (streamRef.current && streamRef.current.active) {
+          setTimeout(() => startNewChunk(), 100); // Small delay to ensure stop completes
+        }
+      }, chunkDuration * 1000);
     } catch (error) {
       console.error('Error al acceder al micrófono:', error);
       alert('No se pudo acceder al micrófono. Por favor, verifica los permisos.');
@@ -206,6 +236,14 @@ export const useAudioRecorder = ({
   };
   
   const stopRecording = () => {
+    console.log('[Audio Recorder] Stopping recording');
+    
+    // Clear the interval
+    if (chunkIntervalRef.current) {
+      clearInterval(chunkIntervalRef.current);
+      chunkIntervalRef.current = null;
+    }
+    
     if (workerRef.current) {
       workerRef.current.postMessage({ type: 'STOP' });
     }
