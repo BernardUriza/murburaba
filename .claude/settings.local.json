@@ -103,7 +103,9 @@
       "Bash(git fetch:*)",
       "Bash(dir:*)",
       "WebFetch(domain:github.com)",
-      "Bash(npx kill-port:*)"
+      "Bash(npx kill-port:*)",
+      "Bash(npm version:*)",
+      "Bash(npm publish:*)"
     ],
     "deny": []
   }

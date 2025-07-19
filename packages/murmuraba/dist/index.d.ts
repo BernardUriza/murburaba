@@ -1,10 +1,17 @@
-export { useAudioEngine } from './hooks/useAudioEngine';
-export { createAudioEngine } from './engines';
-export { RNNoiseEngine } from './engines/RNNoiseEngine';
-export type { AudioEngine, AudioEngineConfig, ProcessingMetrics } from './engines/types';
-export { MurmurabaProcessor } from './utils/MurmurabaProcessor';
-export { AudioStreamManager } from './utils/AudioStreamManager';
-export declare const MURMURABA_VERSION = "0.1.0";
-export declare const SUPPORTED_ENGINES: readonly ["rnnoise", "speex", "custom"];
-export type SupportedEngine = typeof SUPPORTED_ENGINES[number];
+/**
+ * Murmuraba v1.2.1
+ * Real-time audio noise reduction with advanced chunked processing
+ */
+export { MurmubaraEngine } from './core/MurmubaraEngine';
+export { EventEmitter } from './core/EventEmitter';
+export { StateManager } from './core/StateManager';
+export { Logger } from './core/Logger';
+export { WorkerManager } from './managers/WorkerManager';
+export { MetricsManager } from './managers/MetricsManager';
+export * from './types';
+export { initializeAudioEngine, getEngine, processStream, processStreamChunked, destroyEngine, getEngineStatus, getDiagnostics, onMetricsUpdate } from './api';
+export declare const VERSION = "1.2.1";
+export declare const MURMURABA_VERSION = "1.2.1";
+export { ErrorCodes } from './types';
+export { useMurmubaraEngine } from './hooks/useMurmubaraEngine';
 //# sourceMappingURL=index.d.ts.map
