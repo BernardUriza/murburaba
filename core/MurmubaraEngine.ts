@@ -266,6 +266,27 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     const destination = this.audioContext.createMediaStreamDestination();
     const processor = this.audioContext.createScriptProcessor(this.config.bufferSize, 1, 1);
     
+    // Create pre-filters for medical equipment noise
+    const notchFilter1 = this.audioContext.createBiquadFilter();
+    notchFilter1.type = 'notch';
+    notchFilter1.frequency.value = 1000; // Common medical equipment beep frequency
+    notchFilter1.Q.value = 30; // Narrow notch
+    
+    const notchFilter2 = this.audioContext.createBiquadFilter();
+    notchFilter2.type = 'notch';
+    notchFilter2.frequency.value = 2000; // Harmonics of beeps
+    notchFilter2.Q.value = 30;
+    
+    const highPassFilter = this.audioContext.createBiquadFilter();
+    highPassFilter.type = 'highpass';
+    highPassFilter.frequency.value = 80; // Remove low-frequency rumble from machines
+    highPassFilter.Q.value = 0.7;
+    
+    const lowShelfFilter = this.audioContext.createBiquadFilter();
+    lowShelfFilter.type = 'lowshelf';
+    lowShelfFilter.frequency.value = 200; // Reduce echo/room resonance
+    lowShelfFilter.gain.value = -3; // Gentle reduction
+    
     let isPaused = false;
     let isStopped = false;
     const inputBuffer: number[] = [];
@@ -313,9 +334,16 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       }
       
       // Process frames
+      let totalInputRMS = 0;
+      let totalOutputRMS = 0;
+      let framesProcessed = 0;
+      
       while (inputBuffer.length >= 480) {
         const frame = new Float32Array(inputBuffer.splice(0, 480));
+        const frameInputRMS = this.metricsManager.calculateRMS(frame);
+        
         const processed = this.processFrame(frame);
+        const frameOutputRMS = this.metricsManager.calculateRMS(processed);
         
         // Apply noise reduction level adjustment
         const reductionFactor = this.getReductionFactor();
@@ -323,6 +351,11 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
           processed[i] *= reductionFactor;
           outputBuffer.push(processed[i]);
         }
+        
+        // Accumulate RMS values for accurate noise reduction calculation
+        totalInputRMS += frameInputRMS;
+        totalOutputRMS += frameOutputRMS * reductionFactor; // Account for reduction factor
+        framesProcessed++;
         
         this.metricsManager.recordFrame();
       }
@@ -341,12 +374,21 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       const outputPeak = this.metricsManager.calculatePeak(output);
       this.metricsManager.updateOutputLevel(outputPeak);
       
-      // Calculate noise reduction
-      const reduction = inputLevel > 0 ? (1 - outputLevel / inputLevel) * 100 : 0;
-      this.metricsManager.updateNoiseReduction(reduction);
+      // Calculate noise reduction based on actual processed frames
+      if (framesProcessed > 0) {
+        const avgInputRMS = totalInputRMS / framesProcessed;
+        const avgOutputRMS = totalOutputRMS / framesProcessed;
+        const reduction = avgInputRMS > 0 ? Math.max(0, (1 - avgOutputRMS / avgInputRMS) * 100) : 0;
+        this.metricsManager.updateNoiseReduction(reduction);
+      }
     };
     
-    source.connect(processor);
+    // Connect filters in chain: source -> filters -> processor -> destination
+    source.connect(highPassFilter);
+    highPassFilter.connect(notchFilter1);
+    notchFilter1.connect(notchFilter2);
+    notchFilter2.connect(lowShelfFilter);
+    lowShelfFilter.connect(processor);
     processor.connect(destination);
     
     const controller: StreamController = {

@@ -22,7 +22,7 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
   private logger: Logger;
   private config: Required<ChunkConfig>;
   private currentChunk: Float32Array[] = [];
-  private chunkStartTime: number = 0;
+  private chunkStartTime: number = Date.now();
   private chunkIndex: number = 0;
   private sampleRate: number;
   private samplesPerChunk: number;
@@ -64,6 +64,11 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
    * Add samples to the current chunk
    */
   addSamples(samples: Float32Array): void {
+    // Initialize start time on first sample if not already set
+    if (this.chunkStartTime === 0) {
+      this.chunkStartTime = Date.now();
+    }
+    
     this.currentChunk.push(new Float32Array(samples));
     this.currentSampleCount += samples.length;
     

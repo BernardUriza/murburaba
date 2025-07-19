@@ -472,7 +472,7 @@ body {
   height: 0;
 }
 
-.slider {
+.toggle-slider {
   position: absolute;
   cursor: pointer;
   top: 0;
@@ -484,7 +484,7 @@ body {
   border-radius: 34px;
 }
 
-.slider:before {
+.toggle-slider:before {
   position: absolute;
   content: "";
   height: 20px;
@@ -496,11 +496,11 @@ body {
   border-radius: 50%;
 }
 
-input:checked + .slider {
+input:checked + .toggle-slider {
   background: linear-gradient(135deg, #10B981, #059669);
 }
 
-input:checked + .slider:before {
+input:checked + .toggle-slider:before {
   transform: translateX(28px);
 }
 

@@ -77,7 +77,7 @@ export default function AudioEngineToggle({
           onChange={handleToggle}
           disabled={disabled || isLoading}
         />
-        <span className="slider"></span>
+        <span className="toggle-slider"></span>
       </label>
       <span className="control-label">
         Reducción de ruido
