@@ -26,9 +26,19 @@ or
 yarn add murmuraba
 ```
 
+### Important: WebAssembly Files
+
+Murmuraba uses WebAssembly for audio processing. After installing, you need to serve the WASM files from your public directory:
+
+1. Copy the WASM files from `node_modules/murmuraba/dist/wasm/` to your public directory
+2. Copy `rnnoise-fixed.js` from `node_modules/murmuraba/dist/` to your public directory
+3. Ensure these files are accessible at runtime (e.g., `/rnnoise-fixed.js` and `/dist/*.wasm`)
+
 ## Quick Start
 
 ### React Hook Usage
+
+The simplest way to use Murmuraba in a React application:
 
 ```tsx
 import { useAudioEngine } from 'murmuraba';
@@ -72,7 +82,9 @@ function AudioRecorder() {
 }
 ```
 
-### Direct API Usage
+### Direct API Usage (Advanced)
+
+For more control over the audio processing pipeline:
 
 ```typescript
 import { createAudioEngine, MurmurabaProcessor } from 'murmuraba';
@@ -136,6 +148,22 @@ class MyCustomEngine implements AudioEngine {
 }
 ```
 
+## Package Architecture
+
+Murmuraba is designed with a modular architecture:
+
+```
+murmuraba/
+├── engines/          # Audio processing engines
+│   ├── RNNoiseEngine # Neural network noise reduction
+│   └── (future)      # Speex, WebRTC VAD, custom engines
+├── hooks/           # React integration
+│   └── useAudioEngine
+└── utils/           # Core utilities
+    ├── MurmurabaProcessor  # Low-level audio processor
+    └── AudioStreamManager  # Stream management utilities
+```
+
 ## API Reference
 
 ### `useAudioEngine(config?)`
@@ -194,6 +222,20 @@ interface ProcessingMetrics {
 
 WebAssembly and Web Audio API support required.
 
+## Common Issues
+
+### CORS Issues with WASM Files
+Make sure your server is configured to serve WASM files with the correct MIME type:
+```
+application/wasm
+```
+
+### Audio Context Restrictions
+Modern browsers require user interaction before creating audio contexts. Always initialize the audio engine in response to a user action (click, tap, etc.).
+
+### Sample Rate Compatibility
+RNNoise works best at 48kHz. The library automatically handles sample rate conversion, but for best results, use 48kHz when possible.
+
 ## License
 
 MIT © Bernard
@@ -201,6 +243,103 @@ MIT © Bernard
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Complete Integration Example
+
+Here's a complete example of integrating Murmuraba in a Next.js application:
+
+```tsx
+// pages/audio-recorder.tsx
+import { useState } from 'react';
+import { useAudioEngine } from 'murmuraba';
+
+export default function AudioRecorder() {
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  
+  const {
+    isInitialized,
+    isLoading,
+    error,
+    processStream,
+    initializeAudioEngine,
+    getMetrics
+  } = useAudioEngine({ engineType: 'rnnoise' });
+
+  const startRecording = async () => {
+    try {
+      // Get microphone access
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          sampleRate: 48000,
+          echoCancellation: true,
+          noiseSuppression: false, // We'll use our own
+          autoGainControl: true
+        } 
+      });
+      
+      // Process with Murmuraba
+      const processedStream = await processStream(stream);
+      
+      // Create recorder with processed stream
+      const mediaRecorder = new MediaRecorder(processedStream);
+      const chunks: Blob[] = [];
+      
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+      
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        const url = URL.createObjectURL(blob);
+        setAudioUrl(url);
+        
+        // Get processing metrics
+        const metrics = getMetrics();
+        console.log('Noise reduced by:', metrics.noiseReductionLevel + '%');
+      };
+      
+      mediaRecorder.start();
+      setIsRecording(true);
+      
+      // Stop after 5 seconds
+      setTimeout(() => {
+        mediaRecorder.stop();
+        stream.getTracks().forEach(track => track.stop());
+        setIsRecording(false);
+      }, 5000);
+      
+    } catch (err) {
+      console.error('Error:', err);
+    }
+  };
+
+  return (
+    <div>
+      <h1>Murmuraba Audio Recorder</h1>
+      
+      {error && <p style={{color: 'red'}}>{error}</p>}
+      
+      {!isInitialized ? (
+        <button onClick={initializeAudioEngine} disabled={isLoading}>
+          {isLoading ? 'Loading...' : 'Initialize Audio Engine'}
+        </button>
+      ) : (
+        <button onClick={startRecording} disabled={isRecording}>
+          {isRecording ? 'Recording...' : 'Start Recording (5s)'}
+        </button>
+      )}
+      
+      {audioUrl && (
+        <div>
+          <h3>Processed Audio:</h3>
+          <audio controls src={audioUrl} />
+        </div>
+      )}
+    </div>
+  );
+}
+```
 
 ## Acknowledgments
 

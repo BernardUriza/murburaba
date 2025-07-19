@@ -165,7 +165,7 @@ export default function Home() {
               </svg>
             </div>
             <div className="stat-content">
-              <div className="stat-value">{isRNNoiseInitialized ? 'Active' : 'Ready'}</div>
+              <div className="stat-value">{isAudioEngineInitialized ? 'Active' : 'Ready'}</div>
               <div className="stat-label">Audio Engine</div>
             </div>
           </div>
@@ -286,7 +286,7 @@ export default function Home() {
                   disabled={isAudioEngineLoading}
                   className="modern-btn btn-initialize"
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className={isRNNoiseLoading ? 'spinning' : ''}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className={isAudioEngineLoading ? 'spinning' : ''}>
                     <path d="M21 12C21 16.97 16.97 21 12 21C7.03 21 3 16.97 3 12C3 7.03 7.03 3 12 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                     <path d="M18 3L21 3L21 6" stroke="currentColor" strokeWidth="2"/>
                   </svg>

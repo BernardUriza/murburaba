@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { createAudioEngine, AudioEngine, AudioEngineConfig } from './engines';
-import { ProcessingMetrics } from './engines/types';
+import { createAudioEngine, AudioEngine, AudioEngineConfig } from '../engines';
+import { ProcessingMetrics } from '../engines/types';
 
 export const useAudioEngine = (config: AudioEngineConfig = { engineType: 'rnnoise' }) => {
   const [isInitialized, setIsInitialized] = useState(false);
