@@ -18,7 +18,9 @@ export default function Home() {
     isRNNoiseInitialized,
     isRNNoiseLoading,
     rnnoiseError,
-    initializeRNNoise
+    initializeRNNoise,
+    isAggressiveMode,
+    setAggressiveMode
   } = useAudioRecorder({ initialChunkDuration: 2, enableNoiseSupression: true })
 
   return (
@@ -75,21 +77,15 @@ export default function Home() {
               />
             </div>
             
-            <div className="noise-reduction-control">
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={isNoiseSuppressionEnabled}
-                  onChange={(e) => setNoiseSuppressionEnabled(e.target.checked)}
-                  disabled={isRecording}
-                />
-                <span className="slider"></span>
-              </label>
-              <span className="control-label">
-                Reducción de ruido
-                {isNoiseSuppressionEnabled && ' ✓'}
-              </span>
-            </div>
+            <RNNoiseToggle
+              enabled={isNoiseSuppressionEnabled}
+              onToggle={setNoiseSuppressionEnabled}
+              disabled={isRecording}
+              sourceStream={null}
+              isRecording={isRecording}
+              useAggressive={isAggressiveMode}
+              onAggressiveToggle={setAggressiveMode}
+            />
             
             {isNoiseSuppressionEnabled && !isRNNoiseInitialized && !isRecording && (
               <button 

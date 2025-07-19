@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRNNoiseSimple } from '../lib/audio/useRNNoiseSimple';
+import { useRNNoiseAggressive } from '../lib/audio/useRNNoiseAggressive';
+import { useRNNoiseInt16 } from '../lib/audio/useRNNoiseInt16';
 
 interface RNNoiseToggleProps {
   enabled: boolean;
@@ -8,6 +10,8 @@ interface RNNoiseToggleProps {
   onProcessedStream?: (stream: MediaStream | null) => void;
   sourceStream: MediaStream | null;
   isRecording?: boolean;
+  useAggressive?: boolean;
+  onAggressiveToggle?: (aggressive: boolean) => void;
 }
 
 export default function RNNoiseToggle({ 
@@ -16,9 +20,18 @@ export default function RNNoiseToggle({
   disabled = false,
   onProcessedStream,
   sourceStream,
-  isRecording = false
+  isRecording = false,
+  useAggressive = false,
+  onAggressiveToggle
 }: RNNoiseToggleProps) {
-  const { isInitialized, isLoading, processStream, cleanup } = useRNNoiseSimple();
+  const simpleRNNoise = useRNNoiseSimple();
+  const aggressiveRNNoise = useRNNoiseAggressive();
+  const int16RNNoise = useRNNoiseInt16();
+  
+  // Use the appropriate hook based on mode
+  const rnNoise = useAggressive ? aggressiveRNNoise : simpleRNNoise;
+  const { isInitialized, isLoading, processStream, cleanup } = rnNoise;
+  
   const [error, setError] = useState<string | null>(null);
   const [localProcessedStream, setLocalProcessedStream] = useState<MediaStream | null>(null);
 
@@ -50,7 +63,7 @@ export default function RNNoiseToggle({
     };
 
     setupNoiseReduction();
-  }, [enabled, sourceStream, isInitialized]);
+  }, [enabled, sourceStream, isInitialized, useAggressive]);
   
   // Cleanup when recording stops
   useEffect(() => {
@@ -59,7 +72,7 @@ export default function RNNoiseToggle({
       setLocalProcessedStream(null);
       cleanup();
     }
-  }, [isRecording]);
+  }, [isRecording, cleanup]);
 
   const handleToggle = () => {
     if (!disabled && !isLoading) {
@@ -69,20 +82,39 @@ export default function RNNoiseToggle({
 
   return (
     <div className="noise-reduction-control">
-      <label className="switch">
-        <input
-          type="checkbox"
-          checked={enabled}
-          onChange={handleToggle}
-          disabled={disabled || isLoading}
-        />
-        <span className="slider"></span>
-      </label>
-      <span className="control-label">
-        Reducción de ruido
-        {isLoading && ' (cargando...)'}
-        {enabled && isInitialized && ' ✓'}
-      </span>
+      <div className="noise-toggle-main">
+        <label className="switch">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={handleToggle}
+            disabled={disabled || isLoading}
+          />
+          <span className="slider"></span>
+        </label>
+        <span className="control-label">
+          Reducción de ruido
+          {isLoading && ' (cargando...)'}
+          {enabled && isInitialized && ' ✓'}
+        </span>
+      </div>
+      
+      {enabled && onAggressiveToggle && (
+        <div className="noise-mode-toggle">
+          <label className="mode-switch">
+            <input
+              type="checkbox"
+              checked={useAggressive}
+              onChange={(e) => onAggressiveToggle(e.target.checked)}
+              disabled={disabled || isLoading || isRecording}
+            />
+            <span className="mode-label">
+              Modo agresivo {useAggressive ? '🔥' : '🌊'}
+            </span>
+          </label>
+        </div>
+      )}
+      
       {error && <div className="error-message">{error}</div>}
     </div>
   );

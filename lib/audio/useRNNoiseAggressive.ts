@@ -98,11 +98,8 @@ export const useRNNoiseAggressive = () => {
           const frame = rnnoiseRef.current.inputBuffer.splice(0, 480);
           const floatFrame = new Float32Array(frame);
           
-          // Pre-process: Apply high-pass filter to remove low-frequency noise
-          const highpassFrame = applyHighPassFilter(floatFrame, 80); // 80Hz cutoff
-          
-          // Copy to WASM heap
-          rnnoiseRef.current.module.HEAPF32.set(highpassFrame, rnnoiseRef.current.inputPtr >> 2);
+          // Copy original frame to WASM heap (no pre-filtering that might affect VAD)
+          rnnoiseRef.current.module.HEAPF32.set(floatFrame, rnnoiseRef.current.inputPtr >> 2);
           
           // Process with RNNoise
           const vadProb = rnnoiseRef.current.module._rnnoise_process_frame(
@@ -133,28 +130,35 @@ export const useRNNoiseAggressive = () => {
           // Apply multiple noise reduction techniques
           let processedFrame = outputData;
           
-          // 1. VAD-based gating with hysteresis
-          const vadThresholdHigh = 0.6;
-          const vadThresholdLow = 0.3;
+          // 1. VAD-based gating with hysteresis - adjusted for real VAD values
+          const vadThresholdHigh = 0.005;  // Based on actual VAD range
+          const vadThresholdLow = 0.0005;
           if (smoothedVAD < vadThresholdLow) {
-            // Strong attenuation when no voice
-            const attenuation = Math.pow(smoothedVAD / vadThresholdLow, 2) * 0.1;
+            // Very strong attenuation when no voice
+            const attenuation = Math.pow(smoothedVAD / vadThresholdLow, 4) * 0.01;
             processedFrame = processedFrame.map(s => s * attenuation);
           } else if (smoothedVAD < vadThresholdHigh) {
             // Gradual attenuation
-            const attenuation = 0.1 + 0.9 * ((smoothedVAD - vadThresholdLow) / (vadThresholdHigh - vadThresholdLow));
+            const attenuation = 0.01 + 0.99 * ((smoothedVAD - vadThresholdLow) / (vadThresholdHigh - vadThresholdLow));
             processedFrame = processedFrame.map(s => s * attenuation);
           }
           
           // 2. Spectral subtraction based on noise floor
-          if (frameEnergy < noiseFloor.current * 2) {
-            const attenuation = Math.max(0, 1 - (noiseFloor.current / frameEnergy));
+          if (frameEnergy < noiseFloor.current * 3 && smoothedVAD < 0.003) {
+            // Only apply when VAD is very low
+            const attenuation = Math.max(0.1, 1 - (noiseFloor.current / frameEnergy));
             processedFrame = processedFrame.map(s => s * attenuation);
           }
           
-          // 3. Smooth transitions to avoid artifacts
+          // 3. Apply high-pass filter after RNNoise processing
+          if (smoothedVAD < 0.002) {
+            // Only filter when very likely no speech
+            processedFrame = applyHighPassFilter(processedFrame, 60);
+          }
+          
+          // 4. Smooth transitions to avoid artifacts
           for (let i = 0; i < 480; i++) {
-            const smoothing = 0.1;
+            const smoothing = 0.05; // Less smoothing for faster response
             processedFrame[i] = processedFrame[i] * (1 - smoothing) + rnnoiseRef.current.previousFrame[i] * smoothing;
             rnnoiseRef.current.previousFrame[i] = processedFrame[i];
           }
@@ -163,10 +167,12 @@ export const useRNNoiseAggressive = () => {
           if (Math.random() < 0.02) {
             const maxIn = Math.max(...floatFrame.map(Math.abs));
             const maxOut = Math.max(...processedFrame.map(Math.abs));
+            const rawOut = Math.max(...outputData.map(Math.abs));
             console.log('[RNNoise Aggressive]',
                        '\n  VAD:', vadProb.toFixed(3), '(Smoothed:', smoothedVAD.toFixed(3) + ')',
                        '\n  Noise Floor:', noiseFloor.current.toFixed(4),
                        '\n  Frame Energy:', frameEnergy.toFixed(4),
+                       '\n  Max In:', maxIn.toFixed(4), 'RNNoise Out:', rawOut.toFixed(4), 'Final Out:', maxOut.toFixed(4),
                        '\n  Reduction:', maxIn > 0 ? ((1 - maxOut/maxIn) * 100).toFixed(1) + '%' : 'N/A');
           }
           

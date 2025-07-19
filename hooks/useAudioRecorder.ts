@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRNNoiseSimple } from '../lib/audio/useRNNoiseSimple';
+import { useRNNoiseAggressive } from '../lib/audio/useRNNoiseAggressive';
 
 export interface AudioChunk {
   id: number;
@@ -11,6 +12,7 @@ export interface AudioChunk {
 interface UseAudioRecorderProps {
   initialChunkDuration?: number;
   enableNoiseSupression?: boolean;
+  useAggressiveMode?: boolean;
 }
 
 interface UseAudioRecorderReturn {
@@ -27,16 +29,20 @@ interface UseAudioRecorderReturn {
   isRNNoiseLoading: boolean;
   rnnoiseError: string | null;
   initializeRNNoise: () => Promise<void>;
+  isAggressiveMode: boolean;
+  setAggressiveMode: (enabled: boolean) => void;
 }
 
 export const useAudioRecorder = ({ 
   initialChunkDuration = 2,
-  enableNoiseSupression = true
+  enableNoiseSupression = true,
+  useAggressiveMode = false
 }: UseAudioRecorderProps = {}): UseAudioRecorderReturn => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioChunks, setAudioChunks] = useState<AudioChunk[]>([]);
   const [chunkDuration, setChunkDuration] = useState(initialChunkDuration);
   const [isNoiseSuppressionEnabled, setNoiseSuppressionEnabled] = useState(enableNoiseSupression);
+  const [isAggressiveMode, setAggressiveMode] = useState(useAggressiveMode);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const originalRecorderRef = useRef<MediaRecorder | null>(null);
@@ -48,6 +54,11 @@ export const useAudioRecorder = ({
   const currentOriginalChunksRef = useRef<Blob[]>([]);
   const chunkIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
+  const simpleRNNoise = useRNNoiseSimple();
+  const aggressiveRNNoise = useRNNoiseAggressive();
+  
+  // Use the appropriate hook based on mode
+  const rnNoise = isAggressiveMode ? aggressiveRNNoise : simpleRNNoise;
   const { 
     processStream, 
     isInitialized, 
@@ -55,7 +66,7 @@ export const useAudioRecorder = ({
     error: rnnoiseError,
     cleanup: cleanupRNNoise,
     initializeRNNoise 
-  } = useRNNoiseSimple();
+  } = rnNoise;
   
   useEffect(() => {
     console.log('[Audio Recorder] Creating worker...');
@@ -327,6 +338,8 @@ export const useAudioRecorder = ({
     isRNNoiseInitialized: isInitialized,
     isRNNoiseLoading,
     rnnoiseError,
-    initializeRNNoise
+    initializeRNNoise,
+    isAggressiveMode,
+    setAggressiveMode
   };
 };

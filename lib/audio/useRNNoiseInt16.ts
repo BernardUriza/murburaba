@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-export const useRNNoiseSimple = () => {
+export const useRNNoiseInt16 = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +15,7 @@ export const useRNNoiseSimple = () => {
     setError(null);
     
     try {
-      console.log('[RNNoise Simple] Starting initialization...');
+      console.log('[RNNoise Int16] Starting initialization...');
       
       // Load script
       const script = document.createElement('script');
@@ -26,7 +26,7 @@ export const useRNNoiseSimple = () => {
         document.head.appendChild(script);
       });
       
-      console.log('[RNNoise Simple] Script loaded');
+      console.log('[RNNoise Int16] Script loaded');
       
       // Create module
       const createRNNWasmModule = (window as any).createRNNWasmModule;
@@ -39,7 +39,7 @@ export const useRNNoiseSimple = () => {
         }
       });
       
-      console.log('[RNNoise Simple] Module created');
+      console.log('[RNNoise Int16] Module created');
       
       // Create state
       const state = RNNoiseModule._rnnoise_create(0);
@@ -47,25 +47,25 @@ export const useRNNoiseSimple = () => {
         throw new Error('Failed to create RNNoise state');
       }
       
-      // Allocate memory for float32 samples (4 bytes per sample)
-      const inputPtr = RNNoiseModule._malloc(480 * 4);
-      const outputPtr = RNNoiseModule._malloc(480 * 4);
+      // Allocate memory for int16 samples (2 bytes per sample)
+      const inputPtr = RNNoiseModule._malloc(480 * 2);
+      const outputPtr = RNNoiseModule._malloc(480 * 2);
       
       if (!inputPtr || !outputPtr) {
         throw new Error('Failed to allocate memory');
       }
       
-      console.log('[RNNoise Simple] State:', state, 'Ptrs:', inputPtr, outputPtr);
+      console.log('[RNNoise Int16] State:', state, 'Ptrs:', inputPtr, outputPtr);
       
       // Initialize RNNoise with some warm-up frames
-      const silentFrame = new Float32Array(480);
+      const silentFrame = new Int16Array(480);
       for (let i = 0; i < 10; i++) {
-        RNNoiseModule.HEAPF32.set(silentFrame, inputPtr >> 2);
+        RNNoiseModule.HEAP16.set(silentFrame, inputPtr >> 1);
         RNNoiseModule._rnnoise_process_frame(state, outputPtr, inputPtr);
       }
-      console.log('[RNNoise Simple] Warmed up with 10 silent frames');
+      console.log('[RNNoise Int16] Warmed up with 10 silent frames');
       
-      // Store everything - reuse the allocated memory
+      // Store everything
       rnnoiseRef.current = {
         module: RNNoiseModule,
         state,
@@ -75,7 +75,7 @@ export const useRNNoiseSimple = () => {
         outputBuffer: []
       };
       
-      console.log('[RNNoise Simple] Ready for processing with state:', state);
+      console.log('[RNNoise Int16] Ready for processing');
       
       // Create audio context
       audioContextRef.current = new AudioContext({ sampleRate: 48000 });
@@ -101,9 +101,14 @@ export const useRNNoiseSimple = () => {
         while (rnnoiseRef.current.inputBuffer.length >= 480) {
           const frame = rnnoiseRef.current.inputBuffer.splice(0, 480);
           
-          // Copy float32 data directly to WASM heap
-          const floatFrame = new Float32Array(frame);
-          rnnoiseRef.current.module.HEAPF32.set(floatFrame, rnnoiseRef.current.inputPtr >> 2);
+          // Convert to int16
+          const int16Frame = new Int16Array(480);
+          for (let i = 0; i < 480; i++) {
+            int16Frame[i] = Math.max(-32768, Math.min(32767, Math.floor(frame[i] * 32768)));
+          }
+          
+          // Copy to WASM heap
+          rnnoiseRef.current.module.HEAP16.set(int16Frame, rnnoiseRef.current.inputPtr >> 1);
           
           // Process
           const vadProb = rnnoiseRef.current.module._rnnoise_process_frame(
@@ -112,62 +117,29 @@ export const useRNNoiseSimple = () => {
             rnnoiseRef.current.inputPtr
           );
           
-          // Get output - read from HEAPF32 directly
-          const outputData = new Float32Array(480);
+          // Get output - read from HEAP16 directly
+          const outputData = new Int16Array(480);
           for (let i = 0; i < 480; i++) {
-            outputData[i] = rnnoiseRef.current.module.HEAPF32[(rnnoiseRef.current.outputPtr >> 2) + i];
+            outputData[i] = rnnoiseRef.current.module.HEAP16[(rnnoiseRef.current.outputPtr >> 1) + i];
           }
-          
-          // Apply VAD-based gating - adjusted for real VAD values (0.001-0.01 range)
-          const vadThreshold = 0.001; // Very low threshold based on actual values
-          const vadHigh = 0.005; // High threshold for clear voice
-          
-          if (vadProb < vadThreshold) {
-            // Strong attenuation when no voice is detected
-            const attenuation = Math.pow(vadProb / vadThreshold, 2) * 0.1;
-            for (let i = 0; i < 480; i++) {
-              outputData[i] *= attenuation;
-            }
-          } else if (vadProb < vadHigh) {
-            // Gradual attenuation for low confidence
-            const attenuation = 0.1 + 0.9 * ((vadProb - vadThreshold) / (vadHigh - vadThreshold));
-            for (let i = 0; i < 480; i++) {
-              outputData[i] *= attenuation;
-            }
-          }
-          // If VAD >= 0.005, pass through without attenuation
           
           // Log occasionally with more detail
           if (Math.random() < 0.02) {
-            const maxIn = Math.max(...floatFrame.map(Math.abs));
+            const maxIn = Math.max(...int16Frame.map(Math.abs));
             const maxOut = Math.max(...outputData.map(Math.abs));
             
-            // Check first few samples of input and output
-            const inputSamples = [];
-            const outputSamples = [];
-            for (let i = 0; i < 5; i++) {
-              inputSamples.push(floatFrame[i]);
-              outputSamples.push(outputData[i]);
-            }
-            
-            // Also check what's in the heap before and after
-            const heapInput = [];
-            const heapOutput = [];
-            for (let i = 0; i < 5; i++) {
-              heapInput.push(rnnoiseRef.current.module.HEAPF32[(rnnoiseRef.current.inputPtr >> 2) + i]);
-              heapOutput.push(rnnoiseRef.current.module.HEAPF32[(rnnoiseRef.current.outputPtr >> 2) + i]);
-            }
-            
-            console.log('[RNNoise Simple] Processing:',
+            console.log('[RNNoise Int16] Processing:',
                        '\n  VAD:', vadProb.toFixed(3), 
-                       '\n  Max Input:', maxIn.toFixed(4), 'Max Output:', maxOut.toFixed(4),
-                       '\n  Gate Applied:', vadProb < vadThreshold ? `Yes (${(vadProb * 2).toFixed(2)}x)` : 'No',
+                       '\n  Max Input (int16):', maxIn, 'Max Output (int16):', maxOut,
+                       '\n  First input samples:', Array.from(int16Frame.slice(0, 5)),
+                       '\n  First output samples:', Array.from(outputData.slice(0, 5)),
                        '\n  Reduction:', maxIn > 0 ? ((1 - maxOut/maxIn) * 100).toFixed(1) + '%' : 'N/A');
           }
           
-          // Add processed float32 samples to output buffer
+          // Convert back to float32 and add to output buffer
           for (let i = 0; i < 480; i++) {
-            rnnoiseRef.current.outputBuffer.push(outputData[i]);
+            const floatSample = outputData[i] / 32768.0;
+            rnnoiseRef.current.outputBuffer.push(floatSample);
           }
         }
         
@@ -183,10 +155,10 @@ export const useRNNoiseSimple = () => {
       
       processorRef.current = processor;
       setIsInitialized(true);
-      console.log('[RNNoise Simple] Initialization complete!');
+      console.log('[RNNoise Int16] Initialization complete!');
       
     } catch (err) {
-      console.error('[RNNoise Simple] Error:', err);
+      console.error('[RNNoise Int16] Error:', err);
       setError(err instanceof Error ? err.message : String(err));
       throw err;
     } finally {
