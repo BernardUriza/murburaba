@@ -37,11 +37,13 @@ export function ChunkProcessingResults({
 }: ChunkProcessingResultsProps) {
   if (chunks.length === 0) {
     return (
-      <section className="chunks-section glass-panel">
-        <div className="no-chunks">
-          <div className="no-chunks-icon">🎵</div>
-          <div className="no-chunks-text">No chunks processed yet</div>
-          <div className="no-chunks-sub">Start recording to see processed audio chunks</div>
+      <section className="chunks-section">
+        <div className="glass-card text-center" style={{ padding: '4rem 2rem' }}>
+          <div className="no-chunks">
+            <div className="no-chunks-icon" style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.3 }}>🎵</div>
+            <h3 className="no-chunks-text" style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--neutral-700)' }}>No chunks processed yet</h3>
+            <p className="no-chunks-sub" style={{ fontSize: '1rem', color: 'var(--neutral-500)' }}>Start recording to see processed audio chunks</p>
+          </div>
         </div>
       </section>
     )

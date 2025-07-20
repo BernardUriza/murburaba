@@ -298,13 +298,13 @@ export default function Home() {
                     <span>Start Recording</span>
                   </button>
                   
-                  <div className="quick-settings">
-                    <span className="setting-label">⏱️ Chunks:</span>
-                    <div className="chunk-duration-pills">
+                  <div className="control-group" style={{ marginTop: '1rem' }}>
+                    <label className="control-label">⏱️ Chunk Duration</label>
+                    <div className="nav-pills" style={{ justifyContent: 'center' }}>
                       {[5, 8, 10, 15].map(duration => (
                         <button
                           key={duration}
-                          className={`pill ${chunkDuration === duration ? 'active' : ''}`}
+                          className={`nav-pill ${chunkDuration === duration ? 'active' : ''}`}
                           onClick={() => setChunkDuration(duration)}
                         >
                           {duration}s
@@ -396,33 +396,33 @@ export default function Home() {
         />
 
         {/* Floating Action Buttons */}
-        <div className="floating-button-group">
+        <div className="fab-container">
           {/* Audio Control Buttons */}
           {isInitialized && !isRecording && (
             <button 
-              className="floating-btn record-fab pulse"
+              className="fab"
               onClick={handleStartRecording}
               title="Start Recording"
             >
-              <span className="fab-icon">🎙️</span>
+              🎙️
             </button>
           )}
           
           {isRecording && !isPaused && (
             <>
               <button 
-                className="floating-btn pause-fab"
+                className="fab fab-secondary"
                 onClick={pauseRecording}
                 title="Pause Recording"
               >
-                <span className="fab-icon">⏸️</span>
+                ⏸️
               </button>
               <button 
-                className="floating-btn stop-fab"
+                className="fab fab-secondary"
                 onClick={stopRecording}
                 title="Stop Recording"
               >
-                <span className="fab-icon">⏹️</span>
+                ⏹️
               </button>
             </>
           )}
@@ -430,18 +430,18 @@ export default function Home() {
           {isRecording && isPaused && (
             <>
               <button 
-                className="floating-btn resume-fab pulse"
+                className="fab"
                 onClick={resumeRecording}
                 title="Resume Recording"
               >
-                <span className="fab-icon">▶️</span>
+                ▶️
               </button>
               <button 
-                className="floating-btn stop-fab"
+                className="fab fab-secondary"
                 onClick={stopRecording}
                 title="Stop Recording"
               >
-                <span className="fab-icon">⏹️</span>
+                ⏹️
               </button>
             </>
           )}
@@ -451,18 +451,18 @@ export default function Home() {
           
           {/* Settings and Metrics */}
           <button 
-            className="floating-btn settings-fab"
+            className="fab fab-secondary"
             onClick={() => setShowSettings(!showSettings)}
             title="Settings"
           >
-            <span className="fab-icon">⚙️</span>
+            ⚙️
           </button>
           <button 
-            className="floating-btn metrics-fab"
+            className="fab"
             onClick={() => setShowAdvancedMetrics(!showAdvancedMetrics)}
             title={showAdvancedMetrics ? 'Hide Advanced Metrics' : 'Show Advanced Metrics'}
           >
-            <span className="fab-icon">{showAdvancedMetrics ? '📉' : '📈'}</span>
+            {showAdvancedMetrics ? '📉' : '📈'}
           </button>
         </div>
         

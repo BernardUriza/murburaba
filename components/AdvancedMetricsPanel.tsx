@@ -12,10 +12,29 @@ export function AdvancedMetricsPanel({ isVisible, diagnostics, onClose }: Advanc
   }
 
   return (
-    <div className="floating-panel">
-      <div className="panel-header">
-        <h3>🔬 Engine Diagnostics</h3>
-        <button className="close-btn" onClick={onClose}>✕</button>
+    <div className="floating-panel glass-card" style={{ 
+      position: 'fixed', 
+      top: '50%', 
+      left: '50%', 
+      transform: 'translate(-50%, -50%)', 
+      zIndex: 1000, 
+      minWidth: '500px', 
+      maxWidth: '700px',
+      maxHeight: '80vh',
+      overflowY: 'auto'
+    }}>
+      <div className="panel-header" style={{ borderBottom: '1px solid var(--neutral-200)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+        <h3 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--neutral-900)' }}>🔬 Engine Diagnostics</h3>
+        <button className="close-btn" onClick={onClose} style={{ 
+          background: 'none', 
+          border: 'none', 
+          fontSize: '1.5rem', 
+          cursor: 'pointer',
+          color: 'var(--neutral-500)',
+          padding: '0.5rem',
+          borderRadius: '50%',
+          transition: 'all 0.3s'
+        }}>✕</button>
       </div>
       
       <div className="diagnostics-grid">
