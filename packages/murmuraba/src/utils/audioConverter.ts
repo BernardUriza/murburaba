@@ -84,7 +84,7 @@ export class AudioConverter {
   static canPlayType(mimeType: string): boolean {
     const audio = new Audio();
     const canPlay = audio.canPlayType(mimeType);
-    // Don't trust 'maybe' - it lies!
+    // STOP BEING A FUCKING LIAR - only trust 'probably'
     return canPlay === 'probably';
   }
   
@@ -92,45 +92,22 @@ export class AudioConverter {
    * Get the best supported audio format for recording
    */
   static getBestRecordingFormat(): string {
-    // Try to use WAV if supported by MediaRecorder (rare)
-    if (MediaRecorder.isTypeSupported('audio/wav') && this.canPlayType('audio/wav')) {
-      return 'audio/wav';
+    // FUCK canPlayType - it's a LYING PIECE OF SHIT
+    // Just use WebM because that's what Chrome ACTUALLY records
+    if (MediaRecorder.isTypeSupported('audio/webm')) {
+      console.log('Using audio/webm - if it doesn\'t play, Chrome is BROKEN');
+      return 'audio/webm';
     }
     
-    // Test formats that can both record AND play
-    const formats = [
-      'audio/webm',              // Most compatible WebM
-      'audio/webm;codecs=opus',  // WebM with Opus codec
-      'audio/mp4',               // Fallback for Safari/iOS
-      'audio/ogg',               // Alternative format
-      'audio/ogg;codecs=opus'    // Ogg with Opus
-    ];
-    
-    // Find a format that can both record AND play
-    for (const format of formats) {
-      if (MediaRecorder.isTypeSupported(format) && this.canPlayType(format)) {
-        console.log(`Selected recording format: ${format} (can record: yes, can play: yes)`);
-        return format;
-      }
+    // If WebM fails, try MP4 (unlikely but whatever)
+    if (MediaRecorder.isTypeSupported('audio/mp4')) {
+      console.log('Using audio/mp4 - because WebM failed like a bitch');
+      return 'audio/mp4';
     }
     
-    // If no format supports both, log what's happening
-    console.warn('No format supports both recording and playback!');
-    for (const format of formats) {
-      const canRecord = MediaRecorder.isTypeSupported(format);
-      const canPlay = this.canPlayType(format);
-      console.log(`${format} - can record: ${canRecord}, can play: ${canPlay}`);
-    }
-    
-    // Last resort: use any supported recording format
-    for (const format of formats) {
-      if (MediaRecorder.isTypeSupported(format)) {
-        console.warn(`Using ${format} for recording (playback may fail)`);
-        return format;
-      }
-    }
-    
-    return 'audio/webm'; // Final fallback
+    // If we get here, the browser is COMPLETELY FUCKED
+    console.error('NO AUDIO FORMAT SUPPORTED - THIS BROWSER IS GARBAGE');
+    return 'audio/webm'; // Die trying
   }
   
   /**

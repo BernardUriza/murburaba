@@ -200,6 +200,8 @@ export function useMurmubaraEngine(options = {}) {
                     if (previousChunkId && chunkRecordingsRef.current.has(previousChunkId)) {
                         const prevRecording = chunkRecordingsRef.current.get(previousChunkId);
                         prevRecording.finalized = true;
+                        // DON'T request data - let it accumulate naturally
+                        // Requesting data mid-recording creates INCOMPLETE blobs
                     }
                     // Initialize recording storage for this chunk
                     chunkRecordingsRef.current.set(chunkId, { processed: [], original: [], finalized: false });
@@ -234,52 +236,11 @@ export function useMurmubaraEngine(options = {}) {
                     }
                 }
             };
-            // Start continuous recording with timeslice
+            // Start recording with timeslice for real-time chunk collection
             recorder.start(100); // collect data every 100ms
             originalRecorder.start(100);
-            // Process recorded chunks periodically
-            processChunkIntervalRef.current = setInterval(() => {
-                chunkRecordingsRef.current.forEach((recordings, chunkId) => {
-                    // Only process if we have data and haven't already created URLs
-                    const needsProcessing = (recordings.processed.length > 0 || recordings.original.length > 0);
-                    const hasEnoughData = recordings.finalized || recordings.processed.length > 3 || recordings.original.length > 3;
-                    if (needsProcessing && hasEnoughData) {
-                        const chunk = recordingState.chunks.find(c => c.id === chunkId);
-                        // Skip if we already have URLs
-                        if (chunk && chunk.processedAudioUrl && chunk.originalAudioUrl) {
-                            return;
-                        }
-                        const processedBlob = recordings.processed.length > 0
-                            ? new Blob(recordings.processed, { type: mimeType })
-                            : null;
-                        const originalBlob = recordings.original.length > 0
-                            ? new Blob(recordings.original, { type: mimeType })
-                            : null;
-                        const processedUrl = processedBlob && processedBlob.size > 0 ? URL.createObjectURL(processedBlob) : undefined;
-                        const originalUrl = originalBlob && originalBlob.size > 0 ? URL.createObjectURL(originalBlob) : undefined;
-                        if (processedUrl || originalUrl) {
-                            setRecordingState(prev => ({
-                                ...prev,
-                                chunks: prev.chunks.map(chunk => {
-                                    if (chunk.id === chunkId) {
-                                        return {
-                                            ...chunk,
-                                            processedAudioUrl: processedUrl || chunk.processedAudioUrl,
-                                            originalAudioUrl: originalUrl || chunk.originalAudioUrl
-                                        };
-                                    }
-                                    return chunk;
-                                })
-                            }));
-                            // Clear the processed data to avoid reprocessing
-                            if (recordings.finalized) {
-                                recordings.processed = [];
-                                recordings.original = [];
-                            }
-                        }
-                    }
-                });
-            }, 500); // Check more frequently
+            // NO chunk processing during recording - it creates BROKEN audio
+            // Everything is processed in stopRecording after MediaRecorder flushes
             mediaRecorderRef.current = recorder;
             originalRecorderRef.current = originalRecorder;
             setRecordingState(prev => ({
@@ -306,8 +267,41 @@ export function useMurmubaraEngine(options = {}) {
         chunkRecordingsRef.current.forEach((recording) => {
             recording.finalized = true;
         });
-        // Give time for final data to be processed
+        // BRUTALLY PROCESS ALL CHUNKS AFTER 1 SECOND
+        // Give MediaRecorder time to flush its shit
         setTimeout(() => {
+            // Force process all chunks NOW
+            chunkRecordingsRef.current.forEach((recordings, chunkId) => {
+                if (recordings.processed.length > 0 || recordings.original.length > 0) {
+                    const chunk = recordingState.chunks.find(c => c.id === chunkId);
+                    if (chunk && !chunk.processedAudioUrl && !chunk.originalAudioUrl) {
+                        const mimeType = recordingMimeTypeRef.current;
+                        const processedBlob = recordings.processed.length > 0
+                            ? new Blob(recordings.processed, { type: mimeType })
+                            : null;
+                        const originalBlob = recordings.original.length > 0
+                            ? new Blob(recordings.original, { type: mimeType })
+                            : null;
+                        const processedUrl = processedBlob && processedBlob.size > 0 ? URL.createObjectURL(processedBlob) : undefined;
+                        const originalUrl = originalBlob && originalBlob.size > 0 ? URL.createObjectURL(originalBlob) : undefined;
+                        if (processedUrl || originalUrl) {
+                            setRecordingState(prev => ({
+                                ...prev,
+                                chunks: prev.chunks.map(c => {
+                                    if (c.id === chunkId) {
+                                        return {
+                                            ...c,
+                                            processedAudioUrl: processedUrl || c.processedAudioUrl,
+                                            originalAudioUrl: originalUrl || c.originalAudioUrl
+                                        };
+                                    }
+                                    return c;
+                                })
+                            }));
+                        }
+                    }
+                }
+            });
             if (streamController) {
                 streamController.stop();
             }
@@ -317,7 +311,7 @@ export function useMurmubaraEngine(options = {}) {
             if (originalStream) {
                 originalStream.getTracks().forEach(track => track.stop());
             }
-        }, 500);
+        }, 1000); // 1 second to ensure MediaRecorder flushes everything
         // Clear intervals
         if (processChunkIntervalRef.current) {
             clearInterval(processChunkIntervalRef.current);
