@@ -124,6 +124,9 @@ export default function Home() {
       
       console.log('Using MIME type for recording:', mimeType)
       
+      // Store the mime type globally for later use
+      ;(window as any).recordingMimeType = mimeType
+      
       const recorder = new MediaRecorder(processedStream, { mimeType })
       const originalRecorder = new MediaRecorder(stream, { mimeType })
       
@@ -312,8 +315,16 @@ export default function Home() {
         console.error('Audio element details:', {
           readyState: audio.readyState,
           networkState: audio.networkState,
-          error: audio.error
+          error: audio.error,
+          canPlayType: {
+            webm: audio.canPlayType('audio/webm'),
+            webmOpus: audio.canPlayType('audio/webm; codecs=opus'),
+            ogg: audio.canPlayType('audio/ogg'),
+            mp4: audio.canPlayType('audio/mp4'),
+            wav: audio.canPlayType('audio/wav')
+          }
         })
+        console.error('Recording MIME type:', (window as any).recordingMimeType)
       }
       
       audioRefs.current[audioKey].onended = () => {
@@ -327,6 +338,24 @@ export default function Home() {
     }
 
     const audio = audioRefs.current[audioKey]
+    
+    // Check if the audio element can play the format
+    const mimeType = (window as any).recordingMimeType || 'audio/webm'
+    const canPlay = audio.canPlayType(mimeType)
+    
+    if (!canPlay || canPlay === '') {
+      console.error(`Browser cannot play ${mimeType} format`)
+      console.error('Supported formats:', {
+        webm: audio.canPlayType('audio/webm'),
+        webmOpus: audio.canPlayType('audio/webm; codecs=opus'),
+        ogg: audio.canPlayType('audio/ogg'),
+        mp4: audio.canPlayType('audio/mp4')
+      })
+      
+      // Show error to user
+      setError(`Your browser cannot play ${mimeType} audio format. Try a different browser or enable audio codec support.`)
+      return
+    }
     
     if (chunk.isPlaying) {
       audio.pause()
@@ -343,7 +372,15 @@ export default function Home() {
       setProcessedChunks(prev => prev.map(c => ({ ...c, isPlaying: false })))
       
       // Play this audio
-      audio.play()
+      audio.play().catch(error => {
+        console.error('Failed to play audio:', error)
+        // Try to check if it's a format issue
+        if (error.name === 'NotSupportedError') {
+          console.error('Audio format not supported. The recording might be in a format that the browser cannot play.')
+          console.error('MIME type used for recording:', (window as any).recordingMimeType)
+          setError('Unable to play audio. The recording format may not be supported by your browser.')
+        }
+      })
       setProcessedChunks(prev => prev.map(c => 
         c.id === chunkId ? { ...c, isPlaying: true } : c
       ))
