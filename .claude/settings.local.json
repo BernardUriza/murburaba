@@ -105,7 +105,10 @@
       "WebFetch(domain:github.com)",
       "Bash(npx kill-port:*)",
       "Bash(npm version:*)",
-      "Bash(npm publish:*)"
+      "Bash(npm publish:*)",
+      "Bash(git restore:*)",
+      "Bash(md5sum:*)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }

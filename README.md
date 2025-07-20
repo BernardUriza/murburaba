@@ -1,10 +1,15 @@
 # Murmuraba - Advanced Real-time Audio Noise Reduction Engine
 
-A production-ready audio processing library and Next.js application featuring real-time noise reduction using RNNoise neural network, with advanced recording, chunking, and playback capabilities.
+A production-ready audio processing library and Next.js application featuring real-time noise reduction using RNNoise neural network, with **completely refactored clean architecture** (v1.3.0).
 
 ## 🎯 Overview
 
-Murmuraba provides a complete audio processing solution with a powerful React hook (`useMurmubaraEngine`) that handles everything from recording to playback, with automatic format conversion and cross-browser compatibility. Built on RNNoise technology, it delivers state-of-the-art noise suppression with an intuitive API.
+Murmuraba provides a complete audio processing solution with a powerful React hook (`useMurmubaraEngine`) that handles **everything internally** - from recording to playback, with automatic format conversion and cross-browser compatibility. Built on RNNoise technology, it delivers state-of-the-art noise suppression with an ultra-clean API.
+
+### ✨ **v1.3.0 - Clean Architecture**
+- **Frontend**: Pure UI layer (<100 lines) - just imports and renders
+- **Package**: All audio logic centralized in `murmuraba` package
+- **Zero Boilerplate**: Hook handles MediaRecorder, chunks, playback automatically
 
 ## 🚀 Features
 
@@ -17,14 +22,20 @@ Murmuraba provides a complete audio processing solution with a powerful React ho
 - **Performance Metrics**: Real-time latency, noise reduction, and processing metrics
 - **Waveform Visualization**: Live audio waveform display with synced playback
 
-### New Hook Features (v1.3.0)
-- **Complete Recording Pipeline**: Start, stop, pause, and resume recording with a single hook
-- **Automatic Format Conversion**: Converts WebM/Opus to WAV for universal playback
-- **Chunk Management**: Each chunk includes original and processed audio with metadata
-- **Playback Controls**: Toggle between original and processed audio for comparison
-- **Built-in Time Formatting**: Human-readable time display utilities
-- **Average Metrics Calculation**: Track average noise reduction across all chunks
-- **Memory Management**: Automatic cleanup of audio URLs and resources
+### ⚡ **v1.3.0 - Revolutionary Hook Features**
+- **🎯 Zero-Setup Recording**: `startRecording()` handles everything - MediaRecorder, streams, chunks
+- **🔄 WAV-First Strategy**: Prioritizes WAV format, auto-fallback to WebM/Opus
+- **📊 Built-in Chunk Management**: Automatic chunk creation with original/processed audio URLs
+- **🎵 Integrated Playback**: `toggleChunkPlayback()` and `toggleChunkExpansion()` included
+- **⏱️ Smart Time Formatting**: `formatTime()` for human-readable displays
+- **📈 Metrics Calculation**: `getAverageNoiseReduction()` across all chunks
+- **🧹 Auto Memory Management**: Automatic cleanup of audio URLs and resources
+- **🎛️ Complete State Management**: `recordingState` includes everything you need
+
+### 🏗️ **Clean Architecture Benefits**
+- **Frontend Developers**: Just import hook and render - no complex logic
+- **Package Users**: Full-featured audio processing in any React app
+- **Maintainers**: Clean separation between UI and audio processing
 
 ## 📋 Prerequisites
 
