@@ -1,5 +1,4 @@
 import { DiagnosticInfo } from 'murmuraba'
-import styles from './AdvancedMetricsPanel.module.css'
 
 interface AdvancedMetricsPanelProps {
   isVisible: boolean
@@ -13,72 +12,72 @@ export function AdvancedMetricsPanel({ isVisible, diagnostics, onClose }: Advanc
   }
 
   return (
-    <div className={styles.floatingPanel}>
-      <div className={styles.panelHeader}>
+    <div className="floating-panel">
+      <div className="panel-header">
         <h3>🔬 Engine Diagnostics</h3>
-        <button className={styles.closeBtn} onClick={onClose}>✕</button>
+        <button className="close-btn" onClick={onClose}>✕</button>
       </div>
       
-      <div className={styles.diagnosticsGrid}>
-        <div className={styles.diagnosticItem}>
-          <span className={styles.diagLabel}>Version:</span>
-          <span className={styles.diagValue}>{diagnostics.engineVersion}</span>
+      <div className="diagnostics-grid">
+        <div className="diagnostic-item">
+          <span className="diag-label">Version:</span>
+          <span className="diag-value">{diagnostics.engineVersion}</span>
         </div>
         
-        <div className={styles.diagnosticItem}>
-          <span className={styles.diagLabel}>WASM Status:</span>
-          <span className={styles.diagValue}>
+        <div className="diagnostic-item">
+          <span className="diag-label">WASM Status:</span>
+          <span className="diag-value">
             {diagnostics.wasmLoaded ? '✅ Loaded' : '❌ Not Loaded'}
           </span>
         </div>
         
-        <div className={styles.diagnosticItem}>
-          <span className={styles.diagLabel}>Active Processors:</span>
-          <span className={styles.diagValue}>{diagnostics.activeProcessors}</span>
+        <div className="diagnostic-item">
+          <span className="diag-label">Active Processors:</span>
+          <span className="diag-value">{diagnostics.activeProcessors}</span>
         </div>
         
-        <div className={styles.diagnosticItem}>
-          <span className={styles.diagLabel}>Memory Usage:</span>
-          <span className={styles.diagValue}>
+        <div className="diagnostic-item">
+          <span className="diag-label">Memory Usage:</span>
+          <span className="diag-value">
             {(diagnostics.memoryUsage / 1024 / 1024).toFixed(2)} MB
           </span>
         </div>
         
-        <div className={styles.diagnosticItem}>
-          <span className={styles.diagLabel}>Processing Time:</span>
-          <span className={styles.diagValue}>{diagnostics.processingTime.toFixed(2)}ms</span>
+        <div className="diagnostic-item">
+          <span className="diag-label">Processing Time:</span>
+          <span className="diag-value">{diagnostics.processingTime.toFixed(2)}ms</span>
         </div>
         
-        <div className={styles.diagnosticItem}>
-          <span className={styles.diagLabel}>Engine State:</span>
-          <span className={`${styles.diagValue} ${styles.state}`}>
+        <div className="diagnostic-item">
+          <span className="diag-label">Engine State:</span>
+          <span className="diag-value state">
             {diagnostics.engineState}
           </span>
         </div>
         
-        <div className={styles.diagnosticItem}>
-          <span className={styles.diagLabel}>Browser:</span>
-          <span className={styles.diagValue}>{diagnostics.browserInfo?.name || 'Unknown'}</span>
+        <div className="diagnostic-item">
+          <span className="diag-label">Browser:</span>
+          <span className="diag-value">{diagnostics.browserInfo?.name || 'Unknown'}</span>
         </div>
         
-        <div className={styles.diagnosticItem}>
-          <span className={styles.diagLabel}>Audio APIs:</span>
-          <span className={styles.diagValue}>
+        <div className="diagnostic-item">
+          <span className="diag-label">Audio APIs:</span>
+          <span className="diag-value">
             {diagnostics.browserInfo?.audioAPIsSupported ? '✅ Supported' : '❌ Limited'}
           </span>
         </div>
         
-        <div className={styles.diagnosticItem}>
-          <span className={styles.diagLabel}>Performance:</span>
-          <span className={styles.diagValue}>
+        <div className="diagnostic-item">
+          <span className="diag-label">Performance:</span>
+          <span className="diag-value">
             {diagnostics.memoryUsage < 50 * 1024 * 1024 ? '🟢 Good' : 
              diagnostics.memoryUsage < 100 * 1024 * 1024 ? '🟡 Moderate' : '🔴 High'}
           </span>
         </div>
         
-        <div className={styles.diagnosticItem}>
-          <span className={styles.diagLabel}>Uptime:</span>
-          <span className={styles.diagValue}>
+        <div className="diagnostic-item">
+          <span className="diag-label">Uptime:</span>
+          <span className="diag-value">
             Active
           </span>
         </div>

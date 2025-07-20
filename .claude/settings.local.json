@@ -108,7 +108,12 @@
       "Bash(npm publish:*)",
       "Bash(git restore:*)",
       "Bash(md5sum:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(taskkill:*)",
+      "Bash(del \"C:\\Users\\Bernard\\Documents\\GitHub\\murburaba\\styles\\Home.module.css\")",
+      "Bash(del \"C:\\Users\\Bernard\\Documents\\GitHub\\murburaba\\components\\AdvancedMetricsPanel.module.css\")",
+      "Bash(del \"C:\\Users\\Bernard\\Documents\\GitHub\\murburaba\\components\\ChunkProcessingResults.module.css\")",
+      "Bash(git log:*)"
     ],
     "deny": []
   }

@@ -1,5 +1,4 @@
 import { SyncedWaveforms } from './SyncedWaveforms'
-import styles from './ChunkProcessingResults.module.css'
 
 interface ProcessedChunk {
   id: string
@@ -38,28 +37,28 @@ export function ChunkProcessingResults({
 }: ChunkProcessingResultsProps) {
   if (chunks.length === 0) {
     return (
-      <section className={`${styles.chunksSection} ${styles.glassPanel}`}>
-        <div className={styles.noChunks}>
-          <div className={styles.noChunksIcon}>🎵</div>
-          <div className={styles.noChunksText}>No chunks processed yet</div>
-          <div className={styles.noChunksSub}>Start recording to see processed audio chunks</div>
+      <section className="chunks-section glass-panel">
+        <div className="no-chunks">
+          <div className="no-chunks-icon">🎵</div>
+          <div className="no-chunks-text">No chunks processed yet</div>
+          <div className="no-chunks-sub">Start recording to see processed audio chunks</div>
         </div>
       </section>
     )
   }
 
   return (
-    <section className={`${styles.chunksSection} ${styles.glassPanel}`}>
-      <div className={styles.chunksHeader}>
-        <h2 className={styles.sectionTitle}>
+    <section className="chunks-section glass-panel">
+      <div className="chunks-header">
+        <h2 className="section-title">
           🎵 Processed Chunks ({chunks.length})
         </h2>
-        <div className={styles.chunksStats}>
-          <span className={styles.statBadge}>
+        <div className="chunks-stats">
+          <span className="stat-badge">
             📉 Avg Reduction: {averageNoiseReduction.toFixed(1)}%
           </span>
           <button 
-            className={`${styles.controlBtn} ${styles.secondary} ${styles.clearBtn}`}
+            className="control-btn secondary clear-btn"
             onClick={onClearAll}
           >
             <span>🧹 Clear All</span>
@@ -67,7 +66,7 @@ export function ChunkProcessingResults({
         </div>
       </div>
       
-      <div className={styles.chunksList}>
+      <div className="chunks-list">
         {chunks.map((chunk, index) => (
           <ChunkItem
             key={chunk.id}
@@ -99,44 +98,44 @@ function ChunkItem({
   onToggleExpansion 
 }: ChunkItemProps) {
   const chunkClasses = [
-    styles.chunkItem,
-    chunk.isExpanded ? styles.expanded : '',
-    chunk.isPlaying ? styles.playing : ''
+    'chunk-item',
+    chunk.isExpanded ? 'expanded' : '',
+    chunk.isPlaying ? 'playing' : ''
   ].filter(Boolean).join(' ')
 
   return (
     <div className={chunkClasses}>
-      <div className={styles.chunkMain}>
+      <div className="chunk-main">
         {/* Chunk Info */}
-        <div className={styles.chunkInfo}>
-          <span className={styles.chunkNumber}>
-            <span className={styles.chunkIcon}>🎼</span>
+        <div className="chunk-info">
+          <span className="chunk-number">
+            <span className="chunk-icon">🎼</span>
             #{index + 1}
           </span>
-          <span className={styles.chunkDuration}>
+          <span className="chunk-duration">
             ⏱️ {(chunk.duration / 1000).toFixed(1)}s
           </span>
         </div>
         
         {/* Metrics */}
-        <div className={styles.chunkStats}>
-          <div className={styles.statItem}>
-            <span className={styles.statIcon}>🔇</span>
-            <span className={styles.statValue}>{chunk.noiseRemoved.toFixed(1)}%</span>
-            <span className={styles.statLabel}>reduced</span>
+        <div className="chunk-stats">
+          <div className="stat-item">
+            <span className="stat-icon">🔇</span>
+            <span className="stat-value">{chunk.noiseRemoved.toFixed(1)}%</span>
+            <span className="stat-label">reduced</span>
           </div>
-          <div className={styles.statItem}>
-            <span className={styles.statIcon}>⚡</span>
-            <span className={styles.statValue}>{chunk.metrics.processingLatency.toFixed(0)}ms</span>
-            <span className={styles.statLabel}>latency</span>
+          <div className="stat-item">
+            <span className="stat-icon">⚡</span>
+            <span className="stat-value">{chunk.metrics.processingLatency.toFixed(0)}ms</span>
+            <span className="stat-label">latency</span>
           </div>
         </div>
         
         {/* Noise Meter */}
-        <div className={styles.chunkNoiseMeter}>
-          <div className={styles.noiseBar}>
+        <div className="chunk-noise-meter">
+          <div className="noise-bar">
             <div 
-              className={styles.noiseFill}
+              className="noise-fill"
               style={{
                 width: `${chunk.noiseRemoved}%`,
                 background: `linear-gradient(90deg, 
@@ -148,44 +147,44 @@ function ChunkItem({
         </div>
         
         {/* Action Buttons */}
-        <div className={styles.chunkActions}>
+        <div className="chunk-actions">
           <button 
-            className={`${styles.actionBtn} ${styles.playOriginal} ${
-              chunk.isPlaying && isSelected ? styles.active : ''
+            className={`action-btn play-original ${
+              chunk.isPlaying && isSelected ? 'active' : ''
             }`}
             onClick={() => onTogglePlayback(chunk.id, 'original')}
             disabled={!chunk.originalAudioUrl}
             title="Play Original"
           >
-            <span className={styles.btnIcon}>🔊</span>
-            <span className={styles.btnText}>Original</span>
+            <span className="btn-icon">🔊</span>
+            <span className="btn-text">Original</span>
           </button>
           <button 
-            className={`${styles.actionBtn} ${styles.playProcessed} ${
-              chunk.isPlaying && isSelected ? styles.active : ''
+            className={`action-btn play-processed ${
+              chunk.isPlaying && isSelected ? 'active' : ''
             }`}
             onClick={() => onTogglePlayback(chunk.id, 'processed')}
             disabled={!chunk.processedAudioUrl}
             title="Play Enhanced"
           >
-            <span className={styles.btnIcon}>🎵</span>
-            <span className={styles.btnText}>Enhanced</span>
+            <span className="btn-icon">🎵</span>
+            <span className="btn-text">Enhanced</span>
           </button>
           <button 
-            className={`${styles.actionBtn} ${styles.expandBtn}`}
+            className="action-btn expand-btn"
             onClick={() => onToggleExpansion(chunk.id)}
             title={chunk.isExpanded ? 'Collapse' : 'Expand'}
           >
-            <span className={styles.btnIcon}>{chunk.isExpanded ? '▲' : '▼'}</span>
+            <span className="btn-icon">{chunk.isExpanded ? '▲' : '▼'}</span>
           </button>
         </div>
       </div>
       
       {/* Expanded Details */}
       {chunk.isExpanded && (
-        <div className={styles.chunkDetails}>
+        <div className="chunk-details">
           {/* Synced Waveforms */}
-          <div className={styles.waveformsSection}>
+          <div className="waveforms-section">
             <SyncedWaveforms
               originalAudioUrl={chunk.originalAudioUrl}
               processedAudioUrl={chunk.processedAudioUrl}
@@ -199,42 +198,42 @@ function ChunkItem({
           </div>
           
           {/* Technical Details */}
-          <div className={styles.technicalDetails}>
-            <h4 className={styles.detailsTitle}>Technical Details</h4>
-            <div className={styles.detailGrid}>
-              <div className={styles.detailItem}>
-                <span className={styles.detailLabel}>Start Time:</span>
-                <span className={styles.detailValue}>
+          <div className="technical-details">
+            <h4 className="details-title">Technical Details</h4>
+            <div className="detail-grid">
+              <div className="detail-item">
+                <span className="detail-label">Start Time:</span>
+                <span className="detail-value">
                   {new Date(chunk.startTime).toLocaleTimeString()}
                 </span>
               </div>
-              <div className={styles.detailItem}>
-                <span className={styles.detailLabel}>End Time:</span>
-                <span className={styles.detailValue}>
+              <div className="detail-item">
+                <span className="detail-label">End Time:</span>
+                <span className="detail-value">
                   {new Date(chunk.endTime).toLocaleTimeString()}
                 </span>
               </div>
-              <div className={styles.detailItem}>
-                <span className={styles.detailLabel}>Processing Time:</span>
-                <span className={styles.detailValue}>
+              <div className="detail-item">
+                <span className="detail-label">Processing Time:</span>
+                <span className="detail-value">
                   {chunk.metrics.processingLatency.toFixed(2)}ms
                 </span>
               </div>
-              <div className={styles.detailItem}>
-                <span className={styles.detailLabel}>Frame Count:</span>
-                <span className={styles.detailValue}>
+              <div className="detail-item">
+                <span className="detail-label">Frame Count:</span>
+                <span className="detail-value">
                   {chunk.metrics.frameCount} frames
                 </span>
               </div>
-              <div className={styles.detailItem}>
-                <span className={styles.detailLabel}>Input Level:</span>
-                <span className={styles.detailValue}>
+              <div className="detail-item">
+                <span className="detail-label">Input Level:</span>
+                <span className="detail-value">
                   {(chunk.metrics.inputLevel * 100).toFixed(1)}%
                 </span>
               </div>
-              <div className={styles.detailItem}>
-                <span className={styles.detailLabel}>Output Level:</span>
-                <span className={styles.detailValue}>
+              <div className="detail-item">
+                <span className="detail-label">Output Level:</span>
+                <span className="detail-value">
                   {(chunk.metrics.outputLevel * 100).toFixed(1)}%
                 </span>
               </div>

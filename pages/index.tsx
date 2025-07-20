@@ -1,12 +1,11 @@
 import Head from 'next/head'
+import React, { useState } from 'react'
 import { useMurmubaraEngine } from 'murmuraba'
 import { WaveformAnalyzer } from '../components/WaveformAnalyzer'
 import { BuildInfo } from '../components/BuildInfo'
 import { AdvancedMetricsPanel } from '../components/AdvancedMetricsPanel'
 import { ChunkProcessingResults } from '../components/ChunkProcessingResults'
-import { useState } from 'react'
 import Swal from 'sweetalert2'
-import styles from '../styles/Home.module.css'
 
 export default function Home() {
   const {
@@ -105,7 +104,8 @@ export default function Home() {
         <meta name="description" content="Real-time neural audio enhancement with advanced chunk processing" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      <main className={styles.modernContainer}>
+      <main className="main-container">
+        <div className="prairie-grass"></div>
         {/* Floating Settings Panel */}
         {showSettings && (
           <div className="floating-panel settings-panel">
@@ -148,19 +148,24 @@ export default function Home() {
         )}
 
         {/* Header with Glassmorphism */}
-        <div className="glass-header">
+        <div className="studio-header">
           <div className="header-content">
-            <h1 className="studio-title">
+            <div className="logo-area">
+              <div className="logo-icon">🌾</div>
+              <div>
+                <h1 className="studio-title">
               <span className="logo-emoji">🎵</span>
-              <span className="gradient-text">Murmuraba</span>
+              Murmuraba
               <span className="version-badge">v1.3.0</span>
             </h1>
-            <p className="studio-subtitle">✨ Neural Audio Processing Engine</p>
+                <p className="studio-subtitle">Neural Audio Processing Engine</p>
+              </div>
+            </div>
           </div>
           
           {/* Engine Status Bar */}
-          <div className="engine-status-bar">
-            <div className={`status-indicator ${engineState}`}>
+          <div className="nav-pills">
+            <button className={`nav-pill ${engineState === 'ready' ? 'active' : ''}`}>
               <span className="status-dot"></span>
               <span className="status-text">
                 {engineState === 'uninitialized' && '💤 Not Initialized'}
@@ -169,7 +174,7 @@ export default function Home() {
                 {engineState === 'processing' && '🎙️ Processing'}
                 {engineState === 'error' && '❌ Error'}
               </span>
-            </div>
+            </button>
             {diagnostics && (
               <div className="engine-info">
                 <span className="info-badge">
@@ -191,74 +196,84 @@ export default function Home() {
           <div className="recording-status-bar">
             <div className="recording-indicator pulse">
               <span className="recording-dot"></span>
-              <span className="recording-label">Recording</span>
+              <span className="badge badge-recording">Recording</span>
               <span className="recording-time">{formatTime(recordingTime)}</span>
             </div>
-            {isPaused && <span className="pause-badge">PAUSED</span>}
+            {isPaused && <span className="badge badge-warning">PAUSED</span>}
           </div>
         )}
 
         {/* Real-time Metrics Dashboard */}
         {metrics && isRecording && (
-          <section className="metrics-dashboard glass-panel">
-            <h2 className="section-title">📊 Real-time Processing Metrics</h2>
-            <div className="metrics-grid">
-              <div className="metric-card glow">
-                <div className="metric-icon">🔇</div>
-                <div className="metric-value">{metrics.noiseReductionLevel.toFixed(1)}%</div>
-                <div className="metric-label">Noise Reduction</div>
-                <div className="metric-bar">
-                  <div 
-                    className="metric-fill noise-reduction" 
-                    style={{width: `${metrics.noiseReductionLevel}%`}}
-                  ></div>
+          <section className="stats-section">
+            <div className="glass-card">
+              <h2 className="panel-title">Real-time Processing Metrics</h2>
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <div className="stat-icon">🔇</div>
+                  <div className="stat-content">
+                    <div className="stat-value">{metrics.noiseReductionLevel.toFixed(1)}%</div>
+                    <div className="stat-label">Noise Reduction</div>
+                  </div>
+                  <div className="metric-bar">
+                    <div 
+                      className="metric-fill noise-reduction" 
+                      style={{width: `${metrics.noiseReductionLevel}%`}}
+                    ></div>
+                  </div>
                 </div>
-              </div>
               
-              <div className="metric-card glow">
-                <div className="metric-icon">⚡</div>
-                <div className="metric-value">{metrics.processingLatency.toFixed(2)}ms</div>
-                <div className="metric-label">Latency</div>
-                <div className="metric-bar">
-                  <div 
-                    className="metric-fill latency" 
-                    style={{width: `${Math.min(100, metrics.processingLatency * 2)}%`}}
-                  ></div>
+                <div className="stat-card">
+                  <div className="stat-icon">⚡</div>
+                  <div className="stat-content">
+                    <div className="stat-value">{metrics.processingLatency.toFixed(2)}ms</div>
+                    <div className="stat-label">Latency</div>
+                  </div>
+                  <div className="metric-bar">
+                    <div 
+                      className="metric-fill latency" 
+                      style={{width: `${Math.min(100, metrics.processingLatency * 2)}%`}}
+                    ></div>
+                  </div>
                 </div>
-              </div>
               
-              <div className="metric-card glow">
-                <div className="metric-icon">📊</div>
-                <div className="metric-value">{(metrics.inputLevel * 100).toFixed(0)}%</div>
-                <div className="metric-label">Input Level</div>
-                <div className="metric-bar">
-                  <div 
-                    className="metric-fill input" 
-                    style={{width: `${metrics.inputLevel * 100}%`}}
-                  ></div>
+                <div className="stat-card">
+                  <div className="stat-icon">📊</div>
+                  <div className="stat-content">
+                    <div className="stat-value">{(metrics.inputLevel * 100).toFixed(0)}%</div>
+                    <div className="stat-label">Input Level</div>
+                  </div>
+                  <div className="metric-bar">
+                    <div 
+                      className="metric-fill input" 
+                      style={{width: `${metrics.inputLevel * 100}%`}}
+                    ></div>
+                  </div>
                 </div>
-              </div>
               
-              <div className="metric-card glow">
-                <div className="metric-icon">🎯</div>
-                <div className="metric-value">{metrics.frameCount}</div>
-                <div className="metric-label">Frames Processed</div>
+                <div className="stat-card">
+                  <div className="stat-icon">🎯</div>
+                  <div className="stat-content">
+                    <div className="stat-value">{metrics.frameCount}</div>
+                    <div className="stat-label">Frames Processed</div>
+                  </div>
               </div>
+            </div>
             </div>
           </section>
         )}
 
         {/* Control Panel */}
         {!isRecording && (
-          <section className="control-panel glass-panel">
-            <div className="controls-header">
-              <h2 className="section-title">🎛️ Audio Controls</h2>
+          <section className="recording-panel glass-card">
+            <div className="panel-header">
+              <h2 className="panel-title">Audio Controls</h2>
             </div>
 
             <div className="controls-grid">
               {!isInitialized && !isLoading && (
                 <button 
-                  className="control-btn primary initialize-btn glow"
+                  className="btn btn-primary"
                   onClick={initialize}
                 >
                   <span className="btn-icon">⚡</span>
@@ -276,7 +291,7 @@ export default function Home() {
               {isInitialized && !isRecording && (
                 <>
                   <button 
-                    className="control-btn primary record-btn pulse"
+                    className="btn btn-primary"
                     onClick={handleStartRecording}
                   >
                     <span className="btn-icon">🎙️</span>
@@ -303,7 +318,7 @@ export default function Home() {
               {isRecording && (
                 <div className="recording-controls">
                   <button 
-                    className="control-btn stop"
+                    className="btn btn-secondary"
                     onClick={stopRecording}
                   >
                     <span className="btn-icon">⏹️</span>
@@ -312,7 +327,7 @@ export default function Home() {
                   
                   {!isPaused ? (
                     <button 
-                      className="control-btn pause"
+                      className="btn btn-ghost"
                       onClick={pauseRecording}
                     >
                       <span className="btn-icon">⏸️</span>
@@ -320,7 +335,7 @@ export default function Home() {
                     </button>
                   ) : (
                     <button 
-                      className="control-btn resume pulse"
+                      className="btn btn-primary"
                       onClick={resumeRecording}
                     >
                       <span className="btn-icon">▶️</span>
@@ -332,7 +347,7 @@ export default function Home() {
 
               {isInitialized && !isRecording && (
                 <button 
-                  className="control-btn danger destroy-btn"
+                  className="btn btn-ghost"
                   onClick={() => destroy(true)}
                 >
                   <span className="btn-icon">🗑️</span>
