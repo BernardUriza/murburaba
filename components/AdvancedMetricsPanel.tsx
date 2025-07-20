@@ -64,7 +64,7 @@ export function AdvancedMetricsPanel({ isVisible, diagnostics, onClose }: Advanc
         <div className={styles.diagnosticItem}>
           <span className={styles.diagLabel}>Audio APIs:</span>
           <span className={styles.diagValue}>
-            {diagnostics.browserInfo?.audioAPIsSuppor ? '✅ Supported' : '❌ Limited'}
+            {diagnostics.browserInfo?.audioAPIsSupported ? '✅ Supported' : '❌ Limited'}
           </span>
         </div>
         
@@ -79,7 +79,7 @@ export function AdvancedMetricsPanel({ isVisible, diagnostics, onClose }: Advanc
         <div className={styles.diagnosticItem}>
           <span className={styles.diagLabel}>Uptime:</span>
           <span className={styles.diagValue}>
-            {Math.floor((Date.now() - (diagnostics.startTime || Date.now())) / 1000)}s
+            Active
           </span>
         </div>
       </div>

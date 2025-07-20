@@ -1,5 +1,5 @@
 import Head from 'next/head'
-import { useMurmubaraEngine } from 'murmuraba'
+import { useMurmubaraEngine } from '../packages/murmuraba/src/hooks/useMurmubaraEngine'
 import { WaveformAnalyzer } from '../components/WaveformAnalyzer'
 import { BuildInfo } from '../components/BuildInfo'
 import { SyncedWaveforms } from '../components/SyncedWaveforms'
