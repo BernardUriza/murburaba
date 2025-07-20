@@ -39,6 +39,17 @@ export { ErrorCodes } from './types';
 export { useMurmubaraEngine } from './hooks/useMurmubaraEngine';
 export { useAudioEngine } from './hooks/useAudioEngine';
 
+// Audio converter utility export
+export { AudioConverter, getAudioConverter } from './utils/audioConverter';
+
+// Export types from the hook
+export type { 
+  ProcessedChunk, 
+  RecordingState, 
+  UseMurmubaraEngineOptions, 
+  UseMurmubaraEngineReturn 
+} from './hooks/useMurmubaraEngine';
+
 // Import for default export
 import { useMurmubaraEngine } from './hooks/useMurmubaraEngine';
 import { useAudioEngine } from './hooks/useAudioEngine';

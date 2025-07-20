@@ -1,19 +1,30 @@
-# RNNoise Next.js - Real-time Audio Noise Reduction
+# Murmuraba - Advanced Real-time Audio Noise Reduction Engine
 
-A modern implementation of RNNoise (Recurrent Neural Network for Audio Noise Suppression) in a Next.js application, demonstrating real-time audio processing in the browser using WebAssembly.
+A production-ready audio processing library and Next.js application featuring real-time noise reduction using RNNoise neural network, with advanced recording, chunking, and playback capabilities.
 
 ## 🎯 Overview
 
-This project showcases how to integrate RNNoise, a state-of-the-art noise suppression library, into a web frontend using Next.js and TypeScript. It provides real-time audio noise reduction with side-by-side comparison of processed and original audio.
+Murmuraba provides a complete audio processing solution with a powerful React hook (`useMurmubaraEngine`) that handles everything from recording to playback, with automatic format conversion and cross-browser compatibility. Built on RNNoise technology, it delivers state-of-the-art noise suppression with an intuitive API.
 
 ## 🚀 Features
 
+### Core Features
 - **Real-time Noise Reduction**: Process audio streams using RNNoise neural network
-- **Audio Comparison**: Side-by-side playback of original vs processed audio
-- **Waveform Visualization**: Real-time audio waveform display
-- **Chunked Recording**: Record audio in configurable chunks (1-10 seconds)
-- **Energy-based Gating**: Additional silence detection for improved noise reduction
-- **Zero Dependencies**: Uses only RNNoise WASM, no external audio libraries
+- **Advanced Chunked Recording**: Automatic audio chunking with configurable duration
+- **Multi-format Support**: Automatic audio format detection and conversion
+- **Cross-browser Playback**: Built-in audio converter ensures playback compatibility
+- **Comprehensive State Management**: Full recording state with pause/resume support
+- **Performance Metrics**: Real-time latency, noise reduction, and processing metrics
+- **Waveform Visualization**: Live audio waveform display with synced playback
+
+### New Hook Features (v1.3.0)
+- **Complete Recording Pipeline**: Start, stop, pause, and resume recording with a single hook
+- **Automatic Format Conversion**: Converts WebM/Opus to WAV for universal playback
+- **Chunk Management**: Each chunk includes original and processed audio with metadata
+- **Playback Controls**: Toggle between original and processed audio for comparison
+- **Built-in Time Formatting**: Human-readable time display utilities
+- **Average Metrics Calculation**: Track average noise reduction across all chunks
+- **Memory Management**: Automatic cleanup of audio URLs and resources
 
 ## 📋 Prerequisites
 
@@ -41,25 +52,154 @@ npm run dev
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
+## 🎨 Using the NPM Package
+
+### Installation
+```bash
+npm install murmuraba
+# or
+yarn add murmuraba
+```
+
+### Basic Usage
+```typescript
+import { useMurmubaraEngine } from 'murmuraba';
+
+function MyAudioApp() {
+  const {
+    // State
+    isInitialized,
+    recordingState,
+    metrics,
+    diagnostics,
+    
+    // Recording controls
+    startRecording,
+    stopRecording,
+    pauseRecording,
+    resumeRecording,
+    clearRecordings,
+    
+    // Playback controls
+    toggleChunkPlayback,
+    toggleChunkExpansion,
+    
+    // Utilities
+    formatTime,
+    getAverageNoiseReduction
+  } = useMurmubaraEngine({
+    autoInitialize: true,
+    defaultChunkDuration: 8
+  });
+
+  return (
+    <div>
+      <button onClick={() => startRecording()}>
+        Start Recording
+      </button>
+      
+      {recordingState.chunks.map(chunk => (
+        <div key={chunk.id}>
+          <span>Chunk {chunk.id}: {formatTime(chunk.duration / 1000)}</span>
+          <button onClick={() => toggleChunkPlayback(chunk.id, 'original')}>
+            Play Original
+          </button>
+          <button onClick={() => toggleChunkPlayback(chunk.id, 'processed')}>
+            Play Processed
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Hook API Reference
+
+#### Options
+```typescript
+interface UseMurmubaraEngineOptions {
+  autoInitialize?: boolean;          // Auto-initialize on mount (default: false)
+  defaultChunkDuration?: number;      // Chunk duration in seconds (default: 8)
+  noiseReductionLevel?: string;      // 'low' | 'medium' | 'high' (default: 'high')
+  bufferSize?: number;               // Audio buffer size (default: 2048)
+  logLevel?: string;                 // Logging level
+}
+```
+
+#### Return Values
+```typescript
+interface UseMurmubaraEngineReturn {
+  // State
+  isInitialized: boolean;
+  isLoading: boolean;
+  error: string | null;
+  engineState: EngineState;
+  metrics: ProcessingMetrics | null;
+  diagnostics: DiagnosticInfo | null;
+  recordingState: RecordingState;
+  currentStream: MediaStream | null;
+  
+  // Actions
+  initialize: () => Promise<void>;
+  destroy: (force?: boolean) => Promise<void>;
+  startRecording: (chunkDuration?: number) => Promise<void>;
+  stopRecording: () => void;
+  pauseRecording: () => void;
+  resumeRecording: () => void;
+  clearRecordings: () => void;
+  toggleChunkPlayback: (chunkId: string, audioType: 'processed' | 'original') => Promise<void>;
+  toggleChunkExpansion: (chunkId: string) => void;
+  
+  // Utilities
+  formatTime: (seconds: number) => string;
+  getAverageNoiseReduction: () => number;
+  resetError: () => void;
+}
+```
+
+#### Recording State
+```typescript
+interface RecordingState {
+  isRecording: boolean;
+  isPaused: boolean;
+  recordingTime: number;
+  chunks: ProcessedChunk[];
+}
+
+interface ProcessedChunk {
+  id: string;
+  startTime: number;
+  endTime: number;
+  duration: number;
+  noiseRemoved: number;
+  metrics: ChunkMetrics;
+  processedAudioUrl?: string;
+  originalAudioUrl?: string;
+  isPlaying: boolean;
+  isExpanded: boolean;
+}
+```
+
 ## 🏗️ Project Structure
 
 ```
 murburaba/
+├── packages/murmuraba/          # NPM package source
+│   ├── src/
+│   │   ├── hooks/
+│   │   │   └── useMurmubaraEngine.ts  # Main hook with all features
+│   │   ├── utils/
+│   │   │   └── audioConverter.ts      # Audio format converter
+│   │   ├── core/                      # Core engine components
+│   │   └── index.ts                   # Package exports
 ├── components/
-│   ├── RNNoiseToggle.tsx      # Noise reduction toggle component
-│   └── WaveformAnalyzer.tsx   # Audio waveform visualization
+│   ├── WaveformAnalyzer.tsx   # Audio waveform visualization
+│   └── SyncedWaveforms.tsx    # Dual waveform display
 ├── hooks/
-│   └── useAudioRecorder.ts    # Main audio recording hook
-├── lib/audio/
-│   └── useRNNoise.ts          # RNNoise WebAssembly integration
-├── public/
-│   ├── audio-recorder.worker.js   # Web Worker for chunk timing
-│   ├── rnnoise-fixed.js          # RNNoise module loader
-│   └── dist/
-│       ├── rnnoise.wasm          # RNNoise WebAssembly binary
-│       └── rnnoise.js            # WASM loader
+│   └── useMurmubaraEngine.ts  # Re-exports from package
 └── pages/
-    └── index.tsx              # Main application
+    └── index.tsx              # Demo application
 ```
 
 ## 🔧 Technical Implementation

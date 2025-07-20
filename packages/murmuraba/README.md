@@ -17,8 +17,20 @@ Real-time audio noise reduction for web applications with advanced chunked proce
 - 🎛️ **Advanced configuration** options
 - 🚀 **Zero dependencies** (except for RNNoise WASM)
 
-## What's New in v1.2.0 🎉
+## What's New in v1.3.0 🎉
 
+### Complete React Hook with All Features
+The `useMurmubaraEngine` hook now includes everything you need for audio processing:
+
+- **Full Recording Pipeline**: Start, stop, pause, and resume recording with built-in chunking
+- **Automatic Format Conversion**: Seamlessly converts WebM/Opus to WAV for universal playback
+- **Advanced State Management**: Complete recording state with time tracking and chunk management
+- **Built-in Audio Playback**: Toggle between original and processed audio with a single function
+- **Cross-browser Compatibility**: Automatic format detection and conversion for all browsers
+- **Memory Management**: Automatic cleanup of audio URLs and resources
+- **Utility Functions**: Time formatting, average metrics calculation, and more
+
+### Previous Features (v1.2.0)
 - **Chunked Processing**: Process audio in configurable chunks with detailed metrics
 - **Enhanced API**: Complete stream control with pause/resume functionality
 - **Better Cleanup**: Proper destruction of all resources including workers
@@ -62,46 +74,112 @@ controller.resume();  // Resume processing
 controller.stop();    // Stop and cleanup
 ```
 
-## React Hook Usage
+## React Hook Usage - Complete Example
 
 ```tsx
 import { useMurmubaraEngine } from 'murmuraba';
 
 function AudioComponent() {
   const {
+    // State
     isInitialized,
     isLoading,
     error,
+    recordingState,
     metrics,
-    processStream,
-    processStreamChunked
+    diagnostics,
+    
+    // Recording controls
+    startRecording,
+    stopRecording,
+    pauseRecording,
+    resumeRecording,
+    clearRecordings,
+    
+    // Playback controls
+    toggleChunkPlayback,
+    toggleChunkExpansion,
+    
+    // Utilities
+    formatTime,
+    getAverageNoiseReduction
   } = useMurmubaraEngine({
     autoInitialize: true,
+    defaultChunkDuration: 8,  // 8 second chunks
     noiseReductionLevel: 'high'
   });
 
-  const startRecording = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    
-    // Option 1: Simple processing
-    const controller = await processStream(stream);
-    
-    // Option 2: Chunked processing with callbacks
-    const controller = await processStreamChunked(stream, {
-      chunkDuration: 5000, // 5 seconds
-      onChunkProcessed: (chunk) => {
-        console.log(`Noise removed: ${chunk.noiseRemoved}%`);
-      }
-    });
-  };
-
   return (
     <div>
+      {/* Recording Controls */}
+      <div>
+        {!recordingState.isRecording ? (
+          <button onClick={() => startRecording()}>
+            Start Recording
+          </button>
+        ) : (
+          <>
+            <button onClick={stopRecording}>Stop</button>
+            {recordingState.isPaused ? (
+              <button onClick={resumeRecording}>Resume</button>
+            ) : (
+              <button onClick={pauseRecording}>Pause</button>
+            )}
+            <span>Recording: {formatTime(recordingState.recordingTime)}</span>
+          </>
+        )}
+      </div>
+
+      {/* Real-time Metrics */}
       {metrics && (
         <div>
-          Noise Reduction: {metrics.noiseReductionLevel.toFixed(1)}%
-          Latency: {metrics.processingLatency.toFixed(2)}ms
+          <p>Noise Reduction: {metrics.noiseReductionLevel.toFixed(1)}%</p>
+          <p>Latency: {metrics.processingLatency.toFixed(2)}ms</p>
+          <p>Average Reduction: {getAverageNoiseReduction().toFixed(1)}%</p>
         </div>
+      )}
+
+      {/* Recorded Chunks */}
+      <div>
+        {recordingState.chunks.map((chunk, index) => (
+          <div key={chunk.id}>
+            <h4>Chunk #{index + 1}</h4>
+            <p>Duration: {formatTime(chunk.duration / 1000)}</p>
+            <p>Noise Removed: {chunk.noiseRemoved.toFixed(1)}%</p>
+            
+            <button 
+              onClick={() => toggleChunkPlayback(chunk.id, 'original')}
+              disabled={!chunk.originalAudioUrl}
+            >
+              {chunk.isPlaying ? 'Stop' : 'Play'} Original
+            </button>
+            
+            <button 
+              onClick={() => toggleChunkPlayback(chunk.id, 'processed')}
+              disabled={!chunk.processedAudioUrl}
+            >
+              {chunk.isPlaying ? 'Stop' : 'Play'} Processed
+            </button>
+            
+            <button onClick={() => toggleChunkExpansion(chunk.id)}>
+              {chunk.isExpanded ? 'Hide' : 'Show'} Details
+            </button>
+            
+            {chunk.isExpanded && (
+              <div>
+                <p>Start: {new Date(chunk.startTime).toLocaleTimeString()}</p>
+                <p>End: {new Date(chunk.endTime).toLocaleTimeString()}</p>
+                <p>Processing Latency: {chunk.metrics.processingLatency.toFixed(2)}ms</p>
+                <p>Frames: {chunk.metrics.frameCount}</p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Clear All */}
+      {recordingState.chunks.length > 0 && (
+        <button onClick={clearRecordings}>Clear All Recordings</button>
       )}
     </div>
   );

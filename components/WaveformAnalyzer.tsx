@@ -7,6 +7,7 @@ interface WaveformAnalyzerProps {
   color?: string;
   isActive?: boolean;
   isPaused?: boolean;
+  hideControls?: boolean;
 }
 
 export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({ 
@@ -15,7 +16,8 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   label, 
   color = '#667eea',
   isActive = true,
-  isPaused = false
+  isPaused = false,
+  hideControls = false
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -44,6 +46,18 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       }
     };
   }, []);
+
+  // Initialize audio URL when hideControls is true and handle external playback
+  useEffect(() => {
+    if (audioUrl && hideControls && audioRef.current) {
+      initializeAudio();
+      
+      // Handle external playback control
+      if (!isPaused && analyser) {
+        draw();
+      }
+    }
+  }, [audioUrl, hideControls, isPaused]);
 
   const initializeLiveStream = async () => {
     if (!stream || audioContext) return;
@@ -210,13 +224,24 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     const drawVisual = () => {
       animationRef.current = requestAnimationFrame(drawVisual);
 
+      if (hideControls && isPaused) {
+        // Stop animation when paused in external control mode
+        return;
+      }
+      
       analyser.getByteTimeDomainData(dataArray);
 
-      ctx.fillStyle = 'rgb(20, 20, 20)';
+      // Clear canvas with gradient background
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, 'rgba(10, 10, 20, 0.8)');
+      gradient.addColorStop(1, 'rgba(20, 20, 40, 0.8)');
+      ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 3;
       ctx.strokeStyle = color;
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = color;
       ctx.beginPath();
 
       const sliceWidth = canvas.width / bufferLength;
@@ -237,26 +262,29 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
 
       ctx.lineTo(canvas.width, canvas.height / 2);
       ctx.stroke();
+      ctx.shadowBlur = 0;
 
       // Draw amplitude meter
-      let maxValue = 0;
+      let sum = 0;
       for (let i = 0; i < dataArray.length; i++) {
-        if (dataArray[i] > maxValue) {
-          maxValue = dataArray[i];
-        }
+        sum += Math.abs(dataArray[i] - 128);
       }
-      const amplitude = maxValue - 128;
-      const normalizedAmplitude = amplitude / 128;
+      const average = sum / dataArray.length;
+      const normalizedAmplitude = average / 128;
       
-      ctx.fillStyle = color;
+      // Amplitude bar with gradient
+      const ampGradient = ctx.createLinearGradient(10, 0, 110, 0);
+      ampGradient.addColorStop(0, color);
+      ampGradient.addColorStop(1, color + '88');
+      ctx.fillStyle = ampGradient;
       ctx.fillRect(10, 10, normalizedAmplitude * 100, 10);
       
-      ctx.strokeStyle = 'white';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
       ctx.strokeRect(10, 10, 100, 10);
       
       ctx.fillStyle = 'white';
       ctx.font = '12px monospace';
-      ctx.fillText(`Amplitude: ${(normalizedAmplitude * 100).toFixed(1)}%`, 10, 35);
+      ctx.fillText(`Level: ${(normalizedAmplitude * 100).toFixed(1)}%`, 10, 35);
     };
 
     drawVisual();
@@ -305,24 +333,34 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   if (audioUrl) {
     return (
       <div className="waveform-analyzer">
-        {label && <h4>{label}</h4>}
+        {label && <h4 style={{ color: color }}>{label}</h4>}
         <canvas 
           ref={canvasRef} 
           width={300} 
           height={150} 
           style={{ width: '100%', height: '150px', backgroundColor: '#141414' }}
         />
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '10px' }}>
-          <button onClick={handlePlay} className="btn btn-primary">
-            {isPlaying ? '⏸️ Pausar' : '▶️ Reproducir'}
-          </button>
+        {!hideControls && (
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '10px' }}>
+            <button onClick={handlePlay} className="btn btn-primary">
+              {isPlaying ? '⏸️ Pausar' : '▶️ Reproducir'}
+            </button>
+            <audio 
+              ref={audioRef} 
+              src={audioUrl}
+              onEnded={() => setIsPlaying(false)}
+              style={{ display: 'none' }}
+            />
+          </div>
+        )}
+        {hideControls && (
           <audio 
             ref={audioRef} 
             src={audioUrl}
             onEnded={() => setIsPlaying(false)}
             style={{ display: 'none' }}
           />
-        </div>
+        )}
       </div>
     );
   }

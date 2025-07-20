@@ -2,6 +2,7 @@ import Head from 'next/head'
 import { useMurmubaraEngine } from '../hooks/useMurmubaraEngine'
 import { WaveformAnalyzer } from '../components/WaveformAnalyzer'
 import { BuildInfo } from '../components/BuildInfo'
+import { SyncedWaveforms } from '../components/SyncedWaveforms'
 import { useState, useEffect, useRef } from 'react'
 import type { StreamController, ChunkMetrics } from '../types'
 import { getAudioConverter, AudioConverter } from '../utils/audioConverter'
@@ -797,21 +798,54 @@ export default function Home() {
                   {/* Expanded Details */}
                   {chunk.isExpanded && (
                     <div className="chunk-details">
-                      <div className="detail-item">
-                        <span className="detail-label">Start Time:</span>
-                        <span className="detail-value">{new Date(chunk.startTime).toLocaleTimeString()}</span>
+                      {/* Synced Waveforms */}
+                      <div className="waveforms-section">
+                        <SyncedWaveforms
+                          originalAudioUrl={chunk.originalAudioUrl}
+                          processedAudioUrl={chunk.processedAudioUrl}
+                          isPlaying={chunk.isPlaying}
+                          onPlayingChange={(playing) => {
+                            if (playing) {
+                              toggleChunkPlayback(chunk.id, 'processed')
+                            } else {
+                              // Stop playback
+                              setProcessedChunks(prev => prev.map(c => 
+                                c.id === chunk.id ? { ...c, isPlaying: false } : c
+                              ))
+                            }
+                          }}
+                        />
                       </div>
-                      <div className="detail-item">
-                        <span className="detail-label">End Time:</span>
-                        <span className="detail-value">{new Date(chunk.endTime).toLocaleTimeString()}</span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Processing Time:</span>
-                        <span className="detail-value">{chunk.metrics.processingLatency.toFixed(2)}ms</span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Frame Count:</span>
-                        <span className="detail-value">{chunk.metrics.frameCount} frames</span>
+                      
+                      {/* Technical Details */}
+                      <div className="technical-details mt-4">
+                        <h4 className="text-sm font-semibold text-gray-400 mb-2">Technical Details</h4>
+                        <div className="detail-grid">
+                          <div className="detail-item">
+                            <span className="detail-label">Start Time:</span>
+                            <span className="detail-value">{new Date(chunk.startTime).toLocaleTimeString()}</span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">End Time:</span>
+                            <span className="detail-value">{new Date(chunk.endTime).toLocaleTimeString()}</span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">Processing Time:</span>
+                            <span className="detail-value">{chunk.metrics.processingLatency.toFixed(2)}ms</span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">Frame Count:</span>
+                            <span className="detail-value">{chunk.metrics.frameCount} frames</span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">Input Level:</span>
+                            <span className="detail-value">{(chunk.metrics.inputLevel * 100).toFixed(1)}%</span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">Output Level:</span>
+                            <span className="detail-value">{(chunk.metrics.outputLevel * 100).toFixed(1)}%</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
