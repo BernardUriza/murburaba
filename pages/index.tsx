@@ -4,6 +4,7 @@ import { WaveformAnalyzer } from '../components/WaveformAnalyzer'
 import { BuildInfo } from '../components/BuildInfo'
 import { useState, useEffect, useRef } from 'react'
 import type { StreamController, ChunkMetrics } from '../types'
+import { getAudioConverter, AudioConverter } from '../utils/audioConverter'
 
 interface ProcessedChunk extends ChunkMetrics {
   id: string
@@ -116,11 +117,16 @@ export default function Home() {
       // Record processed audio - detect supported mime type
       const processedStream = controller.stream
       
-      // Check for supported audio formats
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' :
-                      MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' :
-                      MediaRecorder.isTypeSupported('audio/ogg;codecs=opus') ? 'audio/ogg;codecs=opus' :
-                      'audio/webm' // fallback
+      // Check for supported audio formats - prefer formats that can be played back
+      const mimeType = (() => {
+        // Try MP4 first as it has the best browser support
+        if (MediaRecorder.isTypeSupported('audio/mp4')) return 'audio/mp4';
+        // Then try WebM
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) return 'audio/webm;codecs=opus';
+        if (MediaRecorder.isTypeSupported('audio/webm')) return 'audio/webm';
+        if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) return 'audio/ogg;codecs=opus';
+        return 'audio/webm'; // fallback
+      })()
       
       console.log('Using MIME type for recording:', mimeType)
       
@@ -286,7 +292,7 @@ export default function Home() {
     setProcessedChunks([])
   }
 
-  const toggleChunkPlayback = (chunkId: string, audioType: 'processed' | 'original') => {
+  const toggleChunkPlayback = async (chunkId: string, audioType: 'processed' | 'original') => {
     const chunk = processedChunks.find(c => c.id === chunkId)
     if (!chunk) {
       console.error('Chunk not found:', chunkId)
@@ -301,6 +307,21 @@ export default function Home() {
     }
 
     const audioKey = `${chunkId}-${audioType}`
+    
+    // Check if we need to convert the audio
+    let playableUrl = audioUrl
+    const mimeType = (window as any).recordingMimeType || 'audio/webm'
+    
+    if (!AudioConverter.canPlayType(mimeType)) {
+      console.log('Converting audio from', mimeType, 'to WAV for playback...')
+      try {
+        const converter = getAudioConverter()
+        playableUrl = await converter.convertBlobUrl(audioUrl)
+        console.log('Audio converted successfully')
+      } catch (error) {
+        console.error('Failed to convert audio:', error)
+      }
+    }
     
     if (!audioRefs.current[audioKey]) {
       audioRefs.current[audioKey] = new Audio()
@@ -334,28 +355,10 @@ export default function Home() {
       }
       
       // Set the source after adding event handlers
-      audioRefs.current[audioKey].src = audioUrl
+      audioRefs.current[audioKey].src = playableUrl
     }
 
     const audio = audioRefs.current[audioKey]
-    
-    // Check if the audio element can play the format
-    const mimeType = (window as any).recordingMimeType || 'audio/webm'
-    const canPlay = audio.canPlayType(mimeType)
-    
-    if (!canPlay || canPlay === '') {
-      console.error(`Browser cannot play ${mimeType} format`)
-      console.error('Supported formats:', {
-        webm: audio.canPlayType('audio/webm'),
-        webmOpus: audio.canPlayType('audio/webm; codecs=opus'),
-        ogg: audio.canPlayType('audio/ogg'),
-        mp4: audio.canPlayType('audio/mp4')
-      })
-      
-      // Show error to user
-      setError(`Your browser cannot play ${mimeType} audio format. Try a different browser or enable audio codec support.`)
-      return
-    }
     
     if (chunk.isPlaying) {
       audio.pause()
@@ -378,7 +381,7 @@ export default function Home() {
         if (error.name === 'NotSupportedError') {
           console.error('Audio format not supported. The recording might be in a format that the browser cannot play.')
           console.error('MIME type used for recording:', (window as any).recordingMimeType)
-          setError('Unable to play audio. The recording format may not be supported by your browser.')
+          alert('Unable to play audio. The recording format may not be supported by your browser.')
         }
       })
       setProcessedChunks(prev => prev.map(c => 
