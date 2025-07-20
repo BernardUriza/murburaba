@@ -152,16 +152,8 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     const waveformData = new Uint8Array(bufferLength);
 
     const drawVisual = () => {
-      if (!isActive || isPaused) {
-        animationRef.current = requestAnimationFrame(() => drawVisual());
-        return;
-      }
-
+      // Keep animation running but show paused state
       animationRef.current = requestAnimationFrame(drawVisual);
-
-      // Get frequency data for visualization effects
-      analyserNode.getByteFrequencyData(dataArray);
-      analyserNode.getByteTimeDomainData(waveformData);
 
       // Clear canvas with gradient background
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
@@ -169,6 +161,16 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       gradient.addColorStop(1, 'rgba(20, 20, 40, 0.8)');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Only update data when active and not paused
+      if (isActive && !isPaused) {
+        analyserNode.getByteFrequencyData(dataArray);
+        analyserNode.getByteTimeDomainData(waveformData);
+      } else {
+        // Show flat line when paused
+        dataArray.fill(0);
+        waveformData.fill(128);
+      }
 
       // Draw frequency bars in background
       const barWidth = (canvas.width / bufferLength) * 2.5;
@@ -237,13 +239,23 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       
       // Add real-time indicator
       if (stream) {
-        ctx.fillStyle = '#4caf50';
-        ctx.beginPath();
-        ctx.arc(canvas.width - 20, 20, 5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = 'white';
-        ctx.font = '10px monospace';
-        ctx.fillText('LIVE', canvas.width - 50, 25);
+        if (isActive && !isPaused) {
+          ctx.fillStyle = '#4caf50';
+          ctx.beginPath();
+          ctx.arc(canvas.width - 20, 20, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = 'white';
+          ctx.font = '10px monospace';
+          ctx.fillText('LIVE', canvas.width - 50, 25);
+        } else if (isPaused) {
+          ctx.fillStyle = '#ff9800';
+          ctx.beginPath();
+          ctx.arc(canvas.width - 20, 20, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = 'white';
+          ctx.font = '10px monospace';
+          ctx.fillText('PAUSED', canvas.width - 60, 25);
+        }
       }
     };
 
@@ -262,13 +274,13 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
 
     const drawVisual = () => {
       animationRef.current = requestAnimationFrame(drawVisual);
-
-      if (hideControls && isPaused) {
-        // Stop animation when paused in external control mode
-        return;
-      }
       
-      analyser.getByteTimeDomainData(dataArray);
+      // Keep drawing but show paused state
+      if (hideControls && isPaused) {
+        dataArray.fill(128); // Flat line when paused
+      } else {
+        analyser.getByteTimeDomainData(dataArray);
+      }
 
       // Clear canvas with gradient background
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);

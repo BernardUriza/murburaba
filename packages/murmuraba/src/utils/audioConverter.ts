@@ -91,28 +91,40 @@ export class AudioConverter {
    * Get the best supported audio format for recording
    */
   static getBestRecordingFormat(): string {
-    // Try to use WAV if supported by MediaRecorder
-    if (MediaRecorder.isTypeSupported('audio/wav')) {
+    // Try to use WAV if supported by MediaRecorder (rare)
+    if (MediaRecorder.isTypeSupported('audio/wav') && this.canPlayType('audio/wav')) {
       return 'audio/wav';
     }
     
-    // Prefer formats with better browser playback support
+    // Test formats that can both record AND play
     const formats = [
-      'audio/mp4',
-      'audio/webm',
-      'audio/webm;codecs=opus',
-      'audio/ogg;codecs=opus'
+      'audio/webm',              // Most compatible WebM
+      'audio/webm;codecs=opus',  // WebM with Opus codec
+      'audio/mp4',               // Fallback for Safari/iOS
+      'audio/ogg',               // Alternative format
+      'audio/ogg;codecs=opus'    // Ogg with Opus
     ];
     
+    // Find a format that can both record AND play
     for (const format of formats) {
       if (MediaRecorder.isTypeSupported(format) && this.canPlayType(format)) {
+        console.log(`Selected recording format: ${format} (can record: yes, can play: yes)`);
         return format;
       }
     }
     
-    // Fallback to any supported format
+    // If no format supports both, log what's happening
+    console.warn('No format supports both recording and playback!');
+    for (const format of formats) {
+      const canRecord = MediaRecorder.isTypeSupported(format);
+      const canPlay = this.canPlayType(format);
+      console.log(`${format} - can record: ${canRecord}, can play: ${canPlay}`);
+    }
+    
+    // Last resort: use any supported recording format
     for (const format of formats) {
       if (MediaRecorder.isTypeSupported(format)) {
+        console.warn(`Using ${format} for recording (playback may fail)`);
         return format;
       }
     }

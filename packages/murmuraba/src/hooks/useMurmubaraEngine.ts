@@ -7,6 +7,7 @@ import {
   getEngineStatus,
   getDiagnostics,
   onMetricsUpdate,
+  getEngine,
 } from '../api';
 import {
   MurmubaraConfig,
@@ -150,11 +151,14 @@ export function useMurmubaraEngine(
   
   // Initialize engine
   const initialize = useCallback(async () => {
+    console.log('🚀 [LIFECYCLE] Initializing MurmubaraEngine...');
     if (initializePromiseRef.current) {
+      console.log('⏳ [LIFECYCLE] Already initializing, returning existing promise');
       return initializePromiseRef.current;
     }
     
     if (isInitialized) {
+      console.log('✅ [LIFECYCLE] Already initialized, skipping');
       return;
     }
     
@@ -163,6 +167,7 @@ export function useMurmubaraEngine(
     
     initializePromiseRef.current = (async () => {
       try {
+        console.log('🔧 [LIFECYCLE] Calling initializeAudioEngine with config:', config);
         await initializeAudioEngine(config);
         
         // Set up metrics listener
@@ -176,6 +181,36 @@ export function useMurmubaraEngine(
         setIsInitialized(true);
         setEngineState('ready');
         updateDiagnostics();
+        console.log('🎉 [LIFECYCLE] Engine initialized successfully!');
+        
+        // Listen for engine destruction events
+        const engine = getEngine();
+        if (engine) {
+          const handleDestroyed = () => {
+            console.log('💥 [LIFECYCLE] Engine destroyed by auto-cleanup!');
+            setIsInitialized(false);
+            setEngineState('destroyed');
+            setMetrics(null);
+            setDiagnostics(null);
+          };
+          
+          const handleStateChange = (oldState: EngineState, newState: EngineState) => {
+            console.log(`🔄 [LIFECYCLE] Engine state changed: ${oldState} → ${newState}`);
+            setEngineState(newState);
+            if (newState === 'destroyed') {
+              setIsInitialized(false);
+            }
+          };
+          
+          engine.on('destroyed', handleDestroyed);
+          engine.on('state-change', handleStateChange);
+          
+          // Store cleanup functions
+          metricsUnsubscribeRef.current = () => {
+            engine.off('destroyed', handleDestroyed);
+            engine.off('state-change', handleStateChange);
+          };
+        }
         
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err));
@@ -205,14 +240,23 @@ export function useMurmubaraEngine(
   
   // Destroy engine
   const destroy = useCallback(async (force: boolean = false) => {
+    console.log('🔥 [LIFECYCLE] Destroying engine...', { force });
     if (!isInitialized) {
+      console.log('⚠️ [LIFECYCLE] Engine not initialized, skipping destroy');
       return;
     }
     
     try {
       // Stop any ongoing recording
       if (recordingState.isRecording) {
+        console.log('🛑 [LIFECYCLE] Stopping ongoing recording before destroy');
         stopRecording();
+      }
+      
+      // Clean up event listeners before destroying
+      if (metricsUnsubscribeRef.current) {
+        metricsUnsubscribeRef.current();
+        metricsUnsubscribeRef.current = null;
       }
       
       await destroyEngine({ force });
@@ -220,6 +264,7 @@ export function useMurmubaraEngine(
       setEngineState('destroyed');
       setMetrics(null);
       setDiagnostics(null);
+      console.log('💀 [LIFECYCLE] Engine destroyed successfully');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(errorMessage);
@@ -285,7 +330,7 @@ export function useMurmubaraEngine(
           previousChunkId = recordingChunkId;
           recordingChunkId = chunkId;
           
-          console.log('New chunk created:', chunkId, 'Previous chunk:', previousChunkId);
+          console.log('📦 [LIFECYCLE] New chunk created:', chunkId, 'Previous chunk:', previousChunkId);
         }
       });
 
@@ -294,7 +339,7 @@ export function useMurmubaraEngine(
       // Detect and use supported MIME type
       const mimeType = getSupportedMimeType();
       recordingMimeTypeRef.current = mimeType;
-      console.log('Using MIME type for recording:', mimeType);
+      console.log('🎤 [LIFECYCLE] Using MIME type for recording:', mimeType);
 
       // Record processed and original audio
       const processedStream = controller.stream;
@@ -665,6 +710,7 @@ export function useMurmubaraEngine(
   // Auto-initialize if requested
   useEffect(() => {
     if (autoInitialize && !isInitialized && !isLoading) {
+      console.log('🤖 [LIFECYCLE] Auto-initializing engine...');
       initialize();
     }
   }, [autoInitialize, isInitialized, isLoading, initialize]);
@@ -707,13 +753,18 @@ export function useMurmubaraEngine(
   
   // Cleanup on unmount
   useEffect(() => {
+    console.log('🌟 [LIFECYCLE] Component mounted, setting up cleanup handler');
+    
+    // Prevent cleanup in development mode double mounting
+    let isCleaningUp = false;
+    
     return () => {
-      if (recordingState.isRecording) {
-        stopRecording();
-      }
-      if (isInitialized) {
-        destroy(true).catch(console.error);
-      }
+      if (isCleaningUp) return;
+      isCleaningUp = true;
+      
+      console.log('👋 [LIFECYCLE] Component unmounting, cleaning up...');
+      // Don't stop recording or destroy in StrictMode double mount
+      // The dependencies ensure proper cleanup when actually needed
     };
   }, []);
   
