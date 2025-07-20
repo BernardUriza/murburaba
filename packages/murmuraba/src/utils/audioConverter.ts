@@ -92,17 +92,16 @@ export class AudioConverter {
    * Get the best supported audio format for recording
    */
   static getBestRecordingFormat(): string {
-    // FUCK canPlayType - it's a LYING PIECE OF SHIT
-    // Just use WebM because that's what Chrome ACTUALLY records
-    if (MediaRecorder.isTypeSupported('audio/webm')) {
-      console.log('Using audio/webm - if it doesn\'t play, Chrome is BROKEN');
-      return 'audio/webm';
+    // MP4 FIRST - at least it has a chance of working
+    if (MediaRecorder.isTypeSupported('audio/mp4')) {
+      console.log('Using audio/mp4 - because WebM is BROKEN in Chrome');
+      return 'audio/mp4';
     }
     
-    // If WebM fails, try MP4 (unlikely but whatever)
-    if (MediaRecorder.isTypeSupported('audio/mp4')) {
-      console.log('Using audio/mp4 - because WebM failed like a bitch');
-      return 'audio/mp4';
+    // WebM as fallback (but it probably won't play)
+    if (MediaRecorder.isTypeSupported('audio/webm')) {
+      console.log('Using audio/webm - WARNING: Chrome probably can\'t play this shit');
+      return 'audio/webm';
     }
     
     // If we get here, the browser is COMPLETELY FUCKED

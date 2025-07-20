@@ -317,23 +317,13 @@ export function useMurmubaraEngine(
             chunks: [...prev.chunks, enhancedChunk]
           }));
           
-          // Finalize previous chunk if exists
-          if (previousChunkId && chunkRecordingsRef.current.has(previousChunkId)) {
-            const prevRecording = chunkRecordingsRef.current.get(previousChunkId)!;
-            prevRecording.finalized = true;
-            
-            // DON'T request data - let it accumulate naturally
-            // Requesting data mid-recording creates INCOMPLETE blobs
+          // HACK: All chunks will share the SAME recording
+          // We'll slice it later based on timestamps
+          if (!chunkRecordingsRef.current.has('MASTER')) {
+            chunkRecordingsRef.current.set('MASTER', { processed: [], original: [], finalized: false });
           }
           
-          // Initialize recording storage for this chunk
-          chunkRecordingsRef.current.set(chunkId, { processed: [], original: [], finalized: false });
-          
-          // Important: Update the chunk IDs in the correct order
-          previousChunkId = recordingChunkId;
-          recordingChunkId = chunkId;
-          
-          console.log('📦 [LIFECYCLE] New chunk created:', chunkId, 'Previous chunk:', previousChunkId);
+          console.log('📦 [LIFECYCLE] New chunk created:', chunkId, ' (using MASTER recording)');
         }
       });
 
@@ -349,27 +339,34 @@ export function useMurmubaraEngine(
       const recorder = new MediaRecorder(processedStream, { mimeType });
       const originalRecorder = new MediaRecorder(stream, { mimeType });
       
+      // BRUTAL HACK: We'll stop/restart recording for each chunk
+      let currentChunkRecorder: MediaRecorder | null = null;
+      let currentChunkOriginalRecorder: MediaRecorder | null = null;
+      
       recorder.ondataavailable = (event) => {
-        if (event.data.size > 0 && recordingChunkId) {
-          const recordings = chunkRecordingsRef.current.get(recordingChunkId);
-          if (recordings) {
-            recordings.processed.push(event.data);
+        if (event.data.size > 0) {
+          const masterRecording = chunkRecordingsRef.current.get('MASTER');
+          if (masterRecording) {
+            masterRecording.processed.push(event.data);
+            console.log('💾 [LIFECYCLE] Master processed data received:', event.data.size, 'bytes');
           }
         }
       };
       
       originalRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0 && recordingChunkId) {
-          const recordings = chunkRecordingsRef.current.get(recordingChunkId);
-          if (recordings) {
-            recordings.original.push(event.data);
+        if (event.data.size > 0) {
+          const masterRecording = chunkRecordingsRef.current.get('MASTER');
+          if (masterRecording) {
+            masterRecording.original.push(event.data);
+            console.log('💾 [LIFECYCLE] Master original data received:', event.data.size, 'bytes');
           }
         }
       };
 
-      // Start recording with timeslice for real-time chunk collection
-      recorder.start(100); // collect data every 100ms
-      originalRecorder.start(100);
+      // FUCK TIMESLICE - record everything in ONE PIECE
+      // We'll create "fake" chunks but the audio is continuous
+      recorder.start(); // NO timeslice = ONE complete file
+      originalRecorder.start();
       
       // NO chunk processing during recording - it creates BROKEN audio
       // Everything is processed in stopRecording after MediaRecorder flushes
@@ -398,47 +395,48 @@ export function useMurmubaraEngine(
       originalRecorderRef.current.stop();
     }
     
-    // Finalize all pending recordings
-    chunkRecordingsRef.current.forEach((recording) => {
-      recording.finalized = true;
-    });
+    // Finalize MASTER recording
+    const masterRecording = chunkRecordingsRef.current.get('MASTER');
+    if (masterRecording) {
+      masterRecording.finalized = true;
+    }
     
     // BRUTALLY PROCESS ALL CHUNKS AFTER 1 SECOND
     // Give MediaRecorder time to flush its shit
     setTimeout(() => {
+      console.log('💥 [LIFECYCLE] Processing chunks after stop, total chunks:', chunkRecordingsRef.current.size);
       // Force process all chunks NOW
-      chunkRecordingsRef.current.forEach((recordings, chunkId) => {
-        if (recordings.processed.length > 0 || recordings.original.length > 0) {
-          const chunk = recordingState.chunks.find(c => c.id === chunkId);
-          if (chunk && !chunk.processedAudioUrl && !chunk.originalAudioUrl) {
-            const mimeType = recordingMimeTypeRef.current;
-            const processedBlob = recordings.processed.length > 0 
-              ? new Blob(recordings.processed, { type: mimeType })
-              : null;
-            const originalBlob = recordings.original.length > 0
-              ? new Blob(recordings.original, { type: mimeType })
-              : null;
-            
-            const processedUrl = processedBlob && processedBlob.size > 0 ? URL.createObjectURL(processedBlob) : undefined;
-            const originalUrl = originalBlob && originalBlob.size > 0 ? URL.createObjectURL(originalBlob) : undefined;
-            
-            if (processedUrl || originalUrl) {
-              setRecordingState(prev => ({
-                ...prev,
-                chunks: prev.chunks.map(c => {
-                  if (c.id === chunkId) {
-                    return {
-                      ...c,
-                      processedAudioUrl: processedUrl || c.processedAudioUrl,
-                      originalAudioUrl: originalUrl || c.originalAudioUrl
-                    };
-                  }
-                  return c;
-                })
-              }));
-            }
-          }
+      // Process chunks and update state
+      setRecordingState(prev => {
+        const updatedChunks = [...prev.chunks];
+        const masterRecording = chunkRecordingsRef.current.get('MASTER');
+        
+        if (!masterRecording || masterRecording.processed.length === 0) {
+          console.error('❌ [LIFECYCLE] No MASTER recording found!');
+          return prev;
         }
+        
+        console.log(`🎯 [LIFECYCLE] Processing MASTER recording: ${masterRecording.processed.length} processed, ${masterRecording.original.length} original`);
+        
+        // Create ONE blob for ALL chunks
+        const mimeType = recordingMimeTypeRef.current;
+        const processedBlob = new Blob(masterRecording.processed, { type: mimeType });
+        const originalBlob = new Blob(masterRecording.original, { type: mimeType });
+        const processedUrl = URL.createObjectURL(processedBlob);
+        const originalUrl = URL.createObjectURL(originalBlob);
+        
+        // Give ALL chunks the SAME audio URL
+        updatedChunks.forEach((chunk, index) => {
+          console.log(`🔗 [LIFECYCLE] Assigning MASTER audio to chunk ${chunk.id}`);
+          updatedChunks[index] = {
+            ...chunk,
+            processedAudioUrl: processedUrl,
+            originalAudioUrl: originalUrl
+          };
+        });
+        
+        // Return the updated chunks
+        return { ...prev, chunks: updatedChunks };
       });
       
       if (streamController) {
