@@ -327,17 +327,26 @@ export default function Home() {
     let playableUrl = audioUrl
     const mimeType = (window as any).recordingMimeType || 'audio/webm'
     
-    // Always convert to WAV for maximum compatibility
-    console.log('Converting audio from', mimeType, 'to WAV for playback...')
-    try {
-      const converter = getAudioConverter()
-      playableUrl = await converter.convertBlobUrl(audioUrl)
-      console.log('Audio converted successfully')
-    } catch (error) {
-      console.error('Failed to convert audio:', error)
-      console.error('Falling back to original URL')
-      // Fall back to original URL if conversion fails
-      playableUrl = audioUrl
+    // Check if browser can play the format
+    const testAudio = new Audio()
+    const canPlay = testAudio.canPlayType(mimeType)
+    console.log('Browser can play', mimeType, ':', canPlay)
+    
+    if (canPlay === '' || canPlay === 'no') {
+      // Try to convert to WAV for maximum compatibility
+      console.log('Converting audio from', mimeType, 'to WAV for playback...')
+      try {
+        const converter = getAudioConverter()
+        playableUrl = await converter.convertBlobUrl(audioUrl)
+        console.log('Audio converted successfully')
+      } catch (error) {
+        console.error('Failed to convert audio:', error)
+        console.error('Falling back to original URL')
+        // Fall back to original URL if conversion fails
+        playableUrl = audioUrl
+      }
+    } else {
+      console.log('Browser supports format, using original URL')
     }
     
     if (!audioRefs.current[audioKey]) {
@@ -346,11 +355,13 @@ export default function Home() {
       // Add error handling for audio playback
       audioRefs.current[audioKey].onerror = (e) => {
         console.error('Audio playback error:', e)
-        console.error('Audio URL:', audioUrl)
+        console.error('Playable URL:', playableUrl)
+        console.error('Original URL:', audioUrl)
         console.error('Audio type:', audioType)
         // Try to get more details about the audio element
         const audio = audioRefs.current[audioKey]
         console.error('Audio element details:', {
+          src: audio.src,
           readyState: audio.readyState,
           networkState: audio.networkState,
           error: audio.error,
@@ -370,9 +381,12 @@ export default function Home() {
           c.id === chunkId ? { ...c, isPlaying: false } : c
         ))
       }
-      
-      // Set the source after adding event handlers
-      audioRefs.current[audioKey].src = playableUrl
+    }
+    
+    // Always update the source to use the converted URL
+    const audio = audioRefs.current[audioKey]
+    if (audio.src !== playableUrl) {
+      audio.src = playableUrl
     }
 
     const audio = audioRefs.current[audioKey]

@@ -17,15 +17,15 @@ export class AudioConverter {
     try {
       // First, try to decode the audio data
       const arrayBuffer = await blob.arrayBuffer();
-      const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+      const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer.slice(0));
       
       // Convert to WAV
       const wavBlob = this.audioBufferToWav(audioBuffer);
+      console.log('Successfully converted to WAV, size:', wavBlob.size);
       return wavBlob;
     } catch (error) {
       console.error('Failed to convert audio:', error);
-      // Return original blob if conversion fails
-      return blob;
+      throw error;
     }
   }
   
@@ -91,11 +91,16 @@ export class AudioConverter {
    * Get the best supported audio format for recording
    */
   static getBestRecordingFormat(): string {
+    // Try to use WAV if supported by MediaRecorder
+    if (MediaRecorder.isTypeSupported('audio/wav')) {
+      return 'audio/wav';
+    }
+    
     // Prefer formats with better browser playback support
     const formats = [
       'audio/mp4',
-      'audio/webm;codecs=opus',
       'audio/webm',
+      'audio/webm;codecs=opus',
       'audio/ogg;codecs=opus'
     ];
     
@@ -123,16 +128,23 @@ export class AudioConverter {
       const response = await fetch(blobUrl);
       const blob = await response.blob();
       
+      // Check if already WAV
+      if (blob.type === 'audio/wav') {
+        console.log('Audio is already WAV format');
+        return blobUrl;
+      }
+      
       // Always convert to WAV for maximum compatibility
-      console.log('Converting audio from', blob.type, 'to WAV');
+      console.log('Converting audio from', blob.type, 'to WAV, blob size:', blob.size);
       
       const wavBlob = await this.convertToWav(blob);
       const wavUrl = URL.createObjectURL(wavBlob);
       
-      console.log('Audio converted successfully to WAV');
+      console.log('Audio converted successfully to WAV, new size:', wavBlob.size);
       return wavUrl;
     } catch (error) {
       console.error('Error converting blob URL:', error);
+      console.error('Falling back to original URL');
       // Return original URL as fallback
       return blobUrl;
     }
