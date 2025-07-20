@@ -15,32 +15,15 @@ export class AudioConverter {
    */
   async convertToWav(blob: Blob): Promise<Blob> {
     try {
-      console.log('Converting blob to WAV, original type:', blob.type, 'size:', blob.size);
-      
       // First, try to decode the audio data
       const arrayBuffer = await blob.arrayBuffer();
-      console.log('ArrayBuffer size:', arrayBuffer.byteLength);
-      
       const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
-      console.log('AudioBuffer decoded:', {
-        duration: audioBuffer.duration,
-        numberOfChannels: audioBuffer.numberOfChannels,
-        sampleRate: audioBuffer.sampleRate,
-        length: audioBuffer.length
-      });
       
       // Convert to WAV
       const wavBlob = this.audioBufferToWav(audioBuffer);
-      console.log('WAV blob created, size:', wavBlob.size);
-      
       return wavBlob;
     } catch (error) {
       console.error('Failed to convert audio:', error);
-      console.error('Error details:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      });
       // Return original blob if conversion fails
       return blob;
     }

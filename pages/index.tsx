@@ -117,14 +117,14 @@ export default function Home() {
       // Record processed audio - detect supported mime type
       const processedStream = controller.stream
       
-      // Check for supported audio formats - prefer formats that can be played back
+      // Check for supported audio formats
       const mimeType = (() => {
-        // Try MP4 first as it has the best browser support
-        if (MediaRecorder.isTypeSupported('audio/mp4')) return 'audio/mp4';
-        // Then try WebM
+        // Note: Even if MediaRecorder says it supports MP4, it might not work properly
+        // So we'll stick with WebM which is more reliable for MediaRecorder
         if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) return 'audio/webm;codecs=opus';
         if (MediaRecorder.isTypeSupported('audio/webm')) return 'audio/webm';
         if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) return 'audio/ogg;codecs=opus';
+        if (MediaRecorder.isTypeSupported('audio/mp4')) return 'audio/mp4';
         return 'audio/webm'; // fallback
       })()
       
@@ -153,10 +153,23 @@ export default function Home() {
           }
         }
       }
+      
+      // Add onstop handlers to ensure proper finalization
+      recorder.onstop = () => {
+        console.log('MediaRecorder stopped, finalizing recordings...')
+      }
+      
+      originalRecorder.onstop = () => {
+        console.log('Original MediaRecorder stopped')
+      }
 
       // Start continuous recording with timeslice
       recorder.start(100) // collect data every 100ms
       originalRecorder.start(100)
+      
+      // Save recorder references
+      mediaRecorderRef.current = recorder
+      originalRecorderRef.current = originalRecorder
       
       // Process recorded chunks when each chunk completes
       const processRecordedChunks = setInterval(() => {
@@ -312,15 +325,17 @@ export default function Home() {
     let playableUrl = audioUrl
     const mimeType = (window as any).recordingMimeType || 'audio/webm'
     
-    if (!AudioConverter.canPlayType(mimeType)) {
-      console.log('Converting audio from', mimeType, 'to WAV for playback...')
-      try {
-        const converter = getAudioConverter()
-        playableUrl = await converter.convertBlobUrl(audioUrl)
-        console.log('Audio converted successfully')
-      } catch (error) {
-        console.error('Failed to convert audio:', error)
-      }
+    // Always convert to WAV for maximum compatibility
+    console.log('Converting audio from', mimeType, 'to WAV for playback...')
+    try {
+      const converter = getAudioConverter()
+      playableUrl = await converter.convertBlobUrl(audioUrl)
+      console.log('Audio converted successfully')
+    } catch (error) {
+      console.error('Failed to convert audio:', error)
+      console.error('Falling back to original URL')
+      // Fall back to original URL if conversion fails
+      playableUrl = audioUrl
     }
     
     if (!audioRefs.current[audioKey]) {
