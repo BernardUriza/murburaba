@@ -15,6 +15,8 @@ export declare const MURMURABA_VERSION = "1.3.0";
 export { ErrorCodes } from './types';
 export { useMurmubaraEngine } from './hooks/useMurmubaraEngine';
 export { useAudioEngine } from './hooks/useAudioEngine';
+export { AudioConverter, getAudioConverter } from './utils/audioConverter';
+export type { ProcessedChunk, RecordingState, UseMurmubaraEngineOptions, UseMurmubaraEngineReturn } from './hooks/useMurmubaraEngine';
 import { useMurmubaraEngine } from './hooks/useMurmubaraEngine';
 import { MurmubaraEngine } from './core/MurmubaraEngine';
 declare const _default: {

@@ -6,7 +6,7 @@ const packageJson = require('../package.json');
 const version = packageJson.version;
 
 // Get current date in a readable format
-const buildDate = new Date().toLocaleDateTimeString('en-US', {
+const buildDate = new Date().toLocaleString('en-US', {
   year: 'numeric',
   month: 'short',
   day: 'numeric',
