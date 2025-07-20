@@ -392,22 +392,10 @@ export function useMurmubaraEngine(options = {}) {
             return;
         }
         const audioKey = `${chunkId}-${audioType}`;
-        // Check if we need to convert the audio
-        let playableUrl = audioUrl;
+        // Use native browser playback - no conversion needed
+        const playableUrl = audioUrl;
         const mimeType = recordingMimeTypeRef.current;
-        // Always convert to WAV for maximum compatibility
-        if (audioConverterRef.current) {
-            console.log('Converting audio from', mimeType, 'to WAV for playback...');
-            try {
-                playableUrl = await audioConverterRef.current.convertBlobUrl(audioUrl);
-                console.log('Audio converted successfully');
-            }
-            catch (error) {
-                console.error('Failed to convert audio:', error);
-                // Use original URL as fallback
-                playableUrl = audioUrl;
-            }
-        }
+        console.log('🎵 Playing audio natively, format:', mimeType);
         if (!audioRefs.current[audioKey]) {
             audioRefs.current[audioKey] = new Audio();
             audioRefs.current[audioKey].onerror = (e) => {

@@ -84,7 +84,8 @@ export class AudioConverter {
   static canPlayType(mimeType: string): boolean {
     const audio = new Audio();
     const canPlay = audio.canPlayType(mimeType);
-    return canPlay === 'probably' || canPlay === 'maybe';
+    // Don't trust 'maybe' - it lies!
+    return canPlay === 'probably';
   }
   
   /**
@@ -146,7 +147,13 @@ export class AudioConverter {
         return blobUrl;
       }
       
-      // Always convert to WAV for maximum compatibility
+      // Skip conversion for WebM/MP4 - let browser handle it natively
+      if (blob.type.includes('webm') || blob.type.includes('mp4')) {
+        console.log('Using native browser playback for', blob.type);
+        return blobUrl;
+      }
+      
+      // Only convert for truly incompatible formats
       console.log('Converting audio from', blob.type, 'to WAV, blob size:', blob.size);
       
       const wavBlob = await this.convertToWav(blob);
