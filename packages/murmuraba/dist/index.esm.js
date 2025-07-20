@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 
 class EventEmitter {
     constructor() {
@@ -555,6 +555,7 @@ class MurmubaraEngine extends EventEmitter {
             cleanupDelay: config.cleanupDelay || 30000,
             useWorker: config.useWorker ?? false,
             workerPath: config.workerPath || '/murmuraba.worker.js',
+            allowDegraded: config.allowDegraded ?? false,
         };
         this.logger = new Logger('[Murmuraba]');
         this.logger.setLevel(this.config.logLevel);
@@ -612,10 +613,16 @@ class MurmubaraEngine extends EventEmitter {
         this.stateManager.transitionTo('initializing');
         try {
             this.logger.info('Initializing Murmuraba engine...');
-            // Create audio context
-            this.audioContext = new AudioContext({ sampleRate: 48000 });
-            // Load WASM module
-            await this.loadWasmModule();
+            // Check environment support first
+            if (!this.checkEnvironmentSupport()) {
+                throw new Error('Environment not supported: Missing required APIs');
+            }
+            // Create audio context with fallbacks
+            this.stateManager.transitionTo('creating-context');
+            await this.initializeAudioContext();
+            // Load WASM module with timeout
+            this.stateManager.transitionTo('loading-wasm');
+            await this.loadWasmModuleWithTimeout(5000);
             // Initialize metrics
             this.metricsManager.startAutoUpdate(100);
             this.stateManager.transitionTo('ready');
@@ -624,10 +631,89 @@ class MurmubaraEngine extends EventEmitter {
         }
         catch (error) {
             this.stateManager.transitionTo('error');
+            this.recordError(error);
             const murmubaraError = new MurmubaraError(ErrorCodes.INITIALIZATION_FAILED, `Initialization failed: ${error instanceof Error ? error.message : String(error)}`, error);
             this.emit('error', murmubaraError);
-            throw murmubaraError;
+            // Try degraded mode if configured
+            if (this.config.allowDegraded) {
+                this.logger.warn('Attempting degraded mode initialization...');
+                await this.initializeDegraded();
+            }
+            else {
+                throw murmubaraError;
+            }
         }
+    }
+    checkEnvironmentSupport() {
+        // Check for required APIs
+        const hasAudioContext = !!(window.AudioContext ||
+            window.webkitAudioContext);
+        const hasWebAssembly = !!window.WebAssembly;
+        if (!hasAudioContext) {
+            this.logger.error('AudioContext API not supported');
+        }
+        if (!hasWebAssembly) {
+            this.logger.error('WebAssembly not supported');
+        }
+        return hasAudioContext && hasWebAssembly;
+    }
+    async initializeAudioContext() {
+        try {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            this.audioContext = new AudioContextClass({ sampleRate: 48000 });
+            // Resume if suspended (for Chrome autoplay policy)
+            if (this.audioContext.state === 'suspended') {
+                await this.audioContext.resume();
+            }
+        }
+        catch (error) {
+            throw new Error(`Failed to create AudioContext: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async loadWasmModuleWithTimeout(timeoutMs) {
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error(`WASM loading timeout after ${timeoutMs}ms`)), timeoutMs);
+        });
+        try {
+            await Promise.race([
+                this.loadWasmModule(),
+                timeoutPromise
+            ]);
+        }
+        catch (error) {
+            if (error instanceof Error && error.message.includes('timeout')) {
+                this.logger.error('WASM module loading timed out');
+            }
+            throw error;
+        }
+    }
+    recordError(error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        this.errorHistory.push({
+            timestamp: Date.now(),
+            error: errorMessage
+        });
+        // Keep only last 10 errors
+        if (this.errorHistory.length > 10) {
+            this.errorHistory.shift();
+        }
+    }
+    async initializeDegraded() {
+        this.logger.info('Initializing in degraded mode...');
+        this.stateManager.transitionTo('degraded');
+        // Create minimal audio context
+        if (!this.audioContext) {
+            try {
+                await this.initializeAudioContext();
+            }
+            catch {
+                this.logger.error('Failed to create audio context even in degraded mode');
+                return;
+            }
+        }
+        // Engine will work but without noise reduction
+        this.emit('degraded-mode');
+        this.logger.warn('Engine running in degraded mode - noise reduction disabled');
     }
     async loadWasmModule() {
         this.logger.debug('Loading WASM module...');
@@ -918,25 +1004,159 @@ class MurmubaraEngine extends EventEmitter {
         this.on('metrics-update', callback);
     }
     getDiagnostics() {
+        const reactVersion = window.React?.version || 'unknown';
+        const capabilities = {
+            hasWASM: !!window.WebAssembly,
+            hasAudioContext: !!(window.AudioContext || window.webkitAudioContext),
+            hasWorklet: !!(window.AudioWorkletNode),
+            maxChannels: this.audioContext?.destination.maxChannelCount || 0,
+        };
+        const browserInfo = {
+            name: this.getBrowserName(),
+            version: this.getBrowserVersion(),
+            audioAPIsSupported: this.getAudioAPIsSupported(),
+        };
         return {
+            version: '1.3.0',
             engineVersion: '2.0.0',
+            reactVersion,
+            browserInfo,
             wasmLoaded: !!this.wasmModule,
             activeProcessors: this.activeStreams.size,
             memoryUsage: performance.memory?.usedJSHeapSize || 0,
             processingTime: this.metricsManager.getMetrics().processingLatency,
             engineState: this.stateManager.getState(),
+            capabilities,
             errors: this.errorHistory,
+            initializationLog: [], // TODO: Implement log history tracking
+            performanceMetrics: {
+                wasmLoadTime: 0, // TODO: Track actual load times
+                contextCreationTime: 0,
+                totalInitTime: 0,
+            },
         };
     }
-    recordError(error) {
-        this.errorHistory.push({
+    getBrowserName() {
+        const userAgent = navigator.userAgent;
+        if (userAgent.includes('Chrome'))
+            return 'Chrome';
+        if (userAgent.includes('Firefox'))
+            return 'Firefox';
+        if (userAgent.includes('Safari'))
+            return 'Safari';
+        if (userAgent.includes('Edge'))
+            return 'Edge';
+        return 'Unknown';
+    }
+    getBrowserVersion() {
+        const userAgent = navigator.userAgent;
+        const match = userAgent.match(/(Chrome|Firefox|Safari|Edge)\/([\d.]+)/);
+        return match ? match[2] : 'unknown';
+    }
+    getAudioAPIsSupported() {
+        const apis = [];
+        if (window.AudioContext || window.webkitAudioContext)
+            apis.push('AudioContext');
+        if (window.AudioWorkletNode)
+            apis.push('AudioWorklet');
+        if (window.webkitAudioContext)
+            apis.push('webkitAudioContext');
+        if (window.MediaStream)
+            apis.push('MediaStream');
+        if (window.MediaRecorder)
+            apis.push('MediaRecorder');
+        return apis;
+    }
+    async runDiagnosticTests() {
+        const report = {
             timestamp: Date.now(),
-            error,
-        });
-        // Keep only last 100 errors
-        if (this.errorHistory.length > 100) {
-            this.errorHistory.shift();
+            tests: [],
+            passed: 0,
+            failed: 0,
+            warnings: 0,
+        };
+        // Test 1: Environment Support
+        const envTest = {
+            name: 'Environment Support',
+            passed: false,
+            message: '',
+            duration: 0,
+        };
+        const startEnv = Date.now();
+        if (this.checkEnvironmentSupport()) {
+            envTest.passed = true;
+            envTest.message = 'All required APIs are supported';
         }
+        else {
+            envTest.message = 'Missing required APIs';
+        }
+        envTest.duration = Date.now() - startEnv;
+        report.tests.push(envTest);
+        // Test 2: Audio Context Creation
+        const audioTest = {
+            name: 'Audio Context Creation',
+            passed: false,
+            message: '',
+            duration: 0,
+        };
+        const startAudio = Date.now();
+        try {
+            if (!this.audioContext) {
+                await this.initializeAudioContext();
+            }
+            audioTest.passed = true;
+            audioTest.message = `Audio context created (state: ${this.audioContext?.state})`;
+        }
+        catch (error) {
+            audioTest.message = `Failed: ${error instanceof Error ? error.message : String(error)}`;
+        }
+        audioTest.duration = Date.now() - startAudio;
+        report.tests.push(audioTest);
+        // Test 3: WASM Module Loading
+        const wasmTest = {
+            name: 'WASM Module Loading',
+            passed: false,
+            message: '',
+            duration: 0,
+        };
+        const startWasm = Date.now();
+        if (this.wasmModule) {
+            wasmTest.passed = true;
+            wasmTest.message = 'WASM module already loaded';
+        }
+        else {
+            wasmTest.message = 'WASM module not loaded (run initialize first)';
+        }
+        wasmTest.duration = Date.now() - startWasm;
+        report.tests.push(wasmTest);
+        // Test 4: Frame Processing
+        const frameTest = {
+            name: 'Frame Processing',
+            passed: false,
+            message: '',
+            duration: 0,
+        };
+        const startFrame = Date.now();
+        try {
+            if (this.wasmModule && this.rnnoiseState) {
+                const testFrame = new Float32Array(480);
+                const output = this.processFrame(testFrame);
+                frameTest.passed = output.length === 480;
+                frameTest.message = frameTest.passed ? 'Frame processing successful' : 'Invalid output size';
+            }
+            else {
+                frameTest.message = 'Engine not initialized';
+            }
+        }
+        catch (error) {
+            frameTest.message = `Failed: ${error instanceof Error ? error.message : String(error)}`;
+        }
+        frameTest.duration = Date.now() - startFrame;
+        report.tests.push(frameTest);
+        // Calculate totals
+        report.passed = report.tests.filter((t) => t.passed).length;
+        report.failed = report.tests.filter((t) => !t.passed).length;
+        return report;
     }
 }
 
@@ -985,7 +1205,10 @@ function onMetricsUpdate(callback) {
 }
 
 function useMurmubaraEngine(options = {}) {
-    const { autoInitialize = false, ...config } = options;
+    const { autoInitialize = false, fallbackToManual = false, onInitError, react19Mode = false, ...config } = options;
+    // Detect React version
+    const reactVersion = React.version;
+    const isReact19 = reactVersion.startsWith('19') || react19Mode;
     const [isInitialized, setIsInitialized] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -1015,10 +1238,22 @@ function useMurmubaraEngine(options = {}) {
                 updateDiagnostics();
             }
             catch (err) {
-                const errorMessage = err instanceof Error ? err.message : String(err);
+                const error = err instanceof Error ? err : new Error(String(err));
+                const errorMessage = error.message;
                 setError(errorMessage);
                 setEngineState('error');
-                throw err;
+                // Call error callback if provided
+                if (onInitError) {
+                    onInitError(error);
+                }
+                // If fallback is enabled and we're in React 19, try manual initialization
+                if (fallbackToManual && isReact19) {
+                    console.warn('[MurmubaraEngine] Auto-init failed in React 19, attempting manual fallback');
+                    // The user can still manually call initialize() later
+                }
+                else {
+                    throw err;
+                }
             }
             finally {
                 setIsLoading(false);
@@ -1140,14 +1375,340 @@ function useMurmubaraEngine(options = {}) {
     };
 }
 
+class RNNoiseEngine {
+    constructor() {
+        this.name = 'RNNoise';
+        this.description = 'Neural network-based noise suppression';
+        this.isInitialized = false;
+        this.module = null;
+        this.state = null;
+        this.inputPtr = 0;
+        this.outputPtr = 0;
+    }
+    async initialize() {
+        if (this.isInitialized)
+            return;
+        console.log('[RNNoiseEngine] Starting initialization...');
+        // Load script
+        const script = document.createElement('script');
+        script.src = '/rnnoise-fixed.js';
+        await new Promise((resolve, reject) => {
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+        // Create module
+        const createRNNWasmModule = window.createRNNWasmModule;
+        this.module = await createRNNWasmModule({
+            locateFile: (filename) => {
+                if (filename.endsWith('.wasm')) {
+                    return `/dist/${filename}`;
+                }
+                return filename;
+            }
+        });
+        // Create state
+        this.state = this.module._rnnoise_create(0);
+        if (!this.state) {
+            throw new Error('Failed to create RNNoise state');
+        }
+        // Allocate memory for float32 samples
+        this.inputPtr = this.module._malloc(480 * 4);
+        this.outputPtr = this.module._malloc(480 * 4);
+        // Warm up
+        const silentFrame = new Float32Array(480);
+        for (let i = 0; i < 10; i++) {
+            this.module.HEAPF32.set(silentFrame, this.inputPtr >> 2);
+            this.module._rnnoise_process_frame(this.state, this.outputPtr, this.inputPtr);
+        }
+        this.isInitialized = true;
+        console.log('[RNNoiseEngine] Initialization complete!');
+    }
+    process(inputBuffer) {
+        if (!this.isInitialized) {
+            throw new Error('RNNoiseEngine not initialized');
+        }
+        if (inputBuffer.length !== 480) {
+            throw new Error('RNNoise requires exactly 480 samples per frame');
+        }
+        // Copy to WASM heap
+        this.module.HEAPF32.set(inputBuffer, this.inputPtr >> 2);
+        // Process with RNNoise
+        this.module._rnnoise_process_frame(this.state, this.outputPtr, this.inputPtr);
+        // Get output
+        const outputData = new Float32Array(480);
+        for (let i = 0; i < 480; i++) {
+            outputData[i] = this.module.HEAPF32[(this.outputPtr >> 2) + i];
+        }
+        return outputData;
+    }
+    cleanup() {
+        if (this.module && this.state) {
+            this.module._free(this.inputPtr);
+            this.module._free(this.outputPtr);
+            this.module._rnnoise_destroy(this.state);
+            this.state = null;
+            this.module = null;
+            this.isInitialized = false;
+        }
+    }
+}
+
+function createAudioEngine(config) {
+    switch (config.engineType) {
+        case 'rnnoise':
+            return new RNNoiseEngine();
+        case 'speex':
+            throw new Error('Speex engine not implemented yet');
+        case 'custom':
+            throw new Error('Custom engine not implemented yet');
+        default:
+            throw new Error(`Unknown engine type: ${config.engineType}`);
+    }
+}
+
+const useAudioEngine = (config = { engineType: 'rnnoise' }) => {
+    console.warn('[Murmuraba] useAudioEngine is deprecated. Please use useMurmubaraEngine instead for better React 19 compatibility.');
+    const [isInitialized, setIsInitialized] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const audioContextRef = useRef(null);
+    const processorRef = useRef(null);
+    const engineRef = useRef(null);
+    const engineDataRef = useRef(null);
+    const metricsRef = useRef({
+        inputSamples: 0,
+        outputSamples: 0,
+        silenceFrames: 0,
+        activeFrames: 0,
+        totalInputEnergy: 0,
+        totalOutputEnergy: 0,
+        peakInput: 0,
+        peakOutput: 0,
+        startTime: 0,
+        totalFrames: 0
+    });
+    const initializeAudioEngine = async () => {
+        if (isInitialized || isLoading)
+            return;
+        setIsLoading(true);
+        setError(null);
+        try {
+            console.log('[AudioEngine] Creating audio engine with config:', config);
+            // Create engine instance
+            const engine = createAudioEngine(config);
+            await engine.initialize();
+            engineRef.current = engine;
+            // Initialize engine-specific data
+            engineDataRef.current = {
+                inputBuffer: [],
+                outputBuffer: [],
+                energyHistory: new Array(20).fill(0),
+                energyIndex: 0
+            };
+            console.log('[AudioEngine] Engine ready for processing');
+            // Create audio context
+            audioContextRef.current = new AudioContext({ sampleRate: 48000 });
+            // Create processor
+            const processor = audioContextRef.current.createScriptProcessor(4096, 1, 1);
+            processor.onaudioprocess = (e) => {
+                const input = e.inputBuffer.getChannelData(0);
+                const output = e.outputBuffer.getChannelData(0);
+                if (!engineRef.current || !engineDataRef.current) {
+                    output.set(input);
+                    return;
+                }
+                // Track input metrics
+                metricsRef.current.inputSamples += input.length;
+                // Add to input buffer
+                for (let i = 0; i < input.length; i++) {
+                    engineDataRef.current.inputBuffer.push(input[i]);
+                    metricsRef.current.peakInput = Math.max(metricsRef.current.peakInput, Math.abs(input[i]));
+                }
+                // Process chunks of 480 samples
+                while (engineDataRef.current.inputBuffer.length >= 480) {
+                    const frame = engineDataRef.current.inputBuffer.splice(0, 480);
+                    const floatFrame = new Float32Array(frame);
+                    // Process with engine
+                    const outputData = engineRef.current.process(floatFrame);
+                    // Calculate frame energy for gating
+                    const frameEnergy = calculateRMS(floatFrame);
+                    const outputEnergy = calculateRMS(outputData);
+                    // Track frame metrics
+                    metricsRef.current.totalFrames++;
+                    metricsRef.current.totalInputEnergy += frameEnergy;
+                    metricsRef.current.totalOutputEnergy += outputEnergy;
+                    // Update energy history
+                    engineDataRef.current.energyHistory[engineDataRef.current.energyIndex] = frameEnergy;
+                    engineDataRef.current.energyIndex = (engineDataRef.current.energyIndex + 1) % 20;
+                    // Calculate average energy
+                    const avgEnergy = engineDataRef.current.energyHistory.reduce((a, b) => a + b) / 20;
+                    // Simple energy-based gating
+                    let processedFrame = outputData;
+                    const silenceThreshold = 0.001;
+                    const speechThreshold = 0.005;
+                    let wasSilenced = false;
+                    if (avgEnergy < silenceThreshold) {
+                        // Very quiet - attenuate heavily
+                        processedFrame = processedFrame.map(s => s * 0.1);
+                        wasSilenced = true;
+                        metricsRef.current.silenceFrames++;
+                    }
+                    else if (avgEnergy < speechThreshold) {
+                        // Quiet - moderate attenuation
+                        const factor = (avgEnergy - silenceThreshold) / (speechThreshold - silenceThreshold);
+                        const attenuation = 0.1 + 0.9 * factor;
+                        processedFrame = processedFrame.map(s => s * attenuation);
+                        metricsRef.current.activeFrames++;
+                    }
+                    else {
+                        metricsRef.current.activeFrames++;
+                    }
+                    // Additional noise gate based on RNNoise output vs input ratio
+                    const reductionRatio = outputEnergy / (frameEnergy + 0.0001);
+                    if (reductionRatio < 0.3 && avgEnergy < speechThreshold) {
+                        // RNNoise reduced significantly - likely noise
+                        processedFrame = processedFrame.map(s => s * reductionRatio);
+                        if (!wasSilenced)
+                            metricsRef.current.silenceFrames++;
+                    }
+                    // Log occasionally
+                    if (Math.random() < 0.02) {
+                        const gateStatus = avgEnergy < silenceThreshold ? 'SILENCE' :
+                            avgEnergy < speechThreshold ? 'TRANSITION' : 'SPEECH';
+                        console.log('[AudioEngine]', '\n  Status:', gateStatus, '\n  Avg Energy:', avgEnergy.toFixed(6), '\n  Frame Energy:', frameEnergy.toFixed(6), '\n  Engine Reduction:', ((1 - reductionRatio) * 100).toFixed(1) + '%', '\n  Gate Applied:', avgEnergy < speechThreshold ? 'Yes' : 'No');
+                    }
+                    // Add to output buffer
+                    for (let i = 0; i < 480; i++) {
+                        engineDataRef.current.outputBuffer.push(processedFrame[i]);
+                    }
+                }
+                // Output
+                for (let i = 0; i < output.length; i++) {
+                    if (engineDataRef.current.outputBuffer.length > 0) {
+                        const sample = engineDataRef.current.outputBuffer.shift();
+                        output[i] = sample;
+                        metricsRef.current.outputSamples++;
+                        metricsRef.current.peakOutput = Math.max(metricsRef.current.peakOutput, Math.abs(sample));
+                    }
+                    else {
+                        output[i] = 0;
+                    }
+                }
+            };
+            processorRef.current = processor;
+            setIsInitialized(true);
+            console.log('[AudioEngine] Initialization complete!');
+        }
+        catch (err) {
+            console.error('[AudioEngine] Error:', err);
+            setError(err instanceof Error ? err.message : String(err));
+            throw err;
+        }
+        finally {
+            setIsLoading(false);
+        }
+    };
+    const resetMetrics = () => {
+        metricsRef.current = {
+            inputSamples: 0,
+            outputSamples: 0,
+            silenceFrames: 0,
+            activeFrames: 0,
+            totalInputEnergy: 0,
+            totalOutputEnergy: 0,
+            peakInput: 0,
+            peakOutput: 0,
+            startTime: Date.now(),
+            totalFrames: 0
+        };
+    };
+    const getMetrics = () => {
+        const metrics = metricsRef.current;
+        const processingTime = Date.now() - metrics.startTime;
+        const avgInputEnergy = metrics.totalFrames > 0 ? metrics.totalInputEnergy / metrics.totalFrames : 0;
+        const avgOutputEnergy = metrics.totalFrames > 0 ? metrics.totalOutputEnergy / metrics.totalFrames : 0;
+        // Calculate noise reduction differently - compare silence frames to total frames
+        // and consider the energy reduction ratio
+        const energyReduction = avgInputEnergy > 0 ? Math.abs(avgInputEnergy - avgOutputEnergy) / avgInputEnergy : 0;
+        const silenceRatio = metrics.totalFrames > 0 ? metrics.silenceFrames / metrics.totalFrames : 0;
+        // Combine both metrics for a more accurate noise reduction estimate
+        const noiseReduction = ((energyReduction * 0.5) + (silenceRatio * 0.5)) * 100;
+        return {
+            inputSamples: metrics.inputSamples,
+            outputSamples: metrics.outputSamples,
+            noiseReductionLevel: Math.max(0, Math.min(100, noiseReduction)),
+            silenceFrames: metrics.silenceFrames,
+            activeFrames: metrics.activeFrames,
+            averageInputEnergy: avgInputEnergy,
+            averageOutputEnergy: avgOutputEnergy,
+            peakInputLevel: metrics.peakInput,
+            peakOutputLevel: metrics.peakOutput,
+            processingTimeMs: processingTime,
+            chunkOffset: 0,
+            totalFramesProcessed: metrics.totalFrames
+        };
+    };
+    const processStream = async (stream) => {
+        if (!isInitialized) {
+            await initializeAudioEngine();
+        }
+        if (!audioContextRef.current || !processorRef.current) {
+            throw new Error('Not initialized');
+        }
+        // Reset metrics when starting new stream
+        resetMetrics();
+        const source = audioContextRef.current.createMediaStreamSource(stream);
+        const destination = audioContextRef.current.createMediaStreamDestination();
+        source.connect(processorRef.current);
+        processorRef.current.connect(destination);
+        return destination.stream;
+    };
+    const cleanup = () => {
+        if (processorRef.current) {
+            processorRef.current.disconnect();
+        }
+        if (engineRef.current) {
+            engineRef.current.cleanup();
+            engineRef.current = null;
+        }
+        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+            audioContextRef.current.close();
+        }
+    };
+    return {
+        isInitialized,
+        isLoading,
+        error,
+        processStream,
+        cleanup,
+        initializeAudioEngine,
+        getMetrics,
+        resetMetrics
+    };
+};
+function calculateRMS(frame) {
+    let sum = 0;
+    for (let i = 0; i < frame.length; i++) {
+        sum += frame[i] * frame[i];
+    }
+    return Math.sqrt(sum / frame.length);
+}
+
 /**
  * Murmuraba v1.2.1
  * Real-time audio noise reduction with advanced chunked processing
  */
 // Core exports
 // Export version
-const VERSION = '1.2.1';
+const VERSION = '1.3.0';
 const MURMURABA_VERSION = VERSION;
+// Default export for easier usage
+var index = {
+    useMurmubaraEngine,
+    useAudioEngine,
+    MurmubaraEngine
+};
 
-export { ErrorCodes, EventEmitter, Logger, MURMURABA_VERSION, MetricsManager, MurmubaraEngine, MurmubaraError, StateManager, VERSION, WorkerManager, destroyEngine, getDiagnostics, getEngine, getEngineStatus, initializeAudioEngine, onMetricsUpdate, processStream, processStreamChunked, useMurmubaraEngine };
+export { ErrorCodes, EventEmitter, Logger, MURMURABA_VERSION, MetricsManager, MurmubaraEngine, MurmubaraError, StateManager, VERSION, WorkerManager, index as default, destroyEngine, getDiagnostics, getEngine, getEngineStatus, initializeAudioEngine, onMetricsUpdate, processStream, processStreamChunked, useAudioEngine, useMurmubaraEngine };
 //# sourceMappingURL=index.esm.js.map

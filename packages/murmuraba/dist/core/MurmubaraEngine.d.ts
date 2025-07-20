@@ -1,5 +1,5 @@
 import { EventEmitter } from './EventEmitter';
-import { MurmubaraConfig, EngineEvents, StreamController, DiagnosticInfo, ProcessingMetrics, ChunkConfig } from '../types';
+import { MurmubaraConfig, EngineEvents, StreamController, DiagnosticInfo, DiagnosticReport, ProcessingMetrics, ChunkConfig } from '../types';
 export declare class MurmubaraEngine extends EventEmitter<EngineEvents> {
     private config;
     private stateManager;
@@ -20,6 +20,11 @@ export declare class MurmubaraEngine extends EventEmitter<EngineEvents> {
     private setupAutoCleanup;
     initialize(): Promise<void>;
     private performInitialization;
+    private checkEnvironmentSupport;
+    private initializeAudioContext;
+    private loadWasmModuleWithTimeout;
+    private recordError;
+    private initializeDegraded;
     private loadWasmModule;
     private warmupModel;
     private processFrame;
@@ -31,6 +36,9 @@ export declare class MurmubaraEngine extends EventEmitter<EngineEvents> {
     getMetrics(): ProcessingMetrics;
     onMetricsUpdate(callback: (metrics: ProcessingMetrics) => void): void;
     getDiagnostics(): DiagnosticInfo;
-    private recordError;
+    private getBrowserName;
+    private getBrowserVersion;
+    private getAudioAPIsSupported;
+    runDiagnosticTests(): Promise<DiagnosticReport>;
 }
 //# sourceMappingURL=MurmubaraEngine.d.ts.map

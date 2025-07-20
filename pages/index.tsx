@@ -113,10 +113,19 @@ export default function Home() {
 
       setStreamController(controller)
 
-      // Record processed audio
+      // Record processed audio - detect supported mime type
       const processedStream = controller.stream
-      const recorder = new MediaRecorder(processedStream, { mimeType: 'audio/webm' })
-      const originalRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+      
+      // Check for supported audio formats
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' :
+                      MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' :
+                      MediaRecorder.isTypeSupported('audio/ogg;codecs=opus') ? 'audio/ogg;codecs=opus' :
+                      'audio/webm' // fallback
+      
+      console.log('Using MIME type for recording:', mimeType)
+      
+      const recorder = new MediaRecorder(processedStream, { mimeType })
+      const originalRecorder = new MediaRecorder(stream, { mimeType })
       
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0 && recordingChunkId) {
@@ -146,13 +155,21 @@ export default function Home() {
           // Process if we have any data and chunk is finalized or has enough data
           if ((recordings.processed.length > 0 || recordings.original.length > 0) && 
               (recordings.finalized || recordings.processed.length > 5)) {
-            // Create blobs from accumulated data
+            // Create blobs from accumulated data with correct mime type
+            const mimeType = (window as any).recordingMimeType || 'audio/webm'
             const processedBlob = recordings.processed.length > 0 
-              ? new Blob(recordings.processed, { type: 'audio/webm' })
+              ? new Blob(recordings.processed, { type: mimeType })
               : null
             const originalBlob = recordings.original.length > 0
-              ? new Blob(recordings.original, { type: 'audio/webm' })
+              ? new Blob(recordings.original, { type: mimeType })
               : null
+            
+            console.log(`Creating URLs for chunk ${chunkId}:`, {
+              processedDataChunks: recordings.processed.length,
+              originalDataChunks: recordings.original.length,
+              processedBlobSize: processedBlob?.size,
+              originalBlobSize: originalBlob?.size
+            })
             
             // Create URLs if blobs exist
             const processedUrl = processedBlob ? URL.createObjectURL(processedBlob) : undefined
@@ -181,6 +198,7 @@ export default function Home() {
       originalRecorderRef.current = originalRecorder
       ;(window as any).processRecordedChunksInterval = processRecordedChunks
       ;(window as any).chunkRecordings = chunkRecordings
+      ;(window as any).recordingMimeType = mimeType // Store mime type for blob creation
       
       setIsRecording(true)
       setRecordingTime(0)
@@ -267,20 +285,45 @@ export default function Home() {
 
   const toggleChunkPlayback = (chunkId: string, audioType: 'processed' | 'original') => {
     const chunk = processedChunks.find(c => c.id === chunkId)
-    if (!chunk) return
+    if (!chunk) {
+      console.error('Chunk not found:', chunkId)
+      return
+    }
 
     const audioUrl = audioType === 'processed' ? chunk.processedAudioUrl : chunk.originalAudioUrl
-    if (!audioUrl) return
+    if (!audioUrl) {
+      console.error(`No ${audioType} audio URL for chunk:`, chunkId)
+      console.log('Chunk data:', chunk)
+      return
+    }
 
     const audioKey = `${chunkId}-${audioType}`
     
     if (!audioRefs.current[audioKey]) {
-      audioRefs.current[audioKey] = new Audio(audioUrl)
+      audioRefs.current[audioKey] = new Audio()
+      
+      // Add error handling for audio playback
+      audioRefs.current[audioKey].onerror = (e) => {
+        console.error('Audio playback error:', e)
+        console.error('Audio URL:', audioUrl)
+        console.error('Audio type:', audioType)
+        // Try to get more details about the audio element
+        const audio = audioRefs.current[audioKey]
+        console.error('Audio element details:', {
+          readyState: audio.readyState,
+          networkState: audio.networkState,
+          error: audio.error
+        })
+      }
+      
       audioRefs.current[audioKey].onended = () => {
         setProcessedChunks(prev => prev.map(c => 
           c.id === chunkId ? { ...c, isPlaying: false } : c
         ))
       }
+      
+      // Set the source after adding event handlers
+      audioRefs.current[audioKey].src = audioUrl
     }
 
     const audio = audioRefs.current[audioKey]

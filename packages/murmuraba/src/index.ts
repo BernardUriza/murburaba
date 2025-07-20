@@ -29,11 +29,24 @@ export {
 } from './api';
 
 // Export version
-export const VERSION = '1.2.1';
+export const VERSION = '1.3.0';
 export const MURMURABA_VERSION = VERSION;
 
 // Re-export error codes
 export { ErrorCodes } from './types';
 
-// Hook export at the end to avoid circular dependency
+// Hook exports at the end to avoid circular dependency
 export { useMurmubaraEngine } from './hooks/useMurmubaraEngine';
+export { useAudioEngine } from './hooks/useAudioEngine';
+
+// Import for default export
+import { useMurmubaraEngine } from './hooks/useMurmubaraEngine';
+import { useAudioEngine } from './hooks/useAudioEngine';
+import { MurmubaraEngine } from './core/MurmubaraEngine';
+
+// Default export for easier usage
+export default {
+  useMurmubaraEngine,
+  useAudioEngine,
+  MurmubaraEngine
+};

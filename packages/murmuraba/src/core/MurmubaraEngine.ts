@@ -9,6 +9,7 @@ import {
   EngineEvents,
   StreamController,
   DiagnosticInfo,
+  DiagnosticReport,
   MurmubaraError,
   ErrorCodes,
   ProcessingMetrics,
@@ -45,6 +46,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       cleanupDelay: config.cleanupDelay || 30000,
       useWorker: config.useWorker ?? false,
       workerPath: config.workerPath || '/murmuraba.worker.js',
+      allowDegraded: config.allowDegraded ?? false,
     } as Required<MurmubaraConfig>;
     
     this.logger = new Logger('[Murmuraba]');
@@ -120,11 +122,18 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     try {
       this.logger.info('Initializing Murmuraba engine...');
       
-      // Create audio context
-      this.audioContext = new AudioContext({ sampleRate: 48000 });
+      // Check environment support first
+      if (!this.checkEnvironmentSupport()) {
+        throw new Error('Environment not supported: Missing required APIs');
+      }
       
-      // Load WASM module
-      await this.loadWasmModule();
+      // Create audio context with fallbacks
+      this.stateManager.transitionTo('creating-context');
+      await this.initializeAudioContext();
+      
+      // Load WASM module with timeout
+      this.stateManager.transitionTo('loading-wasm');
+      await this.loadWasmModuleWithTimeout(5000);
       
       // Initialize metrics
       this.metricsManager.startAutoUpdate(100);
@@ -135,14 +144,105 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       
     } catch (error) {
       this.stateManager.transitionTo('error');
+      this.recordError(error);
+      
       const murmubaraError = new MurmubaraError(
         ErrorCodes.INITIALIZATION_FAILED,
         `Initialization failed: ${error instanceof Error ? error.message : String(error)}`,
         error
       );
       this.emit('error', murmubaraError);
-      throw murmubaraError;
+      
+      // Try degraded mode if configured
+      if (this.config.allowDegraded) {
+        this.logger.warn('Attempting degraded mode initialization...');
+        await this.initializeDegraded();
+      } else {
+        throw murmubaraError;
+      }
     }
+  }
+  
+  private checkEnvironmentSupport(): boolean {
+    // Check for required APIs
+    const hasAudioContext = !!(
+      window.AudioContext || 
+      (window as any).webkitAudioContext
+    );
+    const hasWebAssembly = !!window.WebAssembly;
+    
+    if (!hasAudioContext) {
+      this.logger.error('AudioContext API not supported');
+    }
+    if (!hasWebAssembly) {
+      this.logger.error('WebAssembly not supported');
+    }
+    
+    return hasAudioContext && hasWebAssembly;
+  }
+  
+  private async initializeAudioContext(): Promise<void> {
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      this.audioContext = new AudioContextClass({ sampleRate: 48000 });
+      
+      // Resume if suspended (for Chrome autoplay policy)
+      if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+      }
+    } catch (error) {
+      throw new Error(`Failed to create AudioContext: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  
+  private async loadWasmModuleWithTimeout(timeoutMs: number): Promise<void> {
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error(`WASM loading timeout after ${timeoutMs}ms`)), timeoutMs);
+    });
+    
+    try {
+      await Promise.race([
+        this.loadWasmModule(),
+        timeoutPromise
+      ]);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('timeout')) {
+        this.logger.error('WASM module loading timed out');
+      }
+      throw error;
+    }
+  }
+  
+  private recordError(error: unknown): void {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    this.errorHistory.push({
+      timestamp: Date.now(),
+      error: errorMessage
+    });
+    
+    // Keep only last 10 errors
+    if (this.errorHistory.length > 10) {
+      this.errorHistory.shift();
+    }
+  }
+  
+  private async initializeDegraded(): Promise<void> {
+    this.logger.info('Initializing in degraded mode...');
+    this.stateManager.transitionTo('degraded');
+    
+    // Create minimal audio context
+    if (!this.audioContext) {
+      try {
+        await this.initializeAudioContext();
+      } catch {
+        this.logger.error('Failed to create audio context even in degraded mode');
+        return;
+      }
+    }
+    
+    // Engine will work but without noise reduction
+    this.emit('degraded-mode');
+    this.logger.warn('Engine running in degraded mode - noise reduction disabled');
   }
   
   private async loadWasmModule(): Promise<void> {
@@ -520,26 +620,156 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
   }
   
   getDiagnostics(): DiagnosticInfo {
+    const reactVersion = (window as any).React?.version || 'unknown';
+    const capabilities = {
+      hasWASM: !!window.WebAssembly,
+      hasAudioContext: !!(window.AudioContext || (window as any).webkitAudioContext),
+      hasWorklet: !!(window.AudioWorkletNode),
+      maxChannels: this.audioContext?.destination.maxChannelCount || 0,
+    };
+    
+    const browserInfo = {
+      name: this.getBrowserName(),
+      version: this.getBrowserVersion(),
+      audioAPIsSupported: this.getAudioAPIsSupported(),
+    };
+    
     return {
+      version: '1.3.0',
       engineVersion: '2.0.0',
+      reactVersion,
+      browserInfo,
       wasmLoaded: !!this.wasmModule,
       activeProcessors: this.activeStreams.size,
       memoryUsage: (performance as any).memory?.usedJSHeapSize || 0,
       processingTime: this.metricsManager.getMetrics().processingLatency,
       engineState: this.stateManager.getState(),
+      capabilities,
       errors: this.errorHistory,
+      initializationLog: [], // TODO: Implement log history tracking
+      performanceMetrics: {
+        wasmLoadTime: 0, // TODO: Track actual load times
+        contextCreationTime: 0,
+        totalInitTime: 0,
+      },
     };
   }
   
-  private recordError(error: string): void {
-    this.errorHistory.push({
+  private getBrowserName(): string {
+    const userAgent = navigator.userAgent;
+    if (userAgent.includes('Chrome')) return 'Chrome';
+    if (userAgent.includes('Firefox')) return 'Firefox';
+    if (userAgent.includes('Safari')) return 'Safari';
+    if (userAgent.includes('Edge')) return 'Edge';
+    return 'Unknown';
+  }
+  
+  private getBrowserVersion(): string {
+    const userAgent = navigator.userAgent;
+    const match = userAgent.match(/(Chrome|Firefox|Safari|Edge)\/([\d.]+)/);
+    return match ? match[2] : 'unknown';
+  }
+  
+  private getAudioAPIsSupported(): string[] {
+    const apis: string[] = [];
+    if (window.AudioContext || (window as any).webkitAudioContext) apis.push('AudioContext');
+    if (window.AudioWorkletNode) apis.push('AudioWorklet');
+    if ((window as any).webkitAudioContext) apis.push('webkitAudioContext');
+    if (window.MediaStream) apis.push('MediaStream');
+    if (window.MediaRecorder) apis.push('MediaRecorder');
+    return apis;
+  }
+  
+  async runDiagnosticTests(): Promise<DiagnosticReport> {
+    const report: DiagnosticReport = {
       timestamp: Date.now(),
-      error,
-    });
+      tests: [],
+      passed: 0,
+      failed: 0,
+      warnings: 0,
+    };
     
-    // Keep only last 100 errors
-    if (this.errorHistory.length > 100) {
-      this.errorHistory.shift();
+    // Test 1: Environment Support
+    const envTest = {
+      name: 'Environment Support',
+      passed: false,
+      message: '',
+      duration: 0,
+    };
+    const startEnv = Date.now();
+    if (this.checkEnvironmentSupport()) {
+      envTest.passed = true;
+      envTest.message = 'All required APIs are supported';
+    } else {
+      envTest.message = 'Missing required APIs';
     }
+    envTest.duration = Date.now() - startEnv;
+    report.tests.push(envTest);
+    
+    // Test 2: Audio Context Creation
+    const audioTest = {
+      name: 'Audio Context Creation',
+      passed: false,
+      message: '',
+      duration: 0,
+    };
+    const startAudio = Date.now();
+    try {
+      if (!this.audioContext) {
+        await this.initializeAudioContext();
+      }
+      audioTest.passed = true;
+      audioTest.message = `Audio context created (state: ${this.audioContext?.state})`;
+    } catch (error) {
+      audioTest.message = `Failed: ${error instanceof Error ? error.message : String(error)}`;
+    }
+    audioTest.duration = Date.now() - startAudio;
+    report.tests.push(audioTest);
+    
+    // Test 3: WASM Module Loading
+    const wasmTest = {
+      name: 'WASM Module Loading',
+      passed: false,
+      message: '',
+      duration: 0,
+    };
+    const startWasm = Date.now();
+    if (this.wasmModule) {
+      wasmTest.passed = true;
+      wasmTest.message = 'WASM module already loaded';
+    } else {
+      wasmTest.message = 'WASM module not loaded (run initialize first)';
+    }
+    wasmTest.duration = Date.now() - startWasm;
+    report.tests.push(wasmTest);
+    
+    // Test 4: Frame Processing
+    const frameTest = {
+      name: 'Frame Processing',
+      passed: false,
+      message: '',
+      duration: 0,
+    };
+    const startFrame = Date.now();
+    try {
+      if (this.wasmModule && this.rnnoiseState) {
+        const testFrame = new Float32Array(480);
+        const output = this.processFrame(testFrame);
+        frameTest.passed = output.length === 480;
+        frameTest.message = frameTest.passed ? 'Frame processing successful' : 'Invalid output size';
+      } else {
+        frameTest.message = 'Engine not initialized';
+      }
+    } catch (error) {
+      frameTest.message = `Failed: ${error instanceof Error ? error.message : String(error)}`;
+    }
+    frameTest.duration = Date.now() - startFrame;
+    report.tests.push(frameTest);
+    
+    // Calculate totals
+    report.passed = report.tests.filter((t: any) => t.passed).length;
+    report.failed = report.tests.filter((t: any) => !t.passed).length;
+    
+    return report;
   }
 }

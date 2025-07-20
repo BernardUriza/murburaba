@@ -1,4 +1,4 @@
-export type EngineState = 'uninitialized' | 'initializing' | 'ready' | 'processing' | 'paused' | 'destroying' | 'destroyed' | 'error';
+export type EngineState = 'uninitialized' | 'initializing' | 'loading-wasm' | 'creating-context' | 'ready' | 'processing' | 'paused' | 'destroying' | 'destroyed' | 'error' | 'degraded';
 export type LogLevel = 'none' | 'error' | 'warn' | 'info' | 'debug';
 export type NoiseReductionLevel = 'low' | 'medium' | 'high' | 'auto';
 export type Algorithm = 'rnnoise' | 'spectral' | 'adaptive';
@@ -13,6 +13,7 @@ export interface MurmubaraConfig {
     cleanupDelay?: number;
     useWorker?: boolean;
     workerPath?: string;
+    allowDegraded?: boolean;
 }
 export interface StreamController {
     stream: MediaStream;
@@ -52,16 +53,35 @@ export interface ChunkConfig {
     overlap?: number;
 }
 export interface DiagnosticInfo {
+    version: string;
     engineVersion: string;
+    reactVersion: string;
+    browserInfo: {
+        name: string;
+        version: string;
+        audioAPIsSupported: string[];
+    };
     wasmLoaded: boolean;
     activeProcessors: number;
     memoryUsage: number;
     processingTime: number;
     engineState: EngineState;
+    capabilities: {
+        hasWASM: boolean;
+        hasAudioContext: boolean;
+        hasWorklet: boolean;
+        maxChannels: number;
+    };
     errors: Array<{
         timestamp: number;
         error: string;
     }>;
+    initializationLog: string[];
+    performanceMetrics: {
+        wasmLoadTime: number;
+        contextCreationTime: number;
+        totalInitTime: number;
+    };
 }
 export interface EngineEvents {
     initialized: () => void;
@@ -71,12 +91,25 @@ export interface EngineEvents {
     error: (error: MurmubaraError) => void;
     'state-change': (oldState: EngineState, newState: EngineState) => void;
     'metrics-update': (metrics: ProcessingMetrics) => void;
+    'degraded-mode': () => void;
     [key: string]: (...args: any[]) => void;
 }
 export declare class MurmubaraError extends Error {
     code: string;
     details?: any;
     constructor(code: string, message: string, details?: any);
+}
+export interface DiagnosticReport {
+    timestamp: number;
+    tests: Array<{
+        name: string;
+        passed: boolean;
+        message: string;
+        duration: number;
+    }>;
+    passed: number;
+    failed: number;
+    warnings: number;
 }
 export declare const ErrorCodes: {
     readonly WASM_NOT_LOADED: "WASM_NOT_LOADED";

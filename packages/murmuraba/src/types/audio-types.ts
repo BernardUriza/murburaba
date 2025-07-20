@@ -1,12 +1,15 @@
 export type EngineState = 
   | 'uninitialized'
-  | 'initializing' 
+  | 'initializing'
+  | 'loading-wasm'
+  | 'creating-context' 
   | 'ready'
   | 'processing'
   | 'paused'
   | 'destroying'
   | 'destroyed'
-  | 'error';
+  | 'error'
+  | 'degraded';
 
 export type LogLevel = 'none' | 'error' | 'warn' | 'info' | 'debug';
 export type NoiseReductionLevel = 'low' | 'medium' | 'high' | 'auto';
@@ -23,6 +26,7 @@ export interface MurmubaraConfig {
   cleanupDelay?: number;
   useWorker?: boolean;
   workerPath?: string;
+  allowDegraded?: boolean;
 }
 
 export interface StreamController {
@@ -68,13 +72,32 @@ export interface ChunkConfig {
 }
 
 export interface DiagnosticInfo {
+  version: string;
   engineVersion: string;
+  reactVersion: string;
+  browserInfo: {
+    name: string;
+    version: string;
+    audioAPIsSupported: string[];
+  };
   wasmLoaded: boolean;
   activeProcessors: number;
   memoryUsage: number;
   processingTime: number;
   engineState: EngineState;
+  capabilities: {
+    hasWASM: boolean;
+    hasAudioContext: boolean;
+    hasWorklet: boolean;
+    maxChannels: number;
+  };
   errors: Array<{ timestamp: number; error: string }>;
+  initializationLog: string[];
+  performanceMetrics: {
+    wasmLoadTime: number;
+    contextCreationTime: number;
+    totalInitTime: number;
+  };
 }
 
 export interface EngineEvents {
@@ -85,6 +108,7 @@ export interface EngineEvents {
   error: (error: MurmubaraError) => void;
   'state-change': (oldState: EngineState, newState: EngineState) => void;
   'metrics-update': (metrics: ProcessingMetrics) => void;
+  'degraded-mode': () => void;
   [key: string]: (...args: any[]) => void;
 }
 
@@ -98,6 +122,19 @@ export class MurmubaraError extends Error {
     this.code = code;
     this.details = details;
   }
+}
+
+export interface DiagnosticReport {
+  timestamp: number;
+  tests: Array<{
+    name: string;
+    passed: boolean;
+    message: string;
+    duration: number;
+  }>;
+  passed: number;
+  failed: number;
+  warnings: number;
 }
 
 export const ErrorCodes = {

@@ -1,7 +1,10 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { initializeAudioEngine, destroyEngine, processStream, processStreamChunked, getEngineStatus, getDiagnostics, onMetricsUpdate, } from '../api';
 export function useMurmubaraEngine(options = {}) {
-    const { autoInitialize = false, ...config } = options;
+    const { autoInitialize = false, fallbackToManual = false, onInitError, react19Mode = false, ...config } = options;
+    // Detect React version
+    const reactVersion = React.version;
+    const isReact19 = reactVersion.startsWith('19') || react19Mode;
     const [isInitialized, setIsInitialized] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -31,10 +34,22 @@ export function useMurmubaraEngine(options = {}) {
                 updateDiagnostics();
             }
             catch (err) {
-                const errorMessage = err instanceof Error ? err.message : String(err);
+                const error = err instanceof Error ? err : new Error(String(err));
+                const errorMessage = error.message;
                 setError(errorMessage);
                 setEngineState('error');
-                throw err;
+                // Call error callback if provided
+                if (onInitError) {
+                    onInitError(error);
+                }
+                // If fallback is enabled and we're in React 19, try manual initialization
+                if (fallbackToManual && isReact19) {
+                    console.warn('[MurmubaraEngine] Auto-init failed in React 19, attempting manual fallback');
+                    // The user can still manually call initialize() later
+                }
+                else {
+                    throw err;
+                }
             }
             finally {
                 setIsLoading(false);

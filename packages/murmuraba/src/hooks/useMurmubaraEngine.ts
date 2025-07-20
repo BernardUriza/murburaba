@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   initializeAudioEngine,
   destroyEngine,
@@ -19,6 +19,9 @@ import {
 
 interface UseMurmubaraEngineOptions extends MurmubaraConfig {
   autoInitialize?: boolean;
+  fallbackToManual?: boolean;
+  onInitError?: (error: Error) => void;
+  react19Mode?: boolean;
 }
 
 interface UseMurmubaraEngineReturn {
@@ -50,7 +53,17 @@ interface UseMurmubaraEngineReturn {
 export function useMurmubaraEngine(
   options: UseMurmubaraEngineOptions = {}
 ): UseMurmubaraEngineReturn {
-  const { autoInitialize = false, ...config } = options;
+  const { 
+    autoInitialize = false, 
+    fallbackToManual = false, 
+    onInitError,
+    react19Mode = false,
+    ...config 
+  } = options;
+  
+  // Detect React version
+  const reactVersion = React.version;
+  const isReact19 = reactVersion.startsWith('19') || react19Mode;
   
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -88,10 +101,23 @@ export function useMurmubaraEngine(
         updateDiagnostics();
         
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
+        const error = err instanceof Error ? err : new Error(String(err));
+        const errorMessage = error.message;
         setError(errorMessage);
         setEngineState('error');
-        throw err;
+        
+        // Call error callback if provided
+        if (onInitError) {
+          onInitError(error);
+        }
+        
+        // If fallback is enabled and we're in React 19, try manual initialization
+        if (fallbackToManual && isReact19) {
+          console.warn('[MurmubaraEngine] Auto-init failed in React 19, attempting manual fallback');
+          // The user can still manually call initialize() later
+        } else {
+          throw err;
+        }
       } finally {
         setIsLoading(false);
         initializePromiseRef.current = null;

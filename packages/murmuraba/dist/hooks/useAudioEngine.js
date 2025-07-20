@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { createAudioEngine } from '../engines';
 export const useAudioEngine = (config = { engineType: 'rnnoise' }) => {
+    console.warn('[Murmuraba] useAudioEngine is deprecated. Please use useMurmubaraEngine instead for better React 19 compatibility.');
     const [isInitialized, setIsInitialized] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);

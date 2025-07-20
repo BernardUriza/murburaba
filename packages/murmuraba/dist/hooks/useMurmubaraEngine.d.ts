@@ -1,6 +1,9 @@
 import { MurmubaraConfig, EngineState, ProcessingMetrics, StreamController, DiagnosticInfo, ChunkMetrics } from '../types';
 interface UseMurmubaraEngineOptions extends MurmubaraConfig {
     autoInitialize?: boolean;
+    fallbackToManual?: boolean;
+    onInitError?: (error: Error) => void;
+    react19Mode?: boolean;
 }
 interface UseMurmubaraEngineReturn {
     isInitialized: boolean;
