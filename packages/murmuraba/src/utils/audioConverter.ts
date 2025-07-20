@@ -123,16 +123,18 @@ export class AudioConverter {
       const response = await fetch(blobUrl);
       const blob = await response.blob();
       
-      // Check if conversion is needed
-      if (blob.type.includes('wav') || AudioConverter.canPlayType(blob.type)) {
-        return blobUrl; // No conversion needed
-      }
+      // Always convert to WAV for maximum compatibility
+      console.log('Converting audio from', blob.type, 'to WAV');
       
       const wavBlob = await this.convertToWav(blob);
-      return URL.createObjectURL(wavBlob);
+      const wavUrl = URL.createObjectURL(wavBlob);
+      
+      console.log('Audio converted successfully to WAV');
+      return wavUrl;
     } catch (error) {
-      console.error('Failed to convert blob URL:', error);
-      return blobUrl; // Return original on error
+      console.error('Error converting blob URL:', error);
+      // Return original URL as fallback
+      return blobUrl;
     }
   }
 }

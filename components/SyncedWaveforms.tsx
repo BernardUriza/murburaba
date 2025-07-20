@@ -22,7 +22,19 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
   // Create audio elements for synced playback
   useEffect(() => {
     if (originalAudioUrl && processedAudioUrl) {
-      // Create audio elements
+      // Clean up previous audio elements
+      if (originalAudioRef.current) {
+        originalAudioRef.current.pause();
+        originalAudioRef.current.src = '';
+        originalAudioRef.current = null;
+      }
+      if (processedAudioRef.current) {
+        processedAudioRef.current.pause();
+        processedAudioRef.current.src = '';
+        processedAudioRef.current = null;
+      }
+      
+      // Create new audio elements
       originalAudioRef.current = new Audio(originalAudioUrl);
       processedAudioRef.current = new Audio(processedAudioUrl);
       
@@ -43,19 +55,6 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
         }
       };
       
-      // Handle play/pause
-      if (isPlaying) {
-        originalAudioRef.current.play().catch(console.error);
-        processedAudioRef.current.play().catch(console.error);
-        updateTime();
-      } else {
-        originalAudioRef.current.pause();
-        processedAudioRef.current.pause();
-        if (animationRef.current) {
-          cancelAnimationFrame(animationRef.current);
-        }
-      }
-      
       // Handle ended event
       originalAudioRef.current.onended = () => {
         onPlayingChange(false);
@@ -65,17 +64,52 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
     return () => {
       if (originalAudioRef.current) {
         originalAudioRef.current.pause();
+        originalAudioRef.current.src = '';
         originalAudioRef.current = null;
       }
       if (processedAudioRef.current) {
         processedAudioRef.current.pause();
+        processedAudioRef.current.src = '';
         processedAudioRef.current = null;
       }
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [originalAudioUrl, processedAudioUrl, isPlaying, onPlayingChange]);
+  }, [originalAudioUrl, processedAudioUrl]);
+  
+  // Handle play/pause separately
+  useEffect(() => {
+    if (!originalAudioRef.current || !processedAudioRef.current) return;
+    
+    const updateTime = () => {
+      if (originalAudioRef.current) {
+        setCurrentTime(originalAudioRef.current.currentTime);
+        
+        // Sync processed audio if needed
+        if (processedAudioRef.current && 
+            Math.abs(originalAudioRef.current.currentTime - processedAudioRef.current.currentTime) > 0.1) {
+          processedAudioRef.current.currentTime = originalAudioRef.current.currentTime;
+        }
+      }
+      
+      if (isPlaying) {
+        animationRef.current = requestAnimationFrame(updateTime);
+      }
+    };
+    
+    if (isPlaying) {
+      originalAudioRef.current.play().catch(console.error);
+      processedAudioRef.current.play().catch(console.error);
+      updateTime();
+    } else {
+      originalAudioRef.current.pause();
+      processedAudioRef.current.pause();
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    }
+  }, [isPlaying]);
 
   // Format time display
   const formatTime = (seconds: number) => {

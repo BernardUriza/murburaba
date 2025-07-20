@@ -41,8 +41,15 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
 
   useEffect(() => {
     return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
       if (audioContext && audioContext.state !== 'closed') {
-        audioContext.close();
+        audioContext.close().catch(console.error);
+      }
+      // Clean up the source created flag
+      if (audioRef.current) {
+        delete audioRef.current.dataset.sourceCreated;
       }
     };
   }, []);
@@ -50,14 +57,28 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   // Initialize audio URL when hideControls is true and handle external playback
   useEffect(() => {
     if (audioUrl && hideControls && audioRef.current) {
-      initializeAudio();
+      // Small delay to ensure audio element is ready
+      const timer = setTimeout(() => {
+        initializeAudio();
+        
+        // Handle external playback control
+        if (!isPaused && analyser) {
+          draw();
+        }
+      }, 100);
       
-      // Handle external playback control
-      if (!isPaused && analyser) {
-        draw();
-      }
+      return () => clearTimeout(timer);
     }
-  }, [audioUrl, hideControls, isPaused]);
+  }, [audioUrl, hideControls]);
+  
+  // Handle playback state changes
+  useEffect(() => {
+    if (hideControls && analyser && !isPaused) {
+      draw();
+    } else if (hideControls && isPaused && animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+  }, [isPaused, analyser, hideControls]);
 
   const initializeLiveStream = async () => {
     if (!stream || audioContext) return;
@@ -85,20 +106,38 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   };
 
   const initializeAudio = async () => {
-    if (!audioRef.current || audioContext) return;
+    if (!audioRef.current) return;
+    
+    // Check if we already have a context and it's not closed
+    if (audioContext && audioContext.state !== 'closed') {
+      return;
+    }
 
-    const ctx = new AudioContext();
-    const analyserNode = ctx.createAnalyser();
-    analyserNode.fftSize = 2048;
-    analyserNode.smoothingTimeConstant = 0.85;
+    try {
+      const ctx = new AudioContext();
+      const analyserNode = ctx.createAnalyser();
+      analyserNode.fftSize = 2048;
+      analyserNode.smoothingTimeConstant = 0.85;
 
-    const sourceNode = ctx.createMediaElementSource(audioRef.current);
-    sourceNode.connect(analyserNode);
-    analyserNode.connect(ctx.destination);
+      // Check if this audio element already has a source node
+      if (!audioRef.current.dataset.sourceCreated) {
+        const sourceNode = ctx.createMediaElementSource(audioRef.current);
+        sourceNode.connect(analyserNode);
+        analyserNode.connect(ctx.destination);
+        
+        // Mark that we've created a source for this element
+        audioRef.current.dataset.sourceCreated = 'true';
+        setSource(sourceNode);
+      } else {
+        // If source already exists, just connect the analyser to destination
+        analyserNode.connect(ctx.destination);
+      }
 
-    setAudioContext(ctx);
-    setAnalyser(analyserNode);
-    setSource(sourceNode);
+      setAudioContext(ctx);
+      setAnalyser(analyserNode);
+    } catch (error) {
+      console.error('Error initializing audio:', error);
+    }
   };
 
   const drawLiveWaveform = (analyserNode: AnalyserNode) => {

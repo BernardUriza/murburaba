@@ -280,8 +280,12 @@ export function useMurmubaraEngine(
           
           // Initialize recording storage for this chunk
           chunkRecordingsRef.current.set(chunkId, { processed: [], original: [], finalized: false });
+          
+          // Important: Update the chunk IDs in the correct order
           previousChunkId = recordingChunkId;
           recordingChunkId = chunkId;
+          
+          console.log('New chunk created:', chunkId, 'Previous chunk:', previousChunkId);
         }
       });
 
@@ -322,8 +326,17 @@ export function useMurmubaraEngine(
       // Process recorded chunks periodically
       processChunkIntervalRef.current = setInterval(() => {
         chunkRecordingsRef.current.forEach((recordings, chunkId) => {
-          if ((recordings.processed.length > 0 || recordings.original.length > 0) && 
-              (recordings.finalized || recordings.processed.length > 5)) {
+          // Only process if we have data and haven't already created URLs
+          const needsProcessing = (recordings.processed.length > 0 || recordings.original.length > 0);
+          const hasEnoughData = recordings.finalized || recordings.processed.length > 3 || recordings.original.length > 3;
+          
+          if (needsProcessing && hasEnoughData) {
+            const chunk = recordingState.chunks.find(c => c.id === chunkId);
+            
+            // Skip if we already have URLs
+            if (chunk && chunk.processedAudioUrl && chunk.originalAudioUrl) {
+              return;
+            }
             
             const processedBlob = recordings.processed.length > 0 
               ? new Blob(recordings.processed, { type: mimeType })
@@ -332,25 +345,33 @@ export function useMurmubaraEngine(
               ? new Blob(recordings.original, { type: mimeType })
               : null;
             
-            const processedUrl = processedBlob ? URL.createObjectURL(processedBlob) : undefined;
-            const originalUrl = originalBlob ? URL.createObjectURL(originalBlob) : undefined;
+            const processedUrl = processedBlob && processedBlob.size > 0 ? URL.createObjectURL(processedBlob) : undefined;
+            const originalUrl = originalBlob && originalBlob.size > 0 ? URL.createObjectURL(originalBlob) : undefined;
             
-            setRecordingState(prev => ({
-              ...prev,
-              chunks: prev.chunks.map(chunk => {
-                if (chunk.id === chunkId) {
-                  return {
-                    ...chunk,
-                    processedAudioUrl: processedUrl || chunk.processedAudioUrl,
-                    originalAudioUrl: originalUrl || chunk.originalAudioUrl
-                  };
-                }
-                return chunk;
-              })
-            }));
+            if (processedUrl || originalUrl) {
+              setRecordingState(prev => ({
+                ...prev,
+                chunks: prev.chunks.map(chunk => {
+                  if (chunk.id === chunkId) {
+                    return {
+                      ...chunk,
+                      processedAudioUrl: processedUrl || chunk.processedAudioUrl,
+                      originalAudioUrl: originalUrl || chunk.originalAudioUrl
+                    };
+                  }
+                  return chunk;
+                })
+              }));
+              
+              // Clear the processed data to avoid reprocessing
+              if (recordings.finalized) {
+                recordings.processed = [];
+                recordings.original = [];
+              }
+            }
           }
         });
-      }, 1000);
+      }, 500); // Check more frequently
       
       mediaRecorderRef.current = recorder;
       originalRecorderRef.current = originalRecorder;
@@ -368,26 +389,31 @@ export function useMurmubaraEngine(
   
   // Stop recording
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current) {
+    // First, stop the recorders to get final data
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
-    if (originalRecorderRef.current) {
+    if (originalRecorderRef.current && originalRecorderRef.current.state !== 'inactive') {
       originalRecorderRef.current.stop();
-    }
-    if (streamController) {
-      streamController.stop();
-    }
-    if (currentStream) {
-      currentStream.getTracks().forEach(track => track.stop());
-    }
-    if (originalStream) {
-      originalStream.getTracks().forEach(track => track.stop());
     }
     
     // Finalize all pending recordings
     chunkRecordingsRef.current.forEach((recording) => {
       recording.finalized = true;
     });
+    
+    // Give time for final data to be processed
+    setTimeout(() => {
+      if (streamController) {
+        streamController.stop();
+      }
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+      }
+      if (originalStream) {
+        originalStream.getTracks().forEach(track => track.stop());
+      }
+    }, 500);
     
     // Clear intervals
     if (processChunkIntervalRef.current) {
@@ -474,13 +500,16 @@ export function useMurmubaraEngine(
     let playableUrl = audioUrl;
     const mimeType = recordingMimeTypeRef.current;
     
-    if (!AudioConverter.canPlayType(mimeType) && audioConverterRef.current) {
+    // Always convert to WAV for maximum compatibility
+    if (audioConverterRef.current) {
       console.log('Converting audio from', mimeType, 'to WAV for playback...');
       try {
         playableUrl = await audioConverterRef.current.convertBlobUrl(audioUrl);
         console.log('Audio converted successfully');
       } catch (error) {
         console.error('Failed to convert audio:', error);
+        // Use original URL as fallback
+        playableUrl = audioUrl;
       }
     }
     

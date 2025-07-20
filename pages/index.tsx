@@ -6,6 +6,7 @@ import { SyncedWaveforms } from '../components/SyncedWaveforms'
 import { useState, useEffect, useRef } from 'react'
 import type { StreamController, ChunkMetrics } from '../types'
 import { getAudioConverter, AudioConverter } from '../utils/audioConverter'
+import Swal from 'sweetalert2'
 
 interface ProcessedChunk extends ChunkMetrics {
   id: string
@@ -397,7 +398,17 @@ export default function Home() {
         if (error.name === 'NotSupportedError') {
           console.error('Audio format not supported. The recording might be in a format that the browser cannot play.')
           console.error('MIME type used for recording:', (window as any).recordingMimeType)
-          alert('Unable to play audio. The recording format may not be supported by your browser.')
+          
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'error',
+            title: 'Audio playback error',
+            text: 'The recording format may not be supported by your browser',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+          })
         }
       })
       setProcessedChunks(prev => prev.map(c => 
