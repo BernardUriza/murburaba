@@ -482,6 +482,8 @@ export function useMurmubaraEngine(
   
   // Toggle chunk playback with audio conversion support
   const toggleChunkPlayback = useCallback(async (chunkId: string, audioType: 'processed' | 'original') => {
+    
+    console.log('♒Searching for this chunk:', chunkId);
     const chunk = recordingState.chunks.find(c => c.id === chunkId);
     if (!chunk) {
       console.error('Chunk not found:', chunkId);
