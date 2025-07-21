@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { initializeAudioEngine, destroyEngine, processStream, processStreamChunked, getEngineStatus, getDiagnostics, onMetricsUpdate, } from '../../api';
-import { getAudioConverter } from '../../utils/audioConverter';
+import { getAudioConverter, destroyAudioConverter } from '../../utils/audioConverter';
 // Import managers
 import { URLManager } from './urlManager';
 import { ChunkManager } from './chunkManager';
@@ -125,6 +125,8 @@ export function useMurmubaraEngine(options = {}) {
                 metricsUnsubscribeRef.current();
                 metricsUnsubscribeRef.current = null;
             }
+            // CRITICAL: Destroy audio converter to prevent memory leaks
+            destroyAudioConverter();
             // Clean up all URLs
             urlManagerRef.current.revokeAllUrls();
             await destroyEngine({ force });
@@ -246,6 +248,8 @@ export function useMurmubaraEngine(options = {}) {
         console.log(`🌟 ${LOG_PREFIX.LIFECYCLE} Component mounted, setting up cleanup handler`);
         return () => {
             console.log(`👋 ${LOG_PREFIX.LIFECYCLE} Component unmounting, cleaning up...`);
+            // CRITICAL: Destroy audio converter to prevent memory leaks
+            destroyAudioConverter();
             // Clean up all URLs
             urlManagerRef.current.revokeAllUrls();
             // Clean up audio elements

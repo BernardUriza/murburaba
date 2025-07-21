@@ -1225,6 +1225,8 @@ function onMetricsUpdate(callback) {
  */
 class AudioConverter {
     constructor() {
+        // CRITICAL FOR MEDICAL APP: Track created URLs for cleanup
+        this.createdUrls = new Set();
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
     }
     /**
@@ -1404,6 +1406,8 @@ class AudioConverter {
             console.log('Converting audio from', blob.type, 'to WAV, blob size:', blob.size);
             const wavBlob = await this.convertToWav(blob);
             const wavUrl = URL.createObjectURL(wavBlob);
+            // CRITICAL: Track URL for cleanup in medical app
+            this.createdUrls.add(wavUrl);
             console.log('Audio converted successfully to WAV, new size:', wavBlob.size);
             return wavUrl;
         }
@@ -1414,6 +1418,21 @@ class AudioConverter {
             return blobUrl;
         }
     }
+    /**
+     * CRITICAL FOR MEDICAL APP: Clean up all created URLs to prevent memory leaks
+     * Must be called when the converter is no longer needed
+     */
+    destroy() {
+        // Revoke all created URLs
+        this.createdUrls.forEach(url => {
+            URL.revokeObjectURL(url);
+        });
+        this.createdUrls.clear();
+        // Close audio context
+        if (this.audioContext && this.audioContext.state !== 'closed') {
+            this.audioContext.close();
+        }
+    }
 }
 // Singleton instance
 let converterInstance = null;
@@ -1422,6 +1441,16 @@ function getAudioConverter() {
         converterInstance = new AudioConverter();
     }
     return converterInstance;
+}
+/**
+ * CRITICAL FOR MEDICAL APP: Destroy the singleton and clean up all resources
+ * Must be called when the application is shutting down or during cleanup
+ */
+function destroyAudioConverter() {
+    if (converterInstance) {
+        converterInstance.destroy();
+        converterInstance = null;
+    }
 }
 
 /**
@@ -2143,6 +2172,8 @@ function useMurmubaraEngine(options = {}) {
                 metricsUnsubscribeRef.current();
                 metricsUnsubscribeRef.current = null;
             }
+            // CRITICAL: Destroy audio converter to prevent memory leaks
+            destroyAudioConverter();
             // Clean up all URLs
             urlManagerRef.current.revokeAllUrls();
             await destroyEngine({ force });
@@ -2264,6 +2295,8 @@ function useMurmubaraEngine(options = {}) {
         console.log(`🌟 ${LOG_PREFIX.LIFECYCLE} Component mounted, setting up cleanup handler`);
         return () => {
             console.log(`👋 ${LOG_PREFIX.LIFECYCLE} Component unmounting, cleaning up...`);
+            // CRITICAL: Destroy audio converter to prevent memory leaks
+            destroyAudioConverter();
             // Clean up all URLs
             urlManagerRef.current.revokeAllUrls();
             // Clean up audio elements

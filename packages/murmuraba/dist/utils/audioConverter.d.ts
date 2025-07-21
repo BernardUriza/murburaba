@@ -4,6 +4,7 @@
  */
 export declare class AudioConverter {
     private audioContext;
+    private createdUrls;
     constructor();
     /**
      * Convert a Blob from WebM/Opus to WAV format
@@ -33,6 +34,16 @@ export declare class AudioConverter {
      * Convert blob URL to WAV blob URL
      */
     convertBlobUrl(blobUrl: string): Promise<string>;
+    /**
+     * CRITICAL FOR MEDICAL APP: Clean up all created URLs to prevent memory leaks
+     * Must be called when the converter is no longer needed
+     */
+    destroy(): void;
 }
 export declare function getAudioConverter(): AudioConverter;
+/**
+ * CRITICAL FOR MEDICAL APP: Destroy the singleton and clean up all resources
+ * Must be called when the application is shutting down or during cleanup
+ */
+export declare function destroyAudioConverter(): void;
 //# sourceMappingURL=audioConverter.d.ts.map

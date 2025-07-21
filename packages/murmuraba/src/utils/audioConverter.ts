@@ -5,6 +5,8 @@
 
 export class AudioConverter {
   private audioContext: AudioContext;
+  // CRITICAL FOR MEDICAL APP: Track created URLs for cleanup
+  private createdUrls = new Set<string>();
   
   constructor() {
     this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -218,6 +220,9 @@ export class AudioConverter {
       const wavBlob = await this.convertToWav(blob);
       const wavUrl = URL.createObjectURL(wavBlob);
       
+      // CRITICAL: Track URL for cleanup in medical app
+      this.createdUrls.add(wavUrl);
+      
       console.log('Audio converted successfully to WAV, new size:', wavBlob.size);
       return wavUrl;
     } catch (error) {
@@ -225,6 +230,23 @@ export class AudioConverter {
       console.error('Falling back to original URL');
       // Return original URL as fallback
       return blobUrl;
+    }
+  }
+  
+  /**
+   * CRITICAL FOR MEDICAL APP: Clean up all created URLs to prevent memory leaks
+   * Must be called when the converter is no longer needed
+   */
+  destroy(): void {
+    // Revoke all created URLs
+    this.createdUrls.forEach(url => {
+      URL.revokeObjectURL(url);
+    });
+    this.createdUrls.clear();
+    
+    // Close audio context
+    if (this.audioContext && this.audioContext.state !== 'closed') {
+      this.audioContext.close();
     }
   }
 }
@@ -237,4 +259,15 @@ export function getAudioConverter(): AudioConverter {
     converterInstance = new AudioConverter();
   }
   return converterInstance;
+}
+
+/**
+ * CRITICAL FOR MEDICAL APP: Destroy the singleton and clean up all resources
+ * Must be called when the application is shutting down or during cleanup
+ */
+export function destroyAudioConverter(): void {
+  if (converterInstance) {
+    converterInstance.destroy();
+    converterInstance = null;
+  }
 }

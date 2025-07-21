@@ -9,7 +9,7 @@ import {
   onMetricsUpdate,
   getEngine,
 } from '../../api';
-import { getAudioConverter, AudioConverter } from '../../utils/audioConverter';
+import { getAudioConverter, AudioConverter, destroyAudioConverter } from '../../utils/audioConverter';
 
 // Import types
 import {
@@ -179,6 +179,9 @@ export function useMurmubaraEngine(
         metricsUnsubscribeRef.current = null;
       }
       
+      // CRITICAL: Destroy audio converter to prevent memory leaks
+      destroyAudioConverter();
+      
       // Clean up all URLs
       urlManagerRef.current.revokeAllUrls();
       
@@ -334,6 +337,9 @@ export function useMurmubaraEngine(
     
     return () => {
       console.log(`👋 ${LOG_PREFIX.LIFECYCLE} Component unmounting, cleaning up...`);
+      
+      // CRITICAL: Destroy audio converter to prevent memory leaks
+      destroyAudioConverter();
       
       // Clean up all URLs
       urlManagerRef.current.revokeAllUrls();
