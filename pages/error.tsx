@@ -1,4 +1,5 @@
 import React from 'react'
+import Link from 'next/link'
 
 export default function Error() {
   return (
@@ -8,10 +9,10 @@ export default function Error() {
         <p className="error-message-text">
           Something went wrong. Please try again.
         </p>
-        <a href="/" className="btn btn-primary">
+        <Link href="/" className="btn btn-primary">
           <span className="btn-icon">🏠</span>
           <span>Back to Home</span>
-        </a>
+        </Link>
       </div>
     </div>
   )

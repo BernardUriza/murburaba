@@ -1615,7 +1615,9 @@ function useMurmubaraEngine(options = {}) {
                     autoGainControl: true
                 }
             });
-            setOriginalStream(stream);
+            // Clone the stream for the original recorder - STOP BEING STUPID
+            const originalStreamClone = stream.clone();
+            setOriginalStream(originalStreamClone);
             setCurrentStream(stream);
             // Clear previous recordings
             chunkRecordingsRef.current.clear();
@@ -1652,7 +1654,8 @@ function useMurmubaraEngine(options = {}) {
                 chunkRecordingsRef.current.set(chunkId, { processed: [], original: [], finalized: false });
                 // Create new recorders for this cycle
                 currentRecorder = new MediaRecorder(processedStream, { mimeType });
-                currentOriginalRecorder = new MediaRecorder(stream, { mimeType });
+                // USE THE CLONED STREAM, NOT THE CONSUMED ONE, DUMBASS
+                currentOriginalRecorder = new MediaRecorder(originalStreamClone, { mimeType });
                 // Debug: Check if streams are active
                 console.log(`🔍 [FAKE-STREAM] Stream states:`, {
                     processedStreamActive: processedStream.active,

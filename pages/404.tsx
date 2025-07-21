@@ -1,4 +1,5 @@
 import React from 'react'
+import Link from 'next/link'
 
 export default function Custom404() {
   return (
@@ -16,10 +17,10 @@ export default function Custom404() {
         <p className="error-message-text">
           Page not found. The prairie winds have blown this page away.
         </p>
-        <a href="/" className="btn btn-primary">
+        <Link href="/" className="btn btn-primary">
           <span className="btn-icon">🏠</span>
           <span>Back to Home</span>
-        </a>
+        </Link>
       </div>
     </div>
   )

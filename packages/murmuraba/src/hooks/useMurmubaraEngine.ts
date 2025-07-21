@@ -317,7 +317,10 @@ export function useMurmubaraEngine(
         } 
       });
 
-      setOriginalStream(stream);
+      // Clone the stream for the original recorder - STOP BEING STUPID
+      const originalStreamClone = stream.clone();
+      
+      setOriginalStream(originalStreamClone);
       setCurrentStream(stream);
 
       // Clear previous recordings
@@ -364,7 +367,8 @@ export function useMurmubaraEngine(
         
         // Create new recorders for this cycle
         currentRecorder = new MediaRecorder(processedStream, { mimeType });
-        currentOriginalRecorder = new MediaRecorder(stream, { mimeType });
+        // USE THE CLONED STREAM, NOT THE CONSUMED ONE, DUMBASS
+        currentOriginalRecorder = new MediaRecorder(originalStreamClone, { mimeType });
         
         // Debug: Check if streams are active
         console.log(`🔍 [FAKE-STREAM] Stream states:`, {

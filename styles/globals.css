@@ -1334,6 +1334,13 @@ p {
   color: var(--neutral-800);
 }
 
+.setting-label {
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--neutral-600);
+}
+
 /* Noise Slider */
 .noise-slider {
   accent-color: var(--grass-light);

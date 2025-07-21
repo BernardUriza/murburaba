@@ -195,13 +195,13 @@ export default function Home() {
         {showSettings && (
           <div className="floating-panel settings-panel">
             <div className="panel-header">
-              <h3>⚙️ Settings</h3>
+              <h3>Settings</h3>
               <button className="close-btn" onClick={() => setShowSettings(false)}>✕</button>
             </div>
             <div className="panel-content">
               {/* Noise Reduction Level */}
               <div className="setting-group">
-                <label>🔇 Noise Reduction Level</label>
+                <label className="setting-label">Noise Reduction Level</label>
                 <div className="radio-group">
                   {(['low', 'medium', 'high', 'auto'] as const).map(level => (
                     <label key={level} className="radio-label">
@@ -220,7 +220,7 @@ export default function Home() {
 
               {/* Algorithm Selection */}
               <div className="setting-group">
-                <label>🧠 Processing Algorithm</label>
+                <label className="setting-label">Processing Algorithm</label>
                 <select 
                   value={engineConfig.algorithm}
                   onChange={(e) => setEngineConfig(prev => ({ 
@@ -238,7 +238,7 @@ export default function Home() {
 
               {/* Buffer Size */}
               <div className="setting-group">
-                <label>📊 Buffer Size</label>
+                <label className="setting-label">Buffer Size</label>
                 <select 
                   value={engineConfig.bufferSize}
                   onChange={(e) => setEngineConfig(prev => ({ 
@@ -258,7 +258,7 @@ export default function Home() {
 
               {/* Advanced Options */}
               <div className="setting-group">
-                <label>⚡ Performance Options</label>
+                <label className="setting-label">Performance Options</label>
                 <label className="checkbox-label">
                   <input
                     type="checkbox"
@@ -281,7 +281,7 @@ export default function Home() {
               
               {/* Chunk Duration */}
               <div className="setting-group">
-                <label>⏱️ Chunk Duration</label>
+                <label className="setting-label">Chunk Duration</label>
                 <div className="duration-buttons">
                   {[5, 8, 10, 15, 20, 30].map(duration => (
                     <button 
@@ -315,7 +315,7 @@ export default function Home() {
                     }}
                     disabled={isRecording}
                   >
-                    🔄 Apply Changes
+                    Apply Changes
                   </button>
                 </div>
               )}
