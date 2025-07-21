@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">40% </span>
+                <span class="strong">4% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>10/25</span>
+                <span class='fraction'>1/25</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">25% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>2/8</span>
+                <span class='fraction'>0/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">44.44% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>4/9</span>
+                <span class='fraction'>0/9</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">40% </span>
+                <span class="strong">4% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>10/25</span>
+                <span class='fraction'>1/25</span>
             </div>
         
             
@@ -120,14 +120,14 @@
 <a name='L55'></a><a href='#L55'>55</a>
 <a name='L56'></a><a href='#L56'>56</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">17x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -141,11 +141,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">28x</span>
-<span class="cline-any cline-yes">28x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -175,14 +175,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">export type EventHandler = (...args: any[]) =&gt; void;
 &nbsp;
-export class EventEmitter&lt;T extends Record&lt;string, EventHandler&gt;&gt; {
-  private events: Map&lt;keyof T, Set&lt;EventHandler&gt;&gt; = new Map();
+<span class="fstat-no" title="function not covered" >export class E</span>ventEmitter&lt;T extends Record&lt;string, EventHandler&gt;&gt; {
+  private <span class="cstat-no" title="statement not covered" >events: Map&lt;keyof T, Set&lt;EventHandler&gt;&gt; = new Map();</span>
   
-  on&lt;K extends keyof T&gt;(event: K, handler: T[K]): void {
-    if (!this.events.has(event)) {
-      this.events.set(event, new Set());
+<span class="fstat-no" title="function not covered" >  on&lt;</span>K extends keyof T&gt;(event: K, handler: T[K]): void {
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!this.events.has(event)) {</span>
+<span class="cstat-no" title="statement not covered" >      this.events.set(event, new Set());</span>
     }
-    this.events.get(event)!.add(handler);
+<span class="cstat-no" title="statement not covered" >    this.events.get(event)!.add(handler);</span>
   }
   
 <span class="fstat-no" title="function not covered" >  off&lt;</span>K extends keyof T&gt;(event: K, handler: T[K]): void {
@@ -195,12 +195,12 @@ export class EventEmitter&lt;T extends Record&lt;string, EventHandler&gt;&gt; {
     }
   }
   
-  emit&lt;K extends keyof T&gt;(event: K, ...args: Parameters&lt;T[K]&gt;): void {
-    const handlers = this.events.get(event);
-    if (handlers) {
-      handlers.forEach(handler =&gt; {
-        try {
-          handler(...args);
+<span class="fstat-no" title="function not covered" >  emit&lt;</span>K extends keyof T&gt;(event: K, ...args: Parameters&lt;T[K]&gt;): void {
+    const handlers = <span class="cstat-no" title="statement not covered" >this.events.get(event);</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (handlers) {</span>
+<span class="cstat-no" title="statement not covered" >      handlers.forEach(<span class="fstat-no" title="function not covered" >handler </span>=&gt; {</span>
+<span class="cstat-no" title="statement not covered" >        try {</span>
+<span class="cstat-no" title="statement not covered" >          handler(...args);</span>
         } catch (error) {
 <span class="cstat-no" title="statement not covered" >          console.error(`Error in event handler for ${String(event)}:`, error);</span>
         }
@@ -235,7 +235,7 @@ export class EventEmitter&lt;T extends Record&lt;string, EventHandler&gt;&gt; {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-07-21T19:55:08.098Z
+                at 2025-07-21T20:07:29.792Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
