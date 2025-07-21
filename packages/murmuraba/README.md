@@ -374,6 +374,26 @@ interface ProcessingMetrics {
 - WebAssembly support
 - Modern browser (Chrome 66+, Firefox 60+, Safari 11.1+, Edge 79+)
 
+## Testing
+
+### Unit Tests
+
+```bash
+npm test              # Run all tests
+npm run test:coverage # Run with coverage report
+```
+
+### Integration Tests (Browser)
+
+For real-world audio testing with actual noise reduction, see our [DOM Integration Testing Guide](./docs/DOM_INTEGRATION_TESTS.md).
+
+This guide covers:
+- Testing with real microphone input
+- File upload testing with noisy audio
+- Performance benchmarking
+- Visual waveform analysis
+- SNR (Signal-to-Noise Ratio) measurements
+
 ## Performance Tips
 
 1. Use appropriate buffer sizes:
