@@ -211,10 +211,11 @@ describe('ChunkProcessor', () => {
       // Force flush
       chunkProcessor.flush();
       
+      // flush() pads with silence to complete the chunk size
       expect(config.onChunkProcessed).toHaveBeenCalledWith(
         expect.objectContaining({
-          originalSize: 10000 * 4, // Float32 = 4 bytes
-          duration: expect.any(Number)
+          originalSize: 48000 * 4, // Full chunk size after padding
+          duration: 1000
         })
       );
     });
@@ -230,7 +231,7 @@ describe('ChunkProcessor', () => {
       chunkProcessor.flush();
       
       expect(config.onChunkProcessed).not.toHaveBeenCalled();
-      expect(mockLogger.debug).toHaveBeenCalledWith('No samples to flush');
+      expect(mockLogger.debug).toHaveBeenCalledWith('ChunkProcessor reset');
     });
   });
 
