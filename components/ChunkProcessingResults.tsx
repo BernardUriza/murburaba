@@ -1,5 +1,6 @@
 import { SyncedWaveforms } from './SyncedWaveforms'
 import { useEffect } from 'react'
+import AudioPlayer from './AudioPlayer'
 
 interface ProcessedChunk {
   id: string
@@ -186,30 +187,24 @@ function ChunkItem({
               ⚠️ {chunk.errorMessage || 'Audio unavailable'}
             </div>
           ) : (
-            <>
-              <button 
-                className={`action-btn play-original ${
-                  chunk.isPlaying && isSelected ? 'active' : ''
-                }`}
-                onClick={() => onTogglePlayback(chunk.id, 'original')}
-                disabled={!chunk.originalAudioUrl}
-                title="Play Original"
-              >
-                <span className="btn-icon">🔊</span>
-                <span className="btn-text">Original</span>
-              </button>
-              <button 
-                className={`action-btn play-processed ${
-                  chunk.isPlaying && isSelected ? 'active' : ''
-                }`}
-                onClick={() => onTogglePlayback(chunk.id, 'processed')}
-                disabled={!chunk.processedAudioUrl}
-                title="Play Enhanced"
-              >
-                <span className="btn-icon">🎵</span>
-                <span className="btn-text">Enhanced</span>
-              </button>
-            </>
+            <div className="audio-controls">
+              <AudioPlayer
+                src={chunk.originalAudioUrl}
+                label="Original"
+                onPlayStateChange={(playing) => {
+                  if (playing) onTogglePlayback(chunk.id, 'original')
+                }}
+                className="audio-player-original"
+              />
+              <AudioPlayer
+                src={chunk.processedAudioUrl}
+                label="Enhanced"
+                onPlayStateChange={(playing) => {
+                  if (playing) onTogglePlayback(chunk.id, 'processed')
+                }}
+                className="audio-player-enhanced"
+              />
+            </div>
           )}
           <div className="dropdown-container">
             <button 

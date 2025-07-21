@@ -35,10 +35,11 @@ export function throttle(func, limit) {
 export class AudioCache {
     constructor(maxSize = 50, ttlMinutes = 15) {
         this.cache = new Map();
+        this.cleanupInterval = null;
         this.maxSize = maxSize;
         this.ttl = ttlMinutes * 60 * 1000;
-        // Auto cleanup expired entries
-        setInterval(() => this.cleanup(), 60000);
+        // Auto cleanup expired entries - CRITICAL: Store interval ID for cleanup
+        this.cleanupInterval = setInterval(() => this.cleanup(), 60000);
     }
     set(key, blob) {
         // Evict oldest if at capacity
@@ -73,6 +74,17 @@ export class AudioCache {
         }
     }
     clear() {
+        this.cache.clear();
+    }
+    /**
+     * CRITICAL FOR MEDICAL APP: Properly cleanup interval to prevent memory leak
+     * Must be called when AudioCache instance is no longer needed
+     */
+    destroy() {
+        if (this.cleanupInterval) {
+            clearInterval(this.cleanupInterval);
+            this.cleanupInterval = null;
+        }
         this.cache.clear();
     }
 }

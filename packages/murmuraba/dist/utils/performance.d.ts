@@ -17,12 +17,18 @@ export declare class AudioCache {
     private cache;
     private maxSize;
     private ttl;
+    private cleanupInterval;
     constructor(maxSize?: number, ttlMinutes?: number);
     set(key: string, blob: Blob): void;
     get(key: string): Blob | null;
     has(key: string): boolean;
     cleanup(): void;
     clear(): void;
+    /**
+     * CRITICAL FOR MEDICAL APP: Properly cleanup interval to prevent memory leak
+     * Must be called when AudioCache instance is no longer needed
+     */
+    destroy(): void;
 }
 /**
  * Generate hash for blob caching

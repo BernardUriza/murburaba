@@ -196,7 +196,7 @@ export default function Home() {
           <div className="floating-panel settings-panel">
             <div className="panel-header">
               <h3>Settings</h3>
-              <button className="close-btn" onClick={() => setShowSettings(false)}>✕</button>
+              <button className="close-btn" onClick={() => setShowSettings(false)}>×</button>
             </div>
             <div className="panel-content">
               {/* Noise Reduction Level */}
@@ -209,7 +209,7 @@ export default function Home() {
                         type="radio"
                         name="noiseLevel"
                         checked={engineConfig.noiseReductionLevel === level}
-                        onChange={() => setEngineConfig(prev => ({ ...prev, noiseReductionLevel: level }))}
+                        onChange={() => setEngineConfig((prev: any) => ({ ...prev, noiseReductionLevel: level }))}
                         disabled={isRecording}
                       />
                       <span>{level.charAt(0).toUpperCase() + level.slice(1)}</span>
@@ -223,7 +223,7 @@ export default function Home() {
                 <label className="setting-label">Processing Algorithm</label>
                 <select 
                   value={engineConfig.algorithm}
-                  onChange={(e) => setEngineConfig(prev => ({ 
+                  onChange={(e) => setEngineConfig((prev: any) => ({ 
                     ...prev, 
                     algorithm: e.target.value as 'rnnoise' | 'spectral' | 'adaptive' 
                   }))}
@@ -241,7 +241,7 @@ export default function Home() {
                 <label className="setting-label">Buffer Size</label>
                 <select 
                   value={engineConfig.bufferSize}
-                  onChange={(e) => setEngineConfig(prev => ({ 
+                  onChange={(e) => setEngineConfig((prev: any) => ({ 
                     ...prev, 
                     bufferSize: Number(e.target.value) as 256 | 512 | 1024 | 2048 | 4096
                   }))}
@@ -263,7 +263,7 @@ export default function Home() {
                   <input
                     type="checkbox"
                     checked={engineConfig.useWorker}
-                    onChange={(e) => setEngineConfig(prev => ({ ...prev, useWorker: e.target.checked }))}
+                    onChange={(e) => setEngineConfig((prev: any) => ({ ...prev, useWorker: e.target.checked }))}
                     disabled={isRecording}
                   />
                   <span>Use Web Worker (better performance)</span>
@@ -272,7 +272,7 @@ export default function Home() {
                   <input
                     type="checkbox"
                     checked={engineConfig.allowDegraded}
-                    onChange={(e) => setEngineConfig(prev => ({ ...prev, allowDegraded: e.target.checked }))}
+                    onChange={(e) => setEngineConfig((prev: any) => ({ ...prev, allowDegraded: e.target.checked }))}
                     disabled={isRecording}
                   />
                   <span>Allow degraded mode (fallback)</span>

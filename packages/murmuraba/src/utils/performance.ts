@@ -47,13 +47,14 @@ export class AudioCache {
   private cache = new Map<string, { blob: Blob; timestamp: number }>();
   private maxSize: number;
   private ttl: number;
+  private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor(maxSize = 50, ttlMinutes = 15) {
     this.maxSize = maxSize;
     this.ttl = ttlMinutes * 60 * 1000;
     
-    // Auto cleanup expired entries
-    setInterval(() => this.cleanup(), 60000);
+    // Auto cleanup expired entries - CRITICAL: Store interval ID for cleanup
+    this.cleanupInterval = setInterval(() => this.cleanup(), 60000);
   }
 
   set(key: string, blob: Blob): void {
@@ -94,6 +95,18 @@ export class AudioCache {
   }
 
   clear(): void {
+    this.cache.clear();
+  }
+
+  /**
+   * CRITICAL FOR MEDICAL APP: Properly cleanup interval to prevent memory leak
+   * Must be called when AudioCache instance is no longer needed
+   */
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
     this.cache.clear();
   }
 }
