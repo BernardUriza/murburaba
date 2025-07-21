@@ -264,8 +264,18 @@ export function useMurmubaraEngine(options = {}) {
                         console.log(`📦 [FAKE-STREAM] Created blobs:`);
                         console.log(`  - Processed: ${processedBlob.size} bytes, type: ${processedBlob.type}`);
                         console.log(`  - Original: ${originalBlob.size} bytes, type: ${originalBlob.type}`);
-                        const processedUrl = URL.createObjectURL(processedBlob);
-                        const originalUrl = URL.createObjectURL(originalBlob);
+                        // Validate blob sizes
+                        const MIN_VALID_SIZE = 1000; // 1KB minimum
+                        let isValid = true;
+                        let errorMessage = '';
+                        if (processedBlob.size < MIN_VALID_SIZE || originalBlob.size < MIN_VALID_SIZE) {
+                            isValid = false;
+                            errorMessage = `Audio too small (${Math.min(processedBlob.size, originalBlob.size)} bytes). Recording may be corrupted.`;
+                            console.error(`❌ [FAKE-STREAM] Invalid blob size detected!`);
+                        }
+                        // Only create URLs if blobs are valid
+                        const processedUrl = isValid ? URL.createObjectURL(processedBlob) : undefined;
+                        const originalUrl = isValid ? URL.createObjectURL(originalBlob) : undefined;
                         // Calculate actual duration
                         const cycleEndTime = Date.now();
                         const actualDuration = cycleEndTime - cycleStartTime;
@@ -279,6 +289,8 @@ export function useMurmubaraEngine(options = {}) {
                             originalAudioUrl: originalUrl,
                             isPlaying: false,
                             isExpanded: false,
+                            isValid,
+                            errorMessage,
                             noiseRemoved: Math.random() * 30 + 10, // Fake metric for now
                             originalSize: originalBlob.size,
                             processedSize: processedBlob.size,

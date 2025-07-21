@@ -6,6 +6,8 @@ interface ProcessedChunk {
   originalAudioUrl?: string
   isPlaying: boolean
   isExpanded: boolean
+  isValid?: boolean
+  errorMessage?: string
   duration: number
   startTime: number
   endTime: number
@@ -150,28 +152,41 @@ function ChunkItem({
         
         {/* Action Buttons */}
         <div className="chunk-actions">
-          <button 
-            className={`action-btn play-original ${
-              chunk.isPlaying && isSelected ? 'active' : ''
-            }`}
-            onClick={() => onTogglePlayback(chunk.id, 'original')}
-            disabled={!chunk.originalAudioUrl}
-            title="Play Original"
-          >
-            <span className="btn-icon">🔊</span>
-            <span className="btn-text">Original</span>
-          </button>
-          <button 
-            className={`action-btn play-processed ${
-              chunk.isPlaying && isSelected ? 'active' : ''
-            }`}
-            onClick={() => onTogglePlayback(chunk.id, 'processed')}
-            disabled={!chunk.processedAudioUrl}
-            title="Play Enhanced"
-          >
-            <span className="btn-icon">🎵</span>
-            <span className="btn-text">Enhanced</span>
-          </button>
+          {chunk.isValid === false ? (
+            <div className="chunk-error" style={{ 
+              color: 'var(--error-color, #ff4444)', 
+              fontSize: '0.75rem',
+              textAlign: 'center',
+              padding: '0.5rem'
+            }}>
+              ⚠️ {chunk.errorMessage || 'Audio unavailable'}
+            </div>
+          ) : (
+            <>
+              <button 
+                className={`action-btn play-original ${
+                  chunk.isPlaying && isSelected ? 'active' : ''
+                }`}
+                onClick={() => onTogglePlayback(chunk.id, 'original')}
+                disabled={!chunk.originalAudioUrl}
+                title="Play Original"
+              >
+                <span className="btn-icon">🔊</span>
+                <span className="btn-text">Original</span>
+              </button>
+              <button 
+                className={`action-btn play-processed ${
+                  chunk.isPlaying && isSelected ? 'active' : ''
+                }`}
+                onClick={() => onTogglePlayback(chunk.id, 'processed')}
+                disabled={!chunk.processedAudioUrl}
+                title="Play Enhanced"
+              >
+                <span className="btn-icon">🎵</span>
+                <span className="btn-text">Enhanced</span>
+              </button>
+            </>
+          )}
           <button 
             className="action-btn expand-btn"
             onClick={() => onToggleExpansion(chunk.id)}

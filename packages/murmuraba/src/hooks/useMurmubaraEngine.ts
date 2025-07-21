@@ -25,6 +25,8 @@ export interface ProcessedChunk extends ChunkMetrics {
   originalAudioUrl?: string;
   isPlaying: boolean;
   isExpanded: boolean;
+  isValid?: boolean;
+  errorMessage?: string;
 }
 
 export interface RecordingState {
@@ -397,8 +399,20 @@ export function useMurmubaraEngine(
             console.log(`  - Processed: ${processedBlob.size} bytes, type: ${processedBlob.type}`);
             console.log(`  - Original: ${originalBlob.size} bytes, type: ${originalBlob.type}`);
             
-            const processedUrl = URL.createObjectURL(processedBlob);
-            const originalUrl = URL.createObjectURL(originalBlob);
+            // Validate blob sizes
+            const MIN_VALID_SIZE = 1000; // 1KB minimum
+            let isValid = true;
+            let errorMessage = '';
+            
+            if (processedBlob.size < MIN_VALID_SIZE || originalBlob.size < MIN_VALID_SIZE) {
+              isValid = false;
+              errorMessage = `Audio too small (${Math.min(processedBlob.size, originalBlob.size)} bytes). Recording may be corrupted.`;
+              console.error(`❌ [FAKE-STREAM] Invalid blob size detected!`);
+            }
+            
+            // Only create URLs if blobs are valid
+            const processedUrl = isValid ? URL.createObjectURL(processedBlob) : undefined;
+            const originalUrl = isValid ? URL.createObjectURL(originalBlob) : undefined;
             
             // Calculate actual duration
             const cycleEndTime = Date.now();
@@ -414,6 +428,8 @@ export function useMurmubaraEngine(
               originalAudioUrl: originalUrl,
               isPlaying: false,
               isExpanded: false,
+              isValid,
+              errorMessage,
               noiseRemoved: Math.random() * 30 + 10, // Fake metric for now
               originalSize: originalBlob.size,
               processedSize: processedBlob.size,
