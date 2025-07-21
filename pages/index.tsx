@@ -8,6 +8,55 @@ import { ChunkProcessingResults } from '../components/ChunkProcessingResults'
 import Swal from 'sweetalert2'
 
 export default function Home() {
+  // Engine configuration state with localStorage persistence
+  const [engineConfig, setEngineConfig] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('murmuraba-config');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error('Failed to parse saved config:', e);
+        }
+      }
+    }
+    return {
+      bufferSize: 16384,
+      processWindow: 1024,
+      hopSize: 256,
+      spectralFloorDb: -80,
+      noiseFloorDb: -60,
+      denoiseStrength: 0.85,
+      spectralGateThreshold: 0.3,
+      smoothingFactor: 0.95,
+      frequencyBands: 32,
+      adaptiveNoiseReduction: true,
+      enableSpectralGating: true,
+      enableDynamicRangeCompression: true,
+      compressionRatio: 4,
+      compressionThreshold: -20,
+      compressionKnee: 10,
+      compressionAttack: 5,
+      compressionRelease: 50,
+      webAudioLatencyHint: 'balanced' as 'interactive' | 'balanced' | 'playback',
+      workletProcessorPath: '/static/murmuraba-processor.js',
+      enableDebugLogs: false,
+      enableMetrics: true,
+      metricsUpdateInterval: 100,
+      maxChunkRetries: 3,
+      chunkRetryDelay: 500,
+      enableAutoGainControl: true,
+      targetLUFS: -16,
+      maxGainBoost: 12,
+      enableHighFrequencyRecovery: true,
+      highFrequencyThreshold: 8000,
+      enableTransientPreservation: true,
+      transientThreshold: 0.7,
+      enablePsychoacousticModel: true,
+      psychoacousticMaskingCurve: 'fletcher-munson' as 'fletcher-munson' | 'equal-loudness' | 'custom'
+    };
+  });
+
   const {
     // State
     isInitialized,
@@ -36,6 +85,11 @@ export default function Home() {
     toggleChunkPlayback,
     toggleChunkExpansion,
     
+    // Export Actions
+    exportChunkAsWav,
+    exportChunkAsMp3,
+    downloadChunk,
+    
     // Utility
     resetError,
     formatTime,
@@ -43,9 +97,8 @@ export default function Home() {
   } = useMurmubaraEngine({
     autoInitialize: false,
     logLevel: 'info',
-    noiseReductionLevel: 'high',
-    bufferSize: 2048,
-    defaultChunkDuration: 8
+    defaultChunkDuration: 8,
+    ...engineConfig
   })
 
   // Extract values from recordingState
@@ -57,9 +110,41 @@ export default function Home() {
   const [showSettings, setShowSettings] = useState(false)
   const [noiseReductionLevel, setNoiseReductionLevel] = useState(75)
   const [selectedChunk, setSelectedChunk] = useState<string | null>(null)
+  const [recordingHistory, setRecordingHistory] = useState<Array<{
+    id: string;
+    date: Date;
+    duration: number;
+    chunks: number;
+    avgNoiseReduction: number;
+    config: typeof engineConfig;
+  }>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('murmuraba-history');
+      if (saved) {
+        try {
+          const history = JSON.parse(saved);
+          return history.map((item: any) => ({
+            ...item,
+            date: new Date(item.date)
+          }));
+        } catch (e) {
+          console.error('Failed to parse history:', e);
+        }
+      }
+    }
+    return [];
+  });
+  
   
   // Use average noise reduction from hook
   const averageNoiseReduction = getAverageNoiseReduction()
+  
+  // Save config to localStorage when it changes
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('murmuraba-config', JSON.stringify(engineConfig));
+    }
+  }, [engineConfig]);
   
   // Handle chunk expansion with selection
   const handleToggleChunkExpansion = (chunkId: string) => {
@@ -114,21 +199,87 @@ export default function Home() {
               <button className="close-btn" onClick={() => setShowSettings(false)}>✕</button>
             </div>
             <div className="panel-content">
+              {/* Noise Reduction Level */}
               <div className="setting-group">
                 <label>🔇 Noise Reduction Level</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max="100" 
-                    value={noiseReductionLevel}
-                    onChange={(e) => setNoiseReductionLevel(Number(e.target.value))}
-                    className="slider noise-slider"
-                    style={{ flex: 1 }}
-                  />
-                  <span className="slider-value">{noiseReductionLevel}%</span>
+                <div className="radio-group">
+                  {(['low', 'medium', 'high', 'auto'] as const).map(level => (
+                    <label key={level} className="radio-label">
+                      <input
+                        type="radio"
+                        name="noiseLevel"
+                        checked={engineConfig.noiseReductionLevel === level}
+                        onChange={() => setEngineConfig(prev => ({ ...prev, noiseReductionLevel: level }))}
+                        disabled={isRecording}
+                      />
+                      <span>{level.charAt(0).toUpperCase() + level.slice(1)}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
+
+              {/* Algorithm Selection */}
+              <div className="setting-group">
+                <label>🧠 Processing Algorithm</label>
+                <select 
+                  value={engineConfig.algorithm}
+                  onChange={(e) => setEngineConfig(prev => ({ 
+                    ...prev, 
+                    algorithm: e.target.value as 'rnnoise' | 'spectral' | 'adaptive' 
+                  }))}
+                  disabled={isRecording}
+                  className="select-input"
+                >
+                  <option value="rnnoise">RNNoise (Neural Network)</option>
+                  <option value="spectral">Spectral Subtraction</option>
+                  <option value="adaptive">Adaptive Filtering</option>
+                </select>
+              </div>
+
+              {/* Buffer Size */}
+              <div className="setting-group">
+                <label>📊 Buffer Size</label>
+                <select 
+                  value={engineConfig.bufferSize}
+                  onChange={(e) => setEngineConfig(prev => ({ 
+                    ...prev, 
+                    bufferSize: Number(e.target.value) as 256 | 512 | 1024 | 2048 | 4096
+                  }))}
+                  disabled={isRecording}
+                  className="select-input"
+                >
+                  <option value="256">256 samples (lowest latency)</option>
+                  <option value="512">512 samples (balanced)</option>
+                  <option value="1024">1024 samples (recommended)</option>
+                  <option value="2048">2048 samples (better quality)</option>
+                  <option value="4096">4096 samples (highest quality)</option>
+                </select>
+              </div>
+
+              {/* Advanced Options */}
+              <div className="setting-group">
+                <label>⚡ Performance Options</label>
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={engineConfig.useWorker}
+                    onChange={(e) => setEngineConfig(prev => ({ ...prev, useWorker: e.target.checked }))}
+                    disabled={isRecording}
+                  />
+                  <span>Use Web Worker (better performance)</span>
+                </label>
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={engineConfig.allowDegraded}
+                    onChange={(e) => setEngineConfig(prev => ({ ...prev, allowDegraded: e.target.checked }))}
+                    disabled={isRecording}
+                  />
+                  <span>Allow degraded mode (fallback)</span>
+                </label>
+              </div>
+              
+              {/* Chunk Duration */}
               <div className="setting-group">
                 <label>⏱️ Chunk Duration</label>
                 <div className="duration-buttons">
@@ -137,12 +288,37 @@ export default function Home() {
                       key={duration}
                       className={`duration-btn ${chunkDuration === duration ? 'active' : ''}`}
                       onClick={() => setChunkDuration(duration)}
+                      disabled={isRecording}
                     >
                       {duration}s
                     </button>
                   ))}
                 </div>
               </div>
+
+              {/* Apply Button */}
+              {isInitialized && (
+                <div className="setting-group">
+                  <button 
+                    className="control-btn primary"
+                    onClick={async () => {
+                      await destroy();
+                      await initialize();
+                      Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Settings applied!',
+                        showConfirmButton: false,
+                        timer: 2000
+                      });
+                    }}
+                    disabled={isRecording}
+                  >
+                    🔄 Apply Changes
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -208,6 +384,39 @@ export default function Home() {
           <section className="stats-section">
             <div className="glass-card">
               <h2 className="panel-title">Real-time Processing Metrics</h2>
+              
+              {/* Live Audio Meter */}
+              <div className="audio-meter-container">
+                <div className="audio-meter">
+                  <div className="meter-label">Input</div>
+                  <div className="meter-bar">
+                    <div 
+                      className="meter-fill input-level"
+                      style={{
+                        width: `${metrics.inputLevel * 100}%`,
+                        background: metrics.inputLevel > 0.8 ? 
+                          'var(--error-main)' : 
+                          metrics.inputLevel > 0.6 ? 
+                            'var(--warning-main)' : 
+                            'var(--grass-light)'
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="audio-meter">
+                  <div className="meter-label">Output</div>
+                  <div className="meter-bar">
+                    <div 
+                      className="meter-fill output-level"
+                      style={{
+                        width: `${metrics.outputLevel * 100}%`,
+                        background: 'var(--prairie-sky)'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+              
               <div className="stats-grid">
                 <div className="stat-card">
                   <div className="stat-icon">🔇</div>
@@ -319,7 +528,23 @@ export default function Home() {
                 <div className="recording-controls">
                   <button 
                     className="btn btn-secondary"
-                    onClick={stopRecording}
+                    onClick={() => {
+                      stopRecording();
+                      // Save to history
+                      if (processedChunks.length > 0) {
+                        const newRecord = {
+                          id: `rec-${Date.now()}`,
+                          date: new Date(),
+                          duration: recordingTime,
+                          chunks: processedChunks.length,
+                          avgNoiseReduction: averageNoiseReduction,
+                          config: engineConfig
+                        };
+                        const newHistory = [newRecord, ...recordingHistory].slice(0, 10); // Keep last 10
+                        setRecordingHistory(newHistory);
+                        localStorage.setItem('murmuraba-history', JSON.stringify(newHistory));
+                      }
+                    }}
                   >
                     <span className="btn-icon">⏹️</span>
                     <span>Stop</span>
@@ -393,6 +618,9 @@ export default function Home() {
           onTogglePlayback={toggleChunkPlayback}
           onToggleExpansion={handleToggleChunkExpansion}
           onClearAll={clearRecordings}
+          onExportWav={exportChunkAsWav}
+          onExportMp3={exportChunkAsMp3}
+          onDownloadChunk={downloadChunk}
         />
 
         {/* Floating Action Buttons */}

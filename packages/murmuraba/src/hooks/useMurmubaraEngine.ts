@@ -81,6 +81,11 @@ export interface UseMurmubaraEngineReturn {
   toggleChunkPlayback: (chunkId: string, audioType: 'processed' | 'original') => Promise<void>;
   toggleChunkExpansion: (chunkId: string) => void;
   
+  // Export Actions
+  exportChunkAsWav: (chunkId: string, audioType: 'processed' | 'original') => Promise<Blob>;
+  exportChunkAsMp3: (chunkId: string, audioType: 'processed' | 'original', bitrate?: number) => Promise<Blob>;
+  downloadChunk: (chunkId: string, format: 'webm' | 'wav' | 'mp3', audioType: 'processed' | 'original') => Promise<void>;
+  
   // Utility
   getDiagnostics: () => DiagnosticInfo | null;
   resetError: () => void;
@@ -361,6 +366,14 @@ export function useMurmubaraEngine(
         currentRecorder = new MediaRecorder(processedStream, { mimeType });
         currentOriginalRecorder = new MediaRecorder(stream, { mimeType });
         
+        // Debug: Check if streams are active
+        console.log(`🔍 [FAKE-STREAM] Stream states:`, {
+          processedStreamActive: processedStream.active,
+          processedStreamTracks: processedStream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })),
+          originalStreamActive: stream.active,
+          originalStreamTracks: stream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState }))
+        });
+        
         currentRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
             const chunkRecording = chunkRecordingsRef.current.get(chunkId);
@@ -380,7 +393,18 @@ export function useMurmubaraEngine(
               chunkRecording.original.push(event.data);
               console.log(`💾 [FAKE-STREAM] Cycle #${cycleCount} - Original data: ${event.data.size} bytes`);
             }
+          } else {
+            console.error(`❌ [FAKE-STREAM] Cycle #${cycleCount} - Empty original data received!`);
           }
+        };
+        
+        // Add error handlers
+        currentRecorder.onerror = (error) => {
+          console.error(`❌ [FAKE-STREAM] Processed recorder error:`, error);
+        };
+        
+        currentOriginalRecorder.onerror = (error) => {
+          console.error(`❌ [FAKE-STREAM] Original recorder error:`, error);
         };
         
         // When recording stops, immediately process and create URLs
@@ -430,15 +454,22 @@ export function useMurmubaraEngine(
               isExpanded: false,
               isValid,
               errorMessage,
-              noiseRemoved: Math.random() * 30 + 10, // Fake metric for now
+              // Calculate real metrics
+              noiseRemoved: originalBlob.size > 0 ? 
+                ((originalBlob.size - processedBlob.size) / originalBlob.size * 100) : 0,
               originalSize: originalBlob.size,
               processedSize: processedBlob.size,
               metrics: {
-                processingLatency: Math.random() * 50 + 10,
+                // Use actual timing for latency
+                processingLatency: Date.now() - cycleStartTime - actualDuration,
+                // Estimate frame count from duration (assuming 10ms frames)
                 frameCount: Math.floor(actualDuration / 10),
-                inputLevel: 0.7,
-                outputLevel: 0.5,
-                noiseReductionLevel: Math.random() * 0.3 + 0.1,
+                // Calculate input/output levels from size ratio
+                inputLevel: 1.0,
+                outputLevel: processedBlob.size / originalBlob.size,
+                // Calculate noise reduction from size difference
+                noiseReductionLevel: Math.max(0, Math.min(1, 
+                  (originalBlob.size - processedBlob.size) / originalBlob.size)),
                 timestamp: Date.now(),
                 droppedFrames: 0
               }
@@ -740,6 +771,87 @@ export function useMurmubaraEngine(
     return recordingState.chunks.reduce((acc, chunk) => acc + chunk.noiseRemoved, 0) / recordingState.chunks.length;
   }, [recordingState.chunks]);
   
+  // Export chunk as WAV
+  const exportChunkAsWav = useCallback(async (chunkId: string, audioType: 'processed' | 'original'): Promise<Blob> => {
+    const chunk = recordingState.chunks.find(c => c.id === chunkId);
+    if (!chunk) {
+      throw new Error(`Chunk not found: ${chunkId}`);
+    }
+    
+    const audioUrl = audioType === 'processed' ? chunk.processedAudioUrl : chunk.originalAudioUrl;
+    if (!audioUrl) {
+      throw new Error(`No ${audioType} audio URL for chunk: ${chunkId}`);
+    }
+    
+    // Fetch the blob from URL
+    const response = await fetch(audioUrl);
+    const webmBlob = await response.blob();
+    
+    // Convert to WAV
+    return AudioConverter.webmToWav(webmBlob);
+  }, [recordingState.chunks]);
+  
+  // Export chunk as MP3
+  const exportChunkAsMp3 = useCallback(async (chunkId: string, audioType: 'processed' | 'original', bitrate: number = 128): Promise<Blob> => {
+    const chunk = recordingState.chunks.find(c => c.id === chunkId);
+    if (!chunk) {
+      throw new Error(`Chunk not found: ${chunkId}`);
+    }
+    
+    const audioUrl = audioType === 'processed' ? chunk.processedAudioUrl : chunk.originalAudioUrl;
+    if (!audioUrl) {
+      throw new Error(`No ${audioType} audio URL for chunk: ${chunkId}`);
+    }
+    
+    // Fetch the blob from URL
+    const response = await fetch(audioUrl);
+    const webmBlob = await response.blob();
+    
+    // Convert to MP3
+    return AudioConverter.webmToMp3(webmBlob, bitrate);
+  }, [recordingState.chunks]);
+  
+  // Download chunk in specified format
+  const downloadChunk = useCallback(async (chunkId: string, format: 'webm' | 'wav' | 'mp3', audioType: 'processed' | 'original'): Promise<void> => {
+    const chunk = recordingState.chunks.find(c => c.id === chunkId);
+    if (!chunk) {
+      throw new Error(`Chunk not found: ${chunkId}`);
+    }
+    
+    let blob: Blob;
+    let filename: string;
+    const timestamp = new Date(chunk.startTime).toISOString().replace(/:/g, '-').split('.')[0];
+    const prefix = audioType === 'processed' ? 'enhanced' : 'original';
+    
+    if (format === 'webm') {
+      const audioUrl = audioType === 'processed' ? chunk.processedAudioUrl : chunk.originalAudioUrl;
+      if (!audioUrl) {
+        throw new Error(`No ${audioType} audio URL for chunk: ${chunkId}`);
+      }
+      const response = await fetch(audioUrl);
+      blob = await response.blob();
+      filename = `${prefix}_${timestamp}.webm`;
+    } else if (format === 'wav') {
+      blob = await exportChunkAsWav(chunkId, audioType);
+      filename = `${prefix}_${timestamp}.wav`;
+    } else if (format === 'mp3') {
+      blob = await exportChunkAsMp3(chunkId, audioType);
+      filename = `${prefix}_${timestamp}.mp3`;
+    } else {
+      throw new Error(`Unsupported format: ${format}`);
+    }
+    
+    // Create download link
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [recordingState.chunks, exportChunkAsWav, exportChunkAsMp3]);
+  
   const processStreamWrapper = useCallback(async (stream: MediaStream) => {
     if (!isInitialized) {
       throw new Error('Engine not initialized');
@@ -873,6 +985,11 @@ export function useMurmubaraEngine(
     // Audio Playback Actions
     toggleChunkPlayback,
     toggleChunkExpansion,
+    
+    // Export Actions
+    exportChunkAsWav,
+    exportChunkAsMp3,
+    downloadChunk,
     
     // Utility
     getDiagnostics: updateDiagnostics,

@@ -30,6 +30,83 @@ export class AudioConverter {
   }
   
   /**
+   * Convert WebM blob to WAV blob (static method for easy use)
+   */
+  static async webmToWav(webmBlob: Blob): Promise<Blob> {
+    const converter = new AudioConverter();
+    return converter.convertToWav(webmBlob);
+  }
+  
+  /**
+   * Convert WebM to MP3 using lamejs
+   */
+  static async webmToMp3(webmBlob: Blob, bitrate: number = 128): Promise<Blob> {
+    const converter = new AudioConverter();
+    
+    try {
+      // Import lamejs dynamically
+      const lamejs = await import('lamejs');
+      
+      // First decode to AudioBuffer
+      const arrayBuffer = await webmBlob.arrayBuffer();
+      const audioBuffer = await converter.audioContext.decodeAudioData(arrayBuffer);
+      
+      // Convert to mono if stereo (lamejs works better with mono)
+      const channels = audioBuffer.numberOfChannels;
+      const sampleRate = audioBuffer.sampleRate;
+      const samples = audioBuffer.length;
+      
+      // Get PCM data
+      const pcmData = new Int16Array(samples);
+      const channelData = audioBuffer.getChannelData(0); // Use first channel
+      
+      // Convert float32 to int16
+      for (let i = 0; i < samples; i++) {
+        const s = Math.max(-1, Math.min(1, channelData[i]));
+        pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+      
+      // Initialize MP3 encoder
+      const mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, bitrate);
+      
+      // Encode samples
+      const mp3Data: Int8Array[] = [];
+      const sampleBlockSize = 1152; // Must be multiple of 576
+      
+      for (let i = 0; i < samples; i += sampleBlockSize) {
+        const sampleChunk = pcmData.subarray(i, Math.min(i + sampleBlockSize, samples));
+        const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
+        if (mp3buf.length > 0) {
+          mp3Data.push(mp3buf);
+        }
+      }
+      
+      // Flush remaining data
+      const mp3buf = mp3encoder.flush();
+      if (mp3buf.length > 0) {
+        mp3Data.push(mp3buf);
+      }
+      
+      // Combine all chunks
+      let totalLength = 0;
+      mp3Data.forEach(chunk => totalLength += chunk.length);
+      
+      const output = new Int8Array(totalLength);
+      let offset = 0;
+      mp3Data.forEach(chunk => {
+        output.set(chunk, offset);
+        offset += chunk.length;
+      });
+      
+      console.log('Successfully converted to MP3, size:', output.length);
+      return new Blob([output], { type: 'audio/mp3' });
+    } catch (error) {
+      console.error('Failed to convert to MP3:', error);
+      throw error;
+    }
+  }
+  
+  /**
    * Convert AudioBuffer to WAV format
    */
   private audioBufferToWav(audioBuffer: AudioBuffer): Blob {

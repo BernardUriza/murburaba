@@ -40,14 +40,9 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
       
       // Set up time update handler
       const updateTime = () => {
-        if (originalAudioRef.current) {
-          setCurrentTime(originalAudioRef.current.currentTime);
-          
-          // Sync processed audio if needed
-          if (processedAudioRef.current && 
-              Math.abs(originalAudioRef.current.currentTime - processedAudioRef.current.currentTime) > 0.1) {
-            processedAudioRef.current.currentTime = originalAudioRef.current.currentTime;
-          }
+        // Use processed audio as the time source
+        if (processedAudioRef.current) {
+          setCurrentTime(processedAudioRef.current.currentTime);
         }
         
         if (isPlaying) {
@@ -55,8 +50,8 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
         }
       };
       
-      // Handle ended event
-      originalAudioRef.current.onended = () => {
+      // Handle ended event on processed audio
+      processedAudioRef.current.onended = () => {
         onPlayingChange(false);
       };
     }
@@ -83,14 +78,9 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
     if (!originalAudioRef.current || !processedAudioRef.current) return;
     
     const updateTime = () => {
-      if (originalAudioRef.current) {
-        setCurrentTime(originalAudioRef.current.currentTime);
-        
-        // Sync processed audio if needed
-        if (processedAudioRef.current && 
-            Math.abs(originalAudioRef.current.currentTime - processedAudioRef.current.currentTime) > 0.1) {
-          processedAudioRef.current.currentTime = originalAudioRef.current.currentTime;
-        }
+      // Use processed audio as the time source
+      if (processedAudioRef.current) {
+        setCurrentTime(processedAudioRef.current.currentTime);
       }
       
       if (isPlaying) {
@@ -99,11 +89,12 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
     };
     
     if (isPlaying) {
-      originalAudioRef.current.play().catch(console.error);
+      // ONLY play the processed (enhanced) audio
+      // originalAudioRef.current.play().catch(console.error); // DON'T PLAY THIS
       processedAudioRef.current.play().catch(console.error);
       updateTime();
     } else {
-      originalAudioRef.current.pause();
+      // originalAudioRef.current.pause(); // Not playing, so no need to pause
       processedAudioRef.current.pause();
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
@@ -137,6 +128,7 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
           isActive={true}
           isPaused={!isPlaying}
           hideControls={true}
+          currentTime={currentTime}
         />
       </div>
 
@@ -149,6 +141,7 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
           isActive={true}
           isPaused={!isPlaying}
           hideControls={true}
+          currentTime={currentTime}
         />
       </div>
 

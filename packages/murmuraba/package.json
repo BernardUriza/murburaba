@@ -68,5 +68,8 @@
   },
   "engines": {
     "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "lamejs": "^1.2.1"
   }
 }

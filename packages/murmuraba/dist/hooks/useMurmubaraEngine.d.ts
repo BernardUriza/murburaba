@@ -45,6 +45,9 @@ export interface UseMurmubaraEngineReturn {
     clearRecordings: () => void;
     toggleChunkPlayback: (chunkId: string, audioType: 'processed' | 'original') => Promise<void>;
     toggleChunkExpansion: (chunkId: string) => void;
+    exportChunkAsWav: (chunkId: string, audioType: 'processed' | 'original') => Promise<Blob>;
+    exportChunkAsMp3: (chunkId: string, audioType: 'processed' | 'original', bitrate?: number) => Promise<Blob>;
+    downloadChunk: (chunkId: string, format: 'webm' | 'wav' | 'mp3', audioType: 'processed' | 'original') => Promise<void>;
     getDiagnostics: () => DiagnosticInfo | null;
     resetError: () => void;
     formatTime: (seconds: number) => string;

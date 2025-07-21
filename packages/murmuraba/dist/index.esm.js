@@ -1,8 +1,4 @@
-'use strict';
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-var React = require('react');
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 
 function _mergeNamespaces(n, m) {
     m.forEach(function (e) {
@@ -1450,36 +1446,36 @@ function useMurmubaraEngine(options = {}) {
     // Detect React version
     const reactVersion = React.version;
     const isReact19 = reactVersion.startsWith('19') || react19Mode;
-    const [isInitialized, setIsInitialized] = React.useState(false);
-    const [isLoading, setIsLoading] = React.useState(false);
-    const [error, setError] = React.useState(null);
-    const [engineState, setEngineState] = React.useState('uninitialized');
-    const [metrics, setMetrics] = React.useState(null);
-    const [diagnostics, setDiagnostics] = React.useState(null);
+    const [isInitialized, setIsInitialized] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [engineState, setEngineState] = useState('uninitialized');
+    const [metrics, setMetrics] = useState(null);
+    const [diagnostics, setDiagnostics] = useState(null);
     // Recording specific state
-    const [recordingState, setRecordingState] = React.useState({
+    const [recordingState, setRecordingState] = useState({
         isRecording: false,
         isPaused: false,
         recordingTime: 0,
         chunks: []
     });
-    const [currentStream, setCurrentStream] = React.useState(null);
-    const [originalStream, setOriginalStream] = React.useState(null);
-    const [streamController, setStreamController] = React.useState(null);
+    const [currentStream, setCurrentStream] = useState(null);
+    const [originalStream, setOriginalStream] = useState(null);
+    const [streamController, setStreamController] = useState(null);
     // Refs for internal state management
-    const metricsUnsubscribeRef = React.useRef(null);
-    const initializePromiseRef = React.useRef(null);
-    const mediaRecorderRef = React.useRef(null);
-    const originalRecorderRef = React.useRef(null);
-    const audioRefs = React.useRef({});
-    const recordingIntervalRef = React.useRef(null);
-    const chunkRecordingsRef = React.useRef(new Map());
-    const processChunkIntervalRef = React.useRef(null);
-    const recordingMimeTypeRef = React.useRef('audio/webm');
-    const audioConverterRef = React.useRef(null);
-    const stopCycleFlagRef = React.useRef(false);
+    const metricsUnsubscribeRef = useRef(null);
+    const initializePromiseRef = useRef(null);
+    const mediaRecorderRef = useRef(null);
+    const originalRecorderRef = useRef(null);
+    const audioRefs = useRef({});
+    const recordingIntervalRef = useRef(null);
+    const chunkRecordingsRef = useRef(new Map());
+    const processChunkIntervalRef = useRef(null);
+    const recordingMimeTypeRef = useRef('audio/webm');
+    const audioConverterRef = useRef(null);
+    const stopCycleFlagRef = useRef(false);
     // Update diagnostics
-    const updateDiagnostics = React.useCallback(() => {
+    const updateDiagnostics = useCallback(() => {
         if (!isInitialized) {
             setDiagnostics(null);
             return null;
@@ -1495,7 +1491,7 @@ function useMurmubaraEngine(options = {}) {
         }
     }, [isInitialized]);
     // Initialize engine
-    const initialize = React.useCallback(async () => {
+    const initialize = useCallback(async () => {
         console.log('🚀 [LIFECYCLE] Initializing MurmubaraEngine...');
         if (initializePromiseRef.current) {
             console.log('⏳ [LIFECYCLE] Already initializing, returning existing promise');
@@ -1572,7 +1568,7 @@ function useMurmubaraEngine(options = {}) {
         return initializePromiseRef.current;
     }, [config, isInitialized, isReact19, fallbackToManual, onInitError, updateDiagnostics]);
     // Destroy engine
-    const destroy = React.useCallback(async (force = false) => {
+    const destroy = useCallback(async (force = false) => {
         console.log('🔥 [LIFECYCLE] Destroying engine...', { force });
         if (!isInitialized) {
             console.log('⚠️ [LIFECYCLE] Engine not initialized, skipping destroy');
@@ -1603,11 +1599,11 @@ function useMurmubaraEngine(options = {}) {
         }
     }, [isInitialized, recordingState.isRecording]); // eslint-disable-line react-hooks/exhaustive-deps
     // Detect supported MIME type using AudioConverter utility
-    const getSupportedMimeType = React.useCallback(() => {
+    const getSupportedMimeType = useCallback(() => {
         return AudioConverter.getBestRecordingFormat();
     }, []);
     // Start recording with automatic Start/Stop cycling
-    const startRecording = React.useCallback(async (chunkDuration = defaultChunkDuration) => {
+    const startRecording = useCallback(async (chunkDuration = defaultChunkDuration) => {
         try {
             if (!isInitialized) {
                 await initialize();
@@ -1818,7 +1814,7 @@ function useMurmubaraEngine(options = {}) {
         }
     }, [isInitialized, initialize, getSupportedMimeType, defaultChunkDuration]);
     // Stop recording
-    const stopRecording = React.useCallback(() => {
+    const stopRecording = useCallback(() => {
         // Set stop flag for recording cycles
         stopCycleFlagRef.current = true;
         // Clear the cycling interval
@@ -1875,7 +1871,7 @@ function useMurmubaraEngine(options = {}) {
         setOriginalStream(null);
     }, [streamController, currentStream, originalStream]);
     // Pause recording
-    const pauseRecording = React.useCallback(() => {
+    const pauseRecording = useCallback(() => {
         if (streamController && !recordingState.isPaused) {
             streamController.pause();
             if (mediaRecorderRef.current?.state === 'recording') {
@@ -1888,7 +1884,7 @@ function useMurmubaraEngine(options = {}) {
         }
     }, [streamController, recordingState.isPaused]);
     // Resume recording
-    const resumeRecording = React.useCallback(() => {
+    const resumeRecording = useCallback(() => {
         if (streamController && recordingState.isPaused) {
             streamController.resume();
             if (mediaRecorderRef.current?.state === 'paused') {
@@ -1901,7 +1897,7 @@ function useMurmubaraEngine(options = {}) {
         }
     }, [streamController, recordingState.isPaused]);
     // Clear all recordings
-    const clearRecordings = React.useCallback(() => {
+    const clearRecordings = useCallback(() => {
         recordingState.chunks.forEach(chunk => {
             if (chunk.processedAudioUrl)
                 URL.revokeObjectURL(chunk.processedAudioUrl);
@@ -1917,7 +1913,7 @@ function useMurmubaraEngine(options = {}) {
         setRecordingState(prev => ({ ...prev, chunks: [] }));
     }, [recordingState.chunks]);
     // Toggle chunk playback with audio conversion support
-    const toggleChunkPlayback = React.useCallback(async (chunkId, audioType) => {
+    const toggleChunkPlayback = useCallback(async (chunkId, audioType) => {
         console.log('♒Searching for this chunk:', chunkId);
         const chunk = recordingState.chunks.find(c => c.id === chunkId);
         if (!chunk) {
@@ -1985,7 +1981,7 @@ function useMurmubaraEngine(options = {}) {
         }
     }, [recordingState.chunks]);
     // Toggle chunk expansion
-    const toggleChunkExpansion = React.useCallback((chunkId) => {
+    const toggleChunkExpansion = useCallback((chunkId) => {
         setRecordingState(prev => ({
             ...prev,
             chunks: prev.chunks.map(c => {
@@ -1999,19 +1995,19 @@ function useMurmubaraEngine(options = {}) {
         }));
     }, []);
     // Format time helper
-    const formatTime = React.useCallback((seconds) => {
+    const formatTime = useCallback((seconds) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }, []);
     // Get average noise reduction
-    const getAverageNoiseReduction = React.useCallback(() => {
+    const getAverageNoiseReduction = useCallback(() => {
         if (recordingState.chunks.length === 0)
             return 0;
         return recordingState.chunks.reduce((acc, chunk) => acc + chunk.noiseRemoved, 0) / recordingState.chunks.length;
     }, [recordingState.chunks]);
     // Export chunk as WAV
-    const exportChunkAsWav = React.useCallback(async (chunkId, audioType) => {
+    const exportChunkAsWav = useCallback(async (chunkId, audioType) => {
         const chunk = recordingState.chunks.find(c => c.id === chunkId);
         if (!chunk) {
             throw new Error(`Chunk not found: ${chunkId}`);
@@ -2027,7 +2023,7 @@ function useMurmubaraEngine(options = {}) {
         return AudioConverter.webmToWav(webmBlob);
     }, [recordingState.chunks]);
     // Export chunk as MP3
-    const exportChunkAsMp3 = React.useCallback(async (chunkId, audioType, bitrate = 128) => {
+    const exportChunkAsMp3 = useCallback(async (chunkId, audioType, bitrate = 128) => {
         const chunk = recordingState.chunks.find(c => c.id === chunkId);
         if (!chunk) {
             throw new Error(`Chunk not found: ${chunkId}`);
@@ -2043,7 +2039,7 @@ function useMurmubaraEngine(options = {}) {
         return AudioConverter.webmToMp3(webmBlob, bitrate);
     }, [recordingState.chunks]);
     // Download chunk in specified format
-    const downloadChunk = React.useCallback(async (chunkId, format, audioType) => {
+    const downloadChunk = useCallback(async (chunkId, format, audioType) => {
         const chunk = recordingState.chunks.find(c => c.id === chunkId);
         if (!chunk) {
             throw new Error(`Chunk not found: ${chunkId}`);
@@ -2082,7 +2078,7 @@ function useMurmubaraEngine(options = {}) {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }, [recordingState.chunks, exportChunkAsWav, exportChunkAsMp3]);
-    const processStreamWrapper = React.useCallback(async (stream) => {
+    const processStreamWrapper = useCallback(async (stream) => {
         if (!isInitialized) {
             throw new Error('Engine not initialized');
         }
@@ -2097,7 +2093,7 @@ function useMurmubaraEngine(options = {}) {
             throw err;
         }
     }, [isInitialized, updateDiagnostics]);
-    const processStreamChunkedWrapper = React.useCallback(async (stream, chunkConfig) => {
+    const processStreamChunkedWrapper = useCallback(async (stream, chunkConfig) => {
         if (!isInitialized) {
             throw new Error('Engine not initialized');
         }
@@ -2112,18 +2108,18 @@ function useMurmubaraEngine(options = {}) {
             throw err;
         }
     }, [isInitialized, updateDiagnostics]);
-    const resetError = React.useCallback(() => {
+    const resetError = useCallback(() => {
         setError(null);
     }, []);
     // Auto-initialize if requested
-    React.useEffect(() => {
+    useEffect(() => {
         if (autoInitialize && !isInitialized && !isLoading) {
             console.log('🤖 [LIFECYCLE] Auto-initializing engine...');
             initialize();
         }
     }, [autoInitialize, isInitialized, isLoading, initialize]);
     // Update recording time
-    React.useEffect(() => {
+    useEffect(() => {
         if (recordingState.isRecording && !recordingState.isPaused) {
             const startTime = Date.now() - recordingState.recordingTime * 1000;
             recordingIntervalRef.current = setInterval(() => {
@@ -2141,7 +2137,7 @@ function useMurmubaraEngine(options = {}) {
         };
     }, [recordingState.isRecording, recordingState.isPaused, recordingState.recordingTime]);
     // Update engine state periodically
-    React.useEffect(() => {
+    useEffect(() => {
         if (!isInitialized)
             return;
         const interval = setInterval(() => {
@@ -2156,7 +2152,7 @@ function useMurmubaraEngine(options = {}) {
         return () => clearInterval(interval);
     }, [isInitialized]);
     // Cleanup on unmount
-    React.useEffect(() => {
+    useEffect(() => {
         console.log('🌟 [LIFECYCLE] Component mounted, setting up cleanup handler');
         // Prevent cleanup in development mode double mounting
         let isCleaningUp = false;
@@ -2301,14 +2297,14 @@ function createAudioEngine(config) {
 
 const useAudioEngine = (config = { engineType: 'rnnoise' }) => {
     console.warn('[Murmuraba] useAudioEngine is deprecated. Please use useMurmubaraEngine instead for better React 19 compatibility.');
-    const [isInitialized, setIsInitialized] = React.useState(false);
-    const [isLoading, setIsLoading] = React.useState(false);
-    const [error, setError] = React.useState(null);
-    const audioContextRef = React.useRef(null);
-    const processorRef = React.useRef(null);
-    const engineRef = React.useRef(null);
-    const engineDataRef = React.useRef(null);
-    const metricsRef = React.useRef({
+    const [isInitialized, setIsInitialized] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const audioContextRef = useRef(null);
+    const processorRef = useRef(null);
+    const engineRef = useRef(null);
+    const engineDataRef = useRef(null);
+    const metricsRef = useRef({
         inputSamples: 0,
         outputSamples: 0,
         silenceFrames: 0,
@@ -18328,27 +18324,5 @@ var index = /*#__PURE__*/_mergeNamespaces({
     default: js
 }, [js]);
 
-exports.AudioConverter = AudioConverter;
-exports.ErrorCodes = ErrorCodes;
-exports.EventEmitter = EventEmitter;
-exports.Logger = Logger;
-exports.MURMURABA_VERSION = MURMURABA_VERSION;
-exports.MetricsManager = MetricsManager;
-exports.MurmubaraEngine = MurmubaraEngine;
-exports.MurmubaraError = MurmubaraError;
-exports.StateManager = StateManager;
-exports.VERSION = VERSION;
-exports.WorkerManager = WorkerManager;
-exports.default = index$1;
-exports.destroyEngine = destroyEngine;
-exports.getAudioConverter = getAudioConverter;
-exports.getDiagnostics = getDiagnostics;
-exports.getEngine = getEngine;
-exports.getEngineStatus = getEngineStatus;
-exports.initializeAudioEngine = initializeAudioEngine;
-exports.onMetricsUpdate = onMetricsUpdate;
-exports.processStream = processStream;
-exports.processStreamChunked = processStreamChunked;
-exports.useAudioEngine = useAudioEngine;
-exports.useMurmubaraEngine = useMurmubaraEngine;
-//# sourceMappingURL=index.js.map
+export { AudioConverter, ErrorCodes, EventEmitter, Logger, MURMURABA_VERSION, MetricsManager, MurmubaraEngine, MurmubaraError, StateManager, VERSION, WorkerManager, index$1 as default, destroyEngine, getAudioConverter, getDiagnostics, getEngine, getEngineStatus, initializeAudioEngine, onMetricsUpdate, processStream, processStreamChunked, useAudioEngine, useMurmubaraEngine };
+//# sourceMappingURL=index.esm.js.map

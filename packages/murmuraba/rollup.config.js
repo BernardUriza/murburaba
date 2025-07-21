@@ -14,6 +14,7 @@ export default [
       file: 'dist/index.esm.js',
       format: 'esm',
       sourcemap: true,
+      inlineDynamicImports: true,
     },
     external,
     plugins: [
@@ -38,6 +39,7 @@ export default [
       file: 'dist/index.js',
       format: 'cjs',
       sourcemap: true,
+      inlineDynamicImports: true,
     },
     external,
     plugins: [
@@ -56,6 +58,7 @@ export default [
       format: 'umd',
       name: 'Murmuraba',
       sourcemap: true,
+      inlineDynamicImports: true,
       globals: {
         react: 'React',
         'react-dom': 'ReactDOM',

@@ -1,4 +1,5 @@
 import { SyncedWaveforms } from './SyncedWaveforms'
+import { useEffect } from 'react'
 
 interface ProcessedChunk {
   id: string
@@ -27,6 +28,9 @@ interface ChunkProcessingResultsProps {
   onTogglePlayback: (chunkId: string, type: 'original' | 'processed') => void
   onToggleExpansion: (chunkId: string) => void
   onClearAll: () => void
+  onExportWav?: (chunkId: string, audioType: 'processed' | 'original') => Promise<Blob>
+  onExportMp3?: (chunkId: string, audioType: 'processed' | 'original', bitrate?: number) => Promise<Blob>
+  onDownloadChunk?: (chunkId: string, format: 'webm' | 'wav' | 'mp3', audioType: 'processed' | 'original') => Promise<void>
 }
 
 export function ChunkProcessingResults({
@@ -35,8 +39,25 @@ export function ChunkProcessingResults({
   selectedChunk,
   onTogglePlayback,
   onToggleExpansion,
-  onClearAll
+  onClearAll,
+  onExportWav,
+  onExportMp3,
+  onDownloadChunk
 }: ChunkProcessingResultsProps) {
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.dropdown-container')) {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+          menu.classList.remove('show');
+        });
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
   if (chunks.length === 0) {
     return (
       <section className="chunks-section">
@@ -79,6 +100,7 @@ export function ChunkProcessingResults({
             isSelected={selectedChunk === chunk.id}
             onTogglePlayback={onTogglePlayback}
             onToggleExpansion={onToggleExpansion}
+            onDownloadChunk={onDownloadChunk}
           />
         ))}
       </div>
@@ -92,6 +114,7 @@ interface ChunkItemProps {
   isSelected: boolean
   onTogglePlayback: (chunkId: string, type: 'original' | 'processed') => void
   onToggleExpansion: (chunkId: string) => void
+  onDownloadChunk?: (chunkId: string, format: 'webm' | 'wav' | 'mp3', audioType: 'processed' | 'original') => Promise<void>
 }
 
 function ChunkItem({ 
@@ -99,7 +122,8 @@ function ChunkItem({
   index, 
   isSelected, 
   onTogglePlayback, 
-  onToggleExpansion 
+  onToggleExpansion,
+  onDownloadChunk 
 }: ChunkItemProps) {
   const chunkClasses = [
     'chunk-item',
@@ -187,6 +211,104 @@ function ChunkItem({
               </button>
             </>
           )}
+          <div className="dropdown-container">
+            <button 
+              className="action-btn download-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                const dropdown = e.currentTarget.nextElementSibling;
+                if (dropdown) {
+                  dropdown.classList.toggle('show');
+                }
+              }}
+              disabled={!chunk.processedAudioUrl || chunk.isValid === false}
+              title="Export Options"
+            >
+              <span className="btn-icon">💾</span>
+              <span className="btn-icon dropdown-arrow">▼</span>
+            </button>
+            <div className="dropdown-menu">
+              <button
+                className="dropdown-item"
+                onClick={async () => {
+                  if (onDownloadChunk) {
+                    try {
+                      await onDownloadChunk(chunk.id, 'webm', 'processed');
+                    } catch (error) {
+                      console.error('Download failed:', error);
+                      alert('Failed to download: ' + (error as Error).message);
+                    }
+                  }
+                }}
+              >
+                <span className="format-icon">🎵</span> WebM (Original)
+              </button>
+              <button
+                className="dropdown-item"
+                onClick={async () => {
+                  if (onDownloadChunk) {
+                    try {
+                      // Show loading state
+                      const btn = document.activeElement as HTMLButtonElement;
+                      const originalText = btn.innerHTML;
+                      btn.innerHTML = '<span class="spinner-small"></span> Converting...';
+                      btn.disabled = true;
+                      
+                      await onDownloadChunk(chunk.id, 'wav', 'processed');
+                      
+                      // Restore button
+                      btn.innerHTML = originalText;
+                      btn.disabled = false;
+                    } catch (error) {
+                      console.error('WAV conversion failed:', error);
+                      alert('Failed to convert to WAV: ' + (error as Error).message);
+                      
+                      // Restore button on error
+                      const btn = document.activeElement as HTMLButtonElement;
+                      if (btn) {
+                        btn.innerHTML = '<span class="format-icon">🔊</span> WAV (Uncompressed)';
+                        btn.disabled = false;
+                      }
+                    }
+                  }
+                }}
+              >
+                <span className="format-icon">🔊</span> WAV (Uncompressed)
+              </button>
+              <button
+                className="dropdown-item"
+                onClick={async () => {
+                  if (onDownloadChunk) {
+                    try {
+                      // Show loading state
+                      const btn = document.activeElement as HTMLButtonElement;
+                      const originalText = btn.innerHTML;
+                      btn.innerHTML = '<span class="spinner-small"></span> Converting to MP3...';
+                      btn.disabled = true;
+                      
+                      await onDownloadChunk(chunk.id, 'mp3', 'processed');
+                      
+                      // Restore button
+                      btn.innerHTML = originalText;
+                      btn.disabled = false;
+                    } catch (error) {
+                      console.error('MP3 conversion failed:', error);
+                      alert('Failed to convert to MP3: ' + (error as Error).message);
+                      
+                      // Restore button on error
+                      const btn = document.activeElement as HTMLButtonElement;
+                      if (btn) {
+                        btn.innerHTML = '<span class="format-icon">🎧</span> MP3 (128kbps)';
+                        btn.disabled = false;
+                      }
+                    }
+                  }
+                }}
+              >
+                <span className="format-icon">🎧</span> MP3 (128kbps)
+              </button>
+            </div>
+          </div>
           <button 
             className="action-btn expand-btn"
             onClick={() => onToggleExpansion(chunk.id)}
@@ -207,7 +329,12 @@ function ChunkItem({
               processedAudioUrl={chunk.processedAudioUrl}
               isPlaying={chunk.isPlaying}
               onPlayingChange={(playing) => {
-                if (!playing && chunk.isPlaying) {
+                // Toggle playback state
+                if (playing && !chunk.isPlaying) {
+                  // Start playing
+                  onTogglePlayback(chunk.id, 'processed')
+                } else if (!playing && chunk.isPlaying) {
+                  // Stop playing
                   onTogglePlayback(chunk.id, 'processed')
                 }
               }}

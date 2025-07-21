@@ -10,6 +10,14 @@ export declare class AudioConverter {
      */
     convertToWav(blob: Blob): Promise<Blob>;
     /**
+     * Convert WebM blob to WAV blob (static method for easy use)
+     */
+    static webmToWav(webmBlob: Blob): Promise<Blob>;
+    /**
+     * Convert WebM to MP3 using lamejs
+     */
+    static webmToMp3(webmBlob: Blob, bitrate?: number): Promise<Blob>;
+    /**
      * Convert AudioBuffer to WAV format
      */
     private audioBufferToWav;

@@ -456,8 +456,15 @@ p {
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--spacing-xl);
-  padding-bottom: var(--spacing-lg);
+  padding: var(--spacing-lg) var(--spacing-xl);
   border-bottom: 2px solid var(--neutral-200);
+}
+
+.panel-header h3 {
+  margin: 0;
+  flex: 1;
+  text-align: center;
+  padding-right: 32px;
 }
 
 .panel-title {
@@ -1305,7 +1312,7 @@ p {
 
 /* Panel Content */
 .panel-content {
-  padding: var(--spacing-xl);
+  padding: var(--spacing-xl) 0;
   overflow-y: auto;
   flex: 1;
 }
@@ -1313,6 +1320,7 @@ p {
 /* Setting Group */
 .setting-group {
   margin-bottom: var(--spacing-xl);
+  padding: 0 var(--spacing-xl);
 }
 
 .setting-group:last-child {
@@ -1935,6 +1943,200 @@ p {
     justify-content: center;
     width: 100%;
   }
+}
+
+/* Settings Panel Styles */
+.radio-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.radio-label input[type="radio"] {
+  cursor: pointer;
+}
+
+.select-input {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--neutral-800);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.select-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  cursor: pointer;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  padding: var(--spacing-xs) 0;
+}
+
+.checkbox-label input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.control-btn.primary {
+  background: var(--grass-light);
+  color: white;
+  border-color: var(--grass-light);
+}
+
+.control-btn.primary:hover {
+  background: var(--grass-meadow);
+  border-color: var(--grass-meadow);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Audio Meter Styles */
+.audio-meter-container {
+  display: flex;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.audio-meter {
+  flex: 1;
+}
+
+.meter-label {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--neutral-700);
+  margin-bottom: var(--spacing-xs);
+}
+
+.meter-bar {
+  width: 100%;
+  height: 12px;
+  background: var(--neutral-200);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.meter-fill {
+  height: 100%;
+  transition: width 100ms ease-out;
+  border-radius: var(--radius-full);
+}
+
+.meter-fill.input-level {
+  box-shadow: 0 0 10px currentColor;
+}
+
+.meter-fill.output-level {
+  box-shadow: 0 0 10px currentColor;
+}
+
+/* Download Button Style */
+.action-btn.download-btn:hover:not(:disabled) {
+  background: var(--prairie-sky);
+  color: white;
+  border-color: var(--prairie-sky);
+}
+
+/* Dropdown Styles */
+.dropdown-container {
+  position: relative;
+}
+
+.dropdown-arrow {
+  font-size: 0.7em;
+  margin-left: 0.2rem;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.25rem;
+  background: white;
+  border: 1px solid var(--neutral-300);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 200px;
+  display: none;
+  z-index: 100;
+}
+
+.dropdown-menu.show {
+  display: block;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: var(--font-sm);
+  color: var(--neutral-700);
+  transition: all var(--transition-fast);
+}
+
+.dropdown-item:hover:not(:disabled) {
+  background: var(--neutral-100);
+  color: var(--neutral-900);
+}
+
+.dropdown-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dropdown-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.format-icon {
+  font-size: 1.2em;
+}
+
+/* Spinner for loading state */
+.spinner-small {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--neutral-300);
+  border-top-color: var(--prairie-sky);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Close dropdown when clicking outside */
+.dropdown-menu::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
 }
 
 /* End of Illinois Prairie Theme */
