@@ -4,7 +4,7 @@
  */
 export declare const MAX_CHUNKS_IN_MEMORY = 100;
 export declare const CHUNKS_TO_KEEP_ON_OVERFLOW = 90;
-export declare const MIN_VALID_BLOB_SIZE = 1000;
+export declare const MIN_VALID_BLOB_SIZE = 100;
 export declare const DEFAULT_CHUNK_DURATION = 8;
 export declare const RECORDING_UPDATE_INTERVAL = 100;
 export declare const DEFAULT_MP3_BITRATE = 128;

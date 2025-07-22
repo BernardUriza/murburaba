@@ -6,7 +6,7 @@
 export const MAX_CHUNKS_IN_MEMORY = 100; // ~13 minutes at 8s chunks
 export const CHUNKS_TO_KEEP_ON_OVERFLOW = 90; // Keep most recent chunks when limit reached
 // Recording quality settings
-export const MIN_VALID_BLOB_SIZE = 1000; // 1KB minimum for valid audio
+export const MIN_VALID_BLOB_SIZE = 100; // 100 bytes minimum for valid audio
 export const DEFAULT_CHUNK_DURATION = 8; // seconds
 export const RECORDING_UPDATE_INTERVAL = 100; // ms
 // Audio export settings

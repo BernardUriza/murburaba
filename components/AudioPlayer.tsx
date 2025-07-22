@@ -14,9 +14,12 @@ export default function AudioPlayer({ src, onPlayStateChange, className = '', la
   const [duration, setDuration] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Mejor: useCallback, performance pura
-  const formatTime = useCallback((t: number) => `${Math.floor(t / 60)}:${(Math.floor(t % 60)).toString().padStart(2, '0')}`, [])
-  const progress = useMemo(() => duration > 0 ? (currentTime / duration) * 100 : 0, [currentTime, duration])
+  // Format time with validation
+  const formatTime = useCallback((t: number) => {
+    if (!isFinite(t)) return '0:00'
+    return `${Math.floor(t / 60)}:${(Math.floor(t % 60)).toString().padStart(2, '0')}`
+  }, [])
+  const progress = useMemo(() => duration > 0 && isFinite(duration) ? (currentTime / duration) * 100 : 0, [currentTime, duration])
 
   useEffect(() => {
     const audio = audioRef.current
@@ -25,7 +28,11 @@ export default function AudioPlayer({ src, onPlayStateChange, className = '', la
     // Limpieza: agrupa eventos, menos duplicación, menos leak.
     const handlers = {
       loadstart: () => setIsLoading(true),
-      loadedmetadata: () => { setDuration(audio.duration); setIsLoading(false) },
+      loadedmetadata: () => { 
+        const dur = audio.duration
+        setDuration(isFinite(dur) ? dur : 0)
+        setIsLoading(false) 
+      },
       timeupdate: () => setCurrentTime(audio.currentTime),
       ended: () => { setIsPlaying(false); setCurrentTime(0); onPlayStateChange?.(false) },
       error: () => { setIsLoading(false); setIsPlaying(false); console.error('Audio playback error') }
@@ -73,7 +80,7 @@ export default function AudioPlayer({ src, onPlayStateChange, className = '', la
         <span className="player-label">{label}</span>
         <div className="progress-container" onClick={handleSeek}>
           <div className="progress-bar"><div className="progress-fill" style={{ width: `${progress}%` }} /></div>
-          <span className="time-display">{formatTime(currentTime)} / {formatTime(duration)}</span>
+          <span className="time-display">{formatTime(currentTime)}</span>
         </div>
       </div>
     </div>

@@ -55,22 +55,34 @@ export class RecordingManager {
       const currentOriginalRecorder = new MediaRecorder(originalStream, { mimeType });
       
       currentRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
+        if (event.data.size >= MIN_VALID_BLOB_SIZE) {
           const chunkRecording = this.chunkRecordings.get(chunkId);
           if (chunkRecording && !chunkRecording.finalized) {
             chunkRecording.processed.push(event.data);
             console.log(`💾 ${LOG_PREFIX.CONCAT_STREAM} Cycle #${this.cycleCount} - Processed data: ${event.data.size} bytes`);
           }
+        } else {
+          console.warn(`⚠️ ${LOG_PREFIX.CONCAT_STREAM} Invalid blob size detected! Size: ${event.data.size} bytes (minimum: ${MIN_VALID_BLOB_SIZE} bytes)`, {
+            cycleNumber: this.cycleCount,
+            blobSize: event.data.size,
+            type: 'processed'
+          });
         }
       };
       
       currentOriginalRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
+        if (event.data.size >= MIN_VALID_BLOB_SIZE) {
           const chunkRecording = this.chunkRecordings.get(chunkId);
           if (chunkRecording && !chunkRecording.finalized) {
             chunkRecording.original.push(event.data);
             console.log(`💾 ${LOG_PREFIX.CONCAT_STREAM} Cycle #${this.cycleCount} - Original data: ${event.data.size} bytes`);
           }
+        } else {
+          console.warn(`⚠️ ${LOG_PREFIX.CONCAT_STREAM} Invalid blob size detected! Size: ${event.data.size} bytes (minimum: ${MIN_VALID_BLOB_SIZE} bytes)`, {
+            cycleNumber: this.cycleCount,
+            blobSize: event.data.size,
+            type: 'original'
+          });
         }
       };
       
@@ -85,20 +97,27 @@ export class RecordingManager {
       // When recording stops, process and create chunk
       currentRecorder.onstop = () => {
         const chunkRecording = this.chunkRecordings.get(chunkId);
-        if (chunkRecording && chunkRecording.processed.length > 0) {
-          this.processChunkRecording(
-            chunkId,
-            chunkRecording,
-            cycleStartTime,
-            mimeType,
-            onChunkReady
-          );
+        if (chunkRecording) {
+          // Only process if we have valid data
+          if (chunkRecording.processed.length > 0 || chunkRecording.original.length > 0) {
+            this.processChunkRecording(
+              chunkId,
+              chunkRecording,
+              cycleStartTime,
+              mimeType,
+              onChunkReady
+            );
+          } else {
+            console.warn(`⚠️ ${LOG_PREFIX.CONCAT_STREAM} Cycle #${this.cycleCount} discarded - no valid blobs collected`);
+            // Clean up the empty recording
+            this.chunkRecordings.delete(chunkId);
+          }
         }
       };
       
       // Start recording
-      currentRecorder.start();
-      currentOriginalRecorder.start();
+      currentRecorder.start(1000);
+      currentOriginalRecorder.start(1000);
       
       // Store refs
       this.mediaRecorder = currentRecorder;
@@ -112,17 +131,15 @@ export class RecordingManager {
       console.log(`⏹️ ${LOG_PREFIX.CONCAT_STREAM} Stopping cycle #${this.cycleCount}`);
       
       if (this.mediaRecorder?.state === 'recording') {
-        this.mediaRecorder.requestData();
         this.mediaRecorder.stop();
       }
       
       if (this.originalRecorder?.state === 'recording') {
-        this.originalRecorder.requestData();
         this.originalRecorder.stop();
       }
       
       // Start new cycle after a small delay
-      setTimeout(startNewRecordingCycle, 100);
+      setTimeout(startNewRecordingCycle, 500);
     };
 
     // Start first cycle
@@ -147,14 +164,21 @@ export class RecordingManager {
     
     console.log(`📦 ${LOG_PREFIX.CONCAT_STREAM} Created blobs - Processed: ${processedBlob.size} bytes, Original: ${originalBlob.size} bytes`);
     
-    // Validate blob sizes
+    // Validate blob sizes - already filtered but double-check
     let isValid = true;
     let errorMessage = '';
     
+    if (processedBlob.size === 0 && originalBlob.size === 0) {
+      // Both empty - skip this chunk entirely
+      console.error(`❌ ${LOG_PREFIX.CONCAT_STREAM} Both blobs are empty, skipping chunk creation`);
+      this.chunkRecordings.delete(chunkId);
+      return;
+    }
+    
     if (processedBlob.size < MIN_VALID_BLOB_SIZE || originalBlob.size < MIN_VALID_BLOB_SIZE) {
       isValid = false;
-      errorMessage = `Audio too small (${Math.min(processedBlob.size, originalBlob.size)} bytes). Recording may be corrupted.`;
-      console.error(`❌ ${LOG_PREFIX.CONCAT_STREAM} Invalid blob size detected!`);
+      errorMessage = `Audio too small (Processed: ${processedBlob.size} bytes, Original: ${originalBlob.size} bytes). Recording may be corrupted.`;
+      console.error(`❌ ${LOG_PREFIX.CONCAT_STREAM} Invalid blob size in final chunk!`);
     }
     
     // Create URLs if valid

@@ -146,6 +146,8 @@ export class ChunkProcessor extends EventEmitter {
             startTime: chunk.startTime,
             endTime: chunk.endTime,
         };
+        // Record metrics in metrics manager
+        this.metricsManager.recordChunk(metrics);
         // Emit to listeners
         this.emit('chunk-processed', metrics);
         // Call user callback if provided
