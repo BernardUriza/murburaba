@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AdvancedMetricsPanel } from '../AdvancedMetricsPanel';
-import type { DiagnosticInfo } from '../../core/MurmubaraEngine';
+import type { DiagnosticInfo } from '../../types/audio-types';
 
 // Mock diagnostic data for testing
 const createMockDiagnostics = (overrides: Partial<DiagnosticInfo> = {}): DiagnosticInfo => ({

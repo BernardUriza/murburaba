@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback } from 'react';
-import type { DiagnosticInfo } from '../core/MurmubaraEngine';
+import type { DiagnosticInfo } from '../types/audio-types';
 
 export interface AdvancedMetricsPanelProps {
   /** Controls visibility of the panel */
