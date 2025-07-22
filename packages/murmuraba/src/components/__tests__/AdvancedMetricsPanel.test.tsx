@@ -77,7 +77,7 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
       );
       
       // Check for main dialog container
-      const panel = screen.getByRole('dialog');
+      const panel = screen.getByRole('dialog', { name: /engine diagnostics/i });
       expect(panel).toBeInTheDocument();
       expect(panel).toHaveClass('advanced-metrics-panel');
     });
@@ -105,7 +105,7 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      const closeButton = screen.getByRole('button');
+      const closeButton = screen.getByRole('button', { name: /close/i });
       expect(closeButton).toBeInTheDocument();
       expect(closeButton).toHaveTextContent('✕');
     });
@@ -119,7 +119,7 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      const closeButton = screen.getByRole('button');
+      const closeButton = screen.getByRole('button', { name: /close/i });
       fireEvent.click(closeButton);
       
       expect(mockOnClose).toHaveBeenCalledOnce();
@@ -138,8 +138,8 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      expect(screen.getByText('Version:')).toBeInTheDocument();
-      expect(screen.getByText('1.5.0')).toBeInTheDocument();
+      expect(screen.getByText(/Version:/)).toBeInTheDocument();
+      expect(screen.getByText(/1\.5\.0/)).toBeInTheDocument();
     });
 
     it('should display WASM status - loaded', () => {
@@ -153,8 +153,8 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      expect(screen.getByText('WASM Status:')).toBeInTheDocument();
-      expect(screen.getByText('✅ Loaded')).toBeInTheDocument();
+      expect(screen.getByText(/WASM Status:/)).toBeInTheDocument();
+      expect(screen.getByText(/✅ Loaded/)).toBeInTheDocument();
     });
 
     it('should display WASM status - not loaded', () => {
@@ -168,7 +168,7 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      expect(screen.getByText('❌ Not Loaded')).toBeInTheDocument();
+      expect(screen.getByText(/❌ Not Loaded/)).toBeInTheDocument();
     });
 
     it('should display active processors count', () => {
@@ -182,8 +182,8 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      expect(screen.getByText('Active Processors:')).toBeInTheDocument();
-      expect(screen.getByText('5')).toBeInTheDocument();
+      expect(screen.getByText(/Active Processors:/)).toBeInTheDocument();
+      expect(screen.getByText(/^5$/)).toBeInTheDocument();
     });
 
     it('should display memory usage in MB', () => {
@@ -199,8 +199,8 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      expect(screen.getByText('Memory Usage:')).toBeInTheDocument();
-      expect(screen.getByText('42.00 MB')).toBeInTheDocument();
+      expect(screen.getByText(/Memory Usage:/)).toBeInTheDocument();
+      expect(screen.getByText(/42\.00 MB/)).toBeInTheDocument();
     });
 
     it('should display processing time with decimal precision', () => {
@@ -214,8 +214,8 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      expect(screen.getByText('Processing Time:')).toBeInTheDocument();
-      expect(screen.getByText('123.46ms')).toBeInTheDocument();
+      expect(screen.getByText(/Processing Time:/)).toBeInTheDocument();
+      expect(screen.getByText(/123\.46ms/)).toBeInTheDocument();
     });
 
     it('should display engine state', () => {
@@ -229,8 +229,8 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      expect(screen.getByText('Engine State:')).toBeInTheDocument();
-      expect(screen.getByText('processing')).toBeInTheDocument();
+      expect(screen.getByText(/Engine State:/)).toBeInTheDocument();
+      expect(screen.getByText(/^processing$/)).toBeInTheDocument();
     });
   });
 
@@ -248,8 +248,8 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      expect(screen.getByText('Browser:')).toBeInTheDocument();
-      expect(screen.getByText('Firefox')).toBeInTheDocument();
+      expect(screen.getByText(/Browser:/)).toBeInTheDocument();
+      expect(screen.getByText(/^Firefox$/)).toBeInTheDocument();
     });
 
     it('should display Unknown when browser name is not available', () => {
@@ -265,7 +265,7 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      expect(screen.getByText('Unknown')).toBeInTheDocument();
+      expect(screen.getByText(/^Unknown$/)).toBeInTheDocument();
     });
 
     it('should display Unknown when browserInfo is null', () => {
@@ -281,7 +281,7 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      expect(screen.getByText('Unknown')).toBeInTheDocument();
+      expect(screen.getByText(/^Unknown$/)).toBeInTheDocument();
     });
 
     it('should display audio APIs supported status - supported', () => {
@@ -297,8 +297,8 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      expect(screen.getByText('Audio APIs:')).toBeInTheDocument();
-      expect(screen.getByText('✅ Supported')).toBeInTheDocument();
+      expect(screen.getByText(/Audio APIs:/)).toBeInTheDocument();
+      expect(screen.getByText(/✅ Supported/)).toBeInTheDocument();
     });
 
     it('should display audio APIs supported status - limited', () => {
@@ -314,7 +314,7 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      expect(screen.getByText('❌ Limited')).toBeInTheDocument();
+      expect(screen.getByText(/❌ Limited/)).toBeInTheDocument();
     });
   });
 
@@ -332,8 +332,8 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      expect(screen.getByText('Performance:')).toBeInTheDocument();
-      expect(screen.getByText('🟢 Good')).toBeInTheDocument();
+      expect(screen.getByText(/Performance:/)).toBeInTheDocument();
+      expect(screen.getByText(/🟢 Good/)).toBeInTheDocument();
     });
 
     it('should show Moderate performance for medium memory usage', () => {
@@ -349,7 +349,7 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      expect(screen.getByText('🟡 Moderate')).toBeInTheDocument();
+      expect(screen.getByText(/🟡 Moderate/)).toBeInTheDocument();
     });
 
     it('should show High performance warning for high memory usage', () => {
@@ -365,7 +365,7 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      expect(screen.getByText('🔴 High')).toBeInTheDocument();
+      expect(screen.getByText(/🔴 High/)).toBeInTheDocument();
     });
 
     it('should handle edge case at 50MB threshold', () => {
@@ -381,7 +381,7 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      expect(screen.getByText('🟡 Moderate')).toBeInTheDocument();
+      expect(screen.getByText(/🟡 Moderate/)).toBeInTheDocument();
     });
 
     it('should handle edge case at 100MB threshold', () => {
@@ -397,7 +397,7 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      expect(screen.getByText('🔴 High')).toBeInTheDocument();
+      expect(screen.getByText(/🔴 High/)).toBeInTheDocument();
     });
   });
 

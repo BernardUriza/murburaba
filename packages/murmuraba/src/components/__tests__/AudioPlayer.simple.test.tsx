@@ -26,7 +26,7 @@ describe('AudioPlayer - Critical TDD Tests', () => {
     it('should render disabled state when no src provided', () => {
       render(<AudioPlayer label="Test Audio" />);
       
-      const button = screen.getByRole('button');
+      const button = screen.getByRole('button', { name: /test audio/i });
       expect(button).toBeDisabled();
       expect(screen.getByText('Test Audio - No audio')).toBeInTheDocument();
     });
@@ -34,7 +34,7 @@ describe('AudioPlayer - Critical TDD Tests', () => {
     it('should render enabled state with src', () => {
       render(<AudioPlayer src="test.mp3" label="Test Audio" />);
       
-      const button = screen.getByRole('button');
+      const button = screen.getByRole('button', { name: /test audio/i });
       expect(button).not.toBeDisabled();
       expect(screen.getByText('Test Audio')).toBeInTheDocument();
     });
@@ -84,7 +84,7 @@ describe('AudioPlayer - Critical TDD Tests', () => {
         />
       );
       
-      const button = screen.getByRole('button');
+      const button = screen.getByRole('button', { name: /test/i });
       expect(button).toBeDisabled();
     });
   });
@@ -93,7 +93,7 @@ describe('AudioPlayer - Critical TDD Tests', () => {
     it('should have proper ARIA labels for play state', () => {
       render(<AudioPlayer src="test.mp3" label="Test Audio" />);
       
-      const button = screen.getByRole('button');
+      const button = screen.getByRole('button', { name: /test audio.*play audio/i });
       expect(button).toHaveAttribute('aria-label', 'Test Audio - Play audio');
     });
 
@@ -106,7 +106,7 @@ describe('AudioPlayer - Critical TDD Tests', () => {
         />
       );
       
-      const button = screen.getByRole('button');
+      const button = screen.getByRole('button', { name: /custom audio control/i });
       expect(button).toHaveAttribute('aria-label', 'Custom audio control');
     });
 

@@ -1,6 +1,6 @@
 /**
- * Murmuraba v1.4.0
- * Real-time audio noise reduction with advanced chunked processing
+ * Murmuraba v1.5.0
+ * Real-time audio noise reduction with comprehensive UI component library
  */
 export { MurmubaraEngine } from './core/MurmubaraEngine';
 export { EventEmitter } from './core/EventEmitter';
@@ -13,9 +13,16 @@ export { RNNoiseEngine } from './engines/RNNoiseEngine';
 export type { AudioEngine } from './engines/types';
 export * from './types';
 export { initializeAudioEngine, getEngine, processStream, processStreamChunked, destroyEngine, getEngineStatus, getDiagnostics, onMetricsUpdate } from './api';
-export declare const VERSION = "1.4.0";
-export declare const MURMURABA_VERSION = "1.4.0";
+export declare const VERSION = "1.5.0";
+export declare const MURMURABA_VERSION = "1.5.0";
 export { ErrorCodes } from './types';
+export { AudioPlayer } from './components/AudioPlayer';
+export { AdvancedMetricsPanel } from './components/AdvancedMetricsPanel';
+export { ChunkProcessingResults } from './components/ChunkProcessingResults';
+export { WaveformAnalyzer } from './components/WaveformAnalyzer';
+export { SyncedWaveforms } from './components/SyncedWaveforms';
+export { ErrorBoundary, withErrorBoundary } from './components/ErrorBoundary';
+export { BuildInfo, BuildInfoBadge, BuildInfoBlock, BuildInfoInline, getPackageVersion, formatBuildDate } from './components/BuildInfo';
 export { useMurmubaraEngine } from './hooks/useMurmubaraEngine';
 export { useAudioEngine } from './hooks/useAudioEngine';
 export { AudioConverter, getAudioConverter } from './utils/audioConverter';

@@ -30,9 +30,24 @@ const mockAnchor = {
   download: '',
   style: {}
 };
-global.document.createElement = vi.fn().mockReturnValue(mockAnchor);
-global.document.body.appendChild = vi.fn();
-global.document.body.removeChild = vi.fn();
+
+// Ensure document and body exist before mocking
+if (typeof document !== 'undefined') {
+  vi.spyOn(document, 'createElement').mockReturnValue(mockAnchor as any);
+  if (document.body) {
+    vi.spyOn(document.body, 'appendChild').mockImplementation(() => mockAnchor as any);
+    vi.spyOn(document.body, 'removeChild').mockImplementation(() => mockAnchor as any);
+  }
+} else {
+  // Fallback for environments without document
+  global.document = {
+    createElement: vi.fn().mockReturnValue(mockAnchor),
+    body: {
+      appendChild: vi.fn(),
+      removeChild: vi.fn()
+    }
+  } as any;
+}
 
 // Mock console methods
 beforeEach(() => {

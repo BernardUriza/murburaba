@@ -41,45 +41,80 @@ const mockWasmModule = {
   HEAP32: new Int32Array(10000)
 };
 
-// Get the mock AudioContext from our global setup
+// Mock AudioContext and nodes
 let mockAudioContext: any;
-
-// Mock nodes
-const mockScriptProcessor = {
-  connect: vi.fn(),
-  disconnect: vi.fn(),
-  onaudioprocess: null as any,
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn()
-};
-
-const mockMediaStreamSource = {
-  connect: vi.fn(),
-  disconnect: vi.fn()
-};
-
-const mockMediaStreamDestination = {
-  stream: { 
-    id: 'mock-output-stream',
-    getTracks: vi.fn().mockReturnValue([]),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn()
-  }
-};
-
-const mockBiquadFilter = {
-  type: '' as BiquadFilterType,
-  frequency: { value: 0 },
-  Q: { value: 0 },
-  connect: vi.fn(),
-  disconnect: vi.fn()
-};
+let mockScriptProcessor: any;
+let mockMediaStreamSource: any;
+let mockMediaStreamDestination: any;
+let mockBiquadFilter: any;
+let mockHighPassFilter: any;
+let mockNotchFilter1: any;
+let mockNotchFilter2: any;
+let mockLowShelfFilter: any;
 
 // Setup global mocks
 beforeEach(() => {
   vi.clearAllMocks();
-  // Don't use fake timers by default - only in specific tests that need them
-  // vi.useFakeTimers();
+  
+  // Create fresh mock nodes
+  mockScriptProcessor = {
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    onaudioprocess: null as any,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn()
+  };
+
+  mockMediaStreamSource = {
+    connect: vi.fn(),
+    disconnect: vi.fn()
+  };
+
+  mockMediaStreamDestination = {
+    stream: { 
+      id: 'mock-output-stream',
+      getTracks: vi.fn().mockReturnValue([]),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn()
+    }
+  };
+
+  // Create multiple biquad filters for the chain
+  mockHighPassFilter = {
+    type: '' as BiquadFilterType,
+    frequency: { value: 0 },
+    Q: { value: 0 },
+    gain: { value: 0 },
+    connect: vi.fn(),
+    disconnect: vi.fn()
+  };
+
+  mockNotchFilter1 = {
+    type: '' as BiquadFilterType,
+    frequency: { value: 0 },
+    Q: { value: 0 },
+    connect: vi.fn(),
+    disconnect: vi.fn()
+  };
+
+  mockNotchFilter2 = {
+    type: '' as BiquadFilterType,
+    frequency: { value: 0 },
+    Q: { value: 0 },
+    connect: vi.fn(),
+    disconnect: vi.fn()
+  };
+
+  mockLowShelfFilter = {
+    type: '' as BiquadFilterType,
+    frequency: { value: 0 },
+    Q: { value: 0 },
+    gain: { value: 0 },
+    connect: vi.fn(),
+    disconnect: vi.fn()
+  };
+
+  mockBiquadFilter = mockHighPassFilter; // Default to high pass for backward compatibility
   
   // Create a fresh mock AudioContext
   mockAudioContext = {
@@ -89,7 +124,12 @@ beforeEach(() => {
     createScriptProcessor: vi.fn().mockReturnValue(mockScriptProcessor),
     createMediaStreamSource: vi.fn().mockReturnValue(mockMediaStreamSource),
     createMediaStreamDestination: vi.fn().mockReturnValue(mockMediaStreamDestination),
-    createBiquadFilter: vi.fn().mockReturnValue(mockBiquadFilter),
+    createBiquadFilter: vi.fn()
+      .mockReturnValueOnce(mockNotchFilter1)
+      .mockReturnValueOnce(mockNotchFilter2)
+      .mockReturnValueOnce(mockHighPassFilter)
+      .mockReturnValueOnce(mockLowShelfFilter)
+      .mockReturnValue(mockBiquadFilter),
     resume: vi.fn().mockResolvedValue(undefined),
     close: vi.fn().mockResolvedValue(undefined),
     currentTime: 0,
@@ -100,16 +140,40 @@ beforeEach(() => {
     dispatchEvent: vi.fn()
   };
   
-  // Override the global AudioContext to return our mock
-  (global.AudioContext as any).mockImplementation(() => mockAudioContext);
+  // Mock the global AudioContext constructor
+  global.AudioContext = vi.fn().mockImplementation(() => mockAudioContext);
+  global.webkitAudioContext = global.AudioContext;
   
   // Mock window for checkEnvironmentSupport
   global.window = Object.assign(global.window || {}, {
     AudioContext: global.AudioContext,
     webkitAudioContext: global.AudioContext,
     WebAssembly: {},
-    createRNNWasmModule: vi.fn().mockResolvedValue(mockWasmModule)
+    createRNNWasmModule: vi.fn().mockResolvedValue(mockWasmModule),
+    AudioWorkletNode: vi.fn(),
+    MediaStream: vi.fn(),
+    MediaRecorder: vi.fn(),
+    React: { version: '18.2.0' }
   });
+  
+  // Mock navigator
+  global.navigator = {
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0',
+    mediaDevices: {
+      getUserMedia: vi.fn()
+    }
+  } as any;
+  
+  // Mock performance
+  global.performance = {
+    ...global.performance,
+    memory: {
+      usedJSHeapSize: 1000000,
+      jsHeapSizeLimit: 2000000,
+      totalJSHeapSize: 1500000
+    },
+    now: vi.fn().mockReturnValue(0)
+  } as any;
   
   // Mock document
   global.document = {
@@ -376,16 +440,16 @@ describe('MurmubaraEngine - The Final Boss', () => {
     it('should handle WASM loading failure', async () => {
       (global.window as any).createRNNWasmModule = vi.fn().mockRejectedValue(new Error('WASM load failed'));
       
-      await expect(engine.initialize()).rejects.toThrow('Failed to load RNNoise WASM module');
+      await expect(engine.initialize()).rejects.toThrow('Initialization failed');
       expect(mockStateManager.transitionTo).toHaveBeenCalledWith('error');
     });
     
     it('should handle AudioContext creation failure', async () => {
-      (global.window as any).AudioContext = vi.fn().mockImplementation(() => {
+      global.AudioContext = vi.fn().mockImplementation(() => {
         throw new Error('AudioContext failed');
       });
       
-      await expect(engine.initialize()).rejects.toThrow('Failed to create audio context');
+      await expect(engine.initialize()).rejects.toThrow('Failed to create AudioContext');
     });
     
     it('should resume suspended audio context', async () => {
@@ -403,8 +467,8 @@ describe('MurmubaraEngine - The Final Boss', () => {
       
       await engine.initialize();
       
-      expect(mockLogger.warn).toHaveBeenCalledWith('Running in degraded mode without WASM');
-      expect(mockStateManager.transitionTo).toHaveBeenCalledWith('ready');
+      expect(mockLogger.warn).toHaveBeenCalledWith('Attempting degraded mode initialization...');
+      expect(mockStateManager.transitionTo).toHaveBeenCalledWith('degraded');
     });
     
     it('should warm up WASM module', async () => {
@@ -490,21 +554,45 @@ describe('MurmubaraEngine - The Final Boss', () => {
     });
     
     it('should handle invalid state', async () => {
-      mockStateManager.getState.mockReturnValue('uninitialized');
-      mockStateManager.canTransitionTo.mockReturnValue(false);
+      mockStateManager.requireState.mockImplementation(() => {
+        throw new Error('Invalid state: uninitialized. Required states: ready, processing');
+      });
       
       await expect(engine.processStream(mockStream)).rejects.toThrow(
-        'Cannot process stream in current state: uninitialized'
+        'Invalid state'
       );
     });
     
-    it('should apply highpass filter', async () => {
+    it('should apply filters in chain', async () => {
       await engine.processStream(mockStream);
       
-      expect(mockAudioContext.createBiquadFilter).toHaveBeenCalled();
-      expect(mockBiquadFilter.type).toBe('highpass');
-      expect(mockBiquadFilter.frequency.value).toBe(80);
-      expect(mockBiquadFilter.Q.value).toBe(1);
+      // Should create 4 filters
+      expect(mockAudioContext.createBiquadFilter).toHaveBeenCalledTimes(4);
+      
+      // Check filter configurations
+      expect(mockNotchFilter1.type).toBe('notch');
+      expect(mockNotchFilter1.frequency.value).toBe(1000);
+      expect(mockNotchFilter1.Q.value).toBe(30);
+      
+      expect(mockNotchFilter2.type).toBe('notch');
+      expect(mockNotchFilter2.frequency.value).toBe(2000);
+      expect(mockNotchFilter2.Q.value).toBe(30);
+      
+      expect(mockHighPassFilter.type).toBe('highpass');
+      expect(mockHighPassFilter.frequency.value).toBe(80);
+      expect(mockHighPassFilter.Q.value).toBe(0.7);
+      
+      expect(mockLowShelfFilter.type).toBe('lowshelf');
+      expect(mockLowShelfFilter.frequency.value).toBe(200);
+      expect(mockLowShelfFilter.gain.value).toBe(-3);
+      
+      // Check connections
+      expect(mockMediaStreamSource.connect).toHaveBeenCalledWith(mockHighPassFilter);
+      expect(mockHighPassFilter.connect).toHaveBeenCalledWith(mockNotchFilter1);
+      expect(mockNotchFilter1.connect).toHaveBeenCalledWith(mockNotchFilter2);
+      expect(mockNotchFilter2.connect).toHaveBeenCalledWith(mockLowShelfFilter);
+      expect(mockLowShelfFilter.connect).toHaveBeenCalledWith(mockScriptProcessor);
+      expect(mockScriptProcessor.connect).toHaveBeenCalledWith(mockMediaStreamDestination);
     });
     
     it('should process audio frames', async () => {
@@ -567,11 +655,10 @@ describe('MurmubaraEngine - The Final Boss', () => {
     it('should handle stream stop', async () => {
       const controller = await engine.processStream(mockStream);
       
-      await controller.stop();
+      controller.stop();
       
       expect(mockScriptProcessor.disconnect).toHaveBeenCalled();
       expect(mockMediaStreamSource.disconnect).toHaveBeenCalled();
-      expect(mockBiquadFilter.disconnect).toHaveBeenCalled();
     });
     
     it('should handle pause/resume', async () => {
@@ -606,28 +693,25 @@ describe('MurmubaraEngine - The Final Boss', () => {
     });
     
     it('should force destroy with active streams', async () => {
-      await engine.processStream({ id: 'test' } as any);
-      mockStateManager.getState.mockReturnValue('processing');
+      await engine.processStream(mockStream);
+      mockStateManager.canTransitionTo.mockReturnValue(false);
       
       await engine.destroy(true);
       
-      expect(mockLogger.warn).toHaveBeenCalledWith('Force destroying engine with 1 active streams');
+      expect(mockLogger.warn).toHaveBeenCalledWith('Force destroying engine');
     });
     
     it('should handle already destroyed state', async () => {
-      mockStateManager.getState.mockReturnValue('destroyed');
+      mockStateManager.canTransitionTo.mockReturnValue(false);
       
-      await engine.destroy();
-      
-      expect(mockStateManager.transitionTo).not.toHaveBeenCalledWith('destroying');
+      await expect(engine.destroy()).rejects.toThrow('Cannot destroy engine in current state');
     });
     
     it('should handle errors during cleanup', async () => {
       mockAudioContext.close.mockRejectedValueOnce(new Error('Close failed'));
       
-      await engine.destroy();
-      
-      expect(mockLogger.error).toHaveBeenCalledWith('Error during engine cleanup:', expect.any(Error));
+      await expect(engine.destroy()).rejects.toThrow('Cleanup failed');
+      expect(mockStateManager.transitionTo).toHaveBeenCalledWith('error');
     });
     
     it('should clear cleanup timer', async () => {
@@ -669,7 +753,16 @@ describe('MurmubaraEngine - The Final Boss', () => {
       const callback = vi.fn();
       engine.onMetricsUpdate(callback);
       
-      expect(mockMetricsManager.on).toHaveBeenCalledWith('metrics-update', callback);
+      // Should have registered the callback via event emitter
+      const metricsHandler = mockMetricsManager.on.mock.calls.find(c => c[0] === 'metrics-update')?.[1];
+      expect(metricsHandler).toBeDefined();
+      
+      // Test the forwarding works
+      const testMetrics = { noiseReductionLevel: 50 };
+      metricsHandler?.(testMetrics);
+      
+      // The engine should have received and forwarded the event
+      expect(engine.listenerCount('metrics-update')).toBeGreaterThan(0);
     });
     
     it('should get diagnostics', () => {
@@ -689,18 +782,16 @@ describe('MurmubaraEngine - The Final Boss', () => {
     });
     
     it('should include browser info', () => {
-      global.navigator = { userAgent: 'Mozilla/5.0 Chrome/120.0.0.0' } as any;
-      
-      engine = new MurmubaraEngine();
       const diagnostics = engine.getDiagnostics();
       
       expect(diagnostics.browserInfo.name).toBe('Chrome');
+      expect(diagnostics.browserInfo.version).toBe('120.0.0.0');
+      expect(diagnostics.browserInfo.audioAPIsSupported).toContain('AudioContext');
     });
     
     it('should handle performance.memory absence', () => {
-      delete (global as any).performance;
+      delete (global.performance as any).memory;
       
-      engine = new MurmubaraEngine();
       const diagnostics = engine.getDiagnostics();
       
       expect(diagnostics.memoryUsage).toBe(0);

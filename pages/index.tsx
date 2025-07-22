@@ -1,10 +1,13 @@
 import Head from 'next/head'
 import React, { useState } from 'react'
-import { useMurmubaraEngine } from 'murmuraba'
-import { WaveformAnalyzer } from '../components/WaveformAnalyzer'
-import { BuildInfo } from '../components/BuildInfo'
-import { AdvancedMetricsPanel } from '../components/AdvancedMetricsPanel'
-import { ChunkProcessingResults } from '../components/ChunkProcessingResults'
+import { 
+  useMurmubaraEngine,
+  WaveformAnalyzer,
+  BuildInfo,
+  AdvancedMetricsPanel,
+  ErrorBoundary,
+  ChunkProcessingResults
+} from 'murmuraba'
 import Swal from 'sweetalert2'
 
 export default function Home() {

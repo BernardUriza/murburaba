@@ -2,6 +2,33 @@ import { vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { setupAllAudioMocks } from './mocks/webAudioMocks';
 console.log('\n🚀 ========== VITEST SETUP STARTING ========== 🚀\n');
+// Setup DOM environment for React components
+if (typeof global.document === 'undefined') {
+    // Simple DOM mock for testing
+    global.document = {
+        createElement: vi.fn(() => ({
+            click: vi.fn(),
+            setAttribute: vi.fn(),
+            getAttribute: vi.fn(),
+            appendChild: vi.fn(),
+            removeChild: vi.fn(),
+            style: {},
+            dataset: {},
+        })),
+        body: {
+            appendChild: vi.fn(),
+            removeChild: vi.fn(),
+        },
+        head: {
+            appendChild: vi.fn(),
+        },
+        getElementById: vi.fn(),
+        querySelector: vi.fn(),
+        querySelectorAll: vi.fn(() => []),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+    };
+}
 // Setup all Web Audio mocks
 setupAllAudioMocks();
 // Modern URL mocks
@@ -62,6 +89,7 @@ if (process.env.DEBUG !== 'true') {
     };
 }
 // Custom matchers for Vitest
+import { expect } from 'vitest';
 expect.extend({
     toBeValidChunk(received) {
         const pass = received &&

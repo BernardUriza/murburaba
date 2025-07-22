@@ -1,6 +1,6 @@
 {
   "name": "murmuraba",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Real-time audio noise reduction with advanced chunked processing for web applications",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",

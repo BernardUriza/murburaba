@@ -4,6 +4,15 @@ import path from 'path';
 export default defineConfig({
   test: {
     environment: 'happy-dom',
+    environmentOptions: {
+      happyDOM: {
+        settings: {
+          disableJavaScriptFileLoading: true,
+          disableCSSFileLoading: true,
+          enableFileSystemHttpRequests: false
+        }
+      }
+    },
     globals: true,
     setupFiles: ['./src/__tests__/vitest.setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
@@ -11,6 +20,14 @@ export default defineConfig({
       provider: 'v8',
       enabled: true,
       reporter: ['text', 'json', 'html', 'lcov'],
+      include: [
+        'src/core/**/*.ts',
+        'src/hooks/**/*.ts',
+        'src/engines/**/*.ts',
+        'src/managers/**/*.ts',
+        'src/utils/**/*.ts',
+        'src/components/**/*.tsx'
+      ],
       exclude: [
         'node_modules/',
         'src/__tests__/',
@@ -22,6 +39,8 @@ export default defineConfig({
         'coverage/',
         '**/*.config.ts',
         'src/types/**',
+        'src/**/types.ts',
+        'src/**/interfaces.ts'
       ],
       thresholds: {
         lines: 90,
@@ -50,7 +69,7 @@ export default defineConfig({
     // Retry failed tests
     retry: 0,
     // Better error output
-    reporter: ['default', 'html'],
+    reporters: ['default', 'html'],
     // Pool options for better performance
     pool: 'threads',
     poolOptions: {

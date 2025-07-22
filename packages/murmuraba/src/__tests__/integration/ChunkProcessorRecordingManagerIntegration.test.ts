@@ -34,11 +34,22 @@ describe('ChunkProcessor + RecordingManager Integration', () => {
     // Setup mocks
     urlManager = new URLManager();
     metricsManager = new MetricsManager();
-    logger = new Logger('test', 'info');
+    
+    // Mock logger properly with all required methods
+    logger = {
+      info: vi.fn(),
+      debug: vi.fn(),  
+      warn: vi.fn(),
+      error: vi.fn(),
+      setLevel: vi.fn(),
+      setLogHandler: vi.fn()
+    } as any;
+    
     recordingManager = new RecordingManager(urlManager);
     
     chunkProcessor = new ChunkProcessor(
-      { chunkDuration: 100 },
+      48000, // sampleRate
+      { chunkDuration: 100 }, // config
       logger,
       metricsManager
     );
