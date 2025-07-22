@@ -8,6 +8,8 @@ import { RecordingManager } from './recordingManager';
 import { AudioExporter } from './audioExporter';
 import { PlaybackManager } from './playbackManager';
 import { createRecordingFunctions } from './recordingFunctions';
+// Import hooks
+import { useRecordingState } from './useRecordingState';
 // Import constants
 import { DEFAULT_CHUNK_DURATION, RECORDING_UPDATE_INTERVAL, LOG_PREFIX } from './constants';
 /**
@@ -25,12 +27,8 @@ export function useMurmubaraEngine(options = {}) {
     const [engineState, setEngineState] = useState('uninitialized');
     const [metrics, setMetrics] = useState(null);
     const [diagnostics, setDiagnostics] = useState(null);
-    const [recordingState, setRecordingState] = useState({
-        isRecording: false,
-        isPaused: false,
-        recordingTime: 0,
-        chunks: []
-    });
+    // Use dedicated recording state hook
+    const { recordingState, startRecording: recordingStateStart, stopRecording: recordingStateStop, pauseRecording: recordingStatePause, resumeRecording: recordingStateResume, addChunk, toggleChunkPlayback: recordingStateTogglePlayback, toggleChunkExpansion, clearRecordings: recordingStateClear, updateRecordingTime } = useRecordingState();
     const [currentStream, setCurrentStream] = useState(null);
     const [originalStream, setOriginalStream] = useState(null);
     const [streamController, setStreamController] = useState(null);
@@ -183,9 +181,20 @@ export function useMurmubaraEngine(options = {}) {
     const recordingFunctions = createRecordingFunctions({
         isInitialized,
         recordingState,
+        recordingStateHook: {
+            recordingState,
+            startRecording: recordingStateStart,
+            stopRecording: recordingStateStop,
+            pauseRecording: recordingStatePause,
+            resumeRecording: recordingStateResume,
+            addChunk,
+            toggleChunkPlayback: recordingStateTogglePlayback,
+            toggleChunkExpansion,
+            clearRecordings: recordingStateClear,
+            updateRecordingTime
+        },
         currentStream,
         originalStream,
-        setRecordingState,
         setCurrentStream,
         setOriginalStream,
         setStreamController,
@@ -200,18 +209,9 @@ export function useMurmubaraEngine(options = {}) {
         if (!chunk)
             return;
         await playbackManagerRef.current.toggleChunkPlayback(chunk, audioType, (id, isPlaying) => {
-            setRecordingState(prev => ({
-                ...prev,
-                chunks: chunkManagerRef.current.toggleChunkPlayback(prev.chunks, id, isPlaying)
-            }));
+            recordingStateTogglePlayback(id, isPlaying);
         });
-    }, [recordingState.chunks]);
-    const toggleChunkExpansion = useCallback((chunkId) => {
-        setRecordingState(prev => ({
-            ...prev,
-            chunks: chunkManagerRef.current.toggleChunkExpansion(prev.chunks, chunkId)
-        }));
-    }, []);
+    }, [recordingState.chunks, recordingStateTogglePlayback]);
     // Effects
     // Auto-initialize
     useEffect(() => {
@@ -225,14 +225,11 @@ export function useMurmubaraEngine(options = {}) {
         if (recordingState.isRecording && !recordingState.isPaused) {
             const startTime = Date.now() - recordingState.recordingTime * 1000;
             const interval = setInterval(() => {
-                setRecordingState(prev => ({
-                    ...prev,
-                    recordingTime: Math.floor((Date.now() - startTime) / 1000)
-                }));
+                updateRecordingTime(Math.floor((Date.now() - startTime) / 1000));
             }, RECORDING_UPDATE_INTERVAL);
             return () => clearInterval(interval);
         }
-    }, [recordingState.isRecording, recordingState.isPaused, recordingState.recordingTime]);
+    }, [recordingState.isRecording, recordingState.isPaused, recordingState.recordingTime, updateRecordingTime]);
     // Update engine state periodically
     useEffect(() => {
         if (!isInitialized)

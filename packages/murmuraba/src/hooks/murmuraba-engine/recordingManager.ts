@@ -24,13 +24,14 @@ export class RecordingManager {
   /**
    * Start concatenated streaming for medical-grade recording
    */
-  async startConcatenatedStreaming(
+  async startCycle(
     processedStream: MediaStream,
     originalStream: MediaStream,
-    mimeType: string,
     chunkDuration: number,
-    onChunkReady: (chunk: ProcessedChunk) => void
+    onChunkProcessed: (chunk: ProcessedChunk) => void
   ): Promise<void> {
+    // Use a default mime type for now
+    const mimeType = 'audio/webm;codecs=opus';
     this.cycleCount = 0;
     this.stopCycleFlag = false;
 
@@ -173,7 +174,7 @@ export class RecordingManager {
     chunkRecording: ChunkRecording,
     cycleStartTime: number,
     mimeType: string,
-    onChunkReady: (chunk: ProcessedChunk) => void
+    onChunkProcessed: (chunk: ProcessedChunk) => void
   ): void {
     const processedBlob = new Blob(chunkRecording.processed, { type: mimeType });
     const originalBlob = new Blob(chunkRecording.original, { type: mimeType });
@@ -233,7 +234,7 @@ export class RecordingManager {
     chunkRecording.finalized = true;
     console.log(`✅ ${LOG_PREFIX.CONCAT_STREAM} Cycle #${this.cycleCount} complete: ${(actualDuration/1000).toFixed(1)}s chunk`);
     
-    onChunkReady(newChunk);
+    onChunkProcessed(newChunk);
   }
 
   /**
@@ -311,5 +312,19 @@ export class RecordingManager {
     if (this.originalRecorder?.state === 'paused') {
       this.originalRecorder.resume();
     }
+  }
+
+  /**
+   * Check if currently recording
+   */
+  isRecording(): boolean {
+    return this.mediaRecorder?.state === 'recording' || this.originalRecorder?.state === 'recording';
+  }
+
+  /**
+   * Check if recording is paused
+   */
+  isPaused(): boolean {
+    return this.mediaRecorder?.state === 'paused' || this.originalRecorder?.state === 'paused';
   }
 }

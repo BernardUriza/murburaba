@@ -24,6 +24,10 @@ export declare class ChunkManager {
      */
     clearChunks(chunks: ProcessedChunk[]): void;
     /**
+     * Revoke URLs for all chunks
+     */
+    revokeChunkUrls(chunks: ProcessedChunk[]): void;
+    /**
      * Calculate average noise reduction
      */
     getAverageNoiseReduction(chunks: ProcessedChunk[]): number;

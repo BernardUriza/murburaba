@@ -19,5 +19,6 @@ export declare const LOG_PREFIX: {
     readonly MEDICAL_MEMORY: "[MEDICAL-MEMORY]";
     readonly ERROR: "[ERROR]";
     readonly EXPORT: "[EXPORT]";
+    readonly RECORDING: "[RECORDING]";
 };
 //# sourceMappingURL=constants.d.ts.map

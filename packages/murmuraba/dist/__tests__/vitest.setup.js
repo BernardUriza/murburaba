@@ -1,98 +1,9 @@
 import { vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-// Modern Web Audio API mocks
-const createMockAudioContext = () => ({
-    state: 'running',
-    sampleRate: 48000,
-    currentTime: 0,
-    createMediaStreamSource: vi.fn(),
-    createScriptProcessor: vi.fn(() => ({
-        connect: vi.fn(),
-        disconnect: vi.fn(),
-        onaudioprocess: null,
-    })),
-    createAnalyser: vi.fn(() => ({
-        connect: vi.fn(),
-        disconnect: vi.fn(),
-        fftSize: 2048,
-        frequencyBinCount: 1024,
-        getByteFrequencyData: vi.fn(),
-    })),
-    close: vi.fn().mockResolvedValue(undefined),
-    decodeAudioData: vi.fn().mockResolvedValue({
-        duration: 10,
-        length: 480000,
-        numberOfChannels: 2,
-        sampleRate: 48000,
-        getChannelData: vi.fn().mockReturnValue(new Float32Array(480000)),
-    }),
-});
-global.AudioContext = vi.fn().mockImplementation(createMockAudioContext);
-// Modern MediaStream mock
-class MockMediaStream {
-    constructor() {
-        this.active = true;
-        this.id = `stream-${crypto.randomUUID()}`;
-        this.getTracks = vi.fn().mockReturnValue([
-            {
-                kind: 'audio',
-                enabled: true,
-                readyState: 'live',
-                stop: vi.fn(),
-                clone: vi.fn().mockReturnValue({
-                    kind: 'audio',
-                    enabled: true,
-                    readyState: 'live',
-                    stop: vi.fn(),
-                }),
-            },
-        ]);
-        this.clone = vi.fn().mockImplementation(() => {
-            const cloned = new MockMediaStream();
-            cloned.id = `stream-clone-${crypto.randomUUID()}`;
-            return cloned;
-        });
-    }
-}
-global.MediaStream = MockMediaStream;
-// Modern MediaRecorder mock
-class MockMediaRecorder {
-    constructor() {
-        this.state = 'inactive';
-        this.start = vi.fn();
-        this.stop = vi.fn();
-        this.pause = vi.fn();
-        this.resume = vi.fn();
-        this.requestData = vi.fn();
-        this.ondataavailable = null;
-        this.onerror = null;
-        this.onstop = null;
-        // Auto-trigger stop after start for testing
-        this.start.mockImplementation(() => {
-            this.state = 'recording';
-        });
-        this.stop.mockImplementation(() => {
-            this.state = 'inactive';
-            if (this.onstop) {
-                setTimeout(() => this.onstop(), 0);
-            }
-        });
-    }
-}
-MockMediaRecorder.isTypeSupported = vi.fn().mockReturnValue(true);
-global.MediaRecorder = MockMediaRecorder;
-// Modern getUserMedia mock
-if (!global.navigator) {
-    global.navigator = {};
-}
-Object.defineProperty(global.navigator, 'mediaDevices', {
-    value: {
-        getUserMedia: vi.fn().mockImplementation(() => Promise.resolve(new MockMediaStream())),
-        enumerateDevices: vi.fn().mockResolvedValue([]),
-    },
-    writable: true,
-    configurable: true,
-});
+import { setupAllAudioMocks } from './mocks/webAudioMocks';
+console.log('\n🚀 ========== VITEST SETUP STARTING ========== 🚀\n');
+// Setup all Web Audio mocks
+setupAllAudioMocks();
 // Modern URL mocks
 let urlCounter = 0;
 global.URL.createObjectURL = vi.fn(() => {
@@ -134,15 +45,22 @@ vi.mock('lamejs', () => ({
         flush: vi.fn().mockReturnValue(new Int8Array(50)),
     })),
 }));
-// Mock console methods
-global.console = {
-    ...console,
-    log: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-    info: vi.fn(),
-    debug: vi.fn(),
-};
+// Mock console methods - but allow them in debug mode
+if (process.env.DEBUG !== 'true') {
+    global.console = {
+        ...console,
+        log: vi.fn((...args) => {
+            // Only show emoji logs
+            if (args.some(arg => typeof arg === 'string' && /[\u{1F300}-\u{1F9FF}]/u.test(arg))) {
+                console.info(...args);
+            }
+        }),
+        error: vi.fn((...args) => console.info('❌', ...args)),
+        warn: vi.fn((...args) => console.info('⚠️', ...args)),
+        info: console.info, // Keep info for our logs
+        debug: vi.fn(),
+    };
+}
 // Custom matchers for Vitest
 expect.extend({
     toBeValidChunk(received) {
@@ -159,3 +77,4 @@ expect.extend({
         };
     },
 });
+console.log('✅ ========== VITEST SETUP COMPLETE ========== ✅\n');

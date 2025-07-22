@@ -1,7 +1,8 @@
 import { processStream } from '../../api';
-import { AudioConverter } from '../../utils/audioConverter';
-import { DEFAULT_CHUNK_DURATION, LOG_PREFIX } from './constants';
-export function createRecordingFunctions({ isInitialized, recordingState, currentStream, originalStream, setRecordingState, setCurrentStream, setOriginalStream, setStreamController, setError, chunkManager, recordingManager, initialize }) {
+import { logger } from './logger';
+import { DEFAULT_CHUNK_DURATION } from './constants';
+export function createRecordingFunctions({ isInitialized, recordingState, recordingStateHook, currentStream, originalStream, setCurrentStream, setOriginalStream, setStreamController, setError, chunkManager, recordingManager, initialize }) {
+    const { startRecording: startRecordingState, stopRecording: stopRecordingState, pauseRecording: pauseRecordingState, resumeRecording: resumeRecordingState, addChunk, clearRecordings: clearRecordingsState, updateRecordingTime } = recordingStateHook;
     /**
      * Start recording with concatenated streaming
      */
@@ -13,91 +14,84 @@ export function createRecordingFunctions({ isInitialized, recordingState, curren
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
                     echoCancellation: true,
-                    noiseSuppression: false,
-                    autoGainControl: true
+                    noiseSuppression: false, // We're doing our own
+                    autoGainControl: false
                 }
             });
-            // Clone stream for original recording
-            const originalStreamClone = stream.clone();
-            setOriginalStream(originalStreamClone);
-            // Process stream
+            setOriginalStream(stream);
             const controller = await processStream(stream);
             setStreamController(controller);
-            const processedStream = controller.stream;
-            setCurrentStream(processedStream);
-            // Detect MIME type
-            const mimeType = AudioConverter.getBestRecordingFormat();
-            console.log(`🎤 ${LOG_PREFIX.CONCAT_STREAM} Using MIME type: ${mimeType}`);
-            // Update state
-            setRecordingState(prev => ({
-                ...prev,
-                isRecording: true,
-                isPaused: false,
-                chunks: []
-            }));
-            // Start concatenated streaming
-            await recordingManager.startConcatenatedStreaming(processedStream, originalStreamClone, mimeType, chunkDuration, (newChunk) => {
-                setRecordingState(prev => chunkManager.addChunk(prev, newChunk));
-            });
+            setCurrentStream(controller.stream);
+            // Use hook's state management
+            startRecordingState();
+            // Start the chunk processing
+            const onChunkProcessed = (chunk) => {
+                addChunk(chunk);
+                logger.info('Chunk processed', {
+                    id: chunk.id,
+                    duration: chunk.duration,
+                    noiseReduction: chunk.noiseRemoved
+                });
+            };
+            await recordingManager.startCycle(controller.stream, stream, chunkDuration, onChunkProcessed);
+            logger.info('Recording started', { chunkDuration });
         }
         catch (err) {
-            console.error(`❌ ${LOG_PREFIX.ERROR} Failed to start recording:`, err);
-            setError(err instanceof Error ? err.message : 'Failed to start recording');
+            const errorMessage = err instanceof Error ? err.message : 'Failed to start recording';
+            logger.error('Failed to start recording', { error: errorMessage });
+            setError(errorMessage);
+            throw err;
         }
     };
     /**
-     * Stop recording
+     * Stop recording and cleanup
      */
     const stopRecording = () => {
-        console.log(`🛑 ${LOG_PREFIX.LIFECYCLE} Stopping recording...`);
+        logger.info('Stopping recording');
         recordingManager.stopRecording();
-        // Stop all tracks
-        if (recordingState.isRecording) {
-            if (currentStream) {
-                currentStream.getTracks().forEach(track => track.stop());
-            }
-            if (originalStream) {
-                originalStream.getTracks().forEach(track => track.stop());
-            }
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+            setCurrentStream(null);
         }
-        // Update state
-        setRecordingState(prev => ({
-            ...prev,
-            isRecording: false,
-            isPaused: false,
-            recordingTime: 0
-        }));
-        setCurrentStream(null);
-        setOriginalStream(null);
+        if (originalStream) {
+            originalStream.getTracks().forEach(track => track.stop());
+            setOriginalStream(null);
+        }
         setStreamController(null);
+        // Use hook's state management
+        stopRecordingState();
+        logger.info('Recording stopped');
     };
     /**
      * Pause recording
      */
     const pauseRecording = () => {
-        if (recordingState.isRecording && !recordingState.isPaused) {
-            recordingManager.pauseRecording();
-            setRecordingState(prev => ({ ...prev, isPaused: true }));
-        }
+        logger.info('Pausing recording');
+        recordingManager.pauseRecording();
+        pauseRecordingState();
     };
     /**
      * Resume recording
      */
     const resumeRecording = () => {
-        if (recordingState.isRecording && recordingState.isPaused) {
-            recordingManager.resumeRecording();
-            setRecordingState(prev => ({ ...prev, isPaused: false }));
-        }
+        logger.info('Resuming recording');
+        recordingManager.resumeRecording();
+        resumeRecordingState();
     };
     /**
      * Clear all recordings
      */
     const clearRecordings = () => {
+        logger.info('Clearing all recordings');
+        // Stop any ongoing recording
+        if (recordingState.isRecording) {
+            stopRecording();
+        }
+        // Revoke all chunk URLs
         chunkManager.clearChunks(recordingState.chunks);
-        setRecordingState(prev => ({
-            ...prev,
-            chunks: []
-        }));
+        // Clear state
+        clearRecordingsState();
+        logger.info('All recordings cleared');
     };
     return {
         startRecording,

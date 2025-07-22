@@ -82,6 +82,15 @@ export class ChunkManager {
   }
 
   /**
+   * Revoke URLs for all chunks
+   */
+  revokeChunkUrls(chunks: ProcessedChunk[]): void {
+    chunks.forEach(chunk => {
+      this.urlManager.revokeChunkUrls(chunk.id);
+    });
+  }
+
+  /**
    * Calculate average noise reduction
    */
   getAverageNoiseReduction(chunks: ProcessedChunk[]): number {

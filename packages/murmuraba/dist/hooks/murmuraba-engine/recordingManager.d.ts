@@ -13,7 +13,7 @@ export declare class RecordingManager {
     /**
      * Start concatenated streaming for medical-grade recording
      */
-    startConcatenatedStreaming(processedStream: MediaStream, originalStream: MediaStream, mimeType: string, chunkDuration: number, onChunkReady: (chunk: ProcessedChunk) => void): Promise<void>;
+    startCycle(processedStream: MediaStream, originalStream: MediaStream, chunkDuration: number, onChunkProcessed: (chunk: ProcessedChunk) => void): Promise<void>;
     /**
      * Process recorded chunk data
      */
@@ -30,5 +30,13 @@ export declare class RecordingManager {
      * Resume recording
      */
     resumeRecording(): void;
+    /**
+     * Check if currently recording
+     */
+    isRecording(): boolean;
+    /**
+     * Check if recording is paused
+     */
+    isPaused(): boolean;
 }
 //# sourceMappingURL=recordingManager.d.ts.map

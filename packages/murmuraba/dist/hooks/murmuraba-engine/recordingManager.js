@@ -13,7 +13,9 @@ export class RecordingManager {
     /**
      * Start concatenated streaming for medical-grade recording
      */
-    async startConcatenatedStreaming(processedStream, originalStream, mimeType, chunkDuration, onChunkReady) {
+    async startCycle(processedStream, originalStream, chunkDuration, onChunkProcessed) {
+        // Use a default mime type for now
+        const mimeType = 'audio/webm;codecs=opus';
         this.cycleCount = 0;
         this.stopCycleFlag = false;
         const startNewRecordingCycle = () => {
@@ -128,7 +130,7 @@ export class RecordingManager {
     /**
      * Process recorded chunk data
      */
-    processChunkRecording(chunkId, chunkRecording, cycleStartTime, mimeType, onChunkReady) {
+    processChunkRecording(chunkId, chunkRecording, cycleStartTime, mimeType, onChunkProcessed) {
         const processedBlob = new Blob(chunkRecording.processed, { type: mimeType });
         const originalBlob = new Blob(chunkRecording.original, { type: mimeType });
         console.log(`📦 ${LOG_PREFIX.CONCAT_STREAM} Created blobs - Processed: ${processedBlob.size} bytes, Original: ${originalBlob.size} bytes`);
@@ -178,7 +180,7 @@ export class RecordingManager {
         };
         chunkRecording.finalized = true;
         console.log(`✅ ${LOG_PREFIX.CONCAT_STREAM} Cycle #${this.cycleCount} complete: ${(actualDuration / 1000).toFixed(1)}s chunk`);
-        onChunkReady(newChunk);
+        onChunkProcessed(newChunk);
     }
     /**
      * Stop recording
@@ -244,5 +246,17 @@ export class RecordingManager {
         if (this.originalRecorder?.state === 'paused') {
             this.originalRecorder.resume();
         }
+    }
+    /**
+     * Check if currently recording
+     */
+    isRecording() {
+        return this.mediaRecorder?.state === 'recording' || this.originalRecorder?.state === 'recording';
+    }
+    /**
+     * Check if recording is paused
+     */
+    isPaused() {
+        return this.mediaRecorder?.state === 'paused' || this.originalRecorder?.state === 'paused';
     }
 }
