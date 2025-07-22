@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>0/63</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>0/63</span>
             </div>
         
             
@@ -125,138 +125,138 @@
 <a name='L60'></a><a href='#L60'>60</a>
 <a name='L61'></a><a href='#L61'>61</a>
 <a name='L62'></a><a href='#L62'>62</a>
-<a name='L63'></a><a href='#L63'>63</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { ProcessedChunk } from './types';
-&nbsp;
-/**
- * Interface for URL management operations
- */
-export interface IURLManager {
-  createObjectUrl(blob: Blob): string;
-  revokeUrl(url: string): void;
-  revokeAllUrls(): void;
-  getActiveUrlCount(): number;
-}
-&nbsp;
-/**
- * Interface for chunk management operations
- */
-export interface IChunkManager {
-  findChunk(chunks: ProcessedChunk[], chunkId: string): ProcessedChunk | undefined;
-  toggleChunkPlayback(chunks: ProcessedChunk[], chunkId: string, isPlaying: boolean): ProcessedChunk[];
-  toggleChunkExpansion(chunks: ProcessedChunk[], chunkId: string): ProcessedChunk[];
-  getAverageNoiseReduction(chunks: ProcessedChunk[]): number;
-  clearChunks(chunks: ProcessedChunk[]): void;
-  revokeChunkUrls(chunks: ProcessedChunk[]): void;
-}
-&nbsp;
-/**
- * Interface for recording management operations
- */
-export interface IRecordingManager {
-  startCycle(
-    processedStream: MediaStream,
-    originalStream: MediaStream,
-    chunkDuration: number,
-    onChunkProcessed: (chunk: ProcessedChunk) =&gt; void
-  ): Promise&lt;void&gt;;
-  stopRecording(): void;
-  pauseRecording(): void;
-  resumeRecording(): void;
-  isRecording(): boolean;
-  isPaused(): boolean;
-}
-&nbsp;
-/**
- * Interface for audio export operations
- */
-export interface IAudioExporter {
-  setAudioConverter(converter: any): void;
-  exportChunkAsWav(chunk: ProcessedChunk, audioType: 'processed' | 'original'): Promise&lt;Blob&gt;;
-  exportChunkAsMp3(chunk: ProcessedChunk, audioType: 'processed' | 'original', bitrate?: number): Promise&lt;Blob&gt;;
-  downloadChunk(chunk: ProcessedChunk, format: 'webm' | 'wav' | 'mp3', audioType: 'processed' | 'original'): Promise&lt;void&gt;;
-}
-&nbsp;
-/**
- * Interface for playback management operations
- */
-export interface IPlaybackManager {
-  toggleChunkPlayback(
-    chunk: ProcessedChunk,
-    audioType: 'processed' | 'original',
-    onStateChange: (chunkId: string, isPlaying: boolean) =&gt; void
-  ): Promise&lt;void&gt;;
-  cleanup(): void;
-  stopAll(): void;
-}</pre></td></tr></table></pre>
+<a name='L63'></a><a href='#L63'>63</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import { ProcessedChunk } from './types';</span></span></span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >/**</span>
+<span class="cstat-no" title="statement not covered" > * Interface for URL management operations</span>
+<span class="cstat-no" title="statement not covered" > */</span>
+<span class="cstat-no" title="statement not covered" >export interface IURLManager {</span>
+<span class="cstat-no" title="statement not covered" >  createObjectUrl(blob: Blob): string;</span>
+<span class="cstat-no" title="statement not covered" >  revokeUrl(url: string): void;</span>
+<span class="cstat-no" title="statement not covered" >  revokeAllUrls(): void;</span>
+<span class="cstat-no" title="statement not covered" >  getActiveUrlCount(): number;</span>
+<span class="cstat-no" title="statement not covered" >}</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >/**</span>
+<span class="cstat-no" title="statement not covered" > * Interface for chunk management operations</span>
+<span class="cstat-no" title="statement not covered" > */</span>
+<span class="cstat-no" title="statement not covered" >export interface IChunkManager {</span>
+<span class="cstat-no" title="statement not covered" >  findChunk(chunks: ProcessedChunk[], chunkId: string): ProcessedChunk | undefined;</span>
+<span class="cstat-no" title="statement not covered" >  toggleChunkPlayback(chunks: ProcessedChunk[], chunkId: string, isPlaying: boolean): ProcessedChunk[];</span>
+<span class="cstat-no" title="statement not covered" >  toggleChunkExpansion(chunks: ProcessedChunk[], chunkId: string): ProcessedChunk[];</span>
+<span class="cstat-no" title="statement not covered" >  getAverageNoiseReduction(chunks: ProcessedChunk[]): number;</span>
+<span class="cstat-no" title="statement not covered" >  clearChunks(chunks: ProcessedChunk[]): void;</span>
+<span class="cstat-no" title="statement not covered" >  revokeChunkUrls(chunks: ProcessedChunk[]): void;</span>
+<span class="cstat-no" title="statement not covered" >}</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >/**</span>
+<span class="cstat-no" title="statement not covered" > * Interface for recording management operations</span>
+<span class="cstat-no" title="statement not covered" > */</span>
+<span class="cstat-no" title="statement not covered" >export interface IRecordingManager {</span>
+<span class="cstat-no" title="statement not covered" >  startCycle(</span>
+<span class="cstat-no" title="statement not covered" >    processedStream: MediaStream,</span>
+<span class="cstat-no" title="statement not covered" >    originalStream: MediaStream,</span>
+<span class="cstat-no" title="statement not covered" >    chunkDuration: number,</span>
+<span class="cstat-no" title="statement not covered" >    onChunkProcessed: (chunk: ProcessedChunk) =&gt; void</span>
+<span class="cstat-no" title="statement not covered" >  ): Promise&lt;void&gt;;</span>
+<span class="cstat-no" title="statement not covered" >  stopRecording(): void;</span>
+<span class="cstat-no" title="statement not covered" >  pauseRecording(): void;</span>
+<span class="cstat-no" title="statement not covered" >  resumeRecording(): void;</span>
+<span class="cstat-no" title="statement not covered" >  isRecording(): boolean;</span>
+<span class="cstat-no" title="statement not covered" >  isPaused(): boolean;</span>
+<span class="cstat-no" title="statement not covered" >}</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >/**</span>
+<span class="cstat-no" title="statement not covered" > * Interface for audio export operations</span>
+<span class="cstat-no" title="statement not covered" > */</span>
+<span class="cstat-no" title="statement not covered" >export interface IAudioExporter {</span>
+<span class="cstat-no" title="statement not covered" >  setAudioConverter(converter: any): void;</span>
+<span class="cstat-no" title="statement not covered" >  exportChunkAsWav(chunk: ProcessedChunk, audioType: 'processed' | 'original'): Promise&lt;Blob&gt;;</span>
+<span class="cstat-no" title="statement not covered" >  exportChunkAsMp3(chunk: ProcessedChunk, audioType: 'processed' | 'original', bitrate?: number): Promise&lt;Blob&gt;;</span>
+<span class="cstat-no" title="statement not covered" >  downloadChunk(chunk: ProcessedChunk, format: 'webm' | 'wav' | 'mp3', audioType: 'processed' | 'original'): Promise&lt;void&gt;;</span>
+<span class="cstat-no" title="statement not covered" >}</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >/**</span>
+<span class="cstat-no" title="statement not covered" > * Interface for playback management operations</span>
+<span class="cstat-no" title="statement not covered" > */</span>
+<span class="cstat-no" title="statement not covered" >export interface IPlaybackManager {</span>
+<span class="cstat-no" title="statement not covered" >  toggleChunkPlayback(</span>
+<span class="cstat-no" title="statement not covered" >    chunk: ProcessedChunk,</span>
+<span class="cstat-no" title="statement not covered" >    audioType: 'processed' | 'original',</span>
+<span class="cstat-no" title="statement not covered" >    onStateChange: (chunkId: string, isPlaying: boolean) =&gt; void</span>
+<span class="cstat-no" title="statement not covered" >  ): Promise&lt;void&gt;;</span>
+<span class="cstat-no" title="statement not covered" >  cleanup(): void;</span>
+<span class="cstat-no" title="statement not covered" >  stopAll(): void;</span>
+<span class="cstat-no" title="statement not covered" >}</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-07-22T05:51:57.996Z
+                at 2025-07-22T05:56:39.864Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

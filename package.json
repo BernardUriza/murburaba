@@ -14,8 +14,10 @@
     "lint": "next lint",
     "generate-build-info": "node scripts/generate-build-info.js",
     "test": "npm run test --workspace=murmuraba",
-    "test:watch": "npm run test:watch --workspace=murmuraba",
-    "test:coverage": "npm run test:coverage --workspace=murmuraba"
+    "test:watch": "npm run test:watch --workspace=murmuraba", 
+    "test:ui": "npm run test:ui --workspace=murmuraba",
+    "test:coverage": "npm run test:coverage --workspace=murmuraba",
+    "test:integration": "npm run test --workspace=murmuraba -- --run ChunkProcessorRecordingManagerIntegration"
   },
   "dependencies": {
     "murmuraba": "workspace:*",
@@ -25,17 +27,14 @@
     "sweetalert2": "^11.22.2"
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.3.0",
-    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "concurrently": "^9.2.0",
     "eslint": "^8",
     "eslint-config-next": "14.0.4",
-    "jest": "^30.0.5",
-    "jest-environment-jsdom": "^30.0.5",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4",
+    "happy-dom": "^18.0.1"
   }
 }

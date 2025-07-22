@@ -12,7 +12,7 @@ import { ChunkProcessor } from '../../managers/ChunkProcessor';
 import { RecordingManager } from '../../hooks/murmuraba-engine/recordingManager';
 import { URLManager } from '../../hooks/murmuraba-engine/urlManager';
 import { MetricsManager } from '../../managers/MetricsManager';
-import { Logger } from '../../utils/Logger';
+import { Logger } from '../../core/Logger';
 import { ProcessedChunk } from '../../hooks/murmuraba-engine/types';
 
 // Mock the heavy dependencies
