@@ -76,10 +76,10 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
         />
       );
       
-      // Check for main container
-      const panel = screen.getByText('🔬 Engine Diagnostics').closest('.floating-panel');
+      // Check for main dialog container
+      const panel = screen.getByRole('dialog');
       expect(panel).toBeInTheDocument();
-      expect(panel).toHaveClass('glass-card');
+      expect(panel).toHaveClass('advanced-metrics-panel');
     });
   });
 
