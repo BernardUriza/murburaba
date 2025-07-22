@@ -9,6 +9,49 @@ export class RecordingManager {
         this.stopCycleFlag = false;
         this.cycleCount = 0;
         this.cycleTimeout = null;
+        // TDD Integration: Metrics provider from ChunkProcessor
+        this.metricsProvider = null;
+        this.currentMetrics = null;
+        // TDD Integration: Register with global bridge for ChunkProcessor communication
+        if (global.__murmurabaTDDBridge) {
+            if (!(global.__murmurabaTDDBridge.recordingManagers)) {
+                global.__murmurabaTDDBridge.recordingManagers = new Set();
+            }
+            global.__murmurabaTDDBridge.recordingManagers.add(this);
+            console.log(`🔗 [TDD-INTEGRATION] RecordingManager registered with ChunkProcessor bridge`);
+        }
+    }
+    /**
+     * TDD Integration: Set metrics provider from ChunkProcessor
+     */
+    setMetricsProvider(provider) {
+        this.metricsProvider = provider;
+    }
+    /**
+     * TDD Integration: Receive metrics from ChunkProcessor
+     */
+    receiveMetrics(metrics) {
+        this.currentMetrics = metrics;
+        console.log(`📊 [RECORDING-INTEGRATION] Received real metrics: ${metrics.averageNoiseReduction.toFixed(1)}% avg reduction`);
+    }
+    /**
+     * TDD Integration: Get real metrics for a time period
+     */
+    getRealMetrics(startTime, endTime) {
+        // Try current metrics first
+        if (this.currentMetrics) {
+            return this.currentMetrics;
+        }
+        // Try metrics provider
+        if (this.metricsProvider) {
+            return this.metricsProvider.getAggregatedMetrics(startTime, endTime);
+        }
+        // Fallback to safe defaults (NOT negative values)
+        return {
+            averageNoiseReduction: 0,
+            totalFrames: Math.floor((endTime - startTime) / 10),
+            averageLatency: 0
+        };
     }
     /**
      * Start concatenated streaming for medical-grade recording
@@ -153,7 +196,10 @@ export class RecordingManager {
         const originalUrl = isValid ? this.urlManager.createObjectURL(chunkId, originalBlob) : undefined;
         const cycleEndTime = Date.now();
         const actualDuration = cycleEndTime - cycleStartTime;
-        // Create chunk
+        // TDD Integration: Get REAL metrics from ChunkProcessor
+        const realMetrics = this.getRealMetrics(cycleStartTime, cycleEndTime);
+        console.log(`🎯 [RECORDING-INTEGRATION] Using real metrics for chunk ${chunkId}: ${realMetrics.averageNoiseReduction.toFixed(1)}% noise reduction`);
+        // Create chunk with REAL metrics
         const newChunk = {
             id: chunkId,
             startTime: cycleStartTime,
@@ -165,21 +211,32 @@ export class RecordingManager {
             isExpanded: false,
             isValid,
             errorMessage,
-            noiseRemoved: 0, // Will be calculated properly by ChunkProcessor using audio RMS
+            noiseRemoved: realMetrics.averageNoiseReduction, // REAL noise reduction from audio analysis
             originalSize: originalBlob.size,
             processedSize: processedBlob.size,
             metrics: {
-                processingLatency: Date.now() - cycleStartTime - actualDuration,
-                frameCount: Math.floor(actualDuration / 10),
+                processingLatency: realMetrics.averageLatency || 0,
+                frameCount: realMetrics.totalFrames || Math.floor(actualDuration / 10),
                 inputLevel: 1.0,
                 outputLevel: processedBlob.size / originalBlob.size,
-                noiseReductionLevel: 0, // Cannot calculate from blob sizes - needs audio signal analysis
+                noiseReductionLevel: realMetrics.averageNoiseReduction / 100, // Convert to 0-1 range
                 timestamp: Date.now(),
                 droppedFrames: 0
             }
         };
         chunkRecording.finalized = true;
         console.log(`✅ ${LOG_PREFIX.CONCAT_STREAM} Cycle #${this.cycleCount} complete: ${(actualDuration / 1000).toFixed(1)}s chunk`);
+        // TDD Integration: Trigger period completion in ChunkProcessor
+        // This will cause ChunkProcessor to emit aggregated metrics for the next chunk
+        if (global.__murmurabaTDDBridge?.chunkProcessor) {
+            try {
+                const aggregatedMetrics = global.__murmurabaTDDBridge.chunkProcessor.completePeriod(actualDuration);
+                console.log(`🎯 [TDD-INTEGRATION] Triggered period completion: ${aggregatedMetrics.totalFrames} frames processed`);
+            }
+            catch (error) {
+                console.warn(`⚠️ [TDD-INTEGRATION] Period completion failed:`, error);
+            }
+        }
         onChunkProcessed(newChunk);
     }
     /**

@@ -14,11 +14,21 @@ import { ChunkProcessor } from '../../managers/ChunkProcessor';
 import { MurmubaraConfig, EngineState } from '../../types';
 
 // Mock all dependencies
-vi.mock('../../core/StateManager');
-vi.mock('../../core/Logger');
-vi.mock('../../managers/WorkerManager');
-vi.mock('../../managers/MetricsManager');
-vi.mock('../../managers/ChunkProcessor');
+vi.mock('../../core/StateManager', () => ({
+  StateManager: vi.fn()
+}));
+vi.mock('../../core/Logger', () => ({
+  Logger: vi.fn()
+}));
+vi.mock('../../managers/WorkerManager', () => ({
+  WorkerManager: vi.fn()
+}));
+vi.mock('../../managers/MetricsManager', () => ({
+  MetricsManager: vi.fn()
+}));
+vi.mock('../../managers/ChunkProcessor', () => ({
+  ChunkProcessor: vi.fn()
+}));
 
 // Mock WASM
 const mockWasmModule = {
@@ -272,6 +282,7 @@ describe('MurmubaraEngine - The Final Boss', () => {
     
     it('should setup auto cleanup when enabled', () => {
       vi.useFakeTimers();
+      const setTimeoutSpy = vi.spyOn(global, 'setTimeout');
       engine = new MurmubaraEngine({ autoCleanup: true, cleanupDelay: 5000 });
       
       // Mock state as ready
@@ -280,11 +291,13 @@ describe('MurmubaraEngine - The Final Boss', () => {
       // Emit processing-end event to trigger cleanup timer
       engine.emit('processing-end');
       
-      expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), 5000);
+      expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 5000);
       vi.useRealTimers();
     });
     
     it('should not setup auto cleanup when disabled', () => {
+      vi.useFakeTimers();
+      const setTimeoutSpy = vi.spyOn(global, 'setTimeout');
       engine = new MurmubaraEngine({ autoCleanup: false });
       
       // Mock state as ready
@@ -293,7 +306,8 @@ describe('MurmubaraEngine - The Final Boss', () => {
       // Emit processing-end event - should NOT trigger timer
       engine.emit('processing-end');
       
-      expect(setTimeout).not.toHaveBeenCalled();
+      expect(setTimeoutSpy).not.toHaveBeenCalled();
+      vi.useRealTimers();
     });
   });
   
@@ -414,11 +428,11 @@ describe('MurmubaraEngine - The Final Boss', () => {
       
       const initPromise = engine.initialize();
       
-      // Simulate script load
-      setTimeout(() => {
+      // Immediately simulate script load
+      Promise.resolve().then(() => {
         (global.window as any).createRNNWasmModule = vi.fn().mockResolvedValue(mockWasmModule);
         mockScript.onload?.();
-      }, 10);
+      });
       
       await initPromise;
       
@@ -435,10 +449,10 @@ describe('MurmubaraEngine - The Final Boss', () => {
       
       const initPromise = engine.initialize();
       
-      // Simulate script error
-      setTimeout(() => {
+      // Immediately simulate script error
+      Promise.resolve().then(() => {
         mockScript.onerror?.(new Error('Script failed'));
-      }, 10);
+      });
       
       await expect(initPromise).rejects.toThrow('Failed to load RNNoise script');
     });
@@ -617,6 +631,10 @@ describe('MurmubaraEngine - The Final Boss', () => {
     });
     
     it('should clear cleanup timer', async () => {
+      vi.useFakeTimers();
+      const setTimeoutSpy = vi.spyOn(global, 'setTimeout');
+      const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout');
+      
       engine = new MurmubaraEngine({ autoCleanup: true });
       await engine.initialize();
       
@@ -624,11 +642,12 @@ describe('MurmubaraEngine - The Final Boss', () => {
       mockStateManager.isInState.mockReturnValue(true);
       engine.emit('processing-end');
       
-      const timerId = (setTimeout as unknown as vi.Mock).mock.results[0].value;
+      const timerId = setTimeoutSpy.mock.results[0].value;
       
       await engine.destroy();
       
-      expect(clearTimeout).toHaveBeenCalledWith(timerId);
+      expect(clearTimeoutSpy).toHaveBeenCalledWith(timerId);
+      vi.useRealTimers();
     });
   });
   

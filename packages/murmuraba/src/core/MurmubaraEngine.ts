@@ -407,6 +407,31 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         this.logger.debug('Chunk processed:', metrics);
         this.metricsManager.recordChunk(metrics);
       });
+
+      // TDD Integration: Forward period-complete events for RecordingManager integration
+      chunkProcessor.on('period-complete', (aggregatedMetrics) => {
+        this.logger.info(`🎯 [TDD-INTEGRATION] Period complete: ${aggregatedMetrics.totalFrames} frames, ${aggregatedMetrics.averageNoiseReduction.toFixed(1)}% avg reduction`);
+        
+        // Make aggregated metrics available to RecordingManager
+        // This will be accessed via the global bridge
+        if ((global as any).__murmurabaTDDBridge) {
+          (global as any).__murmurabaTDDBridge.notifyMetrics(aggregatedMetrics);
+        }
+      });
+
+      // TDD Integration: Store ChunkProcessor reference globally for RecordingManager access  
+      (global as any).__murmurabaTDDBridge = {
+        chunkProcessor,
+        notifyMetrics: (metrics: any) => {
+          // Broadcast to all registered RecordingManager instances
+          if ((global as any).__murmurabaTDDBridge.recordingManagers) {
+            (global as any).__murmurabaTDDBridge.recordingManagers.forEach((rm: any) => {
+              rm.receiveMetrics(metrics);
+            });
+          }
+        },
+        recordingManagers: new Set()
+      };
     }
     
     processor.onaudioprocess = (event) => {
@@ -431,6 +456,13 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       // If using chunk processing, add samples to chunk processor
       if (chunkProcessor && !isPaused && !isStopped) {
         chunkProcessor.addSamples(input);
+        
+        // TDD Integration: Also process frame for real-time metrics accumulation
+        // This feeds data to our TDD integration system
+        const timestamp = Date.now();
+        chunkProcessor.processFrame(input, timestamp, output).catch(err => {
+          this.logger.debug('TDD frame processing error:', err);
+        });
       }
       
       // Process frames

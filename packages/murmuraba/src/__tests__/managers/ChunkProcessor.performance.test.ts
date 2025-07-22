@@ -6,23 +6,43 @@
 
 import { ChunkProcessor } from '../../managers/ChunkProcessor';
 import { vi } from 'vitest';
-import { ChunkMetrics } from '../../types';
+import { ChunkMetrics, ChunkConfig } from '../../types';
+import { Logger } from '../../core/Logger';
+import { MetricsManager } from '../../managers/MetricsManager';
 
 // Mock performance.now for predictable tests
 const mockPerformanceNow = vi.fn();
 global.performance.now = mockPerformanceNow;
 
-// Mock api
+// Mock dependencies
+vi.mock('../../core/Logger');
+vi.mock('../../managers/MetricsManager');
 vi.mock('../../api', () => ({
   getEngine: vi.fn(),
 }));
 
 describe('ChunkProcessor - Performance Timing TDD', () => {
   let processor: ChunkProcessor;
+  let mockLogger: any;
+  let mockMetricsManager: any;
+  let config: ChunkConfig;
   
   beforeEach(() => {
     vi.clearAllMocks();
-    processor = new ChunkProcessor();
+    
+    // Create mocks
+    mockLogger = new Logger('test') as any;
+    mockMetricsManager = new MetricsManager() as any;
+    mockMetricsManager.calculateRMS = vi.fn().mockReturnValue(0.5);
+    mockMetricsManager.calculatePeak = vi.fn().mockReturnValue(0.8);
+    mockMetricsManager.recordChunk = vi.fn();
+    
+    config = {
+      chunkDuration: 100,
+      onChunkProcessed: vi.fn()
+    };
+    
+    processor = new ChunkProcessor(48000, config, mockLogger, mockMetricsManager);
     
     // Reset performance.now mock
     mockPerformanceNow.mockReset();

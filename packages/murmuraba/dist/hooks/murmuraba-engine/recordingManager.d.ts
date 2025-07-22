@@ -9,7 +9,23 @@ export declare class RecordingManager {
     private stopCycleFlag;
     private cycleCount;
     private cycleTimeout;
+    private metricsProvider;
+    private currentMetrics;
     constructor(urlManager: URLManager);
+    /**
+     * TDD Integration: Set metrics provider from ChunkProcessor
+     */
+    setMetricsProvider(provider: {
+        getAggregatedMetrics: (startTime: number, endTime: number) => any;
+    }): void;
+    /**
+     * TDD Integration: Receive metrics from ChunkProcessor
+     */
+    receiveMetrics(metrics: any): void;
+    /**
+     * TDD Integration: Get real metrics for a time period
+     */
+    private getRealMetrics;
     /**
      * Start concatenated streaming for medical-grade recording
      */

@@ -60,7 +60,7 @@ describe('ChunkProcessor - High Resolution Timing', () => {
       
       // Process multiple times to fill a chunk
       for (let i = 0; i < 10; i++) {
-        processor.processAudio(audioData);
+        processor.addSamples(audioData);
       }
     });
 
@@ -87,14 +87,14 @@ describe('ChunkProcessor - High Resolution Timing', () => {
 
       // Process multiple chunks
       const audioData = new Float32Array(4800); // 100ms at 48kHz
-      processor.processAudio(audioData);
+      processor.addSamples(audioData);
       
       setTimeout(() => {
-        processor.processAudio(audioData);
+        processor.addSamples(audioData);
       }, 10);
       
       setTimeout(() => {
-        processor.processAudio(audioData);
+        processor.addSamples(audioData);
       }, 20);
     });
 
@@ -122,7 +122,7 @@ describe('ChunkProcessor - High Resolution Timing', () => {
       });
 
       const audioData = new Float32Array(4800);
-      processor.processAudio(audioData);
+      processor.addSamples(audioData);
     });
   });
 
@@ -147,7 +147,7 @@ describe('ChunkProcessor - High Resolution Timing', () => {
       // Process 5 chunks
       const audioData = new Float32Array(4800);
       for (let i = 0; i < 5; i++) {
-        processor.processAudio(audioData);
+        processor.addSamples(audioData);
       }
     });
   });

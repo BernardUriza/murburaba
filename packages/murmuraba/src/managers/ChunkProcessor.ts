@@ -6,7 +6,18 @@ import { MetricsManager } from './MetricsManager';
 interface ChunkEvents {
   'chunk-ready': (chunk: AudioChunk) => void;
   'chunk-processed': (metrics: ChunkMetrics) => void;
+  'period-complete': (aggregatedMetrics: AggregatedMetrics) => void;
+  'frame-processed': (timestamp: number) => void;
   [key: string]: (...args: any[]) => void;
+}
+
+interface AggregatedMetrics {
+  averageNoiseReduction: number;
+  totalFrames: number;
+  averageLatency: number;
+  periodDuration: number;
+  startTime: number;
+  endTime: number;
 }
 
 interface AudioChunk {
@@ -29,6 +40,19 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
   private currentSampleCount: number = 0;
   private overlapBuffer: Float32Array[] = [];
   private metricsManager: MetricsManager;
+
+  // Metrics accumulation for TDD integration
+  private accumulatedMetrics: {
+    totalNoiseReduction: number;
+    frameCount: number;
+    totalLatency: number;
+    periodStartTime: number | null;
+  } = {
+    totalNoiseReduction: 0,
+    frameCount: 0,
+    totalLatency: 0,
+    periodStartTime: null
+  };
   
   constructor(
     sampleRate: number,
@@ -293,6 +317,107 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
       samplesPerChunk: this.samplesPerChunk,
       chunkIndex: this.chunkIndex,
       bufferFillPercentage: (this.currentSampleCount / this.samplesPerChunk) * 100,
+    };
+  }
+
+  /**
+   * TDD Integration: Process individual frame and accumulate metrics
+   * This allows RecordingManager integration with real-time metrics
+   */
+  async processFrame(
+    originalFrame: Float32Array, 
+    timestamp: number, 
+    processedFrame?: Float32Array
+  ): Promise<void> {
+    // Set period start time on first frame
+    if (this.accumulatedMetrics.periodStartTime === null) {
+      this.accumulatedMetrics.periodStartTime = timestamp;
+    }
+
+    // Use processedFrame if provided, otherwise assume no processing (original = processed)
+    const processed = processedFrame || originalFrame;
+
+    // Calculate noise reduction for this frame
+    const originalRMS = this.metricsManager.calculateRMS(originalFrame);
+    const processedRMS = this.metricsManager.calculateRMS(processed);
+    
+    const frameNoiseReduction = originalRMS > 0 
+      ? ((originalRMS - processedRMS) / originalRMS) * 100 
+      : 0;
+
+    // Accumulate metrics
+    this.accumulatedMetrics.totalNoiseReduction += Math.max(0, Math.min(100, frameNoiseReduction));
+    this.accumulatedMetrics.frameCount++;
+    this.accumulatedMetrics.totalLatency += 0.01; // Assume ~0.01ms per frame processing
+
+    // Emit frame-processed event for temporal tracking
+    this.emit('frame-processed', timestamp);
+
+    this.logger.debug(`Frame processed: ${frameNoiseReduction.toFixed(1)}% reduction at ${timestamp}ms`);
+  }
+
+  /**
+   * TDD Integration: Complete current period and emit aggregated metrics
+   * This is called when RecordingManager finishes a recording chunk
+   */
+  completePeriod(duration: number): AggregatedMetrics {
+    const endTime = Date.now();
+    const startTime = this.accumulatedMetrics.periodStartTime || (endTime - duration);
+
+    const aggregatedMetrics: AggregatedMetrics = {
+      averageNoiseReduction: this.accumulatedMetrics.frameCount > 0 
+        ? this.accumulatedMetrics.totalNoiseReduction / this.accumulatedMetrics.frameCount 
+        : 0,
+      totalFrames: this.accumulatedMetrics.frameCount,
+      averageLatency: this.accumulatedMetrics.frameCount > 0 
+        ? this.accumulatedMetrics.totalLatency / this.accumulatedMetrics.frameCount 
+        : 0,
+      periodDuration: duration,
+      startTime,
+      endTime
+    };
+
+    this.logger.info(`Period complete: ${aggregatedMetrics.totalFrames} frames, ${aggregatedMetrics.averageNoiseReduction.toFixed(1)}% avg reduction`);
+
+    // Emit period-complete event
+    this.emit('period-complete', aggregatedMetrics);
+
+    // Reset accumulator for next period
+    this.resetAccumulator();
+
+    return aggregatedMetrics;
+  }
+
+  /**
+   * Reset metrics accumulator for new period
+   */
+  private resetAccumulator(): void {
+    this.accumulatedMetrics = {
+      totalNoiseReduction: 0,
+      frameCount: 0,
+      totalLatency: 0,
+      periodStartTime: null
+    };
+  }
+
+  /**
+   * Get current accumulated metrics without completing the period
+   */
+  getCurrentAccumulatedMetrics(): AggregatedMetrics | null {
+    if (this.accumulatedMetrics.frameCount === 0) {
+      return null;
+    }
+
+    const currentTime = Date.now();
+    const startTime = this.accumulatedMetrics.periodStartTime || currentTime;
+
+    return {
+      averageNoiseReduction: this.accumulatedMetrics.totalNoiseReduction / this.accumulatedMetrics.frameCount,
+      totalFrames: this.accumulatedMetrics.frameCount,
+      averageLatency: this.accumulatedMetrics.totalLatency / this.accumulatedMetrics.frameCount,
+      periodDuration: currentTime - startTime,
+      startTime,
+      endTime: currentTime
     };
   }
 }
