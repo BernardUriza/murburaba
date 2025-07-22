@@ -5,7 +5,6 @@ import {
   WaveformAnalyzer,
   BuildInfo,
   AdvancedMetricsPanel,
-  ErrorBoundary,
   ChunkProcessingResults
 } from 'murmuraba'
 import Swal from 'sweetalert2'

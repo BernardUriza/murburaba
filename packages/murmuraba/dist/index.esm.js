@@ -3393,6 +3393,118 @@ function AdvancedMetricsPanel({ isVisible, diagnostics, onClose, className = '',
     return (jsxRuntimeExports.jsxs("div", { className: `advanced-metrics-panel ${className}`.trim(), role: "dialog", "aria-modal": "true", "aria-label": ariaLabel || 'Engine Diagnostics Panel', onKeyDown: handleKeyDown, tabIndex: -1, children: [jsxRuntimeExports.jsx("div", { className: "panel-backdrop", onClick: onClose, "aria-hidden": "true" }), jsxRuntimeExports.jsxs("div", { className: "panel-container", children: [jsxRuntimeExports.jsx(PanelHeader, { onClose: onClose }), jsxRuntimeExports.jsx("main", { className: "panel-content", children: jsxRuntimeExports.jsxs("div", { className: "metrics-grid", role: "grid", children: [jsxRuntimeExports.jsx(MetricItem, { label: "Version:", value: diagnostics.engineVersion, "data-testid": "metric-version" }), jsxRuntimeExports.jsx(MetricItem, { label: "WASM Status:", value: diagnostics.wasmLoaded ? '✅ Loaded' : '❌ Not Loaded', "data-testid": "metric-wasm-status" }), jsxRuntimeExports.jsx(MetricItem, { label: "Active Processors:", value: diagnostics.activeProcessors.toString(), "data-testid": "metric-active-processors" }), jsxRuntimeExports.jsx(MetricItem, { label: "Memory Usage:", value: formatMemoryUsage(diagnostics.memoryUsage), "data-testid": "metric-memory-usage" }), jsxRuntimeExports.jsx(MetricItem, { label: "Processing Time:", value: formatProcessingTime(diagnostics.processingTime), "data-testid": "metric-processing-time" }), jsxRuntimeExports.jsx(MetricItem, { label: "Engine State:", value: jsxRuntimeExports.jsx("span", { className: "engine-state", children: diagnostics.engineState }), "data-testid": "metric-engine-state" }), jsxRuntimeExports.jsx(MetricItem, { label: "Browser:", value: browserName, "data-testid": "metric-browser" }), jsxRuntimeExports.jsx(MetricItem, { label: "Audio APIs:", value: audioAPIsSupported ? '✅ Supported' : '❌ Limited', "data-testid": "metric-audio-apis" }), jsxRuntimeExports.jsx(MetricItem, { label: "Performance:", value: jsxRuntimeExports.jsx(PerformanceIndicator, { memoryUsage: diagnostics.memoryUsage }), "data-testid": "metric-performance" }), jsxRuntimeExports.jsx(MetricItem, { label: "Uptime:", value: "Active", "data-testid": "metric-uptime" })] }) })] })] }));
 }
 
+/**
+ * Professional chunk processing results component that displays processed audio chunks
+ * with playback controls, export options, and detailed metrics.
+ */
+function ChunkProcessingResults({ chunks, averageNoiseReduction, selectedChunk, onTogglePlayback, onToggleExpansion, onClearAll, onExportWav, onExportMp3, onDownloadChunk, className = '', }) {
+    // Memoize chunk statistics for performance
+    const chunkStats = useMemo(() => {
+        if (chunks.length === 0)
+            return null;
+        const totalDuration = chunks.reduce((sum, chunk) => sum + chunk.duration, 0);
+        const validChunks = chunks.filter(chunk => chunk.isValid !== false);
+        const averageLatency = validChunks.length > 0
+            ? validChunks.reduce((sum, chunk) => sum + chunk.metrics.processingLatency, 0) / validChunks.length
+            : 0;
+        return {
+            totalChunks: chunks.length,
+            validChunks: validChunks.length,
+            totalDuration,
+            averageLatency,
+        };
+    }, [chunks]);
+    // Format time helper
+    const formatTime = useCallback((seconds) => {
+        if (!isFinite(seconds) || seconds < 0)
+            return '0:00';
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }, []);
+    // Format percentage helper
+    const formatPercentage = useCallback((value) => {
+        if (!isFinite(value))
+            return '0.0%';
+        return `${Math.max(0, Math.min(100, value)).toFixed(1)}%`;
+    }, []);
+    // Format file size helper
+    const formatFileSize = useCallback((bytes) => {
+        if (!isFinite(bytes) || bytes <= 0)
+            return '0 KB';
+        const units = ['B', 'KB', 'MB', 'GB'];
+        let size = bytes;
+        let unitIndex = 0;
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex++;
+        }
+        return `${size.toFixed(1)} ${units[unitIndex]}`;
+    }, []);
+    // Handle clear all with confirmation
+    const handleClearAll = useCallback(() => {
+        if (chunks.length === 0)
+            return;
+        const confirmed = window.confirm(`Are you sure you want to delete all ${chunks.length} recorded chunks? This action cannot be undone.`);
+        if (confirmed) {
+            onClearAll();
+        }
+    }, [chunks.length, onClearAll]);
+    // Handle export actions with error handling
+    const handleExport = useCallback(async (chunkId, format, audioType) => {
+        try {
+            if (format === 'wav') {
+                await onExportWav(chunkId, audioType);
+            }
+            else {
+                await onExportMp3(chunkId, audioType);
+            }
+        }
+        catch (error) {
+            console.error(`Failed to export ${format.toUpperCase()}:`, error);
+            // Could add toast notification here
+        }
+    }, [onExportWav, onExportMp3]);
+    // Handle download with error handling
+    const handleDownload = useCallback(async (chunkId, format, audioType) => {
+        try {
+            await onDownloadChunk(chunkId, format, audioType);
+        }
+        catch (error) {
+            console.error(`Failed to download ${format.toUpperCase()}:`, error);
+            // Could add toast notification here
+        }
+    }, [onDownloadChunk]);
+    // Handle playback toggle with error handling
+    const handlePlaybackToggle = useCallback(async (chunkId, audioType) => {
+        try {
+            await onTogglePlayback(chunkId, audioType);
+        }
+        catch (error) {
+            console.error('Failed to toggle playback:', error);
+            // Could add toast notification here
+        }
+    }, [onTogglePlayback]);
+    // Handle keyboard events for accessibility
+    const handleKeyDown = useCallback((event, action) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            action();
+        }
+    }, []);
+    // Render empty state
+    if (chunks.length === 0) {
+        return (jsxRuntimeExports.jsx("section", { className: `chunk-results chunk-results--empty ${className}`.trim(), children: jsxRuntimeExports.jsxs("div", { className: "chunk-results__empty-state", children: [jsxRuntimeExports.jsx("div", { className: "empty-state__icon", "aria-hidden": "true", children: "\uD83C\uDFB5" }), jsxRuntimeExports.jsx("h2", { className: "empty-state__title", children: "No recordings yet" }), jsxRuntimeExports.jsx("p", { className: "empty-state__subtitle", children: "Start recording to see processed chunks here. Each chunk will show detailed metrics and allow you to play, compare, and export the audio." })] }) }));
+    }
+    return (jsxRuntimeExports.jsxs("section", { className: `chunk-results ${className}`.trim(), role: "region", "aria-label": "Processing Results", children: [jsxRuntimeExports.jsxs("div", { className: "chunk-results__header", children: [jsxRuntimeExports.jsxs("div", { className: "header__info", children: [jsxRuntimeExports.jsx("h2", { className: "header__title", children: "\uD83C\uDFAF Processing Results" }), jsxRuntimeExports.jsxs("div", { className: "header__stats", children: [jsxRuntimeExports.jsxs("span", { className: "stat-badge", children: [jsxRuntimeExports.jsx("strong", { children: chunks.length }), " chunks"] }), jsxRuntimeExports.jsxs("span", { className: "stat-badge", children: [jsxRuntimeExports.jsx("strong", { children: formatTime(chunkStats?.totalDuration || 0) }), " total"] }), jsxRuntimeExports.jsxs("span", { className: "stat-badge stat-badge--highlight", children: [jsxRuntimeExports.jsx("strong", { children: formatPercentage(averageNoiseReduction) }), " avg noise reduction"] })] })] }), chunks.length > 0 && (jsxRuntimeExports.jsxs("button", { className: "btn btn-ghost btn--destructive", onClick: handleClearAll, onKeyDown: (e) => handleKeyDown(e, handleClearAll), "aria-label": `Clear all ${chunks.length} chunks`, type: "button", children: [jsxRuntimeExports.jsx("span", { className: "btn__icon", "aria-hidden": "true", children: "\uD83D\uDDD1\uFE0F" }), jsxRuntimeExports.jsx("span", { children: "Clear All" })] }))] }), jsxRuntimeExports.jsx("div", { className: "chunk-results__list", role: "list", children: chunks.map((chunk, index) => {
+                    const isSelected = selectedChunk === chunk.id;
+                    const hasProcessedAudio = Boolean(chunk.processedAudioUrl);
+                    const hasOriginalAudio = Boolean(chunk.originalAudioUrl);
+                    const isValid = chunk.isValid !== false;
+                    return (jsxRuntimeExports.jsxs("div", { "data-chunk-id": chunk.id, "data-testid": `chunk-${chunk.id}`, className: `chunk ${isSelected ? 'chunk--selected' : ''} ${!isValid ? 'chunk--invalid' : ''}`.trim(), role: "listitem", children: [jsxRuntimeExports.jsxs("div", { className: "chunk__header", children: [jsxRuntimeExports.jsxs("div", { className: "chunk__info", children: [jsxRuntimeExports.jsxs("h3", { className: "chunk__title", children: ["Chunk ", index + 1, !isValid && (jsxRuntimeExports.jsx("span", { className: "chunk__error-badge", "aria-label": "Error", children: "\u274C" }))] }), jsxRuntimeExports.jsxs("div", { className: "chunk__meta", children: [jsxRuntimeExports.jsxs("span", { className: "meta-item", children: [jsxRuntimeExports.jsx("span", { className: "meta-label", children: "Duration:" }), jsxRuntimeExports.jsx("span", { className: "meta-value", children: formatTime(chunk.duration) })] }), jsxRuntimeExports.jsxs("span", { className: "meta-item", children: [jsxRuntimeExports.jsx("span", { className: "meta-label", children: "Noise Reduced:" }), jsxRuntimeExports.jsx("span", { className: "meta-value meta-value--highlight", children: formatPercentage(chunk.metrics.noiseReductionLevel) })] }), jsxRuntimeExports.jsxs("span", { className: "meta-item", children: [jsxRuntimeExports.jsx("span", { className: "meta-label", children: "Latency:" }), jsxRuntimeExports.jsxs("span", { className: "meta-value", children: [chunk.metrics.processingLatency.toFixed(1), "ms"] })] })] })] }), jsxRuntimeExports.jsxs("div", { className: "chunk__controls", children: [jsxRuntimeExports.jsxs("button", { className: `btn btn-primary ${chunk.isPlaying ? 'btn--playing' : ''}`, onClick: () => handlePlaybackToggle(chunk.id, 'processed'), onKeyDown: (e) => handleKeyDown(e, () => handlePlaybackToggle(chunk.id, 'processed')), disabled: !hasProcessedAudio || !isValid, "aria-label": `${chunk.isPlaying ? 'Pause' : 'Play'} processed chunk ${index + 1}`, type: "button", children: [jsxRuntimeExports.jsx("span", { className: "btn__icon", "aria-hidden": "true", children: chunk.isPlaying ? '⏸️' : '▶️' }), jsxRuntimeExports.jsx("span", { className: "btn__text", children: chunk.isPlaying ? 'Pause' : 'Play' })] }), jsxRuntimeExports.jsxs("button", { className: `btn btn-ghost ${chunk.isExpanded ? 'btn--active' : ''}`, onClick: () => onToggleExpansion(chunk.id), onKeyDown: (e) => handleKeyDown(e, () => onToggleExpansion(chunk.id)), "aria-label": `${chunk.isExpanded ? 'Collapse' : 'Expand'} details for chunk ${index + 1}`, "aria-expanded": chunk.isExpanded, type: "button", children: [jsxRuntimeExports.jsx("span", { className: "btn__icon", "aria-hidden": "true", children: chunk.isExpanded ? '▲' : '▼' }), jsxRuntimeExports.jsx("span", { className: "btn__text", children: "Details" })] })] })] }), !isValid && chunk.errorMessage && (jsxRuntimeExports.jsxs("div", { className: "chunk__error", role: "alert", children: [jsxRuntimeExports.jsx("span", { className: "error__icon", "aria-hidden": "true", children: "\u26A0\uFE0F" }), jsxRuntimeExports.jsx("span", { className: "error__message", children: chunk.errorMessage })] })), chunk.isExpanded && (jsxRuntimeExports.jsxs("div", { className: "chunk__details", "aria-label": "Chunk details", children: [jsxRuntimeExports.jsxs("div", { className: "details__section", children: [jsxRuntimeExports.jsx("h4", { className: "section__title", children: "\uD83D\uDCCA Processing Metrics" }), jsxRuntimeExports.jsxs("div", { className: "metrics-grid", children: [jsxRuntimeExports.jsxs("div", { className: "metric-item", children: [jsxRuntimeExports.jsx("span", { className: "metric__label", children: "Input Level" }), jsxRuntimeExports.jsx("span", { className: "metric__value", children: formatPercentage(chunk.metrics.inputLevel * 100) }), jsxRuntimeExports.jsx("div", { className: "metric__bar", children: jsxRuntimeExports.jsx("div", { className: "metric__fill metric__fill--input", style: { width: `${chunk.metrics.inputLevel * 100}%` }, "aria-hidden": "true" }) })] }), jsxRuntimeExports.jsxs("div", { className: "metric-item", children: [jsxRuntimeExports.jsx("span", { className: "metric__label", children: "Output Level" }), jsxRuntimeExports.jsx("span", { className: "metric__value", children: formatPercentage(chunk.metrics.outputLevel * 100) }), jsxRuntimeExports.jsx("div", { className: "metric__bar", children: jsxRuntimeExports.jsx("div", { className: "metric__fill metric__fill--output", style: { width: `${chunk.metrics.outputLevel * 100}%` }, "aria-hidden": "true" }) })] }), jsxRuntimeExports.jsxs("div", { className: "metric-item", children: [jsxRuntimeExports.jsx("span", { className: "metric__label", children: "Frames Processed" }), jsxRuntimeExports.jsx("span", { className: "metric__value", children: chunk.metrics.frameCount.toLocaleString() })] }), jsxRuntimeExports.jsxs("div", { className: "metric-item", children: [jsxRuntimeExports.jsx("span", { className: "metric__label", children: "Dropped Frames" }), jsxRuntimeExports.jsx("span", { className: "metric__value metric__value--warning", children: chunk.metrics.droppedFrames })] })] })] }), jsxRuntimeExports.jsxs("div", { className: "details__section", children: [jsxRuntimeExports.jsx("h4", { className: "section__title", children: "\uD83D\uDCC1 File Information" }), jsxRuntimeExports.jsxs("div", { className: "file-info-grid", children: [jsxRuntimeExports.jsxs("div", { className: "file-info-item", children: [jsxRuntimeExports.jsx("span", { className: "info__label", children: "Original Size" }), jsxRuntimeExports.jsx("span", { className: "info__value", children: formatFileSize(chunk.originalSize) })] }), jsxRuntimeExports.jsxs("div", { className: "file-info-item", children: [jsxRuntimeExports.jsx("span", { className: "info__label", children: "Processed Size" }), jsxRuntimeExports.jsx("span", { className: "info__value", children: formatFileSize(chunk.processedSize) })] }), jsxRuntimeExports.jsxs("div", { className: "file-info-item", children: [jsxRuntimeExports.jsx("span", { className: "info__label", children: "Size Reduction" }), jsxRuntimeExports.jsx("span", { className: "info__value info__value--success", children: formatFileSize(chunk.noiseRemoved) })] })] })] }), jsxRuntimeExports.jsxs("div", { className: "details__section", children: [jsxRuntimeExports.jsx("h4", { className: "section__title", children: "\uD83C\uDFB5 Audio Controls" }), jsxRuntimeExports.jsxs("div", { className: "audio-controls", children: [jsxRuntimeExports.jsxs("div", { className: "audio-group", children: [jsxRuntimeExports.jsx("h5", { className: "audio-group__title", children: "Processed Audio" }), jsxRuntimeExports.jsxs("div", { className: "audio-controls__row", children: [jsxRuntimeExports.jsxs("button", { className: `btn btn-secondary ${chunk.isPlaying ? 'btn--playing' : ''}`, onClick: () => handlePlaybackToggle(chunk.id, 'processed'), disabled: !hasProcessedAudio || !isValid, "aria-label": `${chunk.isPlaying ? 'Pause' : 'Play'} processed audio`, type: "button", children: [jsxRuntimeExports.jsx("span", { className: "btn__icon", "aria-hidden": "true", children: chunk.isPlaying ? '⏸️' : '▶️' }), jsxRuntimeExports.jsxs("span", { children: [chunk.isPlaying ? 'Pause' : 'Play', " Processed"] })] }), jsxRuntimeExports.jsx("button", { className: "btn btn-ghost btn--small", onClick: () => handleExport(chunk.id, 'wav', 'processed'), disabled: !hasProcessedAudio || !isValid, "aria-label": "Export processed audio as WAV", type: "button", children: "\uD83D\uDCC4 WAV" }), jsxRuntimeExports.jsx("button", { className: "btn btn-ghost btn--small", onClick: () => handleExport(chunk.id, 'mp3', 'processed'), disabled: !hasProcessedAudio || !isValid, "aria-label": "Export processed audio as MP3", type: "button", children: "\uD83C\uDFB5 MP3" }), jsxRuntimeExports.jsx("button", { className: "btn btn-ghost btn--small", onClick: () => handleDownload(chunk.id, 'webm', 'processed'), disabled: !hasProcessedAudio || !isValid, "aria-label": "Download processed audio", type: "button", children: "\uD83D\uDCBE Download" })] })] }), hasOriginalAudio && (jsxRuntimeExports.jsxs("div", { className: "audio-group", children: [jsxRuntimeExports.jsx("h5", { className: "audio-group__title", children: "Original Audio" }), jsxRuntimeExports.jsxs("div", { className: "audio-controls__row", children: [jsxRuntimeExports.jsxs("button", { className: "btn btn-secondary", onClick: () => handlePlaybackToggle(chunk.id, 'original'), disabled: !hasOriginalAudio || !isValid, "aria-label": "Play original audio", type: "button", children: [jsxRuntimeExports.jsx("span", { className: "btn__icon", "aria-hidden": "true", children: "\u25B6\uFE0F" }), jsxRuntimeExports.jsx("span", { children: "Play Original" })] }), jsxRuntimeExports.jsx("button", { className: "btn btn-ghost btn--small", onClick: () => handleExport(chunk.id, 'wav', 'original'), disabled: !hasOriginalAudio || !isValid, "aria-label": "Export original audio as WAV", type: "button", children: "\uD83D\uDCC4 Original WAV" }), jsxRuntimeExports.jsx("button", { className: "btn btn-ghost btn--small", onClick: () => handleExport(chunk.id, 'mp3', 'original'), disabled: !hasOriginalAudio || !isValid, "aria-label": "Export original audio as MP3", type: "button", children: "\uD83C\uDFB5 Original MP3" })] })] }))] })] })] }))] }, chunk.id));
+                }) })] }));
+}
+
 const WaveformAnalyzer = ({ stream, audioUrl, label, color = '#667eea', isActive = true, isPaused = false, hideControls = false, isMuted = false, volume = 1.0, className = '', 'aria-label': ariaLabel, onPlayStateChange, width = 800, height = 200, disabled = false }) => {
     const canvasRef = useRef(null);
     const audioRef = useRef(null);
@@ -22517,5 +22629,5 @@ var index = /*#__PURE__*/_mergeNamespaces({
     default: js
 }, [js]);
 
-export { AdvancedMetricsPanel, AudioConverter, AudioPlayer, AudioWorkletEngine, BuildInfo, BuildInfoBadge, BuildInfoBlock, BuildInfoInline, ErrorBoundary, ErrorCodes, EventEmitter, Logger, MURMURABA_VERSION, MetricsManager, MurmubaraEngine, MurmubaraError, RNNoiseEngine, StateManager, SyncedWaveforms, VERSION, WaveformAnalyzer, WorkerManager, murmurabaExports as default, destroyEngine, formatBuildDate, getAudioConverter, getDiagnostics, getEngine, getEngineStatus, getPackageVersion, initializeAudioEngine, onMetricsUpdate, processStream, processStreamChunked, useAudioEngine, useMurmubaraEngine, withErrorBoundary };
+export { AdvancedMetricsPanel, AudioConverter, AudioPlayer, AudioWorkletEngine, BuildInfo, BuildInfoBadge, BuildInfoBlock, BuildInfoInline, ChunkProcessingResults, ErrorBoundary, ErrorCodes, EventEmitter, Logger, MURMURABA_VERSION, MetricsManager, MurmubaraEngine, MurmubaraError, RNNoiseEngine, StateManager, SyncedWaveforms, VERSION, WaveformAnalyzer, WorkerManager, murmurabaExports as default, destroyEngine, formatBuildDate, getAudioConverter, getDiagnostics, getEngine, getEngineStatus, getPackageVersion, initializeAudioEngine, onMetricsUpdate, processStream, processStreamChunked, useAudioEngine, useMurmubaraEngine, withErrorBoundary };
 //# sourceMappingURL=index.esm.js.map
