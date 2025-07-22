@@ -22,7 +22,7 @@ export { AudioConverter, getAudioConverter } from './utils/audioConverter';
 export type { ProcessedChunk, RecordingState, UseMurmubaraEngineOptions, UseMurmubaraEngineReturn } from './hooks/useMurmubaraEngine';
 import { useMurmubaraEngine } from './hooks/useMurmubaraEngine';
 import { MurmubaraEngine } from './core/MurmubaraEngine';
-declare const _default: {
+declare const murmurabaExports: {
     useMurmubaraEngine: typeof useMurmubaraEngine;
     useAudioEngine: (config?: import("./engines/types").AudioEngineConfig) => {
         isInitialized: boolean;
@@ -49,5 +49,5 @@ declare const _default: {
     };
     MurmubaraEngine: typeof MurmubaraEngine;
 };
-export default _default;
+export default murmurabaExports;
 //# sourceMappingURL=index.d.ts.map

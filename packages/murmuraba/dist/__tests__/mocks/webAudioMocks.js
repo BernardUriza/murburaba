@@ -83,7 +83,10 @@ export const createMockAudioContext = () => {
         },
         createGain: vi.fn(() => mockGainNode),
         createAnalyser: vi.fn(() => mockAnalyserNode),
-        createScriptProcessor: vi.fn(() => mockScriptProcessor),
+        createScriptProcessor: vi.fn((bufferSize, inputChannels, outputChannels) => {
+            console.log(`🎛️ Creating ScriptProcessor: ${bufferSize} samples, ${inputChannels} in, ${outputChannels} out`);
+            return mockScriptProcessor;
+        }),
         createMediaStreamSource: vi.fn(() => ({
             connect: vi.fn().mockReturnThis(),
             disconnect: vi.fn(),

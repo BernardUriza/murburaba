@@ -14,38 +14,11 @@ vi.mock('../../engines', () => ({
   createAudioEngine: vi.fn()
 }));
 
-// Mock AudioContext and related APIs
-const mockAudioContext = {
-  state: 'running',
-  sampleRate: 48000,
-  createScriptProcessor: vi.fn(),
-  createMediaStreamSource: vi.fn(),
-  createMediaStreamDestination: vi.fn(),
-  close: vi.fn()
-};
-
-const mockProcessor = {
-  connect: vi.fn(),
-  disconnect: vi.fn(),
-  onaudioprocess: null as any
-};
-
-const mockMediaStreamSource = {
-  connect: vi.fn()
-};
-
-const mockMediaStreamDestination = {
-  stream: { id: 'mock-stream' }
-};
-
 const mockEngine = {
   initialize: vi.fn().mockResolvedValue(undefined),
   process: vi.fn(),
   cleanup: vi.fn()
 };
-
-// Mock global AudioContext
-global.AudioContext = vi.fn().mockImplementation(() => mockAudioContext) as any;
 
 // Mock console methods
 beforeEach(() => {
@@ -59,17 +32,63 @@ afterEach(() => {
 });
 
 describe('useAudioEngine', () => {
+  let mockAudioContext: any;
+  let mockProcessor: any;
+  let mockMediaStreamSource: any;
+  let mockMediaStreamDestination: any;
+
   beforeEach(() => {
     vi.clearAllMocks();
     
-    // Setup mocks
-    mockAudioContext.createScriptProcessor.mockReturnValue(mockProcessor);
-    mockAudioContext.createMediaStreamSource.mockReturnValue(mockMediaStreamSource);
-    mockAudioContext.createMediaStreamDestination.mockReturnValue(mockMediaStreamDestination);
+    // Create fresh mocks for each test
+    mockProcessor = {
+      connect: vi.fn().mockReturnThis(),
+      disconnect: vi.fn(),
+      onaudioprocess: null,
+      bufferSize: 4096,
+      numberOfInputs: 1,
+      numberOfOutputs: 1
+    };
+
+    mockMediaStreamSource = {
+      connect: vi.fn().mockReturnThis(),
+      disconnect: vi.fn()
+    };
+
+    mockMediaStreamDestination = {
+      stream: { id: 'mock-stream' }
+    };
+
+    // Create a mock AudioContext instance
+    mockAudioContext = {
+      state: 'running',
+      sampleRate: 48000,
+      createScriptProcessor: vi.fn().mockReturnValue(mockProcessor),
+      createMediaStreamSource: vi.fn().mockReturnValue(mockMediaStreamSource),
+      createMediaStreamDestination: vi.fn().mockReturnValue(mockMediaStreamDestination),
+      close: vi.fn().mockResolvedValue(undefined),
+      currentTime: 0,
+      baseLatency: 0.01,
+      outputLatency: 0.02,
+      destination: {},
+      listener: {},
+      suspend: vi.fn().mockResolvedValue(undefined),
+      resume: vi.fn().mockResolvedValue(undefined),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn()
+    };
+
+    // Override the global AudioContext to return our mock
+    (global.AudioContext as any).mockImplementation(() => mockAudioContext);
+    
+    // Setup engine mock
     (createAudioEngine as vi.Mock).mockReturnValue(mockEngine);
     
-    // Reset processor
-    mockProcessor.onaudioprocess = null;
+    // Reset engine mocks
+    mockEngine.initialize.mockClear();
+    mockEngine.process.mockClear();
+    mockEngine.cleanup.mockClear();
   });
   
   describe('Initialization', () => {
@@ -400,7 +419,7 @@ describe('useAudioEngine', () => {
       const { result } = renderHook(() => useAudioEngine());
       
       // Make AudioContext creation fail
-      (global.AudioContext as vi.Mock).mockImplementationOnce(() => {
+      (global.AudioContext as any).mockImplementationOnce(() => {
         throw new Error('AudioContext failed');
       });
       
@@ -577,8 +596,11 @@ describe('useAudioEngine', () => {
         await result.current.initializeAudioEngine();
       });
       
-      // Set context state to closed
-      mockAudioContext.state = 'closed';
+      // Mock the state getter to return 'closed'
+      Object.defineProperty(mockAudioContext, 'state', {
+        get: () => 'closed',
+        configurable: true
+      });
       
       act(() => {
         result.current.cleanup();

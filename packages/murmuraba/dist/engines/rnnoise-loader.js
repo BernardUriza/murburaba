@@ -71,6 +71,7 @@ export async function loadWithImportMeta() {
         if (wasmUrl) {
             const response = await fetch(wasmUrl);
             const wasmBuffer = await response.arrayBuffer();
+            // eslint-disable-next-line @next/next/no-assign-module-variable
             const module = await import('@jitsi/rnnoise-wasm');
             return module.default();
         }

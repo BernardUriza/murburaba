@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 function _mergeNamespaces(n, m) {
     m.forEach(function (e) {
@@ -1991,7 +1991,8 @@ const LOG_PREFIX = {
     CONCAT_STREAM: '[CONCAT-STREAM]',
     MEDICAL_MEMORY: '[MEDICAL-MEMORY]',
     ERROR: '[ERROR]',
-    EXPORT: '[EXPORT]'
+    EXPORT: '[EXPORT]',
+    RECORDING: '[RECORDING]'
 };
 
 class ChunkManager {
@@ -2052,6 +2053,14 @@ class ChunkManager {
         });
     }
     /**
+     * Revoke URLs for all chunks
+     */
+    revokeChunkUrls(chunks) {
+        chunks.forEach(chunk => {
+            this.urlManager.revokeChunkUrls(chunk.id);
+        });
+    }
+    /**
      * Calculate average noise reduction
      */
     getAverageNoiseReduction(chunks) {
@@ -2077,7 +2086,9 @@ class RecordingManager {
     /**
      * Start concatenated streaming for medical-grade recording
      */
-    async startConcatenatedStreaming(processedStream, originalStream, mimeType, chunkDuration, onChunkReady) {
+    async startCycle(processedStream, originalStream, chunkDuration, onChunkProcessed) {
+        // Use a default mime type for now
+        const mimeType = 'audio/webm;codecs=opus';
         this.cycleCount = 0;
         this.stopCycleFlag = false;
         const startNewRecordingCycle = () => {
@@ -2142,7 +2153,7 @@ class RecordingManager {
                 if (chunkRecording && !chunkRecording.finalized) {
                     // Only process if we have valid data
                     if (chunkRecording.processed.length > 0 || chunkRecording.original.length > 0) {
-                        this.processChunkRecording(chunkId, chunkRecording, cycleStartTime, mimeType, onChunkReady);
+                        this.processChunkRecording(chunkId, chunkRecording, cycleStartTime, mimeType, onChunkProcessed);
                     }
                     else {
                         console.warn(`⚠️ ${LOG_PREFIX.CONCAT_STREAM} Cycle #${this.cycleCount} discarded - no valid blobs collected`);
@@ -2192,7 +2203,7 @@ class RecordingManager {
     /**
      * Process recorded chunk data
      */
-    processChunkRecording(chunkId, chunkRecording, cycleStartTime, mimeType, onChunkReady) {
+    processChunkRecording(chunkId, chunkRecording, cycleStartTime, mimeType, onChunkProcessed) {
         const processedBlob = new Blob(chunkRecording.processed, { type: mimeType });
         const originalBlob = new Blob(chunkRecording.original, { type: mimeType });
         console.log(`📦 ${LOG_PREFIX.CONCAT_STREAM} Created blobs - Processed: ${processedBlob.size} bytes, Original: ${originalBlob.size} bytes`);
@@ -2242,7 +2253,7 @@ class RecordingManager {
         };
         chunkRecording.finalized = true;
         console.log(`✅ ${LOG_PREFIX.CONCAT_STREAM} Cycle #${this.cycleCount} complete: ${(actualDuration / 1000).toFixed(1)}s chunk`);
-        onChunkReady(newChunk);
+        onChunkProcessed(newChunk);
     }
     /**
      * Stop recording
@@ -2308,6 +2319,18 @@ class RecordingManager {
         if (this.originalRecorder?.state === 'paused') {
             this.originalRecorder.resume();
         }
+    }
+    /**
+     * Check if currently recording
+     */
+    isRecording() {
+        return this.mediaRecorder?.state === 'recording' || this.originalRecorder?.state === 'recording';
+    }
+    /**
+     * Check if recording is paused
+     */
+    isPaused() {
+        return this.mediaRecorder?.state === 'paused' || this.originalRecorder?.state === 'paused';
     }
 }
 
@@ -2475,7 +2498,59 @@ class PlaybackManager {
     }
 }
 
-function createRecordingFunctions({ isInitialized, recordingState, currentStream, originalStream, setRecordingState, setCurrentStream, setOriginalStream, setStreamController, setError, chunkManager, recordingManager, initialize }) {
+class MurmubaraLogger {
+    constructor() {
+        this.level = 'info';
+        this.levels = {
+            debug: 0,
+            info: 1,
+            warn: 2,
+            error: 3,
+            silent: 4
+        };
+    }
+    setLevel(level) {
+        this.level = level;
+    }
+    getLevel() {
+        return this.level;
+    }
+    shouldLog(level) {
+        return this.levels[level] >= this.levels[this.level];
+    }
+    debug(message, ...args) {
+        if (this.shouldLog('debug')) {
+            console.debug(`🐛 [DEBUG] ${message}`, ...args);
+        }
+    }
+    info(message, ...args) {
+        if (this.shouldLog('info')) {
+            console.info(`ℹ️ [INFO] ${message}`, ...args);
+        }
+    }
+    warn(message, ...args) {
+        if (this.shouldLog('warn')) {
+            console.warn(`⚠️ [WARN] ${message}`, ...args);
+        }
+    }
+    error(message, ...args) {
+        if (this.shouldLog('error')) {
+            console.error(`❌ [ERROR] ${message}`, ...args);
+        }
+    }
+}
+// Singleton logger instance
+const logger = new MurmubaraLogger();
+// Set default level based on environment
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
+    logger.setLevel('warn');
+}
+else if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    logger.setLevel('silent');
+}
+
+function createRecordingFunctions({ isInitialized, recordingState, recordingStateHook, currentStream, originalStream, setCurrentStream, setOriginalStream, setStreamController, setError, chunkManager, recordingManager, initialize }) {
+    const { startRecording: startRecordingState, stopRecording: stopRecordingState, pauseRecording: pauseRecordingState, resumeRecording: resumeRecordingState, addChunk, clearRecordings: clearRecordingsState} = recordingStateHook;
     /**
      * Start recording with concatenated streaming
      */
@@ -2487,91 +2562,84 @@ function createRecordingFunctions({ isInitialized, recordingState, currentStream
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
                     echoCancellation: true,
-                    noiseSuppression: false,
-                    autoGainControl: true
+                    noiseSuppression: false, // We're doing our own
+                    autoGainControl: false
                 }
             });
-            // Clone stream for original recording
-            const originalStreamClone = stream.clone();
-            setOriginalStream(originalStreamClone);
-            // Process stream
+            setOriginalStream(stream);
             const controller = await processStream(stream);
             setStreamController(controller);
-            const processedStream = controller.stream;
-            setCurrentStream(processedStream);
-            // Detect MIME type
-            const mimeType = AudioConverter.getBestRecordingFormat();
-            console.log(`🎤 ${LOG_PREFIX.CONCAT_STREAM} Using MIME type: ${mimeType}`);
-            // Update state
-            setRecordingState(prev => ({
-                ...prev,
-                isRecording: true,
-                isPaused: false,
-                chunks: []
-            }));
-            // Start concatenated streaming
-            await recordingManager.startConcatenatedStreaming(processedStream, originalStreamClone, mimeType, chunkDuration, (newChunk) => {
-                setRecordingState(prev => chunkManager.addChunk(prev, newChunk));
-            });
+            setCurrentStream(controller.stream);
+            // Use hook's state management
+            startRecordingState();
+            // Start the chunk processing
+            const onChunkProcessed = (chunk) => {
+                addChunk(chunk);
+                logger.info('Chunk processed', {
+                    id: chunk.id,
+                    duration: chunk.duration,
+                    noiseReduction: chunk.noiseRemoved
+                });
+            };
+            await recordingManager.startCycle(controller.stream, stream, chunkDuration, onChunkProcessed);
+            logger.info('Recording started', { chunkDuration });
         }
         catch (err) {
-            console.error(`❌ ${LOG_PREFIX.ERROR} Failed to start recording:`, err);
-            setError(err instanceof Error ? err.message : 'Failed to start recording');
+            const errorMessage = err instanceof Error ? err.message : 'Failed to start recording';
+            logger.error('Failed to start recording', { error: errorMessage });
+            setError(errorMessage);
+            throw err;
         }
     };
     /**
-     * Stop recording
+     * Stop recording and cleanup
      */
     const stopRecording = () => {
-        console.log(`🛑 ${LOG_PREFIX.LIFECYCLE} Stopping recording...`);
+        logger.info('Stopping recording');
         recordingManager.stopRecording();
-        // Stop all tracks
-        if (recordingState.isRecording) {
-            if (currentStream) {
-                currentStream.getTracks().forEach(track => track.stop());
-            }
-            if (originalStream) {
-                originalStream.getTracks().forEach(track => track.stop());
-            }
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+            setCurrentStream(null);
         }
-        // Update state
-        setRecordingState(prev => ({
-            ...prev,
-            isRecording: false,
-            isPaused: false,
-            recordingTime: 0
-        }));
-        setCurrentStream(null);
-        setOriginalStream(null);
+        if (originalStream) {
+            originalStream.getTracks().forEach(track => track.stop());
+            setOriginalStream(null);
+        }
         setStreamController(null);
+        // Use hook's state management
+        stopRecordingState();
+        logger.info('Recording stopped');
     };
     /**
      * Pause recording
      */
     const pauseRecording = () => {
-        if (recordingState.isRecording && !recordingState.isPaused) {
-            recordingManager.pauseRecording();
-            setRecordingState(prev => ({ ...prev, isPaused: true }));
-        }
+        logger.info('Pausing recording');
+        recordingManager.pauseRecording();
+        pauseRecordingState();
     };
     /**
      * Resume recording
      */
     const resumeRecording = () => {
-        if (recordingState.isRecording && recordingState.isPaused) {
-            recordingManager.resumeRecording();
-            setRecordingState(prev => ({ ...prev, isPaused: false }));
-        }
+        logger.info('Resuming recording');
+        recordingManager.resumeRecording();
+        resumeRecordingState();
     };
     /**
      * Clear all recordings
      */
     const clearRecordings = () => {
+        logger.info('Clearing all recordings');
+        // Stop any ongoing recording
+        if (recordingState.isRecording) {
+            stopRecording();
+        }
+        // Revoke all chunk URLs
         chunkManager.clearChunks(recordingState.chunks);
-        setRecordingState(prev => ({
-            ...prev,
-            chunks: []
-        }));
+        // Clear state
+        clearRecordingsState();
+        logger.info('All recordings cleared');
     };
     return {
         startRecording,
@@ -2579,6 +2647,86 @@ function createRecordingFunctions({ isInitialized, recordingState, currentStream
         pauseRecording,
         resumeRecording,
         clearRecordings
+    };
+}
+
+function useRecordingState() {
+    const [recordingState, setRecordingState] = useState({
+        isRecording: false,
+        isPaused: false,
+        recordingTime: 0,
+        chunks: []
+    });
+    const startRecording = useCallback(() => {
+        setRecordingState(prev => ({
+            ...prev,
+            isRecording: true,
+            isPaused: false,
+            recordingTime: 0,
+            chunks: []
+        }));
+    }, []);
+    const stopRecording = useCallback(() => {
+        setRecordingState(prev => ({
+            ...prev,
+            isRecording: false,
+            isPaused: false,
+            recordingTime: 0
+        }));
+    }, []);
+    const pauseRecording = useCallback(() => {
+        setRecordingState(prev => ({
+            ...prev,
+            isPaused: true
+        }));
+    }, []);
+    const resumeRecording = useCallback(() => {
+        setRecordingState(prev => ({
+            ...prev,
+            isPaused: false
+        }));
+    }, []);
+    const addChunk = useCallback((chunk) => {
+        setRecordingState(prev => ({
+            ...prev,
+            chunks: [...prev.chunks, chunk]
+        }));
+    }, []);
+    const toggleChunkPlayback = useCallback((chunkId, isPlaying) => {
+        setRecordingState(prev => ({
+            ...prev,
+            chunks: prev.chunks.map(chunk => chunk.id === chunkId ? { ...chunk, isPlaying } : chunk)
+        }));
+    }, []);
+    const toggleChunkExpansion = useCallback((chunkId) => {
+        setRecordingState(prev => ({
+            ...prev,
+            chunks: prev.chunks.map(chunk => chunk.id === chunkId ? { ...chunk, isExpanded: !chunk.isExpanded } : chunk)
+        }));
+    }, []);
+    const clearRecordings = useCallback(() => {
+        setRecordingState(prev => ({
+            ...prev,
+            chunks: []
+        }));
+    }, []);
+    const updateRecordingTime = useCallback((time) => {
+        setRecordingState(prev => ({
+            ...prev,
+            recordingTime: time
+        }));
+    }, []);
+    return {
+        recordingState,
+        startRecording,
+        stopRecording,
+        pauseRecording,
+        resumeRecording,
+        addChunk,
+        toggleChunkPlayback,
+        toggleChunkExpansion,
+        clearRecordings,
+        updateRecordingTime
     };
 }
 
@@ -2597,12 +2745,8 @@ function useMurmubaraEngine(options = {}) {
     const [engineState, setEngineState] = useState('uninitialized');
     const [metrics, setMetrics] = useState(null);
     const [diagnostics, setDiagnostics] = useState(null);
-    const [recordingState, setRecordingState] = useState({
-        isRecording: false,
-        isPaused: false,
-        recordingTime: 0,
-        chunks: []
-    });
+    // Use dedicated recording state hook
+    const { recordingState, startRecording: recordingStateStart, stopRecording: recordingStateStop, pauseRecording: recordingStatePause, resumeRecording: recordingStateResume, addChunk, toggleChunkPlayback: recordingStateTogglePlayback, toggleChunkExpansion, clearRecordings: recordingStateClear, updateRecordingTime } = useRecordingState();
     const [currentStream, setCurrentStream] = useState(null);
     const [originalStream, setOriginalStream] = useState(null);
     const [streamController, setStreamController] = useState(null);
@@ -2755,9 +2899,20 @@ function useMurmubaraEngine(options = {}) {
     const recordingFunctions = createRecordingFunctions({
         isInitialized,
         recordingState,
+        recordingStateHook: {
+            recordingState,
+            startRecording: recordingStateStart,
+            stopRecording: recordingStateStop,
+            pauseRecording: recordingStatePause,
+            resumeRecording: recordingStateResume,
+            addChunk,
+            toggleChunkPlayback: recordingStateTogglePlayback,
+            toggleChunkExpansion,
+            clearRecordings: recordingStateClear,
+            updateRecordingTime
+        },
         currentStream,
         originalStream,
-        setRecordingState,
         setCurrentStream,
         setOriginalStream,
         setStreamController,
@@ -2772,18 +2927,9 @@ function useMurmubaraEngine(options = {}) {
         if (!chunk)
             return;
         await playbackManagerRef.current.toggleChunkPlayback(chunk, audioType, (id, isPlaying) => {
-            setRecordingState(prev => ({
-                ...prev,
-                chunks: chunkManagerRef.current.toggleChunkPlayback(prev.chunks, id, isPlaying)
-            }));
+            recordingStateTogglePlayback(id, isPlaying);
         });
-    }, [recordingState.chunks]);
-    const toggleChunkExpansion = useCallback((chunkId) => {
-        setRecordingState(prev => ({
-            ...prev,
-            chunks: chunkManagerRef.current.toggleChunkExpansion(prev.chunks, chunkId)
-        }));
-    }, []);
+    }, [recordingState.chunks, recordingStateTogglePlayback]);
     // Effects
     // Auto-initialize
     useEffect(() => {
@@ -2797,14 +2943,11 @@ function useMurmubaraEngine(options = {}) {
         if (recordingState.isRecording && !recordingState.isPaused) {
             const startTime = Date.now() - recordingState.recordingTime * 1000;
             const interval = setInterval(() => {
-                setRecordingState(prev => ({
-                    ...prev,
-                    recordingTime: Math.floor((Date.now() - startTime) / 1000)
-                }));
+                updateRecordingTime(Math.floor((Date.now() - startTime) / 1000));
             }, RECORDING_UPDATE_INTERVAL);
             return () => clearInterval(interval);
         }
-    }, [recordingState.isRecording, recordingState.isPaused, recordingState.recordingTime]);
+    }, [recordingState.isRecording, recordingState.isPaused, recordingState.recordingTime, updateRecordingTime]);
     // Update engine state periodically
     useEffect(() => {
         if (!isInitialized)
@@ -2848,8 +2991,8 @@ function useMurmubaraEngine(options = {}) {
         // Actions
         initialize,
         destroy,
-        processStream: processStream, // Type casting for compatibility
-        processStreamChunked: processStreamChunked,
+        processStream,
+        processStreamChunked,
         // Recording Actions
         startRecording: recordingFunctions.startRecording,
         stopRecording: recordingFunctions.stopRecording,

@@ -3,8 +3,8 @@
  * No más tests de mentira que pasan pero no prueban NADA
  */
 
-import { 
 import { vi } from 'vitest';
+import { 
   generateTestChunks, 
   generateSpeechLikeSignal,
   addNoise,

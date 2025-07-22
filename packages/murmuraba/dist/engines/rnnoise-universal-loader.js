@@ -5,12 +5,14 @@
 // Use dynamic imports that bundlers can understand
 async function loadWasmModule() {
     // Just let the @jitsi/rnnoise-wasm handle its own WASM loading
+    // eslint-disable-next-line @next/next/no-assign-module-variable
     const module = await import('@jitsi/rnnoise-wasm');
     return await module.default();
 }
 export async function initializeRNNoise() {
     console.log('[RNNoise] Initializing with universal loader...');
     try {
+        // eslint-disable-next-line @next/next/no-assign-module-variable
         const module = await loadWasmModule();
         // Create and return the RNNoise state
         const state = module._rnnoise_create(0);

@@ -108,7 +108,7 @@ export class RecordingManager {
               chunkRecording,
               cycleStartTime,
               mimeType,
-              onChunkReady
+              onChunkProcessed
             );
           } else {
             console.warn(`⚠️ ${LOG_PREFIX.CONCAT_STREAM} Cycle #${this.cycleCount} discarded - no valid blobs collected`);

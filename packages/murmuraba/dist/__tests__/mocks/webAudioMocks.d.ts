@@ -74,7 +74,7 @@ export declare const createMockAudioContext: () => {
         connect: import("vitest").Mock<(...args: any[]) => any>;
         disconnect: import("vitest").Mock<(...args: any[]) => any>;
     }>;
-    createScriptProcessor: import("vitest").Mock<() => {
+    createScriptProcessor: import("vitest").Mock<(bufferSize: any, inputChannels: any, outputChannels: any) => {
         bufferSize: number;
         numberOfInputs: number;
         numberOfOutputs: number;

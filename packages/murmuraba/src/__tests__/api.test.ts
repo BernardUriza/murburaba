@@ -3,8 +3,8 @@
  * 100% COVERAGE OR DEATH
  */
 
-import {
 import { vi } from 'vitest';
+import {
   initializeAudioEngine,
   getEngine,
   processStream,

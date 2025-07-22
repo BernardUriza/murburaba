@@ -174,7 +174,7 @@ export function useMurmubaraEngine(
     })();
     
     return initializePromiseRef.current;
-  }, [config, isInitialized, onInitError, updateDiagnostics]);
+  }, [config, isInitialized, onInitError]);
   
   // Destroy engine
   const destroy = useCallback(async (force: boolean = false) => {
@@ -351,6 +351,10 @@ export function useMurmubaraEngine(
   useEffect(() => {
     console.log(`🌟 ${LOG_PREFIX.LIFECYCLE} Component mounted, setting up cleanup handler`);
     
+    // Capture refs for cleanup
+    const urlManager = urlManagerRef.current;
+    const playbackManager = playbackManagerRef.current;
+    
     return () => {
       console.log(`👋 ${LOG_PREFIX.LIFECYCLE} Component unmounting, cleaning up...`);
       
@@ -358,10 +362,10 @@ export function useMurmubaraEngine(
       destroyAudioConverter();
       
       // Clean up all URLs
-      urlManagerRef.current.revokeAllUrls();
+      urlManager.revokeAllUrls();
       
       // Clean up audio elements
-      playbackManagerRef.current.cleanup();
+      playbackManager.cleanup();
     };
   }, []);
   
@@ -382,8 +386,8 @@ export function useMurmubaraEngine(
     // Actions
     initialize,
     destroy,
-    processStream: processStream as any, // Type casting for compatibility
-    processStreamChunked: processStreamChunked as any,
+    processStream,
+    processStreamChunked,
     
     // Recording Actions
     startRecording: recordingFunctions.startRecording,

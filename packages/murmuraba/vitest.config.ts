@@ -9,15 +9,55 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      enabled: true,
+      reporter: ['text', 'json', 'html', 'lcov'],
       exclude: [
         'node_modules/',
         'src/__tests__/',
         '**/*.d.ts',
+        '**/*.test.{ts,tsx}',
+        '**/*.spec.{ts,tsx}',
         'src/index.ts',
         'dist/',
+        'coverage/',
+        '**/*.config.ts',
+        'src/types/**',
       ],
+      thresholds: {
+        lines: 90,
+        functions: 90,
+        branches: 90,
+        statements: 90,
+        // Per-file thresholds for critical components
+        'src/core/**/*.ts': {
+          lines: 95,
+          functions: 95,
+          branches: 90,
+          statements: 95
+        },
+        'src/hooks/**/*.ts': {
+          lines: 90,
+          functions: 90,
+          branches: 85,
+          statements: 90
+        }
+      },
+      reportOnFailure: true,
+      skipFull: false,
     },
+    // Test timeout for long-running tests
+    testTimeout: 10000,
+    // Retry failed tests
+    retry: 0,
+    // Better error output
+    reporter: ['default', 'html'],
+    // Pool options for better performance
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        singleThread: true
+      }
+    }
   },
   resolve: {
     alias: {

@@ -80,7 +80,7 @@ export class RecordingManager {
                 if (chunkRecording && !chunkRecording.finalized) {
                     // Only process if we have valid data
                     if (chunkRecording.processed.length > 0 || chunkRecording.original.length > 0) {
-                        this.processChunkRecording(chunkId, chunkRecording, cycleStartTime, mimeType, onChunkReady);
+                        this.processChunkRecording(chunkId, chunkRecording, cycleStartTime, mimeType, onChunkProcessed);
                     }
                     else {
                         console.warn(`⚠️ ${LOG_PREFIX.CONCAT_STREAM} Cycle #${this.cycleCount} discarded - no valid blobs collected`);

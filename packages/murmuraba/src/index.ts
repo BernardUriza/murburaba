@@ -61,8 +61,10 @@ import { useAudioEngine } from './hooks/useAudioEngine';
 import { MurmubaraEngine } from './core/MurmubaraEngine';
 
 // Default export for easier usage
-export default {
+const murmurabaExports = {
   useMurmubaraEngine,
   useAudioEngine,
   MurmubaraEngine
 };
+
+export default murmurabaExports;
