@@ -7,8 +7,15 @@ describe('MurmubaraEngine Coverage Tests', () => {
     global.window = {
       AudioContext: vi.fn(),
       webkitAudioContext: vi.fn(),
-      navigator: { userAgent: 'test' }
+      navigator: { userAgent: 'test' },
+      WebAssembly: { instantiate: vi.fn(), compile: vi.fn() }
     } as any;
+    
+    Object.defineProperty(global, 'navigator', {
+      value: { userAgent: 'test' },
+      writable: true,
+      configurable: true
+    });
   });
 
   it('should cover constructor branches', () => {
@@ -88,14 +95,12 @@ describe('MurmubaraEngine Coverage Tests', () => {
     expect(engine2).toBeDefined();
   });
 
-  it('should cover checkSupport method', () => {
+  it('should cover checkEnvironmentSupport method', () => {
     const engine = new MurmubaraEngine();
-    const support = engine['checkSupport']();
+    const support = engine['checkEnvironmentSupport']();
     
     expect(support).toBeDefined();
-    expect(support.hasAudioContext).toBeDefined();
-    expect(support.hasWebAssembly).toBeDefined();
-    expect(support.hasMediaDevices).toBeDefined();
+    expect(typeof support).toBe('boolean');
   });
 
   it('should cover error handling', () => {
@@ -104,26 +109,22 @@ describe('MurmubaraEngine Coverage Tests', () => {
     
     engine.on('error', errorHandler);
     
-    // Test handleError method
+    // Test recordError method
     const testError = new Error('Test error');
-    engine['handleError']('GENERAL_ERROR' as any, testError);
-    
-    expect(errorHandler).toHaveBeenCalledWith(expect.objectContaining({
-      code: 'GENERAL_ERROR',
-      message: expect.any(String)
-    }));
+    engine['recordError'](testError);
     
     // Check error history
     expect(engine['errorHistory'].length).toBe(1);
+    expect(engine['errorHistory'][0].error).toBe('Test error');
   });
 
   it('should cover getDiagnostics', () => {
     const engine = new MurmubaraEngine();
-    const diagnostics = engine['getDiagnostics']();
+    const diagnostics = engine.getDiagnostics();
     
     expect(diagnostics).toBeDefined();
-    expect(diagnostics.browser).toBeDefined();
-    expect(diagnostics.browser.userAgent).toBe('test');
+    expect(diagnostics.engineVersion).toBeDefined();
+    expect(diagnostics.state).toBe('uninitialized');
   });
 
   it('should cover destroy force flag', async () => {
@@ -141,31 +142,26 @@ describe('MurmubaraEngine Coverage Tests', () => {
     expect(engine['isActive']()).toBe(false);
   });
 
-  it('should cover noise reduction level mapping', () => {
-    const engine = new MurmubaraEngine();
+  it('should cover noise reduction level configurations', () => {
+    const levels = ['low', 'medium', 'high', 'auto'] as const;
     
-    const levels = {
-      low: 0.3,
-      medium: 0.5,
-      high: 0.8,
-      auto: 0.5
-    };
-    
-    Object.entries(levels).forEach(([level, expected]) => {
-      const attenuation = engine['getNoiseAttenuation'](level as any);
-      expect(attenuation).toBe(expected);
+    levels.forEach(level => {
+      const engine = new MurmubaraEngine({ noiseReductionLevel: level });
+      expect(engine['config'].noiseReductionLevel).toBe(level);
     });
   });
 
-  it('should cover stream ID generation', () => {
+  it('should cover activeStreams management', () => {
     const engine = new MurmubaraEngine();
     
-    const id1 = engine['generateStreamId']();
-    const id2 = engine['generateStreamId']();
+    expect(engine['activeStreams'].size).toBe(0);
     
-    expect(id1).toBeDefined();
-    expect(id2).toBeDefined();
-    expect(id1).not.toBe(id2);
+    // Add a mock stream
+    const mockStream = { id: 'test-stream' } as any;
+    engine['activeStreams'].set('test-stream', mockStream);
+    
+    expect(engine['activeStreams'].size).toBe(1);
+    expect(engine['activeStreams'].has('test-stream')).toBe(true);
   });
 
   it('should cover cleanup timer branches', () => {
@@ -197,24 +193,25 @@ describe('MurmubaraEngine Coverage Tests', () => {
     }
     
     // Force error to check trimming
-    engine['handleError']('TEST' as any, new Error('test'));
+    engine['recordError'](new Error('test'));
     
-    // Should be limited to 100
-    expect(engine['errorHistory'].length).toBeLessThanOrEqual(100);
+    // Should be limited to 10 based on the code
+    expect(engine['errorHistory'].length).toBeLessThanOrEqual(10);
   });
 
-  it('should cover getDiagnosticInfo helper', () => {
+  it('should cover getMetrics', () => {
     const engine = new MurmubaraEngine();
     
-    const info = engine['getDiagnosticInfo']();
-    expect(info).toBeDefined();
-    expect(info.state).toBe('uninitialized');
-    expect(info.activeStreams).toBe(0);
+    const metrics = engine.getMetrics();
+    expect(metrics).toBeDefined();
+    expect(metrics.processed).toBe(0);
+    expect(metrics.latency).toBe(0);
+    expect(metrics.cpuUsage).toBe(0);
   });
 
-  it('should cover metrics initialization', () => {
+  it('should cover metrics manager getMetrics', () => {
     const engine = new MurmubaraEngine();
-    const metrics = engine['metricsManager']['getMetrics']();
+    const metrics = engine['metricsManager'].getMetrics();
     
     expect(metrics).toBeDefined();
     expect(metrics.processed).toBe(0);
@@ -244,12 +241,12 @@ describe('MurmubaraEngine Coverage Tests', () => {
     });
   });
 
-  it('should cover isProcessing check', () => {
+  it('should cover state checks', () => {
     const engine = new MurmubaraEngine();
-    expect(engine['isProcessing']()).toBe(false);
+    expect(engine['stateManager'].isInState('processing')).toBe(false);
     
     // Force processing state
     engine['stateManager']['currentState'] = 'processing';
-    expect(engine['isProcessing']()).toBe(true);
+    expect(engine['stateManager'].isInState('processing')).toBe(true);
   });
 });

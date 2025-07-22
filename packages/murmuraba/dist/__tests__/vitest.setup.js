@@ -2,6 +2,30 @@ import { vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { setupAllAudioMocks } from './mocks/webAudioMocks';
 console.log('\n🚀 ========== VITEST SETUP STARTING ========== 🚀\n');
+// Override XMLHttpRequest to prevent real network requests
+if (typeof global !== 'undefined') {
+    global.XMLHttpRequest = vi.fn().mockImplementation(() => ({
+        open: vi.fn(),
+        send: vi.fn(),
+        setRequestHeader: vi.fn(),
+        getResponseHeader: vi.fn(),
+        getAllResponseHeaders: vi.fn(() => ''),
+        abort: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        readyState: 4,
+        status: 200,
+        statusText: 'OK',
+        responseText: '// Mock RNNoise WASM module',
+        response: '// Mock RNNoise WASM module',
+        onreadystatechange: null,
+        onload: null,
+        onerror: null,
+        onabort: null,
+        onprogress: null,
+        ontimeout: null
+    }));
+}
 // Setup DOM environment for React components
 if (typeof global.document === 'undefined') {
     // Simple DOM mock for testing
@@ -54,6 +78,14 @@ global.fetch = vi.fn().mockImplementation((url) => {
             arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(1024)),
         });
     }
+    // Mock for RNNoise WASM file
+    if (url.includes('rnnoise-fixed.js') || url.includes('localhost:3000')) {
+        return Promise.resolve({
+            ok: true,
+            text: vi.fn().mockResolvedValue('// Mock RNNoise WASM module'),
+            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(1024)),
+        });
+    }
     return Promise.reject(new Error('Not found'));
 });
 // Modern performance.memory mock
@@ -71,6 +103,18 @@ vi.mock('lamejs', () => ({
         encodeBuffer: vi.fn().mockReturnValue(new Int8Array(100)),
         flush: vi.fn().mockReturnValue(new Int8Array(50)),
     })),
+}));
+// Mock RNNoise module
+vi.mock('../engines/rnnoise-loader', () => ({
+    default: vi.fn().mockResolvedValue({
+        _rnnoise_create: vi.fn().mockReturnValue(1),
+        _rnnoise_destroy: vi.fn(),
+        _rnnoise_process_frame: vi.fn().mockReturnValue(0.5),
+        _malloc: vi.fn().mockReturnValue(1000),
+        _free: vi.fn(),
+        HEAPF32: new Float32Array(10000),
+        HEAP32: new Int32Array(10000)
+    })
 }));
 // Mock console methods - but allow them in debug mode
 if (process.env.DEBUG !== 'true') {
