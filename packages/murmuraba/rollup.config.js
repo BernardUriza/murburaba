@@ -25,10 +25,16 @@ export default [
       }),
       copy({
         targets: [
-          { src: 'src/engines/wasm/*', dest: 'dist/wasm' },
-          { src: '../../public/rnnoise-fixed.js', dest: 'dist' },
-          { src: '../../public/dist/*.wasm', dest: 'dist/wasm' }
-        ]
+          { 
+            src: 'node_modules/@jitsi/rnnoise-wasm/dist/*.wasm', 
+            dest: 'dist/wasm' 
+          },
+          { 
+            src: 'node_modules/@jitsi/rnnoise-wasm/dist/*.js', 
+            dest: 'dist/wasm' 
+          }
+        ],
+        hook: 'writeBundle'
       })
     ],
   },

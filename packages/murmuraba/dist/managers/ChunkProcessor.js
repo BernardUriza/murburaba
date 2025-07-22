@@ -3,7 +3,7 @@ export class ChunkProcessor extends EventEmitter {
     constructor(sampleRate, config, logger, metricsManager) {
         super();
         this.currentChunk = [];
-        this.chunkStartTime = Date.now();
+        this.chunkStartTime = 0;
         this.chunkIndex = 0;
         this.currentSampleCount = 0;
         this.overlapBuffer = [];
@@ -28,9 +28,9 @@ export class ChunkProcessor extends EventEmitter {
      * Add samples to the current chunk
      */
     addSamples(samples) {
-        // Initialize start time on first sample if not already set
+        // Initialize start time on first sample with high-resolution timer
         if (this.chunkStartTime === 0) {
-            this.chunkStartTime = Date.now();
+            this.chunkStartTime = performance.now();
         }
         this.currentChunk.push(new Float32Array(samples));
         this.currentSampleCount += samples.length;
@@ -44,7 +44,7 @@ export class ChunkProcessor extends EventEmitter {
      */
     processCurrentChunk() {
         const chunkId = `chunk-${this.chunkIndex++}`;
-        const endTime = Date.now();
+        const endTime = performance.now();
         // Combine all samples into a single array
         const totalSamples = this.extractChunkSamples();
         // Apply overlap if configured

@@ -5,6 +5,15 @@
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.esm.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist",
     "README.md",
@@ -74,6 +83,7 @@
     "node": ">=14.0.0"
   },
   "dependencies": {
+    "@jitsi/rnnoise-wasm": "^0.2.1",
     "lamejs": "^1.2.1"
   }
 }

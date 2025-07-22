@@ -1,5 +1,10 @@
 import { AudioEngine } from './types';
 
+export interface RNNoiseConfig {
+  wasmPath?: string;
+  scriptPath?: string;
+}
+
 export class RNNoiseEngine implements AudioEngine {
   name = 'RNNoise';
   description = 'Neural network-based noise suppression';
@@ -9,31 +14,81 @@ export class RNNoiseEngine implements AudioEngine {
   private state: any = null;
   private inputPtr: number = 0;
   private outputPtr: number = 0;
+  private config: RNNoiseConfig;
   
+  constructor(config?: RNNoiseConfig) {
+    this.config = {
+      wasmPath: config?.wasmPath || '',
+      scriptPath: config?.scriptPath || ''
+    };
+  }
+
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
     
     console.log('[RNNoiseEngine] Starting initialization...');
     
-    // Load script
-    const script = document.createElement('script');
-    script.src = '/rnnoise-fixed.js';
-    await new Promise((resolve, reject) => {
-      script.onload = resolve;
-      script.onerror = reject;
-      document.head.appendChild(script);
-    });
-    
-    // Create module
-    const createRNNWasmModule = (window as any).createRNNWasmModule;
-    this.module = await createRNNWasmModule({
-      locateFile: (filename: string) => {
-        if (filename.endsWith('.wasm')) {
-          return `/dist/${filename}`;
+    try {
+      // Option 1: Try dynamic import with bundler resolution
+      const rnnoiseModule = await import('@jitsi/rnnoise-wasm');
+      
+      // Option 2: Use fetch to load WASM from package
+      if (typeof window !== 'undefined' && !this.config.wasmPath) {
+        // Create a blob URL for the WASM module
+        const wasmUrl = new URL(
+          'node_modules/@jitsi/rnnoise-wasm/dist/rnnoise.wasm',
+          import.meta.url
+        ).href;
+        
+        try {
+          const wasmResponse = await fetch(wasmUrl);
+          const wasmArrayBuffer = await wasmResponse.arrayBuffer();
+          
+          // Initialize with the fetched WASM
+          this.module = await rnnoiseModule.default({
+            wasmBinary: wasmArrayBuffer
+          });
+        } catch (fetchError) {
+          console.warn('[RNNoiseEngine] Could not fetch WASM from package, using default loader');
+          this.module = await rnnoiseModule.default();
         }
-        return filename;
+      } else {
+        this.module = await rnnoiseModule.default();
       }
-    });
+    } catch (error) {
+      console.error('[RNNoiseEngine] Failed to load from import, trying embedded loader...', error);
+      
+      // Option 3: Use embedded WASM loader
+      try {
+        const { initializeRNNoise } = await import('./rnnoise-universal-loader');
+        const rnnoiseInstance = await initializeRNNoise();
+        this.module = rnnoiseInstance.module;
+        this.state = rnnoiseInstance.state;
+      } catch (embeddedError) {
+        console.error('[RNNoiseEngine] Failed to load embedded, trying script tag...', embeddedError);
+      
+      // Fallback to script tag if import fails
+      const script = document.createElement('script');
+      script.src = this.config.scriptPath || '/rnnoise-fixed.js';
+      await new Promise((resolve, reject) => {
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+      
+      // Create module
+      const createRNNWasmModule = (window as any).createRNNWasmModule;
+      this.module = await createRNNWasmModule({
+        locateFile: (filename: string) => {
+          if (filename.endsWith('.wasm')) {
+            return this.config.wasmPath ? 
+              `${this.config.wasmPath}/${filename}` : 
+              `/dist/${filename}`;
+          }
+          return filename;
+        }
+      });
+    }
     
     // Create state
     this.state = this.module._rnnoise_create(0);

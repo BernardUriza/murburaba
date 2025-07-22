@@ -9,6 +9,7 @@ interface WaveformAnalyzerProps {
   isPaused?: boolean;
   hideControls?: boolean;
   isMuted?: boolean;
+  volume?: number;
 }
 
 export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({ 
@@ -19,7 +20,8 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   isActive = true,
   isPaused = false,
   hideControls = false,
-  isMuted = false
+  isMuted = false,
+  volume = 1.0
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -78,6 +80,8 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     if (hideControls && audioRef.current) {
       // Apply mute setting
       audioRef.current.muted = isMuted;
+      // Apply volume setting
+      audioRef.current.volume = volume;
       
       if (!isPaused) {
         audioRef.current.play().catch(console.error);
@@ -89,7 +93,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
         }
       }
     }
-  }, [isPaused, analyser, hideControls, isMuted]);
+  }, [isPaused, analyser, hideControls, isMuted, volume]);
 
   const initializeLiveStream = async () => {
     if (!stream || audioContext) return;

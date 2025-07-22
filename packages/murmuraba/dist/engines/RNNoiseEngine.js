@@ -1,5 +1,5 @@
 export class RNNoiseEngine {
-    constructor() {
+    constructor(config) {
         this.name = 'RNNoise';
         this.description = 'Neural network-based noise suppression';
         this.isInitialized = false;
@@ -7,29 +7,44 @@ export class RNNoiseEngine {
         this.state = null;
         this.inputPtr = 0;
         this.outputPtr = 0;
+        this.config = {
+            wasmPath: config?.wasmPath || '',
+            scriptPath: config?.scriptPath || ''
+        };
     }
     async initialize() {
         if (this.isInitialized)
             return;
         console.log('[RNNoiseEngine] Starting initialization...');
-        // Load script
-        const script = document.createElement('script');
-        script.src = '/rnnoise-fixed.js';
-        await new Promise((resolve, reject) => {
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-        });
-        // Create module
-        const createRNNWasmModule = window.createRNNWasmModule;
-        this.module = await createRNNWasmModule({
-            locateFile: (filename) => {
-                if (filename.endsWith('.wasm')) {
-                    return `/dist/${filename}`;
+        try {
+            // Try to import directly from node_modules
+            const rnnoise = await import('@jitsi/rnnoise-wasm');
+            // Initialize the module
+            this.module = await rnnoise.default();
+        }
+        catch (error) {
+            console.error('[RNNoiseEngine] Failed to load from import, trying script tag...', error);
+            // Fallback to script tag if import fails
+            const script = document.createElement('script');
+            script.src = this.config.scriptPath || '/rnnoise-fixed.js';
+            await new Promise((resolve, reject) => {
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+            // Create module
+            const createRNNWasmModule = window.createRNNWasmModule;
+            this.module = await createRNNWasmModule({
+                locateFile: (filename) => {
+                    if (filename.endsWith('.wasm')) {
+                        return this.config.wasmPath ?
+                            `${this.config.wasmPath}/${filename}` :
+                            `/dist/${filename}`;
+                    }
+                    return filename;
                 }
-                return filename;
-            }
-        });
+            });
+        }
         // Create state
         this.state = this.module._rnnoise_create(0);
         if (!this.state) {

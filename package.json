@@ -15,7 +15,6 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
-    "@jitsi/rnnoise-wasm": "^0.2.1",
     "murmuraba": "workspace:*",
     "next": "14.0.4",
     "react": "^18",

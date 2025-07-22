@@ -1,10 +1,10 @@
 import { AudioEngine, AudioEngineConfig } from './types';
-import { RNNoiseEngine } from './RNNoiseEngine';
+import { RNNoiseEngine, RNNoiseConfig } from './RNNoiseEngine';
 
-export function createAudioEngine(config: AudioEngineConfig): AudioEngine {
+export function createAudioEngine(config: AudioEngineConfig & { rnnoiseConfig?: RNNoiseConfig }): AudioEngine {
   switch (config.engineType) {
     case 'rnnoise':
-      return new RNNoiseEngine();
+      return new RNNoiseEngine(config.rnnoiseConfig);
     case 'speex':
       throw new Error('Speex engine not implemented yet');
     case 'custom':

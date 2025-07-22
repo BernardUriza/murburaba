@@ -17,6 +17,7 @@ export class RecordingManager {
   private processChunkInterval: NodeJS.Timeout | null = null;
   private stopCycleFlag = false;
   private cycleCount = 0;
+  private cycleTimeout: NodeJS.Timeout | null = null;
 
   constructor(private urlManager: URLManager) {}
 
@@ -96,8 +97,9 @@ export class RecordingManager {
       
       // When recording stops, process and create chunk
       currentRecorder.onstop = () => {
+        console.log(`🔄 ${LOG_PREFIX.CONCAT_STREAM} Recorder stopped for cycle #${this.cycleCount}`);
         const chunkRecording = this.chunkRecordings.get(chunkId);
-        if (chunkRecording) {
+        if (chunkRecording && !chunkRecording.finalized) {
           // Only process if we have valid data
           if (chunkRecording.processed.length > 0 || chunkRecording.original.length > 0) {
             this.processChunkRecording(
@@ -126,20 +128,34 @@ export class RecordingManager {
 
     // Stop current cycle and start new one
     const cycleRecording = () => {
-      if (this.stopCycleFlag) return;
+      if (this.stopCycleFlag) {
+        console.log(`🚫 ${LOG_PREFIX.CONCAT_STREAM} Cycle skipped - stop flag set`);
+        return;
+      }
       
       console.log(`⏹️ ${LOG_PREFIX.CONCAT_STREAM} Stopping cycle #${this.cycleCount}`);
       
-      if (this.mediaRecorder?.state === 'recording') {
-        this.mediaRecorder.stop();
+      // Store current recorders to ensure onstop handlers complete
+      const currentMediaRecorder = this.mediaRecorder;
+      const currentOriginalRecorder = this.originalRecorder;
+      
+      // Stop recorders if they're recording
+      if (currentMediaRecorder?.state === 'recording') {
+        currentMediaRecorder.stop();
       }
       
-      if (this.originalRecorder?.state === 'recording') {
-        this.originalRecorder.stop();
+      if (currentOriginalRecorder?.state === 'recording') {
+        currentOriginalRecorder.stop();
       }
       
-      // Start new cycle after a small delay
-      setTimeout(startNewRecordingCycle, 500);
+      // Start new cycle after a delay to ensure processing completes
+      if (!this.stopCycleFlag) {
+        this.cycleTimeout = setTimeout(() => {
+          if (!this.stopCycleFlag) {
+            startNewRecordingCycle();
+          }
+        }, 1000); // Increased delay to ensure chunk processing
+      }
     };
 
     // Start first cycle
@@ -230,21 +246,49 @@ export class RecordingManager {
     
     this.stopCycleFlag = true;
     
+    // Clear intervals and timeouts first
     if (this.processChunkInterval) {
       clearInterval(this.processChunkInterval);
       this.processChunkInterval = null;
     }
     
+    if (this.cycleTimeout) {
+      clearTimeout(this.cycleTimeout);
+      this.cycleTimeout = null;
+    }
+    
+    // Stop recorders and wait for final chunks
+    const promises: Promise<void>[] = [];
+    
     if (this.mediaRecorder?.state === 'recording') {
-      this.mediaRecorder.stop();
+      const stopPromise = new Promise<void>((resolve) => {
+        const originalOnStop = this.mediaRecorder!.onstop;
+        this.mediaRecorder!.onstop = (event) => {
+          if (originalOnStop && this.mediaRecorder) {
+            originalOnStop.call(this.mediaRecorder, event);
+          }
+          resolve();
+        };
+        this.mediaRecorder!.stop();
+      });
+      promises.push(stopPromise);
     }
     
     if (this.originalRecorder?.state === 'recording') {
       this.originalRecorder.stop();
     }
     
-    // Clear recordings
-    this.chunkRecordings.clear();
+    // Wait for all stop handlers to complete before cleanup
+    Promise.all(promises).then(() => {
+      // Clear recordings after processing
+      this.chunkRecordings.clear();
+      
+      // Reset recorders
+      this.mediaRecorder = null;
+      this.originalRecorder = null;
+      
+      console.log(`✅ ${LOG_PREFIX.CONCAT_STREAM} Recording stopped completely`);
+    });
   }
 
   /**

@@ -102,6 +102,13 @@ export function useMurmubaraEngine(
       return null;
     }
   }, [isInitialized]);
+
+  // Fix race condition: Update diagnostics when isInitialized changes to true
+  useEffect(() => {
+    if (isInitialized && !diagnostics) {
+      updateDiagnostics();
+    }
+  }, [isInitialized, diagnostics, updateDiagnostics]);
   
   // Initialize engine
   const initialize = useCallback(async () => {
@@ -135,7 +142,6 @@ export function useMurmubaraEngine(
         
         setIsInitialized(true);
         setEngineState('ready');
-        updateDiagnostics();
         console.log(`🎉 ${LOG_PREFIX.LIFECYCLE} Engine initialized successfully!`);
         
       } catch (err) {

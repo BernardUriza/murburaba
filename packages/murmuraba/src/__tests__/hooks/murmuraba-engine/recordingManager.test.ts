@@ -300,4 +300,132 @@ describe('RecordingManager - Empty Blob Handling', () => {
       expect(chunks[0].isValid).toBe(true);
     });
   });
+
+  describe('Bug: Stop Recording no detiene la grabación', () => {
+    it('debe detener completamente la grabación cuando se llama stopRecording', async () => {
+      jest.useFakeTimers();
+      
+      const processedStream = new MediaStream();
+      const originalStream = new MediaStream();
+      const onChunkReady = jest.fn();
+      
+      let mediaRecorderInstance: any;
+      
+      // Mock MediaRecorder más completo
+      (global.MediaRecorder as any) = jest.fn().mockImplementation((stream) => {
+        const recorder = {
+          start: jest.fn(),
+          stop: jest.fn(),
+          state: 'inactive',
+          ondataavailable: null,
+          onstop: null,
+        };
+        
+        recorder.start = jest.fn(() => {
+          recorder.state = 'recording';
+        });
+        
+        recorder.stop = jest.fn(() => {
+          recorder.state = 'inactive';
+          if (recorder.onstop) recorder.onstop();
+        });
+        
+        if (stream === processedStream) {
+          mediaRecorderInstance = recorder;
+        }
+        
+        return recorder;
+      });
+      
+      // Iniciar grabación
+      await recordingManager.startConcatenatedStreaming(
+        processedStream,
+        originalStream,
+        'audio/webm',
+        5, // 5 segundos por chunk
+        onChunkReady
+      );
+      
+      // Verificar que está grabando
+      expect(mediaRecorderInstance.state).toBe('recording');
+      
+      // Stop recording inmediatamente
+      recordingManager.stopRecording();
+      
+      // Avanzar tiempo para verificar que no se inician nuevos ciclos
+      jest.advanceTimersByTime(10000); // 10 segundos
+      
+      // No debería haber llamadas a onChunkReady porque se detuvo
+      expect(onChunkReady).not.toHaveBeenCalled();
+      
+      jest.useRealTimers();
+    });
+  });
+
+  describe('Bug: Solo aparece un chunk cuando deberían ser varios', () => {
+    it('debe procesar múltiples chunks correctamente', async () => {
+      jest.useFakeTimers();
+      
+      const processedStream = new MediaStream();
+      const originalStream = new MediaStream();
+      const chunks: ProcessedChunk[] = [];
+      const onChunkReady = jest.fn((chunk: ProcessedChunk) => {
+        chunks.push(chunk);
+      });
+      
+      // Mock MediaRecorder que simula grabación real
+      (global.MediaRecorder as any) = jest.fn().mockImplementation((stream) => {
+        const recorder = {
+          start: jest.fn(),
+          stop: jest.fn(),
+          state: 'inactive',
+          ondataavailable: null,
+          onstop: null,
+        };
+        
+        recorder.start = jest.fn(() => {
+          recorder.state = 'recording';
+        });
+        
+        recorder.stop = jest.fn(() => {
+          recorder.state = 'inactive';
+          // Simular data disponible
+          if (recorder.ondataavailable) {
+            recorder.ondataavailable({ 
+              data: new Blob(['test-data'], { type: 'audio/webm' }) 
+            });
+          }
+          if (recorder.onstop) {
+            recorder.onstop();
+          }
+        });
+        
+        return recorder;
+      });
+      
+      // Iniciar grabación con chunks de 2 segundos
+      await recordingManager.startConcatenatedStreaming(
+        processedStream,
+        originalStream,
+        'audio/webm',
+        2,
+        onChunkReady
+      );
+      
+      // Simular 3 ciclos completos
+      for (let i = 0; i < 3; i++) {
+        jest.advanceTimersByTime(2000); // Duración del chunk
+        jest.advanceTimersByTime(500);  // Delay entre ciclos
+      }
+      
+      // Detener grabación
+      recordingManager.stopRecording();
+      
+      // Verificar que se procesaron múltiples chunks
+      console.log('Chunks procesados:', chunks.length);
+      expect(chunks.length).toBeGreaterThanOrEqual(2); // Al menos 2 chunks
+      
+      jest.useRealTimers();
+    });
+  });
 });

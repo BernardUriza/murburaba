@@ -744,14 +744,6 @@ p {
   transform: scale(1.05);
 }
 
-/* Audio Player - Modern Style */
-.audio-player-modern {
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
-  margin: var(--spacing-md) 0;
-  border: 1px solid var(--neutral-200);
-}
 
 .audio-controls {
   display: flex;
@@ -2246,6 +2238,20 @@ p {
   flex-direction: column;
   gap: var(--spacing-sm);
   flex: 1;
+}
+
+/* Modificadores específicos para original/enhanced */
+.audio-player.original {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.audio-player.enhanced {
+  background: rgba(126, 211, 33, 0.08);
+  border-color: var(--grass-light);
+}
+
+.audio-player.enhanced.playing {
+  background: rgba(126, 211, 33, 0.15);
 }
 
 /* End of Illinois Prairie Theme */

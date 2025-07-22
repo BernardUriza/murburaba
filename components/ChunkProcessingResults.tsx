@@ -1,5 +1,5 @@
 import { SyncedWaveforms } from './SyncedWaveforms'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import AudioPlayer from './AudioPlayer'
 
 interface ProcessedChunk {
@@ -126,6 +126,8 @@ function ChunkItem({
   onToggleExpansion,
   onDownloadChunk 
 }: ChunkItemProps) {
+  const [playingAudio, setPlayingAudio] = useState<'original' | 'processed' | null>(null)
+  
   const chunkClasses = [
     'chunk-item',
     chunk.isExpanded ? 'expanded' : '',
@@ -192,17 +194,29 @@ function ChunkItem({
                 src={chunk.originalAudioUrl}
                 label="Original"
                 onPlayStateChange={(playing) => {
-                  if (playing) onTogglePlayback(chunk.id, 'original')
+                  if (playing) {
+                    setPlayingAudio('original')
+                    onTogglePlayback(chunk.id, 'original')
+                  } else if (playingAudio === 'original') {
+                    setPlayingAudio(null)
+                  }
                 }}
-                className="audio-player-original"
+                className="original"
+                forceStop={playingAudio === 'processed'}
               />
               <AudioPlayer
                 src={chunk.processedAudioUrl}
                 label="Enhanced"
                 onPlayStateChange={(playing) => {
-                  if (playing) onTogglePlayback(chunk.id, 'processed')
+                  if (playing) {
+                    setPlayingAudio('processed')
+                    onTogglePlayback(chunk.id, 'processed')
+                  } else if (playingAudio === 'processed') {
+                    setPlayingAudio(null)
+                  }
                 }}
-                className="audio-player-enhanced"
+                className="enhanced"
+                forceStop={playingAudio === 'original'}
               />
             </div>
           )}

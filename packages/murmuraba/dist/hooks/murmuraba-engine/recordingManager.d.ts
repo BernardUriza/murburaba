@@ -8,6 +8,7 @@ export declare class RecordingManager {
     private processChunkInterval;
     private stopCycleFlag;
     private cycleCount;
+    private cycleTimeout;
     constructor(urlManager: URLManager);
     /**
      * Start concatenated streaming for medical-grade recording

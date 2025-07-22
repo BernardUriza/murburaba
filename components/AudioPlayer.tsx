@@ -5,9 +5,10 @@ interface AudioPlayerProps {
   onPlayStateChange?: (isPlaying: boolean) => void
   className?: string
   label: string
+  forceStop?: boolean
 }
 
-export default function AudioPlayer({ src, onPlayStateChange, className = '', label }: AudioPlayerProps) {
+export default function AudioPlayer({ src, onPlayStateChange, className = '', label, forceStop = false }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -40,6 +41,15 @@ export default function AudioPlayer({ src, onPlayStateChange, className = '', la
     Object.entries(handlers).forEach(([evt, fn]) => audio.addEventListener(evt, fn as any))
     return () => Object.entries(handlers).forEach(([evt, fn]) => audio.removeEventListener(evt, fn as any))
   }, [src, onPlayStateChange])
+
+  // Detener cuando forceStop cambia a true
+  useEffect(() => {
+    if (forceStop && isPlaying && audioRef.current) {
+      audioRef.current.pause()
+      setIsPlaying(false)
+      onPlayStateChange?.(false)
+    }
+  }, [forceStop, isPlaying, onPlayStateChange])
 
   const togglePlayPause = useCallback(() => {
     if (!audioRef.current || !src) return

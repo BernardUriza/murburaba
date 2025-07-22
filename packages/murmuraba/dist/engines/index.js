@@ -2,7 +2,7 @@ import { RNNoiseEngine } from './RNNoiseEngine';
 export function createAudioEngine(config) {
     switch (config.engineType) {
         case 'rnnoise':
-            return new RNNoiseEngine();
+            return new RNNoiseEngine(config.rnnoiseConfig);
         case 'speex':
             throw new Error('Speex engine not implemented yet');
         case 'custom':

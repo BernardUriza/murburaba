@@ -8,6 +8,7 @@ export class RecordingManager {
         this.processChunkInterval = null;
         this.stopCycleFlag = false;
         this.cycleCount = 0;
+        this.cycleTimeout = null;
     }
     /**
      * Start concatenated streaming for medical-grade recording
@@ -40,7 +41,7 @@ export class RecordingManager {
                         console.log(`💾 ${LOG_PREFIX.CONCAT_STREAM} Cycle #${this.cycleCount} - Processed data: ${event.data.size} bytes`);
                     }
                 }
-                else if (event.data.size > 0) {
+                else {
                     console.warn(`⚠️ ${LOG_PREFIX.CONCAT_STREAM} Invalid blob size detected! Size: ${event.data.size} bytes (minimum: ${MIN_VALID_BLOB_SIZE} bytes)`, {
                         cycleNumber: this.cycleCount,
                         blobSize: event.data.size,
@@ -56,7 +57,7 @@ export class RecordingManager {
                         console.log(`💾 ${LOG_PREFIX.CONCAT_STREAM} Cycle #${this.cycleCount} - Original data: ${event.data.size} bytes`);
                     }
                 }
-                else if (event.data.size > 0) {
+                else {
                     console.warn(`⚠️ ${LOG_PREFIX.CONCAT_STREAM} Invalid blob size detected! Size: ${event.data.size} bytes (minimum: ${MIN_VALID_BLOB_SIZE} bytes)`, {
                         cycleNumber: this.cycleCount,
                         blobSize: event.data.size,
@@ -72,8 +73,9 @@ export class RecordingManager {
             };
             // When recording stops, process and create chunk
             currentRecorder.onstop = () => {
+                console.log(`🔄 ${LOG_PREFIX.CONCAT_STREAM} Recorder stopped for cycle #${this.cycleCount}`);
                 const chunkRecording = this.chunkRecordings.get(chunkId);
-                if (chunkRecording) {
+                if (chunkRecording && !chunkRecording.finalized) {
                     // Only process if we have valid data
                     if (chunkRecording.processed.length > 0 || chunkRecording.original.length > 0) {
                         this.processChunkRecording(chunkId, chunkRecording, cycleStartTime, mimeType, onChunkReady);
@@ -94,17 +96,29 @@ export class RecordingManager {
         };
         // Stop current cycle and start new one
         const cycleRecording = () => {
-            if (this.stopCycleFlag)
+            if (this.stopCycleFlag) {
+                console.log(`🚫 ${LOG_PREFIX.CONCAT_STREAM} Cycle skipped - stop flag set`);
                 return;
+            }
             console.log(`⏹️ ${LOG_PREFIX.CONCAT_STREAM} Stopping cycle #${this.cycleCount}`);
-            if (this.mediaRecorder?.state === 'recording') {
-                this.mediaRecorder.stop();
+            // Store current recorders to ensure onstop handlers complete
+            const currentMediaRecorder = this.mediaRecorder;
+            const currentOriginalRecorder = this.originalRecorder;
+            // Stop recorders if they're recording
+            if (currentMediaRecorder?.state === 'recording') {
+                currentMediaRecorder.stop();
             }
-            if (this.originalRecorder?.state === 'recording') {
-                this.originalRecorder.stop();
+            if (currentOriginalRecorder?.state === 'recording') {
+                currentOriginalRecorder.stop();
             }
-            // Start new cycle after a small delay
-            setTimeout(startNewRecordingCycle, 500);
+            // Start new cycle after a delay to ensure processing completes
+            if (!this.stopCycleFlag) {
+                this.cycleTimeout = setTimeout(() => {
+                    if (!this.stopCycleFlag) {
+                        startNewRecordingCycle();
+                    }
+                }, 1000); // Increased delay to ensure chunk processing
+            }
         };
         // Start first cycle
         startNewRecordingCycle();
@@ -173,18 +187,42 @@ export class RecordingManager {
     stopRecording() {
         console.log(`🛑 ${LOG_PREFIX.CONCAT_STREAM} Stopping concatenated streaming...`);
         this.stopCycleFlag = true;
+        // Clear intervals and timeouts first
         if (this.processChunkInterval) {
             clearInterval(this.processChunkInterval);
             this.processChunkInterval = null;
         }
+        if (this.cycleTimeout) {
+            clearTimeout(this.cycleTimeout);
+            this.cycleTimeout = null;
+        }
+        // Stop recorders and wait for final chunks
+        const promises = [];
         if (this.mediaRecorder?.state === 'recording') {
-            this.mediaRecorder.stop();
+            const stopPromise = new Promise((resolve) => {
+                const originalOnStop = this.mediaRecorder.onstop;
+                this.mediaRecorder.onstop = (event) => {
+                    if (originalOnStop && this.mediaRecorder) {
+                        originalOnStop.call(this.mediaRecorder, event);
+                    }
+                    resolve();
+                };
+                this.mediaRecorder.stop();
+            });
+            promises.push(stopPromise);
         }
         if (this.originalRecorder?.state === 'recording') {
             this.originalRecorder.stop();
         }
-        // Clear recordings
-        this.chunkRecordings.clear();
+        // Wait for all stop handlers to complete before cleanup
+        Promise.all(promises).then(() => {
+            // Clear recordings after processing
+            this.chunkRecordings.clear();
+            // Reset recorders
+            this.mediaRecorder = null;
+            this.originalRecorder = null;
+            console.log(`✅ ${LOG_PREFIX.CONCAT_STREAM} Recording stopped completely`);
+        });
     }
     /**
      * Pause recording
