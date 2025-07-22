@@ -8,6 +8,7 @@ interface WaveformAnalyzerProps {
   isActive?: boolean;
   isPaused?: boolean;
   hideControls?: boolean;
+  isMuted?: boolean;
 }
 
 export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({ 
@@ -17,7 +18,8 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   color = '#667eea',
   isActive = true,
   isPaused = false,
-  hideControls = false
+  hideControls = false,
+  isMuted = false
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -73,12 +75,21 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   
   // Handle playback state changes
   useEffect(() => {
-    if (hideControls && analyser && !isPaused) {
-      draw();
-    } else if (hideControls && isPaused && animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
+    if (hideControls && audioRef.current) {
+      // Apply mute setting
+      audioRef.current.muted = isMuted;
+      
+      if (!isPaused) {
+        audioRef.current.play().catch(console.error);
+        if (analyser) draw();
+      } else {
+        audioRef.current.pause();
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+        }
+      }
     }
-  }, [isPaused, analyser, hideControls]);
+  }, [isPaused, analyser, hideControls, isMuted]);
 
   const initializeLiveStream = async () => {
     if (!stream || audioContext) return;

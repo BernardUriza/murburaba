@@ -2,13 +2,17 @@
   "name": "murmuraba-studio",
   "version": "1.3.0",
   "private": true,
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "npm run generate-build-info && next build",
     "start": "next start",
     "lint": "next lint",
-    "generate-build-info": "node scripts/generate-build-info.js"
+    "generate-build-info": "node scripts/generate-build-info.js",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "@jitsi/rnnoise-wasm": "^0.2.1",
@@ -19,11 +23,16 @@
     "sweetalert2": "^11.22.2"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",
     "eslint-config-next": "14.0.4",
+    "jest": "^30.0.5",
+    "jest-environment-jsdom": "^30.0.5",
     "typescript": "^5"
   }
 }

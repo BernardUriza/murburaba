@@ -687,8 +687,25 @@ export default function Home() {
           </button>
           <button 
             className="fab"
-            onClick={() => setShowAdvancedMetrics(!showAdvancedMetrics)}
+            onClick={() => {
+              if (!diagnostics) {
+                Swal.fire({
+                  toast: true,
+                  position: 'top-end',
+                  icon: 'warning',
+                  title: 'Engine not initialized',
+                  text: 'Initialize the engine first to see advanced metrics',
+                  showConfirmButton: false,
+                  timer: 3000,
+                  timerProgressBar: true
+                })
+                return
+              }
+              setShowAdvancedMetrics(!showAdvancedMetrics)
+            }}
             title={showAdvancedMetrics ? 'Hide Advanced Metrics' : 'Show Advanced Metrics'}
+            disabled={!isInitialized || !diagnostics}
+            style={{ opacity: (!isInitialized || !diagnostics) ? 0.5 : 1 }}
           >
             {showAdvancedMetrics ? '📉' : '📈'}
           </button>

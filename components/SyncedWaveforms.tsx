@@ -128,6 +128,7 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
           isActive={true}
           isPaused={!isPlaying}
           hideControls={true}
+          isMuted={true}
         />
       </div>
 

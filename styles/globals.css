@@ -1319,7 +1319,6 @@ p {
 
 /* Setting Group */
 .setting-group {
-  margin-bottom: var(--spacing-xl);
   padding: 0 var(--spacing-xl);
 }
 
@@ -1959,6 +1958,10 @@ p {
   margin-top: 0.5rem;
 }
 
+.radio-group input[type="radio"] {
+  margin: 0.5rem;
+}
+
 .radio-label {
   display: flex;
   align-items: center;
@@ -1999,12 +2002,14 @@ p {
 
 .checkbox-label input[type="checkbox"] {
   cursor: pointer;
+  margin: 0.5rem;
 }
 
 .control-btn.primary {
   background: var(--grass-light);
   color: white;
   border-color: var(--grass-light);
+  margin-top: 0.5rem;
 }
 
 .control-btn.primary:hover {

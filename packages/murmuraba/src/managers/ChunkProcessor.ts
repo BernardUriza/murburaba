@@ -22,7 +22,7 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
   private logger: Logger;
   private config: Required<ChunkConfig>;
   private currentChunk: Float32Array[] = [];
-  private chunkStartTime: number = Date.now();
+  private chunkStartTime: number = 0;
   private chunkIndex: number = 0;
   private sampleRate: number;
   private samplesPerChunk: number;
@@ -64,9 +64,9 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
    * Add samples to the current chunk
    */
   addSamples(samples: Float32Array): void {
-    // Initialize start time on first sample if not already set
+    // Initialize start time on first sample with high-resolution timer
     if (this.chunkStartTime === 0) {
-      this.chunkStartTime = Date.now();
+      this.chunkStartTime = performance.now();
     }
     
     this.currentChunk.push(new Float32Array(samples));
@@ -83,7 +83,7 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
    */
   private processCurrentChunk(): void {
     const chunkId = `chunk-${this.chunkIndex++}`;
-    const endTime = Date.now();
+    const endTime = performance.now();
     
     // Combine all samples into a single array
     const totalSamples = this.extractChunkSamples();
