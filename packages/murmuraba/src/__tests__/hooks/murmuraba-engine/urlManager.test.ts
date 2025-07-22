@@ -4,12 +4,13 @@
  */
 
 import { URLManager } from '../../../hooks/murmuraba-engine/urlManager';
+import { vi } from 'vitest';
 
 describe('URLManager - Medical Grade Memory Management', () => {
   let urlManager: URLManager;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     urlManager = new URLManager();
   });
 
@@ -94,7 +95,7 @@ describe('URLManager - Medical Grade Memory Management', () => {
       urlManager.revokeAllUrls();
 
       // Reset mock to count new calls
-      (URL.revokeObjectURL as jest.Mock).mockClear();
+      (URL.revokeObjectURL as vi.Mock).mockClear();
 
       // Revoking again should not call revokeObjectURL
       urlManager.revokeAllUrls();

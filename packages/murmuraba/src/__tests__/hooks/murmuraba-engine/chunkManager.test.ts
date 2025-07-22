@@ -4,6 +4,7 @@
  */
 
 import { ChunkManager } from '../../../hooks/murmuraba-engine/chunkManager';
+import { vi } from 'vitest';
 import { URLManager } from '../../../hooks/murmuraba-engine/urlManager';
 import { ProcessedChunk, RecordingState } from '../../../hooks/murmuraba-engine/types';
 import { MAX_CHUNKS_IN_MEMORY, CHUNKS_TO_KEEP_ON_OVERFLOW } from '../../../hooks/murmuraba-engine/constants';
@@ -13,7 +14,7 @@ describe('ChunkManager - Medical Grade Memory Management', () => {
   let urlManager: URLManager;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     urlManager = new URLManager();
     chunkManager = new ChunkManager(urlManager);
   });
@@ -52,7 +53,7 @@ describe('ChunkManager - Medical Grade Memory Management', () => {
   describe('Chunk Memory Limits', () => {
     it('should respect MAX_CHUNKS_IN_MEMORY limit', () => {
       const chunks: ProcessedChunk[] = [];
-      const revokeChunkUrlsSpy = jest.spyOn(urlManager, 'revokeChunkUrls');
+      const revokeChunkUrlsSpy = vi.spyOn(urlManager, 'revokeChunkUrls');
 
       // Add chunks up to the limit - 1
       for (let i = 0; i < MAX_CHUNKS_IN_MEMORY - 1; i++) {
@@ -70,7 +71,7 @@ describe('ChunkManager - Medical Grade Memory Management', () => {
 
     it('should remove oldest chunks when exceeding limit', () => {
       const chunks: ProcessedChunk[] = [];
-      const revokeChunkUrlsSpy = jest.spyOn(urlManager, 'revokeChunkUrls');
+      const revokeChunkUrlsSpy = vi.spyOn(urlManager, 'revokeChunkUrls');
 
       // Fill to MAX_CHUNKS_IN_MEMORY
       for (let i = 0; i < MAX_CHUNKS_IN_MEMORY; i++) {
@@ -125,7 +126,7 @@ describe('ChunkManager - Medical Grade Memory Management', () => {
     });
 
     it('should log warning when removing chunks', () => {
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
       const chunks: ProcessedChunk[] = [];
 
       // Fill to limit

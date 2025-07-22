@@ -3,31 +3,32 @@
  */
 
 import { RecordingManager } from '../../../hooks/murmuraba-engine/recordingManager';
+import { vi } from 'vitest';
 import { URLManager } from '../../../hooks/murmuraba-engine/urlManager';
 import { ProcessedChunk } from '../../../hooks/murmuraba-engine/types';
 
 describe('RecordingManager - Empty Blob Handling', () => {
   let recordingManager: RecordingManager;
   let urlManager: URLManager;
-  let consoleWarnSpy: jest.SpyInstance;
-  let consoleErrorSpy: jest.SpyInstance;
+  let consoleWarnSpy: vi.SpyInstance;
+  let consoleErrorSpy: vi.SpyInstance;
 
   beforeEach(() => {
     urlManager = new URLManager();
     recordingManager = new RecordingManager(urlManager);
     
     // Mock console methods
-    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-    jest.spyOn(console, 'log').mockImplementation();
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
+    vi.spyOn(console, 'log').mockImplementation();
     
     // Mock URL methods
-    global.URL.createObjectURL = jest.fn(() => `blob:test-${Math.random()}`);
-    global.URL.revokeObjectURL = jest.fn();
+    global.URL.createObjectURL = vi.fn(() => `blob:test-${Math.random()}`);
+    global.URL.revokeObjectURL = vi.fn();
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('Blob Size Validation', () => {
@@ -36,10 +37,10 @@ describe('RecordingManager - Empty Blob Handling', () => {
       let originalRecorderInstance: any;
       
       // Mock MediaRecorder
-      (global.MediaRecorder as any) = jest.fn().mockImplementation((stream, options) => {
+      (global.MediaRecorder as any) = vi.fn().mockImplementation((stream, options) => {
         const recorder = {
-          start: jest.fn(),
-          stop: jest.fn(),
+          start: vi.fn(),
+          stop: vi.fn(),
           state: 'inactive',
           ondataavailable: null,
           onstop: null,
@@ -57,7 +58,7 @@ describe('RecordingManager - Empty Blob Handling', () => {
 
       const processedStream = { getTracks: () => [] } as any;
       const originalStream = { getTracks: () => [] } as any;
-      const onChunkReady = jest.fn();
+      const onChunkReady = vi.fn();
 
       // Start recording
       await recordingManager.startConcatenatedStreaming(
@@ -89,10 +90,10 @@ describe('RecordingManager - Empty Blob Handling', () => {
       let onStopCallback: any;
       const capturedBlobs: Blob[] = [];
       
-      (global.MediaRecorder as any) = jest.fn().mockImplementation((stream) => {
+      (global.MediaRecorder as any) = vi.fn().mockImplementation((stream) => {
         const recorder = {
-          start: jest.fn(),
-          stop: jest.fn(() => {
+          start: vi.fn(),
+          stop: vi.fn(() => {
             if (onStopCallback) onStopCallback();
           }),
           state: 'recording',
@@ -155,10 +156,10 @@ describe('RecordingManager - Empty Blob Handling', () => {
       let originalRecorderInstance: any;
       let onStopCallback: any;
       
-      (global.MediaRecorder as any) = jest.fn().mockImplementation((stream) => {
+      (global.MediaRecorder as any) = vi.fn().mockImplementation((stream) => {
         const recorder = {
-          start: jest.fn(),
-          stop: jest.fn(() => {
+          start: vi.fn(),
+          stop: vi.fn(() => {
             if (onStopCallback && stream === processedStream) {
               onStopCallback();
             }
@@ -222,10 +223,10 @@ describe('RecordingManager - Empty Blob Handling', () => {
       let processedOnStop: any;
       let originalOnStop: any;
       
-      (global.MediaRecorder as any) = jest.fn().mockImplementation((stream) => {
+      (global.MediaRecorder as any) = vi.fn().mockImplementation((stream) => {
         const recorder = {
-          start: jest.fn(),
-          stop: jest.fn(() => {
+          start: vi.fn(),
+          stop: vi.fn(() => {
             if (stream === processedStream && processedOnStop) {
               processedOnStop();
             }
@@ -303,29 +304,29 @@ describe('RecordingManager - Empty Blob Handling', () => {
 
   describe('Bug: Stop Recording no detiene la grabación', () => {
     it('debe detener completamente la grabación cuando se llama stopRecording', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       
       const processedStream = new MediaStream();
       const originalStream = new MediaStream();
-      const onChunkReady = jest.fn();
+      const onChunkReady = vi.fn();
       
       let mediaRecorderInstance: any;
       
       // Mock MediaRecorder más completo
-      (global.MediaRecorder as any) = jest.fn().mockImplementation((stream) => {
+      (global.MediaRecorder as any) = vi.fn().mockImplementation((stream) => {
         const recorder = {
-          start: jest.fn(),
-          stop: jest.fn(),
+          start: vi.fn(),
+          stop: vi.fn(),
           state: 'inactive',
           ondataavailable: null,
           onstop: null,
         };
         
-        recorder.start = jest.fn(() => {
+        recorder.start = vi.fn(() => {
           recorder.state = 'recording';
         });
         
-        recorder.stop = jest.fn(() => {
+        recorder.stop = vi.fn(() => {
           recorder.state = 'inactive';
           if (recorder.onstop) recorder.onstop();
         });
@@ -353,41 +354,41 @@ describe('RecordingManager - Empty Blob Handling', () => {
       recordingManager.stopRecording();
       
       // Avanzar tiempo para verificar que no se inician nuevos ciclos
-      jest.advanceTimersByTime(10000); // 10 segundos
+      vi.advanceTimersByTime(10000); // 10 segundos
       
       // No debería haber llamadas a onChunkReady porque se detuvo
       expect(onChunkReady).not.toHaveBeenCalled();
       
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
   });
 
   describe('Bug: Solo aparece un chunk cuando deberían ser varios', () => {
     it('debe procesar múltiples chunks correctamente', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       
       const processedStream = new MediaStream();
       const originalStream = new MediaStream();
       const chunks: ProcessedChunk[] = [];
-      const onChunkReady = jest.fn((chunk: ProcessedChunk) => {
+      const onChunkReady = vi.fn((chunk: ProcessedChunk) => {
         chunks.push(chunk);
       });
       
       // Mock MediaRecorder que simula grabación real
-      (global.MediaRecorder as any) = jest.fn().mockImplementation((stream) => {
+      (global.MediaRecorder as any) = vi.fn().mockImplementation((stream) => {
         const recorder = {
-          start: jest.fn(),
-          stop: jest.fn(),
+          start: vi.fn(),
+          stop: vi.fn(),
           state: 'inactive',
           ondataavailable: null,
           onstop: null,
         };
         
-        recorder.start = jest.fn(() => {
+        recorder.start = vi.fn(() => {
           recorder.state = 'recording';
         });
         
-        recorder.stop = jest.fn(() => {
+        recorder.stop = vi.fn(() => {
           recorder.state = 'inactive';
           // Simular data disponible
           if (recorder.ondataavailable) {
@@ -414,8 +415,8 @@ describe('RecordingManager - Empty Blob Handling', () => {
       
       // Simular 3 ciclos completos
       for (let i = 0; i < 3; i++) {
-        jest.advanceTimersByTime(2000); // Duración del chunk
-        jest.advanceTimersByTime(500);  // Delay entre ciclos
+        vi.advanceTimersByTime(2000); // Duración del chunk
+        vi.advanceTimersByTime(500);  // Delay entre ciclos
       }
       
       // Detener grabación
@@ -425,7 +426,7 @@ describe('RecordingManager - Empty Blob Handling', () => {
       console.log('Chunks procesados:', chunks.length);
       expect(chunks.length).toBeGreaterThanOrEqual(2); // Al menos 2 chunks
       
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
   });
 });

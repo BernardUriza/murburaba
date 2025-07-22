@@ -5,32 +5,33 @@
  */
 
 import { renderHook, act } from '@testing-library/react';
+import { vi } from 'vitest';
 import { useAudioEngine } from '../../hooks/useAudioEngine';
 import { createAudioEngine } from '../../engines';
 
 // Mock the engines module
-jest.mock('../../engines', () => ({
-  createAudioEngine: jest.fn()
+vi.mock('../../engines', () => ({
+  createAudioEngine: vi.fn()
 }));
 
 // Mock AudioContext and related APIs
 const mockAudioContext = {
   state: 'running',
   sampleRate: 48000,
-  createScriptProcessor: jest.fn(),
-  createMediaStreamSource: jest.fn(),
-  createMediaStreamDestination: jest.fn(),
-  close: jest.fn()
+  createScriptProcessor: vi.fn(),
+  createMediaStreamSource: vi.fn(),
+  createMediaStreamDestination: vi.fn(),
+  close: vi.fn()
 };
 
 const mockProcessor = {
-  connect: jest.fn(),
-  disconnect: jest.fn(),
+  connect: vi.fn(),
+  disconnect: vi.fn(),
   onaudioprocess: null as any
 };
 
 const mockMediaStreamSource = {
-  connect: jest.fn()
+  connect: vi.fn()
 };
 
 const mockMediaStreamDestination = {
@@ -38,34 +39,34 @@ const mockMediaStreamDestination = {
 };
 
 const mockEngine = {
-  initialize: jest.fn().mockResolvedValue(undefined),
-  process: jest.fn(),
-  cleanup: jest.fn()
+  initialize: vi.fn().mockResolvedValue(undefined),
+  process: vi.fn(),
+  cleanup: vi.fn()
 };
 
 // Mock global AudioContext
-global.AudioContext = jest.fn().mockImplementation(() => mockAudioContext) as any;
+global.AudioContext = vi.fn().mockImplementation(() => mockAudioContext) as any;
 
 // Mock console methods
 beforeEach(() => {
-  jest.spyOn(console, 'warn').mockImplementation();
-  jest.spyOn(console, 'log').mockImplementation();
-  jest.spyOn(console, 'error').mockImplementation();
+  vi.spyOn(console, 'warn').mockImplementation();
+  vi.spyOn(console, 'log').mockImplementation();
+  vi.spyOn(console, 'error').mockImplementation();
 });
 
 afterEach(() => {
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
 });
 
 describe('useAudioEngine', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Setup mocks
     mockAudioContext.createScriptProcessor.mockReturnValue(mockProcessor);
     mockAudioContext.createMediaStreamSource.mockReturnValue(mockMediaStreamSource);
     mockAudioContext.createMediaStreamDestination.mockReturnValue(mockMediaStreamDestination);
-    (createAudioEngine as jest.Mock).mockReturnValue(mockEngine);
+    (createAudioEngine as vi.Mock).mockReturnValue(mockEngine);
     
     // Reset processor
     mockProcessor.onaudioprocess = null;
@@ -126,7 +127,7 @@ describe('useAudioEngine', () => {
         await result.current.initializeAudioEngine();
       });
       
-      jest.clearAllMocks();
+      vi.clearAllMocks();
       
       await act(async () => {
         await result.current.initializeAudioEngine();
@@ -206,7 +207,7 @@ describe('useAudioEngine', () => {
       const outputBuffer = new Float32Array(4096);
       
       // Mock the engine process to return input unchanged
-      mockEngine.process = jest.fn().mockImplementation((frame) => frame);
+      mockEngine.process = vi.fn().mockImplementation((frame) => frame);
       
       const mockEvent = {
         inputBuffer: { getChannelData: () => inputBuffer },
@@ -235,7 +236,7 @@ describe('useAudioEngine', () => {
       
       const outputBuffer = new Float32Array(4096);
       
-      mockEngine.process = jest.fn().mockImplementation((frame) => frame);
+      mockEngine.process = vi.fn().mockImplementation((frame) => frame);
       
       const mockEvent = {
         inputBuffer: { getChannelData: () => inputBuffer },
@@ -266,7 +267,7 @@ describe('useAudioEngine', () => {
       
       const outputBuffer = new Float32Array(4096);
       
-      mockEngine.process = jest.fn().mockImplementation((frame) => frame);
+      mockEngine.process = vi.fn().mockImplementation((frame) => frame);
       
       const mockEvent = {
         inputBuffer: { getChannelData: () => inputBuffer },
@@ -299,7 +300,7 @@ describe('useAudioEngine', () => {
       const outputBuffer = new Float32Array(4096);
       
       // Mock engine to heavily reduce signal (indicating noise)
-      mockEngine.process = jest.fn().mockImplementation((frame) => {
+      mockEngine.process = vi.fn().mockImplementation((frame) => {
         return frame.map((s: number) => s * 0.1); // 90% reduction
       });
       
@@ -325,17 +326,17 @@ describe('useAudioEngine', () => {
       
       // Mock Math.random to always return low value to trigger logging
       const originalRandom = Math.random;
-      Math.random = jest.fn().mockReturnValue(0.01);
+      Math.random = vi.fn().mockReturnValue(0.01);
       
       // Clear previous console.log calls
-      jest.clearAllMocks();
+      vi.clearAllMocks();
       
       const inputBuffer = new Float32Array(4096);
       inputBuffer.fill(0.01);
       
       const outputBuffer = new Float32Array(4096);
       
-      mockEngine.process = jest.fn().mockImplementation((frame) => frame);
+      mockEngine.process = vi.fn().mockImplementation((frame) => frame);
       
       const mockEvent = {
         inputBuffer: { getChannelData: () => inputBuffer },
@@ -347,7 +348,7 @@ describe('useAudioEngine', () => {
       });
       
       // Find the log call that contains all the expected strings
-      const logCalls = (console.log as jest.Mock).mock.calls;
+      const logCalls = (console.log as vi.Mock).mock.calls;
       const hasExpectedLog = logCalls.some(call => {
         return call[0]?.includes('[AudioEngine]') && 
                call.length >= 10 && 
@@ -399,7 +400,7 @@ describe('useAudioEngine', () => {
       const { result } = renderHook(() => useAudioEngine());
       
       // Make AudioContext creation fail
-      (global.AudioContext as jest.Mock).mockImplementationOnce(() => {
+      (global.AudioContext as vi.Mock).mockImplementationOnce(() => {
         throw new Error('AudioContext failed');
       });
       
@@ -445,7 +446,7 @@ describe('useAudioEngine', () => {
       
       const outputBuffer = new Float32Array(4096);
       
-      mockEngine.process = jest.fn().mockImplementation((frame) => frame);
+      mockEngine.process = vi.fn().mockImplementation((frame) => frame);
       
       const mockEvent = {
         inputBuffer: { getChannelData: () => inputBuffer },
@@ -509,7 +510,7 @@ describe('useAudioEngine', () => {
       inputBuffer.fill(0.5);
       const outputBuffer = new Float32Array(4096);
       
-      mockEngine.process = jest.fn().mockImplementation((frame) => frame);
+      mockEngine.process = vi.fn().mockImplementation((frame) => frame);
       
       const mockEvent = {
         inputBuffer: { getChannelData: () => inputBuffer },
@@ -601,7 +602,7 @@ describe('useAudioEngine', () => {
       
       const outputBuffer = new Float32Array(500);
       
-      mockEngine.process = jest.fn().mockImplementation((frame) => frame);
+      mockEngine.process = vi.fn().mockImplementation((frame) => frame);
       
       const mockEvent = {
         inputBuffer: { getChannelData: () => inputBuffer },

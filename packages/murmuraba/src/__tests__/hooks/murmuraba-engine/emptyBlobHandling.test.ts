@@ -5,33 +5,34 @@
  */
 
 import { renderHook, act } from '@testing-library/react';
+import { vi } from 'vitest';
 import { useMurmubaraEngine } from '../../../hooks/murmuraba-engine';
 
 // Mock dependencies
-jest.mock('../../../api', () => ({
-  initializeAudioEngine: jest.fn().mockResolvedValue(undefined),
-  destroyEngine: jest.fn().mockResolvedValue(undefined),
-  processStream: jest.fn(),
-  processStreamChunked: jest.fn().mockResolvedValue({
+vi.mock('../../../api', () => ({
+  initializeAudioEngine: vi.fn().mockResolvedValue(undefined),
+  destroyEngine: vi.fn().mockResolvedValue(undefined),
+  processStream: vi.fn(),
+  processStreamChunked: vi.fn().mockResolvedValue({
     processedStream: {
-      getTracks: () => [{ stop: jest.fn() }]
+      getTracks: () => [{ stop: vi.fn() }]
     },
     controller: {
-      stop: jest.fn(),
-      getMetrics: jest.fn().mockReturnValue({ frameCount: 100 })
+      stop: vi.fn(),
+      getMetrics: vi.fn().mockReturnValue({ frameCount: 100 })
     }
   }),
-  getEngineStatus: jest.fn().mockReturnValue('ready'),
-  getDiagnostics: jest.fn().mockReturnValue(null),
-  onMetricsUpdate: jest.fn().mockReturnValue(() => {}),
+  getEngineStatus: vi.fn().mockReturnValue('ready'),
+  getDiagnostics: vi.fn().mockReturnValue(null),
+  onMetricsUpdate: vi.fn().mockReturnValue(() => {}),
 }));
 
-jest.mock('../../../utils/audioConverter', () => ({
-  getAudioConverter: jest.fn().mockReturnValue({
-    webmToWav: jest.fn().mockResolvedValue(new Blob(['wav'], { type: 'audio/wav' })),
-    webmToMp3: jest.fn().mockResolvedValue(new Blob(['mp3'], { type: 'audio/mp3' }))
+vi.mock('../../../utils/audioConverter', () => ({
+  getAudioConverter: vi.fn().mockReturnValue({
+    webmToWav: vi.fn().mockResolvedValue(new Blob(['wav'], { type: 'audio/wav' })),
+    webmToMp3: vi.fn().mockResolvedValue(new Blob(['mp3'], { type: 'audio/mp3' }))
   }),
-  destroyAudioConverter: jest.fn()
+  destroyAudioConverter: vi.fn()
 }));
 
 describe('Empty Blob Handling - TDD', () => {
@@ -39,39 +40,39 @@ describe('Empty Blob Handling - TDD', () => {
   let dataAvailableCallback: ((event: any) => void) | null = null;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Setup MediaRecorder mock
     mockMediaRecorder = {
-      start: jest.fn(),
-      stop: jest.fn(),
-      pause: jest.fn(),
-      resume: jest.fn(),
+      start: vi.fn(),
+      stop: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
       state: 'inactive',
-      addEventListener: jest.fn((event, callback) => {
+      addEventListener: vi.fn((event, callback) => {
         if (event === 'dataavailable') {
           dataAvailableCallback = callback;
         }
       }),
-      removeEventListener: jest.fn(),
+      removeEventListener: vi.fn(),
     };
 
-    (global.MediaRecorder as any) = jest.fn(() => mockMediaRecorder);
-    global.MediaRecorder.isTypeSupported = jest.fn(() => true);
+    (global.MediaRecorder as any) = vi.fn(() => mockMediaRecorder);
+    global.MediaRecorder.isTypeSupported = vi.fn(() => true);
 
     // Mock getUserMedia
     Object.defineProperty(global.navigator, 'mediaDevices', {
       value: {
-        getUserMedia: jest.fn().mockResolvedValue({
-          getTracks: () => [{ stop: jest.fn() }]
+        getUserMedia: vi.fn().mockResolvedValue({
+          getTracks: () => [{ stop: vi.fn() }]
         })
       },
       writable: true
     });
 
     // Mock URL
-    global.URL.createObjectURL = jest.fn(() => `blob:test-${Math.random()}`);
-    global.URL.revokeObjectURL = jest.fn();
+    global.URL.createObjectURL = vi.fn(() => `blob:test-${Math.random()}`);
+    global.URL.revokeObjectURL = vi.fn();
   });
 
   describe('Empty Blob Detection', () => {
@@ -134,7 +135,7 @@ describe('Empty Blob Handling - TDD', () => {
     });
 
     it('should log warning when empty blob is detected', async () => {
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
       
       const { result } = renderHook(() => useMurmubaraEngine());
 
@@ -170,12 +171,12 @@ describe('Empty Blob Handling - TDD', () => {
       });
 
       // Mock fetch to return different sizes for processed vs original
-      global.fetch = jest.fn()
+      global.fetch = vi.fn()
         .mockResolvedValueOnce({
-          blob: jest.fn().mockResolvedValue(new Blob(['processed data']))
+          blob: vi.fn().mockResolvedValue(new Blob(['processed data']))
         })
         .mockResolvedValueOnce({
-          blob: jest.fn().mockResolvedValue(new Blob([])) // Empty original
+          blob: vi.fn().mockResolvedValue(new Blob([])) // Empty original
         });
 
       await act(async () => {

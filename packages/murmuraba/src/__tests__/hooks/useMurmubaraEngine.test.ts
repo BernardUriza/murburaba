@@ -4,25 +4,26 @@
  */
 
 import { renderHook, act } from '@testing-library/react';
+import { vi } from 'vitest';
 import { useMurmubaraEngine } from '../../hooks/murmuraba-engine';
 import * as api from '../../api';
 import { destroyAudioConverter } from '../../utils/audioConverter';
 
 // Mock the API module
-jest.mock('../../api', () => ({
-  initializeAudioEngine: jest.fn().mockResolvedValue(undefined),
-  destroyEngine: jest.fn().mockResolvedValue(undefined),
-  processStream: jest.fn(),
-  processStreamChunked: jest.fn(),
-  getEngineStatus: jest.fn().mockReturnValue('ready'),
-  getDiagnostics: jest.fn().mockReturnValue({
+vi.mock('../../api', () => ({
+  initializeAudioEngine: vi.fn().mockResolvedValue(undefined),
+  destroyEngine: vi.fn().mockResolvedValue(undefined),
+  processStream: vi.fn(),
+  processStreamChunked: vi.fn(),
+  getEngineStatus: vi.fn().mockReturnValue('ready'),
+  getDiagnostics: vi.fn().mockReturnValue({
     wasmLoaded: true,
     audioContextState: 'running',
     processingLatency: 10,
     memoryUsage: 1000000,
     streamCount: 1,
   }),
-  onMetricsUpdate: jest.fn((callback) => {
+  onMetricsUpdate: vi.fn((callback) => {
     callback({
       processingLatency: 10,
       frameCount: 100,
@@ -34,40 +35,40 @@ jest.mock('../../api', () => ({
     });
     return () => {};
   }),
-  getEngine: jest.fn(),
+  getEngine: vi.fn(),
 }));
 
 // Mock audio converter
-jest.mock('../../utils/audioConverter', () => ({
-  getAudioConverter: jest.fn().mockReturnValue({
-    webmToWav: jest.fn().mockResolvedValue(new Blob(['wav'], { type: 'audio/wav' })),
-    webmToMp3: jest.fn().mockResolvedValue(new Blob(['mp3'], { type: 'audio/mp3' }))
+vi.mock('../../utils/audioConverter', () => ({
+  getAudioConverter: vi.fn().mockReturnValue({
+    webmToWav: vi.fn().mockResolvedValue(new Blob(['wav'], { type: 'audio/wav' })),
+    webmToMp3: vi.fn().mockResolvedValue(new Blob(['mp3'], { type: 'audio/mp3' }))
   }),
-  destroyAudioConverter: jest.fn(),
-  AudioConverter: jest.fn()
+  destroyAudioConverter: vi.fn(),
+  AudioConverter: vi.fn()
 }));
 
 describe('useMurmubaraEngine', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Mock browser APIs
-    global.URL.createObjectURL = jest.fn(() => `blob:test-${Math.random()}`);
-    global.URL.revokeObjectURL = jest.fn();
+    global.URL.createObjectURL = vi.fn(() => `blob:test-${Math.random()}`);
+    global.URL.revokeObjectURL = vi.fn();
     Object.defineProperty(global.navigator, 'mediaDevices', {
       value: {
-        getUserMedia: jest.fn().mockResolvedValue({
-          getTracks: () => [{ stop: jest.fn() }]
+        getUserMedia: vi.fn().mockResolvedValue({
+          getTracks: () => [{ stop: vi.fn() }]
         })
       },
       writable: true
     });
-    global.MediaRecorder = jest.fn() as any;
-    jest.spyOn(console, 'error').mockImplementation();
-    jest.spyOn(console, 'warn').mockImplementation();
+    global.MediaRecorder = vi.fn() as any;
+    vi.spyOn(console, 'error').mockImplementation();
+    vi.spyOn(console, 'warn').mockImplementation();
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('Basic Functionality', () => {
@@ -104,7 +105,7 @@ describe('useMurmubaraEngine', () => {
     });
 
     it('should handle initialization errors', async () => {
-      (api.initializeAudioEngine as jest.Mock).mockRejectedValueOnce(new Error('Init failed'));
+      (api.initializeAudioEngine as vi.Mock).mockRejectedValueOnce(new Error('Init failed'));
       
       const { result } = renderHook(() => useMurmubaraEngine());
 
@@ -132,18 +133,18 @@ describe('useMurmubaraEngine', () => {
   describe('Recording Functions', () => {
     it('should start recording', async () => {
       const mockStream = {
-        getTracks: jest.fn(() => [{ stop: jest.fn() }])
+        getTracks: vi.fn(() => [{ stop: vi.fn() }])
       };
       
       const mockMediaRecorder = {
-        start: jest.fn(),
-        stop: jest.fn(),
+        start: vi.fn(),
+        stop: vi.fn(),
         state: 'inactive',
         ondataavailable: null,
         onstop: null,
       };
       
-      (global.navigator.mediaDevices.getUserMedia as jest.Mock).mockResolvedValue(mockStream);
+      (global.navigator.mediaDevices.getUserMedia as vi.Mock).mockResolvedValue(mockStream);
       (global.MediaRecorder as any).mockImplementation(() => mockMediaRecorder);
       
       const { result } = renderHook(() => useMurmubaraEngine());
@@ -170,8 +171,8 @@ describe('useMurmubaraEngine', () => {
 
     it('should stop recording', async () => {
       const mockMediaRecorder = {
-        start: jest.fn(),
-        stop: jest.fn(),
+        start: vi.fn(),
+        stop: vi.fn(),
         state: 'recording',
         ondataavailable: null,
         onstop: null,
@@ -204,20 +205,20 @@ describe('useMurmubaraEngine', () => {
 
     it('should pause and resume recording', async () => {
       const mockStream = {
-        getTracks: jest.fn(() => [{ stop: jest.fn() }])
+        getTracks: vi.fn(() => [{ stop: vi.fn() }])
       };
       
       const mockMediaRecorder = {
-        start: jest.fn(),
-        stop: jest.fn(),
-        pause: jest.fn(),
-        resume: jest.fn(),
+        start: vi.fn(),
+        stop: vi.fn(),
+        pause: vi.fn(),
+        resume: vi.fn(),
         state: 'recording',
         ondataavailable: null,
         onstop: null,
       };
       
-      (global.navigator.mediaDevices.getUserMedia as jest.Mock).mockResolvedValue(mockStream);
+      (global.navigator.mediaDevices.getUserMedia as vi.Mock).mockResolvedValue(mockStream);
       (global.MediaRecorder as any).mockImplementation(() => mockMediaRecorder);
       
       const { result } = renderHook(() => useMurmubaraEngine());
@@ -320,8 +321,8 @@ describe('useMurmubaraEngine', () => {
       });
 
       // Mock fetch for blob URL
-      global.fetch = jest.fn().mockResolvedValue({
-        blob: jest.fn().mockResolvedValue(new Blob(['webm data'], { type: 'audio/webm' })),
+      global.fetch = vi.fn().mockResolvedValue({
+        blob: vi.fn().mockResolvedValue(new Blob(['webm data'], { type: 'audio/webm' })),
       });
 
       // We can't actually test this without chunks, but verify the method exists
@@ -381,7 +382,7 @@ describe('useMurmubaraEngine', () => {
       const { result } = renderHook(() => useMurmubaraEngine());
       
       // Force an error
-      (api.initializeAudioEngine as jest.Mock).mockRejectedValueOnce(new Error('Test error'));
+      (api.initializeAudioEngine as vi.Mock).mockRejectedValueOnce(new Error('Test error'));
       
       await act(async () => {
         try {
@@ -499,7 +500,7 @@ describe('useMurmubaraEngine', () => {
       });
       
       // Mock getDiagnostics to throw
-      (api.getDiagnostics as jest.Mock).mockImplementationOnce(() => {
+      (api.getDiagnostics as vi.Mock).mockImplementationOnce(() => {
         throw new Error('Diagnostics failed');
       });
       
@@ -524,9 +525,9 @@ describe('useMurmubaraEngine', () => {
   
   describe('Error Handling', () => {
     it('should call onInitError when initialization fails', async () => {
-      const onInitError = jest.fn();
+      const onInitError = vi.fn();
       const error = new Error('Init failed');
-      (api.initializeAudioEngine as jest.Mock).mockRejectedValueOnce(error);
+      (api.initializeAudioEngine as vi.Mock).mockRejectedValueOnce(error);
       
       const { result } = renderHook(() => useMurmubaraEngine({ onInitError }));
       
@@ -538,7 +539,7 @@ describe('useMurmubaraEngine', () => {
     });
     
     it('should handle non-Error objects in initialization', async () => {
-      (api.initializeAudioEngine as jest.Mock).mockRejectedValueOnce('String error');
+      (api.initializeAudioEngine as vi.Mock).mockRejectedValueOnce('String error');
       
       const { result } = renderHook(() => useMurmubaraEngine());
       
@@ -561,7 +562,7 @@ describe('useMurmubaraEngine', () => {
       });
       
       const error = new Error('Destroy failed');
-      (api.destroyEngine as jest.Mock).mockRejectedValueOnce(error);
+      (api.destroyEngine as vi.Mock).mockRejectedValueOnce(error);
       
       await act(async () => {
         try {

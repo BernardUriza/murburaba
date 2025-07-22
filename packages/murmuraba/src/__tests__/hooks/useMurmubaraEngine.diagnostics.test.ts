@@ -4,55 +4,56 @@
  */
 
 import { renderHook, act, waitFor } from '@testing-library/react';
+import { vi } from 'vitest';
 import { useMurmubaraEngine } from '../../hooks/murmuraba-engine';
 import * as api from '../../api';
 
 // Mock the API module
-jest.mock('../../api', () => ({
-  initializeAudioEngine: jest.fn().mockResolvedValue(undefined),
-  destroyEngine: jest.fn().mockResolvedValue(undefined),
-  getEngineStatus: jest.fn().mockReturnValue('ready'),
-  getDiagnostics: jest.fn(),
-  onMetricsUpdate: jest.fn(() => () => {}),
+vi.mock('../../api', () => ({
+  initializeAudioEngine: vi.fn().mockResolvedValue(undefined),
+  destroyEngine: vi.fn().mockResolvedValue(undefined),
+  getEngineStatus: vi.fn().mockReturnValue('ready'),
+  getDiagnostics: vi.fn(),
+  onMetricsUpdate: vi.fn(() => () => {}),
 }));
 
 // Mock audio converter
-jest.mock('../../utils/audioConverter', () => ({
-  getAudioConverter: jest.fn().mockReturnValue({
-    webmToWav: jest.fn().mockResolvedValue(new Blob(['wav'], { type: 'audio/wav' })),
-    webmToMp3: jest.fn().mockResolvedValue(new Blob(['mp3'], { type: 'audio/mp3' }))
+vi.mock('../../utils/audioConverter', () => ({
+  getAudioConverter: vi.fn().mockReturnValue({
+    webmToWav: vi.fn().mockResolvedValue(new Blob(['wav'], { type: 'audio/wav' })),
+    webmToMp3: vi.fn().mockResolvedValue(new Blob(['mp3'], { type: 'audio/mp3' }))
   }),
-  destroyAudioConverter: jest.fn(),
+  destroyAudioConverter: vi.fn(),
 }));
 
 describe('useMurmubaraEngine - Diagnostics Race Condition', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Mock browser APIs
-    global.URL.createObjectURL = jest.fn(() => `blob:test-${Math.random()}`);
-    global.URL.revokeObjectURL = jest.fn();
+    global.URL.createObjectURL = vi.fn(() => `blob:test-${Math.random()}`);
+    global.URL.revokeObjectURL = vi.fn();
     Object.defineProperty(global.navigator, 'mediaDevices', {
       value: {
-        getUserMedia: jest.fn().mockResolvedValue({
-          getTracks: () => [{ stop: jest.fn() }]
+        getUserMedia: vi.fn().mockResolvedValue({
+          getTracks: () => [{ stop: vi.fn() }]
         })
       },
       writable: true
     });
-    global.MediaRecorder = jest.fn() as any;
-    jest.spyOn(console, 'error').mockImplementation();
-    jest.spyOn(console, 'warn').mockImplementation();
+    global.MediaRecorder = vi.fn() as any;
+    vi.spyOn(console, 'error').mockImplementation();
+    vi.spyOn(console, 'warn').mockImplementation();
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('should fail to get diagnostics due to race condition during initialization', async () => {
     // This test proves the bug: getDiagnostics is called before isInitialized is true
     let getDiagnosticsCallCount = 0;
     
-    (api.getDiagnostics as jest.Mock).mockImplementation(() => {
+    (api.getDiagnostics as vi.Mock).mockImplementation(() => {
       getDiagnosticsCallCount++;
       // First call happens during init when isInitialized might still be false
       if (getDiagnosticsCallCount === 1) {
@@ -86,7 +87,7 @@ describe('useMurmubaraEngine - Diagnostics Race Condition', () => {
   });
 
   it('should automatically update diagnostics after initialization due to useEffect fix', async () => {
-    (api.getDiagnostics as jest.Mock).mockReturnValue({
+    (api.getDiagnostics as vi.Mock).mockReturnValue({
       wasmLoaded: true,
       audioContextState: 'running',
       processingLatency: 10,
@@ -117,7 +118,7 @@ describe('useMurmubaraEngine - Diagnostics Race Condition', () => {
     // This test verifies the fix works with the new useEffect
     let isInitializedState = false;
     
-    (api.getDiagnostics as jest.Mock).mockImplementation(() => {
+    (api.getDiagnostics as vi.Mock).mockImplementation(() => {
       // Only return diagnostics if initialized
       if (!isInitializedState) {
         return null;
@@ -154,7 +155,7 @@ describe('useMurmubaraEngine - Diagnostics Race Condition', () => {
 
   it('should show that Show Advanced Metrics button is disabled when diagnostics is null', async () => {
     // Direct simulation of the button's disabled state logic
-    (api.getDiagnostics as jest.Mock).mockReturnValue(null);
+    (api.getDiagnostics as vi.Mock).mockReturnValue(null);
 
     const { result } = renderHook(() => useMurmubaraEngine());
 

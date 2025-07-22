@@ -4,43 +4,44 @@
  */
 
 import { AudioExporter } from '../../../hooks/murmuraba-engine/audioExporter';
+import { vi } from 'vitest';
 import { ProcessedChunk } from '../../../hooks/murmuraba-engine/types';
 import { AudioConverter } from '../../../utils/audioConverter';
 
 // Mock AudioConverter static methods
-jest.mock('../../../utils/audioConverter', () => ({
+vi.mock('../../../utils/audioConverter', () => ({
   AudioConverter: {
-    webmToWav: jest.fn().mockResolvedValue(new Blob(['wav data'], { type: 'audio/wav' })),
-    webmToMp3: jest.fn().mockResolvedValue(new Blob(['mp3 data'], { type: 'audio/mp3' }))
+    webmToWav: vi.fn().mockResolvedValue(new Blob(['wav data'], { type: 'audio/wav' })),
+    webmToMp3: vi.fn().mockResolvedValue(new Blob(['mp3 data'], { type: 'audio/mp3' }))
   }
 }));
 
 // Mock fetch
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 // Mock URL.createObjectURL and revokeObjectURL
-global.URL.createObjectURL = jest.fn((blob) => `blob:mock-${Date.now()}`);
-global.URL.revokeObjectURL = jest.fn();
+global.URL.createObjectURL = vi.fn((blob) => `blob:mock-${Date.now()}`);
+global.URL.revokeObjectURL = vi.fn();
 
 // Mock document.createElement for download functionality
 const mockAnchor = {
-  click: jest.fn(),
+  click: vi.fn(),
   href: '',
   download: '',
   style: {}
 };
-global.document.createElement = jest.fn().mockReturnValue(mockAnchor);
-global.document.body.appendChild = jest.fn();
-global.document.body.removeChild = jest.fn();
+global.document.createElement = vi.fn().mockReturnValue(mockAnchor);
+global.document.body.appendChild = vi.fn();
+global.document.body.removeChild = vi.fn();
 
 // Mock console methods
 beforeEach(() => {
-  jest.spyOn(console, 'log').mockImplementation();
-  jest.spyOn(console, 'error').mockImplementation();
+  vi.spyOn(console, 'log').mockImplementation();
+  vi.spyOn(console, 'error').mockImplementation();
 });
 
 afterEach(() => {
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
 });
 
 describe('AudioExporter', () => {
@@ -48,23 +49,23 @@ describe('AudioExporter', () => {
   let mockAudioConverter: AudioConverter;
   
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Reset timers
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     
     audioExporter = new AudioExporter();
     mockAudioConverter = {} as AudioConverter;
     audioExporter.setAudioConverter(mockAudioConverter);
     
     // Reset fetch mock
-    (global.fetch as jest.Mock).mockResolvedValue({
-      blob: jest.fn().mockResolvedValue(new Blob(['webm data'], { type: 'audio/webm' }))
+    (global.fetch as vi.Mock).mockResolvedValue({
+      blob: vi.fn().mockResolvedValue(new Blob(['webm data'], { type: 'audio/webm' }))
     });
   });
   
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
   
   const createMockChunk = (id: string): ProcessedChunk => ({
@@ -135,7 +136,7 @@ describe('AudioExporter', () => {
     
     it('should handle fetch errors', async () => {
       const chunk = createMockChunk('test-1');
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+      (global.fetch as vi.Mock).mockRejectedValueOnce(new Error('Network error'));
       
       await expect(audioExporter.exportChunkAsWav(chunk, 'processed'))
         .rejects.toThrow('Network error');
@@ -196,7 +197,7 @@ describe('AudioExporter', () => {
       expect(document.body.removeChild).toHaveBeenCalledWith(mockAnchor);
       
       // Fast-forward to verify URL revocation
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
       expect(URL.revokeObjectURL).toHaveBeenCalled();
     });
     
@@ -255,7 +256,7 @@ describe('AudioExporter', () => {
     it('should propagate export errors with WAV', async () => {
       const chunk = createMockChunk('test-1');
       
-      (AudioConverter.webmToWav as jest.Mock).mockRejectedValueOnce(new Error('WAV conversion failed'));
+      (AudioConverter.webmToWav as vi.Mock).mockRejectedValueOnce(new Error('WAV conversion failed'));
       
       await expect(audioExporter.exportChunkAsWav(chunk, 'processed'))
         .rejects.toThrow('WAV conversion failed');
@@ -264,7 +265,7 @@ describe('AudioExporter', () => {
     it('should propagate export errors with MP3', async () => {
       const chunk = createMockChunk('test-1');
       
-      (AudioConverter.webmToMp3 as jest.Mock).mockRejectedValueOnce(new Error('MP3 conversion failed'));
+      (AudioConverter.webmToMp3 as vi.Mock).mockRejectedValueOnce(new Error('MP3 conversion failed'));
       
       await expect(audioExporter.exportChunkAsMp3(chunk, 'processed'))
         .rejects.toThrow('MP3 conversion failed');
@@ -274,7 +275,7 @@ describe('AudioExporter', () => {
       const chunk = createMockChunk('test-1');
       
       // Make exportChunkAsWav throw
-      (AudioConverter.webmToWav as jest.Mock).mockRejectedValueOnce(new Error('Export failed'));
+      (AudioConverter.webmToWav as vi.Mock).mockRejectedValueOnce(new Error('Export failed'));
       
       await expect(audioExporter.downloadChunk(chunk, 'wav', 'processed'))
         .rejects.toThrow('Export failed');
