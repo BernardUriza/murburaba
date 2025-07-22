@@ -4,32 +4,33 @@
  */
 
 import { ChunkProcessor } from '../../managers/ChunkProcessor';
+import { vi } from 'vitest';
 import { Logger } from '../../core/Logger';
 import { MetricsManager } from '../../managers/MetricsManager';
 import { ChunkConfig } from '../../types';
 
 // Mock dependencies
-jest.mock('../../core/Logger');
-jest.mock('../../managers/MetricsManager');
+vi.mock('../../core/Logger');
+vi.mock('../../managers/MetricsManager');
 
 describe('ChunkProcessor - High Resolution Timing', () => {
   let processor: ChunkProcessor;
-  let mockLogger: jest.Mocked<Logger>;
-  let mockMetricsManager: jest.Mocked<MetricsManager>;
+  let mockLogger: vi.Mocked<Logger>;
+  let mockMetricsManager: vi.Mocked<MetricsManager>;
   let config: ChunkConfig;
-  let chunkProcessedCallback: jest.Mock;
+  let chunkProcessedCallback: vi.Mock;
 
   beforeEach(() => {
     // Create mocks
-    mockLogger = new Logger('test') as jest.Mocked<Logger>;
-    mockMetricsManager = new MetricsManager(mockLogger) as jest.Mocked<MetricsManager>;
+    mockLogger = new Logger('test') as vi.Mocked<Logger>;
+    mockMetricsManager = new MetricsManager(mockLogger) as vi.Mocked<MetricsManager>;
     
     // Mock metrics calculations
-    mockMetricsManager.calculateRMS = jest.fn().mockReturnValue(0.5);
-    mockMetricsManager.calculatePeak = jest.fn().mockReturnValue(0.8);
-    mockMetricsManager.recordChunk = jest.fn();
+    mockMetricsManager.calculateRMS = vi.fn().mockReturnValue(0.5);
+    mockMetricsManager.calculatePeak = vi.fn().mockReturnValue(0.8);
+    mockMetricsManager.recordChunk = vi.fn();
 
-    chunkProcessedCallback = jest.fn();
+    chunkProcessedCallback = vi.fn();
     config = {
       chunkDuration: 100, // 100ms chunks
       onChunkProcessed: chunkProcessedCallback,
@@ -102,7 +103,7 @@ describe('ChunkProcessor - High Resolution Timing', () => {
       const originalPerformanceNow = global.performance.now;
       let callCount = 0;
       
-      global.performance.now = jest.fn(() => {
+      global.performance.now = vi.fn(() => {
         // Return incrementing microsecond values
         return 1000 + (callCount++ * 0.123);
       });

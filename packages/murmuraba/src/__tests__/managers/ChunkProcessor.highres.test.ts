@@ -3,21 +3,22 @@
  */
 
 import { ChunkProcessor } from '../../managers/ChunkProcessor';
+import { vi } from 'vitest';
 import { Logger } from '../../core/Logger';
 import { MetricsManager } from '../../managers/MetricsManager';
 
 // Mock dependencies
 const mockLogger = {
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
 } as unknown as Logger;
 
 const mockMetricsManager = {
-  calculateRMS: jest.fn().mockReturnValue(0.5),
-  calculatePeak: jest.fn().mockReturnValue(0.8),
-  recordChunk: jest.fn(),
+  calculateRMS: vi.fn().mockReturnValue(0.5),
+  calculatePeak: vi.fn().mockReturnValue(0.8),
+  recordChunk: vi.fn(),
 } as unknown as MetricsManager;
 
 describe('ChunkProcessor - High Resolution Timing Integration', () => {

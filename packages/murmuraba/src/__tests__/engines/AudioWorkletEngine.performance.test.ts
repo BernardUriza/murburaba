@@ -1,4 +1,5 @@
 import { AudioWorkletEngine } from '../../engines/AudioWorkletEngine';
+import { vi } from 'vitest';
 import { RNNoiseEngine } from '../../engines/RNNoiseEngine';
 
 describe('AudioWorkletEngine Performance Benchmarks', () => {
@@ -13,7 +14,7 @@ describe('AudioWorkletEngine Performance Benchmarks', () => {
     originalOfflineAudioContext = (global as any).OfflineAudioContext;
     
     // Mock performance.now for consistent timing
-    jest.spyOn(performance, 'now').mockImplementation(() => Date.now());
+    vi.spyOn(performance, 'now').mockImplementation(() => Date.now());
   });
 
   afterEach(() => {
@@ -21,7 +22,7 @@ describe('AudioWorkletEngine Performance Benchmarks', () => {
     (global as any).AudioContext = originalAudioContext;
     (global as any).AudioWorklet = originalAudioWorklet;
     (global as any).OfflineAudioContext = originalOfflineAudioContext;
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('Main Thread vs Audio Thread Performance', () => {
@@ -30,52 +31,52 @@ describe('AudioWorkletEngine Performance Benchmarks', () => {
       const setupMocks = () => {
         const mockAudioContext = {
           audioWorklet: {
-            addModule: jest.fn().mockResolvedValue(undefined)
+            addModule: vi.fn().mockResolvedValue(undefined)
           },
           sampleRate: 48000,
-          close: jest.fn()
+          close: vi.fn()
         };
         
-        (global as any).AudioContext = jest.fn(() => mockAudioContext);
-        (global as any).AudioWorklet = jest.fn();
+        (global as any).AudioContext = vi.fn(() => mockAudioContext);
+        (global as any).AudioWorklet = vi.fn();
         
         let messageHandler: any = null;
-        (global as any).AudioWorkletNode = jest.fn(() => ({
-          connect: jest.fn(),
-          disconnect: jest.fn(),
+        (global as any).AudioWorkletNode = vi.fn(() => ({
+          connect: vi.fn(),
+          disconnect: vi.fn(),
           port: {
-            postMessage: jest.fn(),
+            postMessage: vi.fn(),
             get onmessage() { return messageHandler; },
             set onmessage(handler) { messageHandler = handler; }
           }
         }));
         
-        (global as any).OfflineAudioContext = jest.fn((channels, length, sampleRate) => ({
-          createBuffer: jest.fn(() => ({
-            copyToChannel: jest.fn(),
-            copyFromChannel: jest.fn((target) => {
+        (global as any).OfflineAudioContext = vi.fn((channels, length, sampleRate) => ({
+          createBuffer: vi.fn(() => ({
+            copyToChannel: vi.fn(),
+            copyFromChannel: vi.fn((target) => {
               // Simulate processed audio
               for (let i = 0; i < target.length; i++) {
                 target[i] = Math.sin(2 * Math.PI * i / 480) * 0.5;
               }
             })
           })),
-          createBufferSource: jest.fn(() => ({
+          createBufferSource: vi.fn(() => ({
             buffer: null,
-            connect: jest.fn(),
-            start: jest.fn()
+            connect: vi.fn(),
+            start: vi.fn()
           })),
           audioWorklet: {
-            addModule: jest.fn().mockResolvedValue(undefined)
+            addModule: vi.fn().mockResolvedValue(undefined)
           },
           destination: {},
           sampleRate,
-          startRendering: jest.fn().mockImplementation(() => {
+          startRendering: vi.fn().mockImplementation(() => {
             // Simulate AudioWorklet processing time (faster)
             return new Promise(resolve => {
               setTimeout(() => {
                 resolve({
-                  copyFromChannel: jest.fn((target) => {
+                  copyFromChannel: vi.fn((target) => {
                     for (let i = 0; i < target.length; i++) {
                       target[i] = Math.sin(2 * Math.PI * i / 480) * 0.5;
                     }
@@ -87,10 +88,10 @@ describe('AudioWorkletEngine Performance Benchmarks', () => {
         }));
         
         (global as any).URL = {
-          createObjectURL: jest.fn(() => 'blob://mock-url'),
-          revokeObjectURL: jest.fn()
+          createObjectURL: vi.fn(() => 'blob://mock-url'),
+          revokeObjectURL: vi.fn()
         };
-        (global as any).Blob = jest.fn();
+        (global as any).Blob = vi.fn();
       };
 
       setupMocks();
@@ -145,32 +146,32 @@ describe('AudioWorkletEngine Performance Benchmarks', () => {
       const setupMocks = () => {
         const mockAudioContext = {
           audioWorklet: {
-            addModule: jest.fn().mockResolvedValue(undefined)
+            addModule: vi.fn().mockResolvedValue(undefined)
           },
           sampleRate: 48000,
-          createScriptProcessor: jest.fn(() => ({
-            connect: jest.fn(),
-            disconnect: jest.fn(),
+          createScriptProcessor: vi.fn(() => ({
+            connect: vi.fn(),
+            disconnect: vi.fn(),
             onaudioprocess: null
           }))
         };
         
-        (global as any).AudioContext = jest.fn(() => mockAudioContext);
-        (global as any).AudioWorklet = jest.fn();
-        (global as any).AudioWorkletNode = jest.fn(() => ({
-          connect: jest.fn(),
-          disconnect: jest.fn(),
+        (global as any).AudioContext = vi.fn(() => mockAudioContext);
+        (global as any).AudioWorklet = vi.fn();
+        (global as any).AudioWorkletNode = vi.fn(() => ({
+          connect: vi.fn(),
+          disconnect: vi.fn(),
           port: {
-            postMessage: jest.fn(),
+            postMessage: vi.fn(),
             onmessage: null
           }
         }));
         
         (global as any).URL = {
-          createObjectURL: jest.fn(() => 'blob://mock-url'),
-          revokeObjectURL: jest.fn()
+          createObjectURL: vi.fn(() => 'blob://mock-url'),
+          revokeObjectURL: vi.fn()
         };
-        (global as any).Blob = jest.fn();
+        (global as any).Blob = vi.fn();
       };
 
       setupMocks();
@@ -207,27 +208,27 @@ describe('AudioWorkletEngine Performance Benchmarks', () => {
     it('should demonstrate efficient memory usage with AudioWorklet', async () => {
       const mockAudioContext = {
         audioWorklet: {
-          addModule: jest.fn().mockResolvedValue(undefined)
+          addModule: vi.fn().mockResolvedValue(undefined)
         },
         sampleRate: 48000
       };
       
-      (global as any).AudioContext = jest.fn(() => mockAudioContext);
-      (global as any).AudioWorklet = jest.fn();
-      (global as any).AudioWorkletNode = jest.fn(() => ({
-        connect: jest.fn(),
-        disconnect: jest.fn(),
+      (global as any).AudioContext = vi.fn(() => mockAudioContext);
+      (global as any).AudioWorklet = vi.fn();
+      (global as any).AudioWorkletNode = vi.fn(() => ({
+        connect: vi.fn(),
+        disconnect: vi.fn(),
         port: {
-          postMessage: jest.fn(),
+          postMessage: vi.fn(),
           onmessage: null
         }
       }));
       
       (global as any).URL = {
-        createObjectURL: jest.fn(() => 'blob://mock-url'),
-        revokeObjectURL: jest.fn()
+        createObjectURL: vi.fn(() => 'blob://mock-url'),
+        revokeObjectURL: vi.fn()
       };
-      (global as any).Blob = jest.fn();
+      (global as any).Blob = vi.fn();
 
       const engine = new AudioWorkletEngine();
       await engine.initialize();

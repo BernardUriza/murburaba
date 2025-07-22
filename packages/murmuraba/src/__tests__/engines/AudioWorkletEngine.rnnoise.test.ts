@@ -1,4 +1,5 @@
 import { AudioWorkletEngine } from '../../engines/AudioWorkletEngine';
+import { vi } from 'vitest';
 
 describe('AudioWorkletEngine with RNNoise', () => {
   let originalAudioContext: any;
@@ -16,15 +17,15 @@ describe('AudioWorkletEngine with RNNoise', () => {
     originalOfflineAudioContext = (global as any).OfflineAudioContext;
     
     // Mock Blob
-    (global as any).Blob = jest.fn((content, options) => ({
+    (global as any).Blob = vi.fn((content, options) => ({
       content,
       options
     }));
     
     // Mock URL
     (global as any).URL = {
-      createObjectURL: jest.fn(() => 'blob://mock-url'),
-      revokeObjectURL: jest.fn()
+      createObjectURL: vi.fn(() => 'blob://mock-url'),
+      revokeObjectURL: vi.fn()
     };
   });
 
@@ -41,11 +42,11 @@ describe('AudioWorkletEngine with RNNoise', () => {
     it('should include RNNoise WASM loading in processor code', async () => {
       const mockAudioContext = {
         audioWorklet: {
-          addModule: jest.fn().mockResolvedValue(undefined)
+          addModule: vi.fn().mockResolvedValue(undefined)
         }
       };
-      (global as any).AudioContext = jest.fn(() => mockAudioContext);
-      (global as any).AudioWorklet = jest.fn();
+      (global as any).AudioContext = vi.fn(() => mockAudioContext);
+      (global as any).AudioWorklet = vi.fn();
 
       const engine = new AudioWorkletEngine();
       await engine.initialize();
@@ -65,12 +66,12 @@ describe('AudioWorkletEngine with RNNoise', () => {
     it('should handle 480-sample frames for RNNoise processing', async () => {
       const mockAudioContext = {
         audioWorklet: {
-          addModule: jest.fn().mockResolvedValue(undefined)
+          addModule: vi.fn().mockResolvedValue(undefined)
         },
         sampleRate: 48000
       };
-      (global as any).AudioContext = jest.fn(() => mockAudioContext);
-      (global as any).AudioWorklet = jest.fn();
+      (global as any).AudioContext = vi.fn(() => mockAudioContext);
+      (global as any).AudioWorklet = vi.fn();
 
       const engine = new AudioWorkletEngine();
       await engine.initialize();
@@ -86,11 +87,11 @@ describe('AudioWorkletEngine with RNNoise', () => {
     it('should include message handling for RNNoise control', async () => {
       const mockAudioContext = {
         audioWorklet: {
-          addModule: jest.fn().mockResolvedValue(undefined)
+          addModule: vi.fn().mockResolvedValue(undefined)
         }
       };
-      (global as any).AudioContext = jest.fn(() => mockAudioContext);
-      (global as any).AudioWorklet = jest.fn();
+      (global as any).AudioContext = vi.fn(() => mockAudioContext);
+      (global as any).AudioWorklet = vi.fn();
 
       const engine = new AudioWorkletEngine();
       await engine.initialize();
@@ -108,10 +109,10 @@ describe('AudioWorkletEngine with RNNoise', () => {
     it('should pass RNNoise configuration to worklet', async () => {
       let messageHandler: any = null;
       const mockWorkletNode = {
-        connect: jest.fn(),
-        disconnect: jest.fn(),
+        connect: vi.fn(),
+        disconnect: vi.fn(),
         port: {
-          postMessage: jest.fn(),
+          postMessage: vi.fn(),
           get onmessage() { return messageHandler; },
           set onmessage(handler) { messageHandler = handler; }
         }
@@ -119,14 +120,14 @@ describe('AudioWorkletEngine with RNNoise', () => {
       
       const mockAudioContext = {
         audioWorklet: {
-          addModule: jest.fn().mockResolvedValue(undefined)
+          addModule: vi.fn().mockResolvedValue(undefined)
         },
         sampleRate: 48000
       };
       
-      (global as any).AudioContext = jest.fn(() => mockAudioContext);
-      (global as any).AudioWorklet = jest.fn();
-      (global as any).AudioWorkletNode = jest.fn(() => mockWorkletNode);
+      (global as any).AudioContext = vi.fn(() => mockAudioContext);
+      (global as any).AudioWorklet = vi.fn();
+      (global as any).AudioWorkletNode = vi.fn(() => mockWorkletNode);
 
       const engine = new AudioWorkletEngine({ 
         enableRNNoise: true,
@@ -150,10 +151,10 @@ describe('AudioWorkletEngine with RNNoise', () => {
     it('should collect performance metrics from worklet', async () => {
       let messageHandler: any = null;
       const mockWorkletNode = {
-        connect: jest.fn(),
-        disconnect: jest.fn(),
+        connect: vi.fn(),
+        disconnect: vi.fn(),
         port: {
-          postMessage: jest.fn(),
+          postMessage: vi.fn(),
           get onmessage() { return messageHandler; },
           set onmessage(handler) { messageHandler = handler; }
         }
@@ -161,14 +162,14 @@ describe('AudioWorkletEngine with RNNoise', () => {
       
       const mockAudioContext = {
         audioWorklet: {
-          addModule: jest.fn().mockResolvedValue(undefined)
+          addModule: vi.fn().mockResolvedValue(undefined)
         },
         sampleRate: 48000
       };
       
-      (global as any).AudioContext = jest.fn(() => mockAudioContext);
-      (global as any).AudioWorklet = jest.fn();
-      (global as any).AudioWorkletNode = jest.fn(() => mockWorkletNode);
+      (global as any).AudioContext = vi.fn(() => mockAudioContext);
+      (global as any).AudioWorklet = vi.fn();
+      (global as any).AudioWorkletNode = vi.fn(() => mockWorkletNode);
 
       const engine = new AudioWorkletEngine();
       await engine.initialize();
@@ -176,7 +177,7 @@ describe('AudioWorkletEngine with RNNoise', () => {
       const workletNode = engine.createWorkletNode();
       
       // Set up performance callback
-      const performanceCallback = jest.fn();
+      const performanceCallback = vi.fn();
       engine.onPerformanceMetrics(performanceCallback);
       
       // Simulate performance message from worklet

@@ -1,18 +1,19 @@
 import { MetricsManager } from '../../managers/MetricsManager';
+import { vi } from 'vitest';
 import { ProcessingMetrics, ChunkMetrics } from '../../types';
 
 describe('MetricsManager', () => {
   let metricsManager: MetricsManager;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.useFakeTimers();
+    vi.clearAllMocks();
+    vi.useFakeTimers();
     metricsManager = new MetricsManager();
   });
 
   afterEach(() => {
     metricsManager.stopAutoUpdate();
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   describe('Initial state', () => {
@@ -33,58 +34,58 @@ describe('MetricsManager', () => {
 
   describe('startAutoUpdate() / stopAutoUpdate()', () => {
     it('should emit metrics updates at intervals', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       metricsManager.on('metrics-update', callback);
       
       metricsManager.startAutoUpdate(100);
       
       expect(callback).not.toHaveBeenCalled();
       
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
       expect(callback).toHaveBeenCalledTimes(1);
       expect(callback).toHaveBeenCalledWith(expect.objectContaining({
         noiseReductionLevel: 0,
         processingLatency: 0
       }));
       
-      jest.advanceTimersByTime(200);
+      vi.advanceTimersByTime(200);
       expect(callback).toHaveBeenCalledTimes(3);
     });
 
     it('should stop auto updates', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       metricsManager.on('metrics-update', callback);
       
       metricsManager.startAutoUpdate(100);
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
       expect(callback).toHaveBeenCalledTimes(1);
       
       metricsManager.stopAutoUpdate();
-      jest.advanceTimersByTime(200);
+      vi.advanceTimersByTime(200);
       expect(callback).toHaveBeenCalledTimes(1); // No more calls
     });
 
     it('should handle multiple start calls', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       metricsManager.on('metrics-update', callback);
       
       metricsManager.startAutoUpdate(100);
       metricsManager.startAutoUpdate(50); // Should clear previous interval
       
-      jest.advanceTimersByTime(50);
+      vi.advanceTimersByTime(50);
       expect(callback).toHaveBeenCalledTimes(1);
       
-      jest.advanceTimersByTime(50);
+      vi.advanceTimersByTime(50);
       expect(callback).toHaveBeenCalledTimes(2);
     });
 
     it('should use default interval', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       metricsManager.on('metrics-update', callback);
       
       metricsManager.startAutoUpdate(); // Default 100ms
       
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
       expect(callback).toHaveBeenCalledTimes(1);
     });
   });
@@ -127,7 +128,7 @@ describe('MetricsManager', () => {
   describe('Frame tracking', () => {
     it('should record frames', () => {
       const now = Date.now();
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
       
       metricsManager.recordFrame();
       
@@ -172,7 +173,7 @@ describe('MetricsManager', () => {
 
   describe('Chunk processing', () => {
     it('should emit chunk events', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       metricsManager.on('chunk-processed', callback);
       
       const chunk: ChunkMetrics = {
@@ -215,7 +216,7 @@ describe('MetricsManager', () => {
     });
 
     it('should update latency during auto-update', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       metricsManager.on('metrics-update', callback);
       
       // Record some frames
@@ -224,7 +225,7 @@ describe('MetricsManager', () => {
       metricsManager.recordFrame(1030);
       
       metricsManager.startAutoUpdate(100);
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
       
       const emittedMetrics = callback.mock.calls[0][0];
       expect(emittedMetrics.processingLatency).toBeGreaterThan(0);

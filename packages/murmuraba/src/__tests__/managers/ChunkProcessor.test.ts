@@ -1,32 +1,33 @@
 import { ChunkProcessor } from '../../managers/ChunkProcessor';
+import { vi } from 'vitest';
 import { Logger } from '../../core/Logger';
 import { MetricsManager } from '../../managers/MetricsManager';
 import { ChunkConfig } from '../../types';
 
 describe('ChunkProcessor', () => {
   let chunkProcessor: ChunkProcessor;
-  let mockLogger: jest.Mocked<Logger>;
-  let mockMetricsManager: jest.Mocked<MetricsManager>;
+  let mockLogger: vi.Mocked<Logger>;
+  let mockMetricsManager: vi.Mocked<MetricsManager>;
   const sampleRate = 48000;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.useFakeTimers();
+    vi.clearAllMocks();
+    vi.useFakeTimers();
     
     // Create mock logger
     mockLogger = {
-      debug: jest.fn(),
-      info: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
-      setLevel: jest.fn(),
-      setLogHandler: jest.fn()
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      setLevel: vi.fn(),
+      setLogHandler: vi.fn()
     } as any;
     
     // Create mock metrics manager
     mockMetricsManager = {
-      recordChunk: jest.fn(),
-      getMetrics: jest.fn().mockReturnValue({
+      recordChunk: vi.fn(),
+      getMetrics: vi.fn().mockReturnValue({
         noiseReductionLevel: 0,
         processingLatency: 0,
         inputLevel: 0,
@@ -35,7 +36,7 @@ describe('ChunkProcessor', () => {
         frameCount: 0,
         droppedFrames: 0
       }),
-      calculateRMS: jest.fn().mockImplementation((samples: Float32Array) => {
+      calculateRMS: vi.fn().mockImplementation((samples: Float32Array) => {
         // Simple RMS calculation
         let sum = 0;
         for (let i = 0; i < samples.length; i++) {
@@ -43,7 +44,7 @@ describe('ChunkProcessor', () => {
         }
         return Math.sqrt(sum / samples.length);
       }),
-      calculatePeak: jest.fn().mockImplementation((samples: Float32Array) => {
+      calculatePeak: vi.fn().mockImplementation((samples: Float32Array) => {
         let peak = 0;
         for (let i = 0; i < samples.length; i++) {
           peak = Math.max(peak, Math.abs(samples[i]));
@@ -54,14 +55,14 @@ describe('ChunkProcessor', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   describe('Constructor', () => {
     it('should initialize with basic config', () => {
       const config: ChunkConfig = {
         chunkDuration: 5000, // 5 seconds
-        onChunkProcessed: jest.fn()
+        onChunkProcessed: vi.fn()
       };
       
       chunkProcessor = new ChunkProcessor(sampleRate, config, mockLogger, mockMetricsManager);
@@ -95,10 +96,10 @@ describe('ChunkProcessor', () => {
   });
 
   describe('addSamples()', () => {
-    let chunkCallback: jest.Mock;
+    let chunkCallback: vi.Mock;
 
     beforeEach(() => {
-      chunkCallback = jest.fn();
+      chunkCallback = vi.fn();
       const config: ChunkConfig = {
         chunkDuration: 1000, // 1 second = 48000 samples
         onChunkProcessed: chunkCallback
@@ -116,13 +117,15 @@ describe('ChunkProcessor', () => {
 
     it('should initialize start time on first sample', () => {
       const mockPerformanceNow = 1234567.89;
-      jest.spyOn(performance, 'now').mockReturnValue(mockPerformanceNow);
+      vi.spyOn(performance, 'now').mockReturnValue(mockPerformanceNow);
       
       // Create a new processor to ensure chunkStartTime is 0
-      const newProcessor = new ChunkProcessor({
-        sampleRate: 48000,
-        chunkDuration: 1
-      });
+      const newProcessor = new ChunkProcessor(
+        48000,
+        { chunkDuration: 1 },
+        mockLogger,
+        mockMetricsManager
+      );
       
       const samples = new Float32Array(100);
       newProcessor.addSamples(samples);
@@ -131,7 +134,7 @@ describe('ChunkProcessor', () => {
       expect(newProcessor['chunkStartTime']).toBe(mockPerformanceNow);
       
       // Restore mock
-      jest.restoreAllMocks();
+      vi.restoreAllMocks();
     });
 
     it('should emit chunk when threshold reached', () => {
@@ -178,7 +181,7 @@ describe('ChunkProcessor', () => {
       const config: ChunkConfig = {
         chunkDuration: 100, // 100ms = 4800 samples
         overlap: 0.1, // 10% = 480 samples
-        onChunkProcessed: jest.fn()
+        onChunkProcessed: vi.fn()
       };
       
       chunkProcessor = new ChunkProcessor(sampleRate, config, mockLogger, mockMetricsManager);
@@ -203,7 +206,7 @@ describe('ChunkProcessor', () => {
     it('should flush partial chunk', () => {
       const config: ChunkConfig = {
         chunkDuration: 1000,
-        onChunkProcessed: jest.fn()
+        onChunkProcessed: vi.fn()
       };
       
       chunkProcessor = new ChunkProcessor(sampleRate, config, mockLogger, mockMetricsManager);
@@ -229,7 +232,7 @@ describe('ChunkProcessor', () => {
     it('should handle empty flush', () => {
       const config: ChunkConfig = {
         chunkDuration: 1000,
-        onChunkProcessed: jest.fn()
+        onChunkProcessed: vi.fn()
       };
       
       chunkProcessor = new ChunkProcessor(sampleRate, config, mockLogger, mockMetricsManager);
@@ -245,7 +248,7 @@ describe('ChunkProcessor', () => {
     it('should clear all buffers', () => {
       const config: ChunkConfig = {
         chunkDuration: 1000,
-        onChunkProcessed: jest.fn()
+        onChunkProcessed: vi.fn()
       };
       
       chunkProcessor = new ChunkProcessor(sampleRate, config, mockLogger, mockMetricsManager);
@@ -267,7 +270,7 @@ describe('ChunkProcessor', () => {
     it('should record chunk metrics', () => {
       const config: ChunkConfig = {
         chunkDuration: 1000,
-        onChunkProcessed: jest.fn()
+        onChunkProcessed: vi.fn()
       };
       
       chunkProcessor = new ChunkProcessor(sampleRate, config, mockLogger, mockMetricsManager);
@@ -290,7 +293,7 @@ describe('ChunkProcessor', () => {
     it('should handle errors in onChunkProcessed callback', () => {
       const config: ChunkConfig = {
         chunkDuration: 100, // 4800 samples
-        onChunkProcessed: jest.fn().mockImplementation(() => {
+        onChunkProcessed: vi.fn().mockImplementation(() => {
           throw new Error('Callback error');
         })
       };
@@ -312,7 +315,7 @@ describe('ChunkProcessor', () => {
     it('should handle very small chunks', () => {
       const config: ChunkConfig = {
         chunkDuration: 10, // 10ms = 480 samples
-        onChunkProcessed: jest.fn()
+        onChunkProcessed: vi.fn()
       };
       
       chunkProcessor = new ChunkProcessor(sampleRate, config, mockLogger, mockMetricsManager);
@@ -326,7 +329,7 @@ describe('ChunkProcessor', () => {
     it('should handle fractional sample calculations', () => {
       const config: ChunkConfig = {
         chunkDuration: 33, // 33ms = 1584 samples
-        onChunkProcessed: jest.fn()
+        onChunkProcessed: vi.fn()
       };
       
       chunkProcessor = new ChunkProcessor(44100, config, mockLogger, mockMetricsManager);
@@ -344,7 +347,7 @@ describe('ChunkProcessor', () => {
     it('should process continuous stream', () => {
       const config: ChunkConfig = {
         chunkDuration: 100,
-        onChunkProcessed: jest.fn()
+        onChunkProcessed: vi.fn()
       };
       
       chunkProcessor = new ChunkProcessor(sampleRate, config, mockLogger, mockMetricsManager);
@@ -353,7 +356,7 @@ describe('ChunkProcessor', () => {
       for (let i = 0; i < 10; i++) {
         const samples = new Float32Array(1000);
         chunkProcessor.addSamples(samples);
-        jest.advanceTimersByTime(20);
+        vi.advanceTimersByTime(20);
       }
       
       // Should have processed 2 chunks (10000 samples / 4800 samples per chunk)
@@ -365,7 +368,7 @@ describe('ChunkProcessor', () => {
     it('should return current status', () => {
       const config: ChunkConfig = {
         chunkDuration: 1000, // 48000 samples
-        onChunkProcessed: jest.fn()
+        onChunkProcessed: vi.fn()
       };
       
       chunkProcessor = new ChunkProcessor(sampleRate, config, mockLogger, mockMetricsManager);

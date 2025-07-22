@@ -1,4 +1,5 @@
 import { AudioWorkletEngine } from '../../engines/AudioWorkletEngine';
+import { vi } from 'vitest';
 
 describe('AudioWorkletEngine', () => {
   let originalAudioContext: any;
@@ -14,15 +15,15 @@ describe('AudioWorkletEngine', () => {
     originalURL = (global as any).URL;
     
     // Mock Blob
-    (global as any).Blob = jest.fn((content, options) => ({
+    (global as any).Blob = vi.fn((content, options) => ({
       content,
       options
     }));
     
     // Mock URL
     (global as any).URL = {
-      createObjectURL: jest.fn(() => 'blob://mock-url'),
-      revokeObjectURL: jest.fn()
+      createObjectURL: vi.fn(() => 'blob://mock-url'),
+      revokeObjectURL: vi.fn()
     };
   });
 
@@ -39,11 +40,11 @@ describe('AudioWorkletEngine', () => {
       // Mock AudioContext with audioWorklet support
       const mockAudioContext = {
         audioWorklet: {
-          addModule: jest.fn()
+          addModule: vi.fn()
         }
       };
-      (global as any).AudioContext = jest.fn(() => mockAudioContext);
-      (global as any).AudioWorklet = jest.fn();
+      (global as any).AudioContext = vi.fn(() => mockAudioContext);
+      (global as any).AudioWorklet = vi.fn();
 
       const engine = new AudioWorkletEngine();
       expect(engine.isAudioWorkletSupported()).toBe(true);
@@ -52,7 +53,7 @@ describe('AudioWorkletEngine', () => {
     it('should detect when AudioWorklet is not supported', () => {
       // Mock AudioContext without audioWorklet
       const mockAudioContext = {};
-      (global as any).AudioContext = jest.fn(() => mockAudioContext);
+      (global as any).AudioContext = vi.fn(() => mockAudioContext);
       (global as any).AudioWorklet = undefined;
 
       const engine = new AudioWorkletEngine();
@@ -73,7 +74,7 @@ describe('AudioWorkletEngine', () => {
     it('should throw error when AudioWorklet is not supported', async () => {
       // Mock no AudioWorklet support
       const mockAudioContext = {};
-      (global as any).AudioContext = jest.fn(() => mockAudioContext);
+      (global as any).AudioContext = vi.fn(() => mockAudioContext);
       (global as any).AudioWorklet = undefined;
 
       const engine = new AudioWorkletEngine();
@@ -82,14 +83,14 @@ describe('AudioWorkletEngine', () => {
 
     it('should initialize successfully when AudioWorklet is supported', async () => {
       // Mock AudioWorklet support
-      const mockAddModule = jest.fn().mockResolvedValue(undefined);
+      const mockAddModule = vi.fn().mockResolvedValue(undefined);
       const mockAudioContext = {
         audioWorklet: {
           addModule: mockAddModule
         }
       };
-      (global as any).AudioContext = jest.fn(() => mockAudioContext);
-      (global as any).AudioWorklet = jest.fn();
+      (global as any).AudioContext = vi.fn(() => mockAudioContext);
+      (global as any).AudioWorklet = vi.fn();
 
       const engine = new AudioWorkletEngine();
       await engine.initialize();
@@ -101,29 +102,29 @@ describe('AudioWorkletEngine', () => {
 
   describe('AudioWorklet Processor Creation', () => {
     let mockAudioContext: any;
-    let mockAddModule: jest.Mock;
+    let mockAddModule: vi.Mock;
 
     beforeEach(() => {
-      mockAddModule = jest.fn().mockResolvedValue(undefined);
+      mockAddModule = vi.fn().mockResolvedValue(undefined);
       mockAudioContext = {
         audioWorklet: {
           addModule: mockAddModule
         },
-        createScriptProcessor: jest.fn(),
-        createGain: jest.fn(() => ({
-          connect: jest.fn(),
-          disconnect: jest.fn(),
+        createScriptProcessor: vi.fn(),
+        createGain: vi.fn(() => ({
+          connect: vi.fn(),
+          disconnect: vi.fn(),
           gain: { value: 1 }
         })),
         destination: {}
       };
-      (global as any).AudioContext = jest.fn(() => mockAudioContext);
-      (global as any).AudioWorklet = jest.fn();
-      (global as any).AudioWorkletNode = jest.fn((context, name, options) => ({
-        connect: jest.fn(),
-        disconnect: jest.fn(),
+      (global as any).AudioContext = vi.fn(() => mockAudioContext);
+      (global as any).AudioWorklet = vi.fn();
+      (global as any).AudioWorkletNode = vi.fn((context, name, options) => ({
+        connect: vi.fn(),
+        disconnect: vi.fn(),
         port: {
-          postMessage: jest.fn(),
+          postMessage: vi.fn(),
           onmessage: null
         }
       }));
@@ -169,65 +170,65 @@ describe('AudioWorkletEngine', () => {
 
     beforeEach(() => {
       mockScriptProcessor = {
-        connect: jest.fn(),
-        disconnect: jest.fn(),
+        connect: vi.fn(),
+        disconnect: vi.fn(),
         onaudioprocess: null
       };
       
       mockWorkletNode = {
-        connect: jest.fn(),
-        disconnect: jest.fn(),
+        connect: vi.fn(),
+        disconnect: vi.fn(),
         port: {
-          postMessage: jest.fn(),
+          postMessage: vi.fn(),
           onmessage: null
         }
       };
       
       mockAudioContext = {
         audioWorklet: {
-          addModule: jest.fn().mockResolvedValue(undefined)
+          addModule: vi.fn().mockResolvedValue(undefined)
         },
-        createScriptProcessor: jest.fn(() => mockScriptProcessor),
-        createMediaStreamSource: jest.fn(() => ({
-          connect: jest.fn(),
-          disconnect: jest.fn()
+        createScriptProcessor: vi.fn(() => mockScriptProcessor),
+        createMediaStreamSource: vi.fn(() => ({
+          connect: vi.fn(),
+          disconnect: vi.fn()
         })),
-        createGain: jest.fn(() => ({
-          connect: jest.fn(),
-          disconnect: jest.fn(),
+        createGain: vi.fn(() => ({
+          connect: vi.fn(),
+          disconnect: vi.fn(),
           gain: { value: 1 }
         })),
         destination: {},
         sampleRate: 48000
       };
       
-      (global as any).AudioContext = jest.fn(() => mockAudioContext);
-      (global as any).AudioWorklet = jest.fn();
-      (global as any).AudioWorkletNode = jest.fn(() => mockWorkletNode);
+      (global as any).AudioContext = vi.fn(() => mockAudioContext);
+      (global as any).AudioWorklet = vi.fn();
+      (global as any).AudioWorkletNode = vi.fn(() => mockWorkletNode);
       
       // Mock OfflineAudioContext
       mockOfflineContext = {
-        createBuffer: jest.fn(() => ({
-          copyToChannel: jest.fn(),
-          copyFromChannel: jest.fn((target) => {
+        createBuffer: vi.fn(() => ({
+          copyToChannel: vi.fn(),
+          copyFromChannel: vi.fn((target) => {
             // Fill target with mock processed data
             for (let i = 0; i < target.length; i++) {
               target[i] = Math.sin(2 * Math.PI * i / 480) * 0.5; // Simulated processed audio
             }
           })
         })),
-        createBufferSource: jest.fn(() => ({
+        createBufferSource: vi.fn(() => ({
           buffer: null,
-          connect: jest.fn(),
-          start: jest.fn()
+          connect: vi.fn(),
+          start: vi.fn()
         })),
         audioWorklet: {
-          addModule: jest.fn().mockResolvedValue(undefined)
+          addModule: vi.fn().mockResolvedValue(undefined)
         },
         destination: {},
         sampleRate: 48000,
-        startRendering: jest.fn().mockResolvedValue({
-          copyFromChannel: jest.fn((target) => {
+        startRendering: vi.fn().mockResolvedValue({
+          copyFromChannel: vi.fn((target) => {
             for (let i = 0; i < target.length; i++) {
               target[i] = Math.sin(2 * Math.PI * i / 480) * 0.5;
             }
@@ -235,7 +236,7 @@ describe('AudioWorkletEngine', () => {
         })
       };
       
-      (global as any).OfflineAudioContext = jest.fn(() => mockOfflineContext);
+      (global as any).OfflineAudioContext = vi.fn(() => mockOfflineContext);
     });
 
     it('should process audio buffer through worklet', async () => {
@@ -265,7 +266,7 @@ describe('AudioWorkletEngine', () => {
       
       // Mock MediaStream
       const mockStream = {
-        getTracks: jest.fn(() => [{ kind: 'audio' }])
+        getTracks: vi.fn(() => [{ kind: 'audio' }])
       };
       
       const processor = await engine.createStreamProcessor(mockStream as any);

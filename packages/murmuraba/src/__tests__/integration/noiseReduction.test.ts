@@ -4,6 +4,7 @@
  */
 
 import { 
+import { vi } from 'vitest';
   generateTestChunks, 
   generateSpeechLikeSignal,
   addNoise,
@@ -16,11 +17,11 @@ import { RNNoiseEngine } from '../../engines/RNNoiseEngine';
 
 // Mock WASM module with realistic behavior
 const mockWasmModule = {
-  _rnnoise_create: jest.fn().mockReturnValue(1),
-  _rnnoise_destroy: jest.fn(),
-  _rnnoise_process_frame: jest.fn(),
-  _malloc: jest.fn().mockReturnValue(1000),
-  _free: jest.fn(),
+  _rnnoise_create: vi.fn().mockReturnValue(1),
+  _rnnoise_destroy: vi.fn(),
+  _rnnoise_process_frame: vi.fn(),
+  _malloc: vi.fn().mockReturnValue(1000),
+  _free: vi.fn(),
   HEAPF32: new Float32Array(10000),
   HEAP32: new Int32Array(10000)
 };
@@ -32,7 +33,7 @@ describe('Noise Reduction Integration Tests', () => {
   let engine: RNNoiseEngine;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Configure realistic noise reduction behavior
     mockWasmModule._rnnoise_process_frame.mockImplementation((state, output, input) => {

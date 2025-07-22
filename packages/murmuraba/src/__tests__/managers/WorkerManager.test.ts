@@ -1,35 +1,36 @@
 import { WorkerManager } from '../../managers/WorkerManager';
+import { vi } from 'vitest';
 import { Logger } from '../../core/Logger';
 import { MurmubaraError, ErrorCodes } from '../../types';
 
 // Mock Worker
 class MockWorker {
-  postMessage = jest.fn();
-  terminate = jest.fn();
+  postMessage = vi.fn();
+  terminate = vi.fn();
   onmessage: ((event: any) => void) | null = null;
   onerror: ((event: any) => void) | null = null;
 }
 
 // Mock global Worker
-global.Worker = jest.fn().mockImplementation((path) => {
+global.Worker = vi.fn().mockImplementation((path) => {
   return new MockWorker();
 }) as any;
 
 describe('WorkerManager', () => {
   let workerManager: WorkerManager;
-  let mockLogger: jest.Mocked<Logger>;
+  let mockLogger: vi.Mocked<Logger>;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Create mock logger
     mockLogger = {
-      debug: jest.fn(),
-      info: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
-      setLevel: jest.fn(),
-      setLogHandler: jest.fn()
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      setLevel: vi.fn(),
+      setLogHandler: vi.fn()
     } as any;
     
     workerManager = new WorkerManager(mockLogger);
@@ -57,7 +58,7 @@ describe('WorkerManager', () => {
     });
 
     it('should handle worker creation failure', () => {
-      (global.Worker as jest.Mock).mockImplementationOnce(() => {
+      (global.Worker as vi.Mock).mockImplementationOnce(() => {
         throw new Error('Failed to create worker');
       });
       
@@ -72,7 +73,7 @@ describe('WorkerManager', () => {
     });
 
     it('should handle non-Error exceptions', () => {
-      (global.Worker as jest.Mock).mockImplementationOnce(() => {
+      (global.Worker as vi.Mock).mockImplementationOnce(() => {
         throw 'String error';
       });
       

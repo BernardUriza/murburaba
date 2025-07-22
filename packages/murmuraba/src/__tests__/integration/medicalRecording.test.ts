@@ -4,37 +4,38 @@
  */
 
 import { renderHook, act, waitFor } from '@testing-library/react';
+import { vi } from 'vitest';
 import { useMurmubaraEngine } from '../../hooks/murmuraba-engine';
 import * as api from '../../api';
 
 // Mock API
-jest.mock('../../api');
+vi.mock('../../api');
 
 describe('Medical Recording Integration Tests', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.useRealTimers();
+    vi.clearAllMocks();
+    vi.useRealTimers();
     
     // Setup API mocks
-    (api.initializeAudioEngine as jest.Mock).mockResolvedValue(undefined);
-    (api.destroyEngine as jest.Mock).mockResolvedValue(undefined);
-    (api.getEngineStatus as jest.Mock).mockReturnValue('ready');
-    (api.processStream as jest.Mock).mockResolvedValue({
+    (api.initializeAudioEngine as vi.Mock).mockResolvedValue(undefined);
+    (api.destroyEngine as vi.Mock).mockResolvedValue(undefined);
+    (api.getEngineStatus as vi.Mock).mockReturnValue('ready');
+    (api.processStream as vi.Mock).mockResolvedValue({
       stream: new MediaStream(),
-      destroy: jest.fn()
+      destroy: vi.fn()
     });
-    (api.getDiagnostics as jest.Mock).mockReturnValue({
+    (api.getDiagnostics as vi.Mock).mockReturnValue({
       wasmLoaded: true,
       audioContextState: 'running',
       processingLatency: 15,
       memoryUsage: 5000000,
       streamCount: 1,
     });
-    (api.onMetricsUpdate as jest.Mock).mockReturnValue(() => {});
+    (api.onMetricsUpdate as vi.Mock).mockReturnValue(() => {});
     
     // Mock MediaStream clone method
     Object.defineProperty(MediaStream.prototype, 'clone', {
-      value: jest.fn().mockImplementation(function() {
+      value: vi.fn().mockImplementation(function() {
         return new MediaStream();
       }),
       writable: true,
@@ -44,7 +45,7 @@ describe('Medical Recording Integration Tests', () => {
 
   describe('Hospital Consultation Recording', () => {
     it('should handle 30-minute consultation recording without memory issues', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       const { result } = renderHook(() => useMurmubaraEngine({
         noiseReductionLevel: 'high',
         algorithm: 'rnnoise',
@@ -67,7 +68,7 @@ describe('Medical Recording Integration Tests', () => {
       for (let i = 0; i < CHUNKS_IN_30_MIN; i++) {
         act(() => {
           // Advance time by 8 seconds
-          jest.advanceTimersByTime(8000);
+          vi.advanceTimersByTime(8000);
           
           // Simulate chunk data
           mockRecorder.ondataavailable({ 
@@ -95,7 +96,7 @@ describe('Medical Recording Integration Tests', () => {
         result.current.stopRecording();
       });
 
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it('should maintain audio quality metrics throughout recording', async () => {
@@ -107,7 +108,7 @@ describe('Medical Recording Integration Tests', () => {
       });
 
       // Simulate metrics updates
-      const metricsCallback = (api.onMetricsUpdate as jest.Mock).mock.calls[0][0];
+      const metricsCallback = (api.onMetricsUpdate as vi.Mock).mock.calls[0][0];
       
       act(() => {
         metricsCallback({
@@ -169,15 +170,15 @@ describe('Medical Recording Integration Tests', () => {
       });
 
       // First attempt fails
-      global.fetch = jest.fn().mockRejectedValueOnce(new Error('Network error'));
+      global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network error'));
       
       await expect(
         result.current.exportChunkAsWav('test-chunk', 'processed')
       ).rejects.toThrow();
 
       // Second attempt succeeds
-      global.fetch = jest.fn().mockResolvedValueOnce({
-        blob: jest.fn().mockResolvedValue(new Blob(['audio'], { type: 'audio/webm' })),
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        blob: vi.fn().mockResolvedValue(new Blob(['audio'], { type: 'audio/webm' })),
       });
 
       // Should work on retry
@@ -194,7 +195,7 @@ describe('Medical Recording Integration Tests', () => {
       });
 
       // Simulate microphone disconnection
-      const mockStream = await (navigator.mediaDevices.getUserMedia as jest.Mock).mock.results[0].value;
+      const mockStream = await (navigator.mediaDevices.getUserMedia as vi.Mock).mock.results[0].value;
       const tracks = mockStream.getTracks();
       
       act(() => {
@@ -231,8 +232,8 @@ describe('Medical Recording Integration Tests', () => {
       });
 
       // Mock successful conversion
-      global.fetch = jest.fn().mockResolvedValue({
-        blob: jest.fn().mockResolvedValue(new Blob(['webm'], { type: 'audio/webm' })),
+      global.fetch = vi.fn().mockResolvedValue({
+        blob: vi.fn().mockResolvedValue(new Blob(['webm'], { type: 'audio/webm' })),
       });
 
       const mp3Blob = await result.current.exportChunkAsMp3('chunk-1', 'processed', 192);
@@ -286,7 +287,7 @@ describe('Medical Recording Integration Tests', () => {
       });
 
       // Simulate high-frequency updates
-      const metricsCallback = (api.onMetricsUpdate as jest.Mock).mock.calls[0][0];
+      const metricsCallback = (api.onMetricsUpdate as vi.Mock).mock.calls[0][0];
       
       const latencies: number[] = [];
       for (let i = 0; i < 100; i++) {

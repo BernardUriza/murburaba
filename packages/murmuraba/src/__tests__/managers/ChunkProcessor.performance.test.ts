@@ -5,22 +5,23 @@
  */
 
 import { ChunkProcessor } from '../../managers/ChunkProcessor';
+import { vi } from 'vitest';
 import { ChunkMetrics } from '../../types';
 
 // Mock performance.now for predictable tests
-const mockPerformanceNow = jest.fn();
+const mockPerformanceNow = vi.fn();
 global.performance.now = mockPerformanceNow;
 
 // Mock api
-jest.mock('../../api', () => ({
-  getEngine: jest.fn(),
+vi.mock('../../api', () => ({
+  getEngine: vi.fn(),
 }));
 
 describe('ChunkProcessor - Performance Timing TDD', () => {
   let processor: ChunkProcessor;
   
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     processor = new ChunkProcessor();
     
     // Reset performance.now mock
