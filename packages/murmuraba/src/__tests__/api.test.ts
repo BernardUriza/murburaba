@@ -4,6 +4,7 @@
  */
 
 import {
+import { vi } from 'vitest';
   initializeAudioEngine,
   getEngine,
   processStream,
@@ -17,27 +18,27 @@ import { MurmubaraEngine } from '../core/MurmubaraEngine';
 import { BufferSize } from '../types';
 
 // Mock MurmubaraEngine
-jest.mock('../core/MurmubaraEngine');
+vi.mock('../core/MurmubaraEngine');
 
 describe('API Module', () => {
   let mockEngine: any;
   
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Create a mock engine instance
     mockEngine = {
-      initialize: jest.fn().mockResolvedValue(undefined),
-      destroy: jest.fn().mockResolvedValue(undefined),
-      processStream: jest.fn().mockResolvedValue({ 
-        stop: jest.fn(),
+      initialize: vi.fn().mockResolvedValue(undefined),
+      destroy: vi.fn().mockResolvedValue(undefined),
+      processStream: vi.fn().mockResolvedValue({ 
+        stop: vi.fn(),
         stream: {} as MediaStream,
         processor: {} as any,
-        pause: jest.fn(),
-        resume: jest.fn(),
-        getState: jest.fn().mockReturnValue('processing')
+        pause: vi.fn(),
+        resume: vi.fn(),
+        getState: vi.fn().mockReturnValue('processing')
       }),
-      getDiagnostics: jest.fn().mockReturnValue({
+      getDiagnostics: vi.fn().mockReturnValue({
         engineState: 'ready',
         wasmLoaded: true,
         audioContextState: 'running',
@@ -55,11 +56,11 @@ describe('API Module', () => {
         errors: [],
         warnings: []
       }),
-      onMetricsUpdate: jest.fn()
+      onMetricsUpdate: vi.fn()
     };
     
     // Mock the constructor
-    (MurmubaraEngine as jest.MockedClass<typeof MurmubaraEngine>).mockImplementation(() => mockEngine);
+    (MurmubaraEngine as vi.MockedClass<typeof MurmubaraEngine>).mockImplementation(() => mockEngine);
   });
   
   afterEach(async () => {
@@ -123,12 +124,12 @@ describe('API Module', () => {
     it('should process stream through engine', async () => {
       const mockStream = { id: 'test-stream' } as any;
       const mockController = { 
-        stop: jest.fn(),
+        stop: vi.fn(),
         stream: mockStream,
         processor: {} as any,
-        pause: jest.fn(),
-        resume: jest.fn(),
-        getState: jest.fn().mockReturnValue('processing')
+        pause: vi.fn(),
+        resume: vi.fn(),
+        getState: vi.fn().mockReturnValue('processing')
       };
       mockEngine.processStream!.mockResolvedValueOnce(mockController);
       
@@ -153,15 +154,15 @@ describe('API Module', () => {
       const mockStream = { id: 'test-stream' } as any;
       const config = {
         chunkDuration: 5,
-        onChunkProcessed: jest.fn()
+        onChunkProcessed: vi.fn()
       };
       const mockController = { 
-        stop: jest.fn(),
+        stop: vi.fn(),
         stream: mockStream,
         processor: {} as any,
-        pause: jest.fn(),
-        resume: jest.fn(),
-        getState: jest.fn().mockReturnValue('processing')
+        pause: vi.fn(),
+        resume: vi.fn(),
+        getState: vi.fn().mockReturnValue('processing')
       };
       mockEngine.processStream!.mockResolvedValueOnce(mockController);
       
@@ -280,7 +281,7 @@ describe('API Module', () => {
   
   describe('onMetricsUpdate', () => {
     it('should register metrics callback', async () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       
       await initializeAudioEngine();
       onMetricsUpdate(callback);
@@ -289,7 +290,7 @@ describe('API Module', () => {
     });
     
     it('should throw error if engine not initialized', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       
       expect(() => onMetricsUpdate(callback)).toThrow(
         'Audio engine not initialized'
@@ -312,7 +313,7 @@ describe('API Module', () => {
       expect(diag.engineState).toBe('ready');
       
       // Register callback
-      const callback = jest.fn();
+      const callback = vi.fn();
       onMetricsUpdate(callback);
       
       // Destroy

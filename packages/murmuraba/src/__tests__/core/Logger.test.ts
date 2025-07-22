@@ -1,26 +1,27 @@
 import { Logger } from '../../core/Logger';
+import { vi } from 'vitest';
 import { LogLevel } from '../../types';
 
 describe('Logger', () => {
   let logger: Logger;
-  let consoleError: jest.SpyInstance;
-  let consoleWarn: jest.SpyInstance;
-  let consoleLog: jest.SpyInstance;
+  let consoleError: vi.SpyInstance;
+  let consoleWarn: vi.SpyInstance;
+  let consoleLog: vi.SpyInstance;
 
   beforeEach(() => {
     logger = new Logger();
-    consoleError = jest.spyOn(console, 'error').mockImplementation();
-    consoleWarn = jest.spyOn(console, 'warn').mockImplementation();
-    consoleLog = jest.spyOn(console, 'log').mockImplementation();
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date('2024-01-01T12:00:00.000Z'));
+    consoleError = vi.spyOn(console, 'error').mockImplementation();
+    consoleWarn = vi.spyOn(console, 'warn').mockImplementation();
+    consoleLog = vi.spyOn(console, 'log').mockImplementation();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-01-01T12:00:00.000Z'));
   });
 
   afterEach(() => {
     consoleError.mockRestore();
     consoleWarn.mockRestore();
     consoleLog.mockRestore();
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   describe('constructor', () => {
@@ -70,7 +71,7 @@ describe('Logger', () => {
 
   describe('setLogHandler()', () => {
     it('should use custom log handler', () => {
-      const customHandler = jest.fn();
+      const customHandler = vi.fn();
       logger.setLogHandler(customHandler);
       
       logger.info('test message', { data: 'test' });

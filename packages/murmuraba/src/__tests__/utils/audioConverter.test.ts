@@ -4,13 +4,14 @@
  */
 
 import { AudioConverter, getAudioConverter, destroyAudioConverter } from '../../utils/audioConverter';
+import { vi } from 'vitest';
 
 describe('AudioConverter - Medical Grade Memory Management', () => {
   let converter: AudioConverter;
 
   beforeEach(() => {
     // Reset mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Destroy any existing singleton
     destroyAudioConverter();
     converter = new AudioConverter();
@@ -29,12 +30,12 @@ describe('AudioConverter - Medical Grade Memory Management', () => {
       const mockUrl = 'blob:mock-url-123';
       
       // Mock fetch to return non-webm blob
-      global.fetch = jest.fn().mockResolvedValue({
-        blob: jest.fn().mockResolvedValue(mockBlob)
+      global.fetch = vi.fn().mockResolvedValue({
+        blob: vi.fn().mockResolvedValue(mockBlob)
       } as any);
       
       // Spy on URL.createObjectURL
-      const createUrlSpy = jest.spyOn(URL, 'createObjectURL').mockReturnValue(mockUrl);
+      const createUrlSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue(mockUrl);
       
       await converter.convertBlobUrl('blob:original-url');
       
@@ -43,16 +44,16 @@ describe('AudioConverter - Medical Grade Memory Management', () => {
 
     it('should revoke all URLs on destroy', async () => {
       const mockUrls = ['blob:url-1', 'blob:url-2', 'blob:url-3'];
-      const revokeUrlSpy = jest.spyOn(URL, 'revokeObjectURL');
+      const revokeUrlSpy = vi.spyOn(URL, 'revokeObjectURL');
       
       // Mock fetch to return non-webm blobs that require conversion
       const mockBlob = new Blob(['test'], { type: 'audio/unknown' });
-      global.fetch = jest.fn().mockResolvedValue({
-        blob: jest.fn().mockResolvedValue(mockBlob)
+      global.fetch = vi.fn().mockResolvedValue({
+        blob: vi.fn().mockResolvedValue(mockBlob)
       } as any);
       
       // Create multiple URLs
-      jest.spyOn(URL, 'createObjectURL')
+      vi.spyOn(URL, 'createObjectURL')
         .mockReturnValueOnce(mockUrls[0])
         .mockReturnValueOnce(mockUrls[1])
         .mockReturnValueOnce(mockUrls[2]);
@@ -73,7 +74,7 @@ describe('AudioConverter - Medical Grade Memory Management', () => {
 
     it('should close AudioContext on destroy', () => {
       const audioContext = converter['audioContext'];
-      const closeSpy = jest.spyOn(audioContext, 'close');
+      const closeSpy = vi.spyOn(audioContext, 'close');
       
       converter.destroy();
       
@@ -84,7 +85,7 @@ describe('AudioConverter - Medical Grade Memory Management', () => {
       const originalUrl = 'blob:original-error-url';
       
       // Mock fetch to throw error
-      global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
+      global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
       
       const result = await converter.convertBlobUrl(originalUrl);
       
@@ -103,7 +104,7 @@ describe('AudioConverter - Medical Grade Memory Management', () => {
 
     it('should destroy singleton properly', () => {
       const instance = getAudioConverter();
-      const destroySpy = jest.spyOn(instance, 'destroy');
+      const destroySpy = vi.spyOn(instance, 'destroy');
       
       destroyAudioConverter();
       
@@ -136,7 +137,7 @@ describe('AudioConverter - Medical Grade Memory Management', () => {
       const inputBlob = new Blob(['invalid audio'], { type: 'audio/webm' });
       
       // Mock decodeAudioData to reject
-      converter['audioContext'].decodeAudioData = jest.fn().mockRejectedValue(new Error('Decode failed'));
+      converter['audioContext'].decodeAudioData = vi.fn().mockRejectedValue(new Error('Decode failed'));
       
       await expect(converter.convertToWav(inputBlob)).rejects.toThrow('Decode failed');
       expect(console.error).toHaveBeenCalledWith('Failed to convert audio:', expect.any(Error));
@@ -146,7 +147,7 @@ describe('AudioConverter - Medical Grade Memory Management', () => {
   describe('Format Detection', () => {
     it('should correctly identify recording MIME types', () => {
       // Mock MediaRecorder to return true only for webm without codecs (the first one checked)
-      MediaRecorder.isTypeSupported = jest.fn().mockImplementation((mimeType: string) => {
+      MediaRecorder.isTypeSupported = vi.fn().mockImplementation((mimeType: string) => {
         return mimeType === 'audio/webm';
       });
       
@@ -154,7 +155,7 @@ describe('AudioConverter - Medical Grade Memory Management', () => {
     });
 
     it('should return fallback format if no format supported', () => {
-      MediaRecorder.isTypeSupported = jest.fn().mockReturnValue(false);
+      MediaRecorder.isTypeSupported = vi.fn().mockReturnValue(false);
       
       expect(AudioConverter.getBestRecordingFormat()).toBe('audio/webm');
     });
@@ -166,10 +167,10 @@ describe('AudioConverter - Medical Grade Memory Management', () => {
       const expectedMp3Blob = new Blob(['mp3 data'], { type: 'audio/mp3' });
       
       // Mock the conversion process
-      jest.spyOn(converter, 'convertToWav').mockResolvedValue(new Blob(['wav data'], { type: 'audio/wav' }));
+      vi.spyOn(converter, 'convertToWav').mockResolvedValue(new Blob(['wav data'], { type: 'audio/wav' }));
       
       // Note: Actual MP3 encoding would require lamejs, which we're mocking
-      const mp3ConversionSpy = jest.spyOn(AudioConverter, 'webmToMp3').mockResolvedValue(expectedMp3Blob);
+      const mp3ConversionSpy = vi.spyOn(AudioConverter, 'webmToMp3').mockResolvedValue(expectedMp3Blob);
       
       const result = await AudioConverter.webmToMp3(webmBlob, 192);
       

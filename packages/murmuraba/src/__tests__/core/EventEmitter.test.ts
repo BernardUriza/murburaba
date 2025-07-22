@@ -1,4 +1,5 @@
 import { EventEmitter } from '../../core/EventEmitter';
+import { vi } from 'vitest';
 
 describe('EventEmitter', () => {
   let emitter: EventEmitter<{
@@ -13,7 +14,7 @@ describe('EventEmitter', () => {
 
   describe('on()', () => {
     it('should register event handler', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       emitter.on('test', handler);
       emitter.emit('test', 'hello');
       
@@ -22,8 +23,8 @@ describe('EventEmitter', () => {
     });
 
     it('should register multiple handlers for same event', () => {
-      const handler1 = jest.fn();
-      const handler2 = jest.fn();
+      const handler1 = vi.fn();
+      const handler2 = vi.fn();
       
       emitter.on('test', handler1);
       emitter.on('test', handler2);
@@ -34,8 +35,8 @@ describe('EventEmitter', () => {
     });
 
     it('should handle multiple event types', () => {
-      const testHandler = jest.fn();
-      const errorHandler = jest.fn();
+      const testHandler = vi.fn();
+      const errorHandler = vi.fn();
       
       emitter.on('test', testHandler);
       emitter.on('error', errorHandler);
@@ -50,7 +51,7 @@ describe('EventEmitter', () => {
 
   describe('off()', () => {
     it('should remove event handler', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       
       emitter.on('test', handler);
       emitter.off('test', handler);
@@ -60,8 +61,8 @@ describe('EventEmitter', () => {
     });
 
     it('should only remove specific handler', () => {
-      const handler1 = jest.fn();
-      const handler2 = jest.fn();
+      const handler1 = vi.fn();
+      const handler2 = vi.fn();
       
       emitter.on('test', handler1);
       emitter.on('test', handler2);
@@ -73,7 +74,7 @@ describe('EventEmitter', () => {
     });
 
     it('should handle removing non-existent handler', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       
       // Should not throw
       expect(() => emitter.off('test', handler)).not.toThrow();
@@ -87,7 +88,7 @@ describe('EventEmitter', () => {
     });
 
     it('should pass multiple arguments to handlers', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       
       emitter.on('data', handler);
       emitter.emit('data', 123, { key: 'value' });
@@ -96,9 +97,9 @@ describe('EventEmitter', () => {
     });
 
     it('should handle handler errors without stopping other handlers', () => {
-      const consoleError = jest.spyOn(console, 'error').mockImplementation();
-      const handler1 = jest.fn(() => { throw new Error('Handler error'); });
-      const handler2 = jest.fn();
+      const consoleError = vi.spyOn(console, 'error').mockImplementation();
+      const handler1 = vi.fn(() => { throw new Error('Handler error'); });
+      const handler2 = vi.fn();
       
       emitter.on('test', handler1);
       emitter.on('test', handler2);
@@ -117,7 +118,7 @@ describe('EventEmitter', () => {
 
   describe('once()', () => {
     it('should call handler only once', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       
       emitter.once('test', handler);
       emitter.emit('test', 'first');
@@ -128,8 +129,8 @@ describe('EventEmitter', () => {
     });
 
     it('should work with multiple once handlers', () => {
-      const handler1 = jest.fn();
-      const handler2 = jest.fn();
+      const handler1 = vi.fn();
+      const handler2 = vi.fn();
       
       emitter.once('test', handler1);
       emitter.once('test', handler2);
@@ -146,9 +147,9 @@ describe('EventEmitter', () => {
 
   describe('removeAllListeners()', () => {
     it('should remove all listeners for specific event', () => {
-      const handler1 = jest.fn();
-      const handler2 = jest.fn();
-      const handler3 = jest.fn();
+      const handler1 = vi.fn();
+      const handler2 = vi.fn();
+      const handler3 = vi.fn();
       
       emitter.on('test', handler1);
       emitter.on('test', handler2);
@@ -164,8 +165,8 @@ describe('EventEmitter', () => {
     });
 
     it('should remove all listeners when no event specified', () => {
-      const handler1 = jest.fn();
-      const handler2 = jest.fn();
+      const handler1 = vi.fn();
+      const handler2 = vi.fn();
       
       emitter.on('test', handler1);
       emitter.on('error', handler2);
@@ -181,8 +182,8 @@ describe('EventEmitter', () => {
 
   describe('listenerCount()', () => {
     it('should return correct listener count', () => {
-      const handler1 = jest.fn();
-      const handler2 = jest.fn();
+      const handler1 = vi.fn();
+      const handler2 = vi.fn();
       
       expect(emitter.listenerCount('test')).toBe(0);
       

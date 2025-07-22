@@ -1,13 +1,14 @@
 import { StateManager } from '../../core/StateManager';
+import { vi } from 'vitest';
 import { EngineState } from '../../types';
 
 describe('StateManager', () => {
   let stateManager: StateManager;
-  let consoleWarn: jest.SpyInstance;
+  let consoleWarn: vi.SpyInstance;
 
   beforeEach(() => {
     stateManager = new StateManager();
-    consoleWarn = jest.spyOn(console, 'warn').mockImplementation();
+    consoleWarn = vi.spyOn(console, 'warn').mockImplementation();
   });
 
   afterEach(() => {
@@ -65,7 +66,7 @@ describe('StateManager', () => {
 
   describe('transitionTo()', () => {
     it('should transition to valid state', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       stateManager.on('state-change', handler);
       
       const result = stateManager.transitionTo('initializing');
@@ -76,7 +77,7 @@ describe('StateManager', () => {
     });
 
     it('should not transition to invalid state', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       stateManager.on('state-change', handler);
       
       const result = stateManager.transitionTo('ready');
@@ -134,7 +135,7 @@ describe('StateManager', () => {
 
   describe('reset()', () => {
     it('should reset to uninitialized state', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       stateManager.on('state-change', handler);
       
       // Transition to another state first
@@ -148,7 +149,7 @@ describe('StateManager', () => {
     });
 
     it('should not emit event when already uninitialized', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       stateManager.on('state-change', handler);
       
       stateManager.reset();
@@ -160,7 +161,7 @@ describe('StateManager', () => {
 
   describe('Integration', () => {
     it('should handle complete lifecycle', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       stateManager.on('state-change', handler);
       
       // Full lifecycle

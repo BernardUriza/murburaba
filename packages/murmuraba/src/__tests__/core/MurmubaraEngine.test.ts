@@ -5,6 +5,7 @@
  */
 
 import { MurmubaraEngine } from '../../core/MurmubaraEngine';
+import { vi } from 'vitest';
 import { StateManager } from '../../core/StateManager';
 import { Logger } from '../../core/Logger';
 import { WorkerManager } from '../../managers/WorkerManager';
@@ -13,19 +14,19 @@ import { ChunkProcessor } from '../../managers/ChunkProcessor';
 import { MurmubaraConfig, EngineState } from '../../types';
 
 // Mock all dependencies
-jest.mock('../../core/StateManager');
-jest.mock('../../core/Logger');
-jest.mock('../../managers/WorkerManager');
-jest.mock('../../managers/MetricsManager');
-jest.mock('../../managers/ChunkProcessor');
+vi.mock('../../core/StateManager');
+vi.mock('../../core/Logger');
+vi.mock('../../managers/WorkerManager');
+vi.mock('../../managers/MetricsManager');
+vi.mock('../../managers/ChunkProcessor');
 
 // Mock WASM
 const mockWasmModule = {
-  _rnnoise_create: jest.fn().mockReturnValue(123),
-  _rnnoise_destroy: jest.fn(),
-  _rnnoise_process_frame: jest.fn().mockReturnValue(1),
-  _malloc: jest.fn().mockReturnValue(1000),
-  _free: jest.fn(),
+  _rnnoise_create: vi.fn().mockReturnValue(123),
+  _rnnoise_destroy: vi.fn(),
+  _rnnoise_process_frame: vi.fn().mockReturnValue(1),
+  _malloc: vi.fn().mockReturnValue(1000),
+  _free: vi.fn(),
   HEAPF32: new Float32Array(10000),
   HEAP32: new Int32Array(10000)
 };
@@ -35,34 +36,34 @@ const mockAudioContext = {
   state: 'running' as AudioContextState,
   sampleRate: 48000,
   destination: { maxChannelCount: 2 },
-  createScriptProcessor: jest.fn(),
-  createMediaStreamSource: jest.fn(),
-  createMediaStreamDestination: jest.fn(),
-  createBiquadFilter: jest.fn(),
-  resume: jest.fn().mockResolvedValue(undefined),
-  close: jest.fn().mockResolvedValue(undefined)
+  createScriptProcessor: vi.fn(),
+  createMediaStreamSource: vi.fn(),
+  createMediaStreamDestination: vi.fn(),
+  createBiquadFilter: vi.fn(),
+  resume: vi.fn().mockResolvedValue(undefined),
+  close: vi.fn().mockResolvedValue(undefined)
 };
 
 // Mock nodes
 const mockScriptProcessor = {
-  connect: jest.fn(),
-  disconnect: jest.fn(),
+  connect: vi.fn(),
+  disconnect: vi.fn(),
   onaudioprocess: null as any,
-  addEventListener: jest.fn(),
-  removeEventListener: jest.fn()
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn()
 };
 
 const mockMediaStreamSource = {
-  connect: jest.fn(),
-  disconnect: jest.fn()
+  connect: vi.fn(),
+  disconnect: vi.fn()
 };
 
 const mockMediaStreamDestination = {
   stream: { 
     id: 'mock-output-stream',
-    getTracks: jest.fn().mockReturnValue([]),
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn()
+    getTracks: vi.fn().mockReturnValue([]),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn()
   }
 };
 
@@ -70,35 +71,35 @@ const mockBiquadFilter = {
   type: '' as BiquadFilterType,
   frequency: { value: 0 },
   Q: { value: 0 },
-  connect: jest.fn(),
-  disconnect: jest.fn()
+  connect: vi.fn(),
+  disconnect: vi.fn()
 };
 
 // Setup global mocks
 beforeEach(() => {
-  jest.clearAllMocks();
-  jest.useFakeTimers();
+  vi.clearAllMocks();
+  vi.useFakeTimers();
   
-  // Note: jest.useFakeTimers() already mocks setTimeout/clearTimeout
+  // Note: vi.useFakeTimers() already mocks setTimeout/clearTimeout
   // We don't need to mock them again
   
   // Mock window - need to properly mock these for checkEnvironmentSupport
   global.window = Object.assign(global.window || {}, {
-    AudioContext: jest.fn(() => mockAudioContext),
-    webkitAudioContext: jest.fn(() => mockAudioContext),
+    AudioContext: vi.fn(() => mockAudioContext),
+    webkitAudioContext: vi.fn(() => mockAudioContext),
     WebAssembly: {},
-    createRNNWasmModule: jest.fn().mockResolvedValue(mockWasmModule)
+    createRNNWasmModule: vi.fn().mockResolvedValue(mockWasmModule)
   });
   
   // Mock document
   global.document = {
-    createElement: jest.fn().mockReturnValue({
+    createElement: vi.fn().mockReturnValue({
       onload: null,
       onerror: null,
       src: ''
     }),
     head: {
-      appendChild: jest.fn()
+      appendChild: vi.fn()
     }
   } as any;
   
@@ -114,62 +115,62 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  jest.useRealTimers();
+  vi.useRealTimers();
 });
 
 describe('MurmubaraEngine - The Final Boss', () => {
   let engine: MurmubaraEngine;
-  let mockStateManager: jest.Mocked<StateManager>;
-  let mockLogger: jest.Mocked<Logger>;
-  let mockWorkerManager: jest.Mocked<WorkerManager>;
-  let mockMetricsManager: jest.Mocked<MetricsManager>;
+  let mockStateManager: vi.Mocked<StateManager>;
+  let mockLogger: vi.Mocked<Logger>;
+  let mockWorkerManager: vi.Mocked<WorkerManager>;
+  let mockMetricsManager: vi.Mocked<MetricsManager>;
   
   beforeEach(() => {
     // Create fresh mocks for each test
     mockStateManager = {
-      getState: jest.fn().mockReturnValue('uninitialized'),
-      canTransitionTo: jest.fn().mockReturnValue(true),
-      transitionTo: jest.fn().mockReturnValue(true),
-      isInState: jest.fn().mockReturnValue(false),
-      requireState: jest.fn(),
-      reset: jest.fn(),
-      on: jest.fn(),
-      off: jest.fn(),
-      emit: jest.fn(),
-      once: jest.fn(),
-      removeAllListeners: jest.fn(),
-      listenerCount: jest.fn().mockReturnValue(0)
+      getState: vi.fn().mockReturnValue('uninitialized'),
+      canTransitionTo: vi.fn().mockReturnValue(true),
+      transitionTo: vi.fn().mockReturnValue(true),
+      isInState: vi.fn().mockReturnValue(false),
+      requireState: vi.fn(),
+      reset: vi.fn(),
+      on: vi.fn(),
+      off: vi.fn(),
+      emit: vi.fn(),
+      once: vi.fn(),
+      removeAllListeners: vi.fn(),
+      listenerCount: vi.fn().mockReturnValue(0)
     } as any;
     
     mockLogger = {
-      debug: jest.fn(),
-      info: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
-      setLevel: jest.fn(),
-      setLogHandler: jest.fn()
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      setLevel: vi.fn(),
+      setLogHandler: vi.fn()
     } as any;
     
     mockWorkerManager = {
-      createWorker: jest.fn(),
-      getWorker: jest.fn(),
-      sendMessage: jest.fn(),
-      terminateWorker: jest.fn(),
-      terminateAll: jest.fn(),
-      getActiveWorkerCount: jest.fn().mockReturnValue(0),
-      getWorkerIds: jest.fn().mockReturnValue([])
+      createWorker: vi.fn(),
+      getWorker: vi.fn(),
+      sendMessage: vi.fn(),
+      terminateWorker: vi.fn(),
+      terminateAll: vi.fn(),
+      getActiveWorkerCount: vi.fn().mockReturnValue(0),
+      getWorkerIds: vi.fn().mockReturnValue([])
     } as any;
     
     mockMetricsManager = {
-      startAutoUpdate: jest.fn(),
-      stopAutoUpdate: jest.fn(),
-      updateInputLevel: jest.fn(),
-      updateOutputLevel: jest.fn(),
-      updateNoiseReduction: jest.fn(),
-      recordFrame: jest.fn(),
-      recordDroppedFrame: jest.fn(),
-      recordChunk: jest.fn(),
-      getMetrics: jest.fn().mockReturnValue({
+      startAutoUpdate: vi.fn(),
+      stopAutoUpdate: vi.fn(),
+      updateInputLevel: vi.fn(),
+      updateOutputLevel: vi.fn(),
+      updateNoiseReduction: vi.fn(),
+      recordFrame: vi.fn(),
+      recordDroppedFrame: vi.fn(),
+      recordChunk: vi.fn(),
+      getMetrics: vi.fn().mockReturnValue({
         noiseReductionLevel: 0,
         processingLatency: 0,
         inputLevel: 0,
@@ -178,41 +179,41 @@ describe('MurmubaraEngine - The Final Boss', () => {
         frameCount: 0,
         droppedFrames: 0
       }),
-      reset: jest.fn(),
-      calculateRMS: jest.fn().mockReturnValue(0.5),
-      calculatePeak: jest.fn().mockReturnValue(0.8),
-      on: jest.fn(),
-      off: jest.fn(),
-      emit: jest.fn(),
-      once: jest.fn(),
-      removeAllListeners: jest.fn(),
-      listenerCount: jest.fn().mockReturnValue(0)
+      reset: vi.fn(),
+      calculateRMS: vi.fn().mockReturnValue(0.5),
+      calculatePeak: vi.fn().mockReturnValue(0.8),
+      on: vi.fn(),
+      off: vi.fn(),
+      emit: vi.fn(),
+      once: vi.fn(),
+      removeAllListeners: vi.fn(),
+      listenerCount: vi.fn().mockReturnValue(0)
     } as any;
     
     // Mock constructors
-    (StateManager as jest.MockedClass<typeof StateManager>).mockImplementation(() => mockStateManager);
-    (Logger as jest.MockedClass<typeof Logger>).mockImplementation(() => mockLogger);
-    (WorkerManager as jest.MockedClass<typeof WorkerManager>).mockImplementation(() => mockWorkerManager);
-    (MetricsManager as jest.MockedClass<typeof MetricsManager>).mockImplementation(() => mockMetricsManager);
+    (StateManager as vi.MockedClass<typeof StateManager>).mockImplementation(() => mockStateManager);
+    (Logger as vi.MockedClass<typeof Logger>).mockImplementation(() => mockLogger);
+    (WorkerManager as vi.MockedClass<typeof WorkerManager>).mockImplementation(() => mockWorkerManager);
+    (MetricsManager as vi.MockedClass<typeof MetricsManager>).mockImplementation(() => mockMetricsManager);
     
     // Ensure ChunkProcessor is properly mocked if needed
-    (ChunkProcessor as jest.MockedClass<typeof ChunkProcessor>).mockImplementation(
+    (ChunkProcessor as vi.MockedClass<typeof ChunkProcessor>).mockImplementation(
       (sampleRate, config, logger, metrics) => ({
-        addSamples: jest.fn(),
-        flush: jest.fn(),
-        reset: jest.fn(),
-        getStatus: jest.fn().mockReturnValue({
+        addSamples: vi.fn(),
+        flush: vi.fn(),
+        reset: vi.fn(),
+        getStatus: vi.fn().mockReturnValue({
           currentSampleCount: 0,
           samplesPerChunk: 48000,
           chunkIndex: 0,
           bufferFillPercentage: 0
         }),
-        on: jest.fn(),
-        off: jest.fn(),
-        emit: jest.fn(),
-        once: jest.fn(),
-        removeAllListeners: jest.fn(),
-        listenerCount: jest.fn().mockReturnValue(0)
+        on: vi.fn(),
+        off: vi.fn(),
+        emit: vi.fn(),
+        once: vi.fn(),
+        removeAllListeners: vi.fn(),
+        listenerCount: vi.fn().mockReturnValue(0)
       } as any)
     );
   });
@@ -238,7 +239,7 @@ describe('MurmubaraEngine - The Final Boss', () => {
         useWorker: true,
         workerPath: '/custom-worker.js',
         allowDegraded: true,
-        onLog: jest.fn()
+        onLog: vi.fn()
       };
       
       engine = new MurmubaraEngine(config);
@@ -352,14 +353,14 @@ describe('MurmubaraEngine - The Final Boss', () => {
     });
     
     it('should handle WASM loading failure', async () => {
-      (global.window as any).createRNNWasmModule = jest.fn().mockRejectedValue(new Error('WASM load failed'));
+      (global.window as any).createRNNWasmModule = vi.fn().mockRejectedValue(new Error('WASM load failed'));
       
       await expect(engine.initialize()).rejects.toThrow('Failed to load RNNoise WASM module');
       expect(mockStateManager.transitionTo).toHaveBeenCalledWith('error');
     });
     
     it('should handle AudioContext creation failure', async () => {
-      (global.window as any).AudioContext = jest.fn().mockImplementation(() => {
+      (global.window as any).AudioContext = vi.fn().mockImplementation(() => {
         throw new Error('AudioContext failed');
       });
       
@@ -377,7 +378,7 @@ describe('MurmubaraEngine - The Final Boss', () => {
       engine = new MurmubaraEngine({ allowDegraded: true });
       
       // Make WASM fail
-      (global.window as any).createRNNWasmModule = jest.fn().mockRejectedValue(new Error('WASM failed'));
+      (global.window as any).createRNNWasmModule = vi.fn().mockRejectedValue(new Error('WASM failed'));
       
       await engine.initialize();
       
@@ -402,13 +403,13 @@ describe('MurmubaraEngine - The Final Boss', () => {
       delete (global.window as any).createRNNWasmModule;
       
       const mockScript = { onload: null as any, onerror: null as any, src: '' };
-      (global.document.createElement as jest.Mock).mockReturnValue(mockScript);
+      (global.document.createElement as vi.Mock).mockReturnValue(mockScript);
       
       const initPromise = engine.initialize();
       
       // Simulate script load
       setTimeout(() => {
-        (global.window as any).createRNNWasmModule = jest.fn().mockResolvedValue(mockWasmModule);
+        (global.window as any).createRNNWasmModule = vi.fn().mockResolvedValue(mockWasmModule);
         mockScript.onload?.();
       }, 10);
       
@@ -423,7 +424,7 @@ describe('MurmubaraEngine - The Final Boss', () => {
       delete (global.window as any).createRNNWasmModule;
       
       const mockScript = { onload: null as any, onerror: null as any, src: '' };
-      (global.document.createElement as jest.Mock).mockReturnValue(mockScript);
+      (global.document.createElement as vi.Mock).mockReturnValue(mockScript);
       
       const initPromise = engine.initialize();
       
@@ -445,11 +446,11 @@ describe('MurmubaraEngine - The Final Boss', () => {
       
       mockStream = {
         id: 'test-stream',
-        getTracks: jest.fn().mockReturnValue([
-          { stop: jest.fn(), addEventListener: jest.fn() }
+        getTracks: vi.fn().mockReturnValue([
+          { stop: vi.fn(), addEventListener: vi.fn() }
         ]),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn()
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn()
       } as any;
     });
     
@@ -510,7 +511,7 @@ describe('MurmubaraEngine - The Final Boss', () => {
     });
     
     it('should handle chunk processing', async () => {
-      const onChunkProcessed = jest.fn();
+      const onChunkProcessed = vi.fn();
       const controller = await engine.processStream(mockStream, {
         chunkDuration: 1000,
         onChunkProcessed
@@ -616,7 +617,7 @@ describe('MurmubaraEngine - The Final Boss', () => {
       mockStateManager.isInState.mockReturnValue(true);
       engine.emit('processing-end');
       
-      const timerId = (setTimeout as unknown as jest.Mock).mock.results[0].value;
+      const timerId = (setTimeout as unknown as vi.Mock).mock.results[0].value;
       
       await engine.destroy();
       
@@ -639,7 +640,7 @@ describe('MurmubaraEngine - The Final Boss', () => {
     });
     
     it('should register metrics callback', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       engine.onMetricsUpdate(callback);
       
       expect(mockMetricsManager.on).toHaveBeenCalledWith('metrics-update', callback);
@@ -686,11 +687,11 @@ describe('MurmubaraEngine - The Final Boss', () => {
     });
     
     it('should emit error events', async () => {
-      const errorHandler = jest.fn();
+      const errorHandler = vi.fn();
       engine.on('error', errorHandler);
       
       // Trigger error
-      (global.window as any).createRNNWasmModule = jest.fn().mockRejectedValue(new Error('Test error'));
+      (global.window as any).createRNNWasmModule = vi.fn().mockRejectedValue(new Error('Test error'));
       
       try {
         await engine.initialize();
@@ -705,7 +706,7 @@ describe('MurmubaraEngine - The Final Boss', () => {
     });
     
     it('should record error history', async () => {
-      (global.window as any).createRNNWasmModule = jest.fn().mockRejectedValue(new Error('Test error'));
+      (global.window as any).createRNNWasmModule = vi.fn().mockRejectedValue(new Error('Test error'));
       
       try {
         await engine.initialize();
@@ -721,7 +722,7 @@ describe('MurmubaraEngine - The Final Boss', () => {
     it('should limit error history', async () => {
       // Trigger many errors by repeatedly trying to initialize with failing WASM
       for (let i = 0; i < 15; i++) {
-        (global.window as any).createRNNWasmModule = jest.fn().mockRejectedValue(new Error(`Error ${i}`));
+        (global.window as any).createRNNWasmModule = vi.fn().mockRejectedValue(new Error(`Error ${i}`));
         try {
           await engine.initialize();
         } catch (e) {
