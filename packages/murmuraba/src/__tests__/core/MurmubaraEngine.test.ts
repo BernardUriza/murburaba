@@ -31,18 +31,8 @@ const mockWasmModule = {
   HEAP32: new Int32Array(10000)
 };
 
-// Mock AudioContext
-const mockAudioContext = {
-  state: 'running' as AudioContextState,
-  sampleRate: 48000,
-  destination: { maxChannelCount: 2 },
-  createScriptProcessor: vi.fn(),
-  createMediaStreamSource: vi.fn(),
-  createMediaStreamDestination: vi.fn(),
-  createBiquadFilter: vi.fn(),
-  resume: vi.fn().mockResolvedValue(undefined),
-  close: vi.fn().mockResolvedValue(undefined)
-};
+// Get the mock AudioContext from our global setup
+let mockAudioContext: any;
 
 // Mock nodes
 const mockScriptProcessor = {
@@ -78,15 +68,35 @@ const mockBiquadFilter = {
 // Setup global mocks
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.useFakeTimers();
+  // Don't use fake timers by default - only in specific tests that need them
+  // vi.useFakeTimers();
   
-  // Note: vi.useFakeTimers() already mocks setTimeout/clearTimeout
-  // We don't need to mock them again
+  // Create a fresh mock AudioContext
+  mockAudioContext = {
+    state: 'running' as AudioContextState,
+    sampleRate: 48000,
+    destination: { maxChannelCount: 2 },
+    createScriptProcessor: vi.fn().mockReturnValue(mockScriptProcessor),
+    createMediaStreamSource: vi.fn().mockReturnValue(mockMediaStreamSource),
+    createMediaStreamDestination: vi.fn().mockReturnValue(mockMediaStreamDestination),
+    createBiquadFilter: vi.fn().mockReturnValue(mockBiquadFilter),
+    resume: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn().mockResolvedValue(undefined),
+    currentTime: 0,
+    baseLatency: 0.01,
+    outputLatency: 0.02,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn()
+  };
   
-  // Mock window - need to properly mock these for checkEnvironmentSupport
+  // Override the global AudioContext to return our mock
+  (global.AudioContext as any).mockImplementation(() => mockAudioContext);
+  
+  // Mock window for checkEnvironmentSupport
   global.window = Object.assign(global.window || {}, {
-    AudioContext: vi.fn(() => mockAudioContext),
-    webkitAudioContext: vi.fn(() => mockAudioContext),
+    AudioContext: global.AudioContext,
+    webkitAudioContext: global.AudioContext,
     WebAssembly: {},
     createRNNWasmModule: vi.fn().mockResolvedValue(mockWasmModule)
   });
@@ -103,19 +113,14 @@ beforeEach(() => {
     }
   } as any;
   
-  // Reset audio nodes
-  mockAudioContext.createScriptProcessor.mockReturnValue(mockScriptProcessor);
-  mockAudioContext.createMediaStreamSource.mockReturnValue(mockMediaStreamSource);
-  mockAudioContext.createMediaStreamDestination.mockReturnValue(mockMediaStreamDestination);
-  mockAudioContext.createBiquadFilter.mockReturnValue(mockBiquadFilter);
-  
   mockScriptProcessor.onaudioprocess = null;
   mockScriptProcessor.connect.mockClear();
   mockScriptProcessor.disconnect.mockClear();
 });
 
 afterEach(() => {
-  vi.useRealTimers();
+  // Only restore timers if they were faked
+  // vi.useRealTimers();
 });
 
 describe('MurmubaraEngine - The Final Boss', () => {
@@ -266,6 +271,7 @@ describe('MurmubaraEngine - The Final Boss', () => {
     });
     
     it('should setup auto cleanup when enabled', () => {
+      vi.useFakeTimers();
       engine = new MurmubaraEngine({ autoCleanup: true, cleanupDelay: 5000 });
       
       // Mock state as ready
@@ -275,6 +281,7 @@ describe('MurmubaraEngine - The Final Boss', () => {
       engine.emit('processing-end');
       
       expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), 5000);
+      vi.useRealTimers();
     });
     
     it('should not setup auto cleanup when disabled', () => {

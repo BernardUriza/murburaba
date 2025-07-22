@@ -635,8 +635,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     };
     
     return {
-      version: '1.3.0',
-      engineVersion: '2.0.0',
+      version: '1.4.0',
+      engineVersion: '1.4.0',
       reactVersion,
       browserInfo,
       wasmLoaded: !!this.wasmModule,

@@ -72,7 +72,7 @@ describe('Advanced Metrics Button', () => {
   it('should show Advanced Metrics panel when diagnostics is available', () => {
     // Configurar el mock con diagnostics válido
     const mockDiagnostics = {
-      engineVersion: '1.0.0',
+      engineVersion: '1.4.0',
       wasmLoaded: true,
       activeProcessors: 2,
       memoryUsage: 1024 * 1024 * 10, // 10MB

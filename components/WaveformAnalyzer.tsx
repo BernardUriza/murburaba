@@ -73,7 +73,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       
       return () => clearTimeout(timer);
     }
-  }, [audioUrl, hideControls]);
+  }, [audioUrl, hideControls, volume, isMuted]);
   
   // Handle playback state changes
   useEffect(() => {
@@ -150,6 +150,12 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
 
       setAudioContext(ctx);
       setAnalyser(analyserNode);
+      
+      // CRITICAL: Apply volume and mute settings after audio initialization
+      if (audioRef.current) {
+        audioRef.current.volume = volume;
+        audioRef.current.muted = isMuted;
+      }
     } catch (error) {
       console.error('Error initializing audio:', error);
     }

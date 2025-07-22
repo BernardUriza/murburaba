@@ -13,8 +13,9 @@
     "start": "next start",
     "lint": "next lint",
     "generate-build-info": "node scripts/generate-build-info.js",
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "test": "npm run test --workspace=murmuraba",
+    "test:watch": "npm run test:watch --workspace=murmuraba",
+    "test:coverage": "npm run test:coverage --workspace=murmuraba"
   },
   "dependencies": {
     "murmuraba": "workspace:*",
