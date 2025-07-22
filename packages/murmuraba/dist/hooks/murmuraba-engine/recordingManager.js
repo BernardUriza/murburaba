@@ -163,8 +163,7 @@ export class RecordingManager {
             isExpanded: false,
             isValid,
             errorMessage,
-            noiseRemoved: originalBlob.size > 0 ?
-                ((originalBlob.size - processedBlob.size) / originalBlob.size * 100) : 0,
+            noiseRemoved: 0, // Will be calculated properly by ChunkProcessor using audio RMS
             originalSize: originalBlob.size,
             processedSize: processedBlob.size,
             metrics: {
@@ -172,7 +171,7 @@ export class RecordingManager {
                 frameCount: Math.floor(actualDuration / 10),
                 inputLevel: 1.0,
                 outputLevel: processedBlob.size / originalBlob.size,
-                noiseReductionLevel: Math.max(0, Math.min(1, (originalBlob.size - processedBlob.size) / originalBlob.size)),
+                noiseReductionLevel: 0, // Cannot calculate from blob sizes - needs audio signal analysis
                 timestamp: Date.now(),
                 droppedFrames: 0
             }

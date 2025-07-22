@@ -19,24 +19,8 @@ export class RNNoiseEngine {
         try {
             // Option 1: Try dynamic import with bundler resolution
             const rnnoiseModule = await import('@jitsi/rnnoise-wasm');
-            // Option 2: Use fetch to load WASM from package
-            if (typeof window !== 'undefined' && !this.config.wasmPath) {
-                // Create a blob URL for the WASM module
-                const wasmUrl = new URL('node_modules/@jitsi/rnnoise-wasm/dist/rnnoise.wasm', import.meta.url).href;
-                try {
-                    const wasmResponse = await fetch(wasmUrl);
-                    const wasmArrayBuffer = await wasmResponse.arrayBuffer();
-                    // Initialize with the fetched WASM
-                    this.module = await rnnoiseModule.default();
-                }
-                catch (fetchError) {
-                    console.warn('[RNNoiseEngine] Could not fetch WASM from package, using default loader');
-                    this.module = await rnnoiseModule.default();
-                }
-            }
-            else {
-                this.module = await rnnoiseModule.default();
-            }
+            // Initialize with default loader - let the module handle its own WASM loading
+            this.module = await rnnoiseModule.default();
         }
         catch (error) {
             console.error('[RNNoiseEngine] Failed to load from import, trying embedded loader...', error);

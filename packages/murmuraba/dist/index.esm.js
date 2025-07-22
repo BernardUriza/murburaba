@@ -1552,24 +1552,8 @@ class RNNoiseEngine {
         try {
             // Option 1: Try dynamic import with bundler resolution
             const rnnoiseModule = await Promise.resolve().then(function () { return index$1; });
-            // Option 2: Use fetch to load WASM from package
-            if (typeof window !== 'undefined' && !this.config.wasmPath) {
-                // Create a blob URL for the WASM module
-                const wasmUrl = new URL('node_modules/@jitsi/rnnoise-wasm/dist/rnnoise.wasm', import.meta.url).href;
-                try {
-                    const wasmResponse = await fetch(wasmUrl);
-                    const wasmArrayBuffer = await wasmResponse.arrayBuffer();
-                    // Initialize with the fetched WASM
-                    this.module = await rnnoiseModule.default();
-                }
-                catch (fetchError) {
-                    console.warn('[RNNoiseEngine] Could not fetch WASM from package, using default loader');
-                    this.module = await rnnoiseModule.default();
-                }
-            }
-            else {
-                this.module = await rnnoiseModule.default();
-            }
+            // Initialize with default loader - let the module handle its own WASM loading
+            this.module = await rnnoiseModule.default();
         }
         catch (error) {
             console.error('[RNNoiseEngine] Failed to load from import, trying embedded loader...', error);
@@ -2243,8 +2227,7 @@ class RecordingManager {
             isExpanded: false,
             isValid,
             errorMessage,
-            noiseRemoved: originalBlob.size > 0 ?
-                ((originalBlob.size - processedBlob.size) / originalBlob.size * 100) : 0,
+            noiseRemoved: 0, // Will be calculated properly by ChunkProcessor using audio RMS
             originalSize: originalBlob.size,
             processedSize: processedBlob.size,
             metrics: {
@@ -2252,7 +2235,7 @@ class RecordingManager {
                 frameCount: Math.floor(actualDuration / 10),
                 inputLevel: 1.0,
                 outputLevel: processedBlob.size / originalBlob.size,
-                noiseReductionLevel: Math.max(0, Math.min(1, (originalBlob.size - processedBlob.size) / originalBlob.size)),
+                noiseReductionLevel: 0, // Cannot calculate from blob sizes - needs audio signal analysis
                 timestamp: Date.now(),
                 droppedFrames: 0
             }
@@ -4061,27 +4044,9 @@ var index$1 = /*#__PURE__*/Object.freeze({
  */
 // Use dynamic imports that bundlers can understand
 async function loadWasmModule() {
-    // For Webpack 5+ / Vite / Modern bundlers
-    try {
-        // This tells bundlers to include the WASM file
-        const wasmUrl = new URL('@jitsi/rnnoise-wasm/dist/rnnoise.wasm', import.meta.url);
-        const response = await fetch(wasmUrl);
-        const wasmBuffer = await response.arrayBuffer();
-        const module = await Promise.resolve().then(function () { return index$1; });
-        return await module.default();
-    }
-    catch (error) {
-        console.warn('[RNNoise] Direct import failed, trying alternative methods...', error);
-    }
-    // Fallback: Let the library handle it
-    try {
-        const module = await Promise.resolve().then(function () { return index$1; });
-        return await module.default();
-    }
-    catch (error) {
-        console.error('[RNNoise] Default import failed', error);
-        throw error;
-    }
+    // Just let the @jitsi/rnnoise-wasm handle its own WASM loading
+    const module = await Promise.resolve().then(function () { return index$1; });
+    return await module.default();
 }
 async function initializeRNNoise() {
     console.log('[RNNoise] Initializing with universal loader...');

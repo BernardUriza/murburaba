@@ -115,7 +115,8 @@
       "Bash(del \"C:\\Users\\Bernard\\Documents\\GitHub\\murburaba\\components\\ChunkProcessingResults.module.css\")",
       "Bash(git log:*)",
       "Bash(git clean:*)",
-      "Bash(del \"C:\\Users\\Bernard\\Documents\\GitHub\\murburaba\\components\\DualAudioPlayer.tsx\")"
+      "Bash(del \"C:\\Users\\Bernard\\Documents\\GitHub\\murburaba\\components\\DualAudioPlayer.tsx\")",
+      "Bash(npm link:*)"
     ],
     "deny": []
   }

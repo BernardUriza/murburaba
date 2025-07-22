@@ -5,31 +5,9 @@
 
 // Use dynamic imports that bundlers can understand
 async function loadWasmModule() {
-  // For Webpack 5+ / Vite / Modern bundlers
-  try {
-    // This tells bundlers to include the WASM file
-    const wasmUrl = new URL(
-      '@jitsi/rnnoise-wasm/dist/rnnoise.wasm',
-      import.meta.url
-    );
-    
-    const response = await fetch(wasmUrl);
-    const wasmBuffer = await response.arrayBuffer();
-    
-    const module = await import('@jitsi/rnnoise-wasm');
-    return await module.default();
-  } catch (error) {
-    console.warn('[RNNoise] Direct import failed, trying alternative methods...', error);
-  }
-  
-  // Fallback: Let the library handle it
-  try {
-    const module = await import('@jitsi/rnnoise-wasm');
-    return await module.default();
-  } catch (error) {
-    console.error('[RNNoise] Default import failed', error);
-    throw error;
-  }
+  // Just let the @jitsi/rnnoise-wasm handle its own WASM loading
+  const module = await import('@jitsi/rnnoise-wasm');
+  return await module.default();
 }
 
 export async function initializeRNNoise(): Promise<any> {

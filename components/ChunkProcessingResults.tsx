@@ -152,7 +152,7 @@ function ChunkItem({
         <div className="chunk-stats">
           <div className="stat-item">
             <span className="stat-icon">🔇</span>
-            <span className="stat-value">{chunk.noiseRemoved.toFixed(1)}%</span>
+            <span className="stat-value">{Math.max(0, chunk.noiseRemoved).toFixed(1)}%</span>
             <span className="stat-label">reduced</span>
           </div>
           <div className="stat-item">
