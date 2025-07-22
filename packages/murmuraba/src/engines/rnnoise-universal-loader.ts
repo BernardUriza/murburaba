@@ -17,9 +17,7 @@ async function loadWasmModule() {
     const wasmBuffer = await response.arrayBuffer();
     
     const module = await import('@jitsi/rnnoise-wasm');
-    return await module.default({
-      wasmBinary: wasmBuffer
-    });
+    return await module.default();
   } catch (error) {
     console.warn('[RNNoise] Direct import failed, trying alternative methods...', error);
   }
@@ -61,14 +59,14 @@ export async function initializeRNNoise(): Promise<any> {
         const outputPtr = module._malloc(frameSize * 4);
         
         // Copy input to WASM memory
-        module.HEAPF32.set(input, inputPtr / 4);
+        (module as any).HEAPF32.set(input, inputPtr / 4);
         
         // Process
         module._rnnoise_process_frame(state, outputPtr, inputPtr);
         
         // Copy output from WASM memory
         const output = new Float32Array(
-          module.HEAPF32.buffer,
+          (module as any).HEAPF32.buffer,
           outputPtr,
           frameSize
         );

@@ -1,5 +1,5 @@
 /**
- * Murmuraba v1.2.1
+ * Murmuraba v1.4.0
  * Real-time audio noise reduction with advanced chunked processing
  */
 
@@ -12,6 +12,11 @@ export { Logger } from './core/Logger';
 // Manager exports
 export { WorkerManager } from './managers/WorkerManager';
 export { MetricsManager } from './managers/MetricsManager';
+
+// Engine exports
+export { AudioWorkletEngine } from './engines/AudioWorkletEngine';
+export { RNNoiseEngine } from './engines/RNNoiseEngine';
+export type { AudioEngine } from './engines/types';
 
 // Type exports
 export * from './types';
@@ -29,7 +34,7 @@ export {
 } from './api';
 
 // Export version
-export const VERSION = '1.3.0';
+export const VERSION = '1.4.0';
 export const MURMURABA_VERSION = VERSION;
 
 // Re-export error codes

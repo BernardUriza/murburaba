@@ -278,14 +278,14 @@ describe('MetricsManager', () => {
       const samples = new Float32Array([0.1, -0.8, 0.3, -0.5, 0.9]);
       const peak = metricsManager.calculatePeak(samples);
       
-      expect(peak).toBe(0.9);
+      expect(peak).toBeCloseTo(0.9, 5);
     });
 
     it('should calculate peak for negative values', () => {
       const samples = new Float32Array([0.1, -0.95, 0.3, -0.5]);
       const peak = metricsManager.calculatePeak(samples);
       
-      expect(peak).toBe(0.95);
+      expect(peak).toBeCloseTo(0.95, 5);
     });
   });
 

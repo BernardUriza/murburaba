@@ -1,0 +1,1 @@
+{"version":3,"file":"rnnoise-loader.d.ts","sourceRoot":"","sources":["../../src/engines/rnnoise-loader.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,OAAO,CAAC,MAAM,CAAC;IACb,UAAU,MAAM;QACd,mBAAmB,CAAC,EAAE,GAAG,CAAC;KAC3B;CACF;AAED,wBAAsB,mBAAmB,IAAI,OAAO,CAAC,GAAG,CAAC,CAoExD;AAGD,wBAAsB,kBAAkB,IAAI,OAAO,CAAC,GAAG,CAAC,CAgBvD"}

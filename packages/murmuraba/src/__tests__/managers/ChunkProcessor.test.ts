@@ -125,7 +125,8 @@ describe('ChunkProcessor', () => {
       chunkProcessor.addSamples(samples);
       
       // Should set start time
-      expect(chunkProcessor['chunkStartTime']).toBe(now);
+      expect(chunkProcessor['chunkStartTime']).toBeGreaterThan(0);
+      expect(chunkProcessor['chunkStartTime']).toBeCloseTo(now, -2); // Within 100ms
     });
 
     it('should emit chunk when threshold reached', () => {

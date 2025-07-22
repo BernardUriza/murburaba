@@ -89,7 +89,7 @@ export async function loadWithImportMeta(): Promise<any> {
       const wasmBuffer = await response.arrayBuffer();
       
       const module = await import('@jitsi/rnnoise-wasm');
-      return module.default({ wasmBinary: wasmBuffer });
+      return module.default();
     }
   } catch (error) {
     console.warn('[RNNoise Loader] import.meta.resolve not supported');

@@ -45,9 +45,7 @@ export class RNNoiseEngine implements AudioEngine {
           const wasmArrayBuffer = await wasmResponse.arrayBuffer();
           
           // Initialize with the fetched WASM
-          this.module = await rnnoiseModule.default({
-            wasmBinary: wasmArrayBuffer
-          });
+          this.module = await rnnoiseModule.default();
         } catch (fetchError) {
           console.warn('[RNNoiseEngine] Could not fetch WASM from package, using default loader');
           this.module = await rnnoiseModule.default();
@@ -66,34 +64,37 @@ export class RNNoiseEngine implements AudioEngine {
         this.state = rnnoiseInstance.state;
       } catch (embeddedError) {
         console.error('[RNNoiseEngine] Failed to load embedded, trying script tag...', embeddedError);
-      
-      // Fallback to script tag if import fails
-      const script = document.createElement('script');
-      script.src = this.config.scriptPath || '/rnnoise-fixed.js';
-      await new Promise((resolve, reject) => {
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-      });
-      
-      // Create module
-      const createRNNWasmModule = (window as any).createRNNWasmModule;
-      this.module = await createRNNWasmModule({
-        locateFile: (filename: string) => {
-          if (filename.endsWith('.wasm')) {
-            return this.config.wasmPath ? 
-              `${this.config.wasmPath}/${filename}` : 
-              `/dist/${filename}`;
+        
+        // Fallback to script tag if import fails
+        const script = document.createElement('script');
+        script.src = this.config.scriptPath || '/rnnoise-fixed.js';
+        await new Promise((resolve, reject) => {
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+        
+        // Create module
+        const createRNNWasmModule = (window as any).createRNNWasmModule;
+        this.module = await createRNNWasmModule({
+          locateFile: (filename: string) => {
+            if (filename.endsWith('.wasm')) {
+              return this.config.wasmPath ? 
+                `${this.config.wasmPath}/${filename}` : 
+                `/dist/${filename}`;
+            }
+            return filename;
           }
-          return filename;
-        }
-      });
+        });
+      }
     }
     
-    // Create state
-    this.state = this.module._rnnoise_create(0);
+    // Create state if not already created
     if (!this.state) {
-      throw new Error('Failed to create RNNoise state');
+      this.state = this.module._rnnoise_create(0);
+      if (!this.state) {
+        throw new Error('Failed to create RNNoise state');
+      }
     }
     
     // Allocate memory for float32 samples
