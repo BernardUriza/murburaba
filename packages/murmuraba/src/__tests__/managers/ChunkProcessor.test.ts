@@ -115,18 +115,23 @@ describe('ChunkProcessor', () => {
     });
 
     it('should initialize start time on first sample', () => {
-      const now = Date.now();
-      jest.setSystemTime(now);
+      const mockPerformanceNow = 1234567.89;
+      jest.spyOn(performance, 'now').mockReturnValue(mockPerformanceNow);
       
-      // Force chunkStartTime to be 0
-      chunkProcessor['chunkStartTime'] = 0;
+      // Create a new processor to ensure chunkStartTime is 0
+      const newProcessor = new ChunkProcessor({
+        sampleRate: 48000,
+        chunkDuration: 1
+      });
       
       const samples = new Float32Array(100);
-      chunkProcessor.addSamples(samples);
+      newProcessor.addSamples(samples);
       
-      // Should set start time
-      expect(chunkProcessor['chunkStartTime']).toBeGreaterThan(0);
-      expect(chunkProcessor['chunkStartTime']).toBeCloseTo(now, -2); // Within 100ms
+      // Should set start time using performance.now()
+      expect(newProcessor['chunkStartTime']).toBe(mockPerformanceNow);
+      
+      // Restore mock
+      jest.restoreAllMocks();
     });
 
     it('should emit chunk when threshold reached', () => {
