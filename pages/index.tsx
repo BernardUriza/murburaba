@@ -101,6 +101,7 @@ export default function Home() {
     autoInitialize: false,
     logLevel: 'info',
     defaultChunkDuration: 8,
+    allowDegraded: true, // Allow degraded mode when WASM fails
     ...engineConfig
   })
 
@@ -170,17 +171,45 @@ export default function Home() {
       })
       
       await startRecording(chunkDuration)
+      
+      // Show success message when degraded mode is active
+      if (engineState === 'degraded') {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'warning',
+          title: 'Grabación iniciada en modo degradado',
+          text: 'La reducción de ruido no está disponible',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true
+        })
+      }
     } catch (error) {
       console.error('Failed to start recording:', error)
+      
+      let errorMessage = 'No se pudo acceder al micrófono';
+      let errorTitle = 'Error al iniciar grabación';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Specific handling for WASM errors
+        if (error.message.includes('WASM') || error.message.includes('initialize')) {
+          errorTitle = 'Error de inicialización';
+          errorMessage = 'El motor de audio no pudo inicializarse. Por favor, recarga la página.';
+        } else if (error.message.includes('Permission')) {
+          errorTitle = 'Permiso denegado';
+          errorMessage = 'Por favor, permite el acceso al micrófono para grabar.';
+        }
+      }
+      
       Swal.fire({
-        toast: true,
-        position: 'top-end',
         icon: 'error',
-        title: 'Error al iniciar grabación',
-        text: error instanceof Error ? error.message : 'No se pudo acceder al micrófono',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true
+        title: errorTitle,
+        text: errorMessage,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#d33'
       })
     }
   }

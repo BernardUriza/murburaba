@@ -248,13 +248,35 @@ export class MurmubaraEngine extends EventEmitter {
     async warmupModel() {
         this.logger.debug('Warming up noise reduction model...');
         const silentFrame = new Float32Array(480);
-        for (let i = 0; i < 10; i++) {
-            this.processFrame(silentFrame);
+        try {
+            for (let i = 0; i < 10; i++) {
+                this.processFrame(silentFrame);
+            }
+        }
+        catch (error) {
+            this.logger.warn('Failed to warm up model, continuing in degraded mode');
         }
     }
     processFrame(frame) {
-        if (!this.wasmModule || !this.rnnoiseState || !this.inputPtr || !this.outputPtr) {
-            throw new Error('WASM module not initialized');
+        // Check if we're in degraded mode (no WASM)
+        if (!this.wasmModule || !this.rnnoiseState) {
+            // In degraded mode, just pass through the audio with basic processing
+            const output = new Float32Array(frame.length);
+            // Simple noise gate as fallback
+            const threshold = 0.01;
+            for (let i = 0; i < frame.length; i++) {
+                if (Math.abs(frame[i]) < threshold) {
+                    output[i] = frame[i] * 0.1; // Reduce quiet sounds
+                }
+                else {
+                    output[i] = frame[i];
+                }
+            }
+            return output;
+        }
+        // Normal WASM processing
+        if (!this.inputPtr || !this.outputPtr) {
+            throw new Error('WASM module not properly initialized');
         }
         // Copy to WASM heap
         this.wasmModule.HEAPF32.set(frame, this.inputPtr >> 2);

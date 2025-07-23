@@ -9,7 +9,14 @@ export function createRecordingFunctions({ isInitialized, recordingState, record
     const startRecording = async (chunkDuration = DEFAULT_CHUNK_DURATION) => {
         try {
             if (!isInitialized) {
-                await initialize();
+                logger.info('Engine not initialized, attempting initialization...');
+                try {
+                    await initialize();
+                }
+                catch (initError) {
+                    logger.error('Initialization failed during recording start', { error: initError });
+                    throw new Error(`Failed to initialize audio engine: ${initError instanceof Error ? initError.message : 'Unknown error'}`);
+                }
             }
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {

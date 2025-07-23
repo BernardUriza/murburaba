@@ -21,7 +21,7 @@ export const WASMErrorDisplay: React.FC<WASMErrorProps> = ({ error, onDismiss })
             <li>🔸 The WASM file is not accessible at <code>/dist/rnnoise.wasm</code></li>
             <li>🔸 CORS policy blocking the WASM file</li>
             <li>🔸 Incorrect MIME type configuration for .wasm files</li>
-            <li>🔸 Browser doesn't support WebAssembly</li>
+            <li>🔸 Browser doesn&apos;t support WebAssembly</li>
           </ul>
           <div className="wasm-error-solution">
             <h4>Solutions:</h4>
