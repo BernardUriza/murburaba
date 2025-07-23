@@ -51,6 +51,11 @@ export declare class RecordingManager {
      */
     isRecording(): boolean;
     /**
+     * Start concatenated streaming for medical-grade recording
+     * This is an alias for startCycle for backward compatibility
+     */
+    startConcatenatedStreaming(processedStream: MediaStream, originalStream: MediaStream, chunkDuration: number, onChunkProcessed: (chunk: ProcessedChunk) => void): Promise<void>;
+    /**
      * Check if recording is paused
      */
     isPaused(): boolean;

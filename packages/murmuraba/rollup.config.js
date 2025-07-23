@@ -4,6 +4,14 @@ import typescript from '@rollup/plugin-typescript';
 import terser from '@rollup/plugin-terser';
 import copy from 'rollup-plugin-copy';
 
+// Suppress circular dependency warnings for known external libraries
+const onwarn = (warning, warn) => {
+  if (warning.code === 'CIRCULAR_DEPENDENCY' && warning.message.includes('lamejs')) {
+    return; // Suppress lamejs circular dependency warnings
+  }
+  warn(warning);
+};
+
 const external = ['react', 'react-dom'];
 
 export default [
@@ -15,8 +23,10 @@ export default [
       format: 'esm',
       sourcemap: true,
       inlineDynamicImports: true,
+      exports: 'named',
     },
     external,
+    onwarn,
     plugins: [
       resolve(),
       commonjs(),
@@ -46,8 +56,10 @@ export default [
       format: 'cjs',
       sourcemap: true,
       inlineDynamicImports: true,
+      exports: 'named',
     },
     external,
+    onwarn,
     plugins: [
       resolve(),
       commonjs(),
@@ -65,12 +77,14 @@ export default [
       name: 'Murmuraba',
       sourcemap: true,
       inlineDynamicImports: true,
+      exports: 'named',
       globals: {
         react: 'React',
         'react-dom': 'ReactDOM',
       },
     },
     external,
+    onwarn,
     plugins: [
       resolve(),
       commonjs(),

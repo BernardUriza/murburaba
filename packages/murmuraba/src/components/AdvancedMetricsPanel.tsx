@@ -89,11 +89,6 @@ export function AdvancedMetricsPanel({
   className = '',
   'aria-label': ariaLabel,
 }: AdvancedMetricsPanelProps) {
-  // Early returns for non-display states
-  if (!isVisible || !diagnostics) {
-    return null;
-  }
-
   // Handle escape key at panel level
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
     if (event.key === 'Escape') {
@@ -111,6 +106,11 @@ export function AdvancedMetricsPanel({
   const formatProcessingTime = useCallback((time: number): string => {
     return `${time.toFixed(2)}ms`;
   }, []);
+
+  // Early returns for non-display states
+  if (!isVisible || !diagnostics) {
+    return null;
+  }
 
   // Safe browser info access
   const browserName = diagnostics.browserInfo?.name || 'Unknown';

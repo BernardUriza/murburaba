@@ -609,7 +609,14 @@ export class MurmubaraEngine extends EventEmitter {
             }
             // Close audio context
             if (this.audioContext && this.audioContext.state !== 'closed') {
-                await this.audioContext.close();
+                try {
+                    await this.audioContext.close();
+                }
+                catch (error) {
+                    this.logger.warn('Failed to close audio context:', error);
+                    // Re-throw to maintain expected error behavior for tests
+                    throw error;
+                }
             }
             // Clear timers
             if (this.cleanupTimer) {

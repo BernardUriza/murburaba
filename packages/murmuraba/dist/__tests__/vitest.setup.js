@@ -27,31 +27,47 @@ if (typeof global !== 'undefined') {
     }));
 }
 // Setup DOM environment for React components
-if (typeof global.document === 'undefined') {
-    // Simple DOM mock for testing
+if (typeof global.document === 'undefined' || !global.document.body) {
+    // Robust DOM mock that handles ALL appendChild scenarios
+    const mockElement = () => ({
+        click: vi.fn(),
+        setAttribute: vi.fn(),
+        getAttribute: vi.fn(),
+        appendChild: vi.fn(),
+        removeChild: vi.fn(),
+        insertBefore: vi.fn(),
+        cloneNode: vi.fn(),
+        style: {},
+        dataset: {},
+        innerHTML: '',
+        textContent: '',
+        tagName: 'DIV',
+        parentNode: null,
+        childNodes: [],
+        firstChild: null,
+        lastChild: null,
+    });
     global.document = {
-        createElement: vi.fn(() => ({
-            click: vi.fn(),
-            setAttribute: vi.fn(),
-            getAttribute: vi.fn(),
-            appendChild: vi.fn(),
-            removeChild: vi.fn(),
-            style: {},
-            dataset: {},
-        })),
-        body: {
-            appendChild: vi.fn(),
-            removeChild: vi.fn(),
-        },
-        head: {
-            appendChild: vi.fn(),
-        },
-        getElementById: vi.fn(),
-        querySelector: vi.fn(),
+        createElement: vi.fn(() => mockElement()),
+        createTextNode: vi.fn(() => ({ textContent: '', nodeType: 3 })),
+        body: mockElement(),
+        head: mockElement(),
+        documentElement: mockElement(),
+        getElementById: vi.fn(() => mockElement()),
+        querySelector: vi.fn(() => mockElement()),
         querySelectorAll: vi.fn(() => []),
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
+        createEvent: vi.fn(() => ({
+            initEvent: vi.fn(),
+            preventDefault: vi.fn(),
+            stopPropagation: vi.fn(),
+        })),
     };
+    // Ensure window.document exists too
+    if (typeof global.window !== 'undefined') {
+        global.window.document = global.document;
+    }
 }
 // Setup all Web Audio mocks
 setupAllAudioMocks();

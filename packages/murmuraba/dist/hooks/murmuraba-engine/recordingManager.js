@@ -311,6 +311,13 @@ export class RecordingManager {
         return this.mediaRecorder?.state === 'recording' || this.originalRecorder?.state === 'recording';
     }
     /**
+     * Start concatenated streaming for medical-grade recording
+     * This is an alias for startCycle for backward compatibility
+     */
+    async startConcatenatedStreaming(processedStream, originalStream, chunkDuration, onChunkProcessed) {
+        return this.startCycle(processedStream, originalStream, chunkDuration, onChunkProcessed);
+    }
+    /**
      * Check if recording is paused
      */
     isPaused() {

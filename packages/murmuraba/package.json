@@ -1,6 +1,7 @@
 {
   "name": "murmuraba",
   "version": "1.5.0",
+  "type": "module",
   "description": "Real-time audio noise reduction with advanced chunked processing for web applications",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
@@ -41,9 +42,11 @@
   },
   "scripts": {
     "build": "npm run clean && npm run build:ts && npm run build:rollup",
+    "build:unsafe": "npm run clean && npm run build:ts && npm run build:rollup",
     "build:ts": "tsc",
     "build:rollup": "rollup -c",
     "clean": "rimraf dist",
+    "quality:gate": "node scripts/check-coverage.js",
     "prepublishOnly": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
