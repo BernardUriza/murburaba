@@ -12,7 +12,7 @@ export { AudioWorkletEngine } from './engines/AudioWorkletEngine';
 export { RNNoiseEngine } from './engines/RNNoiseEngine';
 export type { AudioEngine } from './engines/types';
 export * from './types';
-export { initializeAudioEngine, getEngine, processStream, processStreamChunked, destroyEngine, getEngineStatus, getDiagnostics, onMetricsUpdate } from './api';
+export { initializeAudioEngine, getEngine, processStream, processStreamChunked, destroyEngine, getEngineStatus, getDiagnostics, onMetricsUpdate, processFile } from './api';
 export declare const VERSION = "1.5.0";
 export declare const MURMURABA_VERSION = "1.5.0";
 export { ErrorCodes } from './types';

@@ -8,6 +8,7 @@ import {
   getDiagnostics,
   onMetricsUpdate,
   getEngine,
+  processFile,
 } from '../../api';
 import { getAudioConverter, AudioConverter, destroyAudioConverter } from '../../utils/audioConverter';
 
@@ -388,6 +389,7 @@ export function useMurmubaraEngine(
     destroy,
     processStream,
     processStreamChunked,
+    processFile,
     
     // Recording Actions
     startRecording: recordingFunctions.startRecording,

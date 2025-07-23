@@ -42,3 +42,7 @@ export function onMetricsUpdate(callback) {
     const engine = getEngine();
     engine.onMetricsUpdate(callback);
 }
+export async function processFile(arrayBuffer) {
+    const engine = getEngine();
+    return engine.processFile(arrayBuffer);
+}

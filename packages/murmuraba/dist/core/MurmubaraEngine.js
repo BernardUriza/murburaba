@@ -250,7 +250,11 @@ export class MurmubaraEngine extends EventEmitter {
         const silentFrame = new Float32Array(480);
         try {
             for (let i = 0; i < 10; i++) {
-                this.processFrame(silentFrame);
+                const { output, vad } = this.processFrame(silentFrame);
+                // Silent frame should have VAD close to 0
+                if (i === 9) {
+                    this.logger.debug(`Warmup complete. Silent frame VAD: ${vad.toFixed(3)}`);
+                }
             }
         }
         catch (error) {
@@ -258,36 +262,68 @@ export class MurmubaraEngine extends EventEmitter {
         }
     }
     processFrame(frame) {
+        // REGLA 1: Verificar 480 samples exactos
+        if (frame.length !== 480) {
+            throw new Error(`Frame must be exactly 480 samples, got ${frame.length}`);
+        }
         // Check if we're in degraded mode (no WASM)
         if (!this.wasmModule || !this.rnnoiseState) {
             // In degraded mode, just pass through the audio with basic processing
             const output = new Float32Array(frame.length);
             // Simple noise gate as fallback
             const threshold = 0.01;
+            let voiceActivity = 0;
             for (let i = 0; i < frame.length; i++) {
-                if (Math.abs(frame[i]) < threshold) {
-                    output[i] = frame[i] * 0.1; // Reduce quiet sounds
+                const sample = frame[i];
+                if (Math.abs(sample) < threshold) {
+                    output[i] = sample * 0.1; // Reduce quiet sounds
                 }
                 else {
-                    output[i] = frame[i];
+                    output[i] = sample;
+                    voiceActivity += Math.abs(sample);
                 }
             }
-            return output;
+            // Fake VAD for degraded mode
+            const vad = Math.min(1.0, voiceActivity / frame.length / 0.1);
+            return { output, vad };
         }
         // Normal WASM processing
         if (!this.inputPtr || !this.outputPtr) {
             throw new Error('WASM module not properly initialized');
         }
-        // Copy to WASM heap
-        this.wasmModule.HEAPF32.set(frame, this.inputPtr >> 2);
-        // Process with RNNoise
-        this.wasmModule._rnnoise_process_frame(this.rnnoiseState, this.outputPtr, this.inputPtr);
-        // Get output
+        // REGLA 15: Verificar datos válidos (no NaN, no undefined)
+        for (let i = 0; i < frame.length; i++) {
+            if (isNaN(frame[i]) || frame[i] === undefined) {
+                throw new Error(`Invalid sample at index ${i}: ${frame[i]}`);
+            }
+        }
+        // REGLA 6: ESCALAR CORRECTAMENTE - Entrada: valor * 32768
+        const scaledInput = new Float32Array(480);
+        for (let i = 0; i < 480; i++) {
+            scaledInput[i] = frame[i] * 32768.0;
+        }
+        // REGLA 7: Escribir en HEAPF32
+        this.wasmModule.HEAPF32.set(scaledInput, this.inputPtr >> 2);
+        // REGLA 11: CAPTURAR EL VAD! Process with RNNoise
+        // REGLA 13: Procesar in-place (usar mismo puntero para entrada y salida)
+        const vad = this.wasmModule._rnnoise_process_frame(this.rnnoiseState, this.inputPtr, // In-place: output = input
+        this.inputPtr // In-place: usar mismo buffer
+        );
+        // Get output from the same buffer (in-place processing)
+        const scaledOutput = new Float32Array(480);
+        for (let i = 0; i < 480; i++) {
+            scaledOutput[i] = this.wasmModule.HEAPF32[(this.inputPtr >> 2) + i];
+        }
+        // REGLA 6: ESCALAR CORRECTAMENTE - Salida: valor / 32768
         const output = new Float32Array(480);
         for (let i = 0; i < 480; i++) {
-            output[i] = this.wasmModule.HEAPF32[(this.outputPtr >> 2) + i];
+            output[i] = scaledOutput[i] / 32768.0;
         }
-        return output;
+        // Log VAD for debugging
+        if (vad > 0.5) {
+            this.logger.debug(`🎤 VOICE DETECTED: VAD=${vad.toFixed(3)}`);
+        }
+        return { output, vad };
     }
     async processStream(stream, chunkConfig) {
         this.stateManager.requireState('ready', 'processing');
@@ -410,8 +446,10 @@ export class MurmubaraEngine extends EventEmitter {
             while (inputBuffer.length >= 480) {
                 const frame = new Float32Array(inputBuffer.splice(0, 480));
                 const frameInputRMS = this.metricsManager.calculateRMS(frame);
-                const processed = this.processFrame(frame);
+                const { output: processed, vad } = this.processFrame(frame);
                 const frameOutputRMS = this.metricsManager.calculateRMS(processed);
+                // Update VAD metrics
+                this.metricsManager.updateVAD(vad);
                 // Apply noise reduction level adjustment
                 const reductionFactor = this.getReductionFactor();
                 for (let i = 0; i < processed.length; i++) {
@@ -725,7 +763,7 @@ export class MurmubaraEngine extends EventEmitter {
         try {
             if (this.wasmModule && this.rnnoiseState) {
                 const testFrame = new Float32Array(480);
-                const output = this.processFrame(testFrame);
+                const { output } = this.processFrame(testFrame);
                 frameTest.passed = output.length === 480;
                 frameTest.message = frameTest.passed ? 'Frame processing successful' : 'Invalid output size';
             }
@@ -742,5 +780,166 @@ export class MurmubaraEngine extends EventEmitter {
         report.passed = report.tests.filter((t) => t.passed).length;
         report.failed = report.tests.filter((t) => !t.passed).length;
         return report;
+    }
+    /**
+     * Process a WAV file with RNNoise
+     * @param arrayBuffer WAV file as ArrayBuffer
+     * @returns Processed WAV file as ArrayBuffer
+     */
+    async processFile(arrayBuffer) {
+        this.stateManager.requireState('ready');
+        this.logger.info('Processing WAV file...');
+        const startTime = Date.now();
+        // Parse WAV header
+        const dataView = new DataView(arrayBuffer);
+        // Verify RIFF header
+        const riff = String.fromCharCode(dataView.getUint8(0), dataView.getUint8(1), dataView.getUint8(2), dataView.getUint8(3));
+        if (riff !== 'RIFF') {
+            throw new Error('Not a valid WAV file: missing RIFF header');
+        }
+        // Verify WAVE format
+        const wave = String.fromCharCode(dataView.getUint8(8), dataView.getUint8(9), dataView.getUint8(10), dataView.getUint8(11));
+        if (wave !== 'WAVE') {
+            throw new Error('Not a valid WAV file: missing WAVE format');
+        }
+        // Find fmt chunk
+        let fmtOffset = 12;
+        let fmtFound = false;
+        while (fmtOffset < dataView.byteLength - 8) {
+            const chunkId = String.fromCharCode(dataView.getUint8(fmtOffset), dataView.getUint8(fmtOffset + 1), dataView.getUint8(fmtOffset + 2), dataView.getUint8(fmtOffset + 3));
+            const chunkSize = dataView.getUint32(fmtOffset + 4, true);
+            if (chunkId === 'fmt ') {
+                fmtFound = true;
+                break;
+            }
+            fmtOffset += 8 + chunkSize;
+        }
+        if (!fmtFound) {
+            throw new Error('Invalid WAV file: fmt chunk not found');
+        }
+        // Parse fmt chunk
+        const audioFormat = dataView.getUint16(fmtOffset + 8, true);
+        const numChannels = dataView.getUint16(fmtOffset + 10, true);
+        const sampleRate = dataView.getUint32(fmtOffset + 12, true);
+        const bitsPerSample = dataView.getUint16(fmtOffset + 22, true);
+        // Verify format
+        if (audioFormat !== 1) {
+            throw new Error(`Unsupported audio format: ${audioFormat}. Only PCM (format 1) is supported`);
+        }
+        if (numChannels !== 1) {
+            throw new Error(`Unsupported channel count: ${numChannels}. Only mono (1 channel) is supported`);
+        }
+        if (sampleRate !== 48000) {
+            throw new Error(`Unsupported sample rate: ${sampleRate}Hz. Only 48kHz is supported. Please resample your audio to 48kHz before processing.`);
+        }
+        if (bitsPerSample !== 16) {
+            throw new Error(`Unsupported bit depth: ${bitsPerSample}. Only 16-bit is supported`);
+        }
+        this.logger.info(`WAV format verified: PCM 16-bit mono ${sampleRate}Hz`);
+        // Find data chunk
+        let dataOffset = fmtOffset + 8 + dataView.getUint32(fmtOffset + 4, true);
+        let dataFound = false;
+        let dataSize = 0;
+        while (dataOffset < dataView.byteLength - 8) {
+            const chunkId = String.fromCharCode(dataView.getUint8(dataOffset), dataView.getUint8(dataOffset + 1), dataView.getUint8(dataOffset + 2), dataView.getUint8(dataOffset + 3));
+            dataSize = dataView.getUint32(dataOffset + 4, true);
+            if (chunkId === 'data') {
+                dataFound = true;
+                dataOffset += 8; // Skip chunk header
+                break;
+            }
+            dataOffset += 8 + dataSize;
+        }
+        if (!dataFound) {
+            throw new Error('Invalid WAV file: data chunk not found');
+        }
+        // Extract PCM data
+        const pcmData = new Int16Array(arrayBuffer, dataOffset, dataSize / 2);
+        const numSamples = pcmData.length;
+        const numFrames = Math.floor(numSamples / 480);
+        this.logger.info(`Processing ${numSamples} samples (${numFrames} frames of 480 samples)`);
+        // Process audio in 480-sample frames
+        const processedSamples = new Float32Array(numFrames * 480);
+        let totalVAD = 0;
+        let voiceFrames = 0;
+        for (let frameIndex = 0; frameIndex < numFrames; frameIndex++) {
+            const frameStart = frameIndex * 480;
+            const frame = new Float32Array(480);
+            // Convert PCM16 to Float32
+            for (let i = 0; i < 480; i++) {
+                frame[i] = pcmData[frameStart + i] / 32768.0;
+            }
+            // Calculate input RMS
+            const inputRMS = this.metricsManager.calculateRMS(frame);
+            // Process frame with RNNoise
+            const { output, vad } = this.processFrame(frame);
+            // Calculate output RMS
+            const outputRMS = this.metricsManager.calculateRMS(output);
+            const noiseReduction = inputRMS > 0 ? Math.max(0, (1 - outputRMS / inputRMS) * 100) : 0;
+            // Log frame metrics
+            this.logger.debug(`Frame ${frameIndex + 1}/${numFrames}: VAD=${vad.toFixed(3)}, ` +
+                `InputRMS=${inputRMS.toFixed(4)}, OutputRMS=${outputRMS.toFixed(4)}, ` +
+                `NoiseReduction=${noiseReduction.toFixed(1)}%`);
+            // Track voice activity
+            totalVAD += vad;
+            if (vad > 0.5)
+                voiceFrames++;
+            // Apply noise reduction level adjustment
+            const reductionFactor = this.getReductionFactor();
+            // Store processed samples
+            for (let i = 0; i < 480; i++) {
+                processedSamples[frameStart + i] = output[i] * reductionFactor;
+            }
+        }
+        // Convert Float32 back to PCM16
+        const processedPCM = new Int16Array(processedSamples.length);
+        for (let i = 0; i < processedSamples.length; i++) {
+            // Clamp to [-1, 1] range
+            const clamped = Math.max(-1, Math.min(1, processedSamples[i]));
+            processedPCM[i] = Math.round(clamped * 32767);
+        }
+        // Create output WAV buffer
+        const outputSize = 44 + processedPCM.length * 2; // WAV header + PCM data
+        const outputBuffer = new ArrayBuffer(outputSize);
+        const outputView = new DataView(outputBuffer);
+        // Write WAV header
+        // RIFF chunk
+        outputView.setUint8(0, 0x52); // 'R'
+        outputView.setUint8(1, 0x49); // 'I'
+        outputView.setUint8(2, 0x46); // 'F'
+        outputView.setUint8(3, 0x46); // 'F'
+        outputView.setUint32(4, outputSize - 8, true); // File size - 8
+        outputView.setUint8(8, 0x57); // 'W'
+        outputView.setUint8(9, 0x41); // 'A'
+        outputView.setUint8(10, 0x56); // 'V'
+        outputView.setUint8(11, 0x45); // 'E'
+        // fmt chunk
+        outputView.setUint8(12, 0x66); // 'f'
+        outputView.setUint8(13, 0x6D); // 'm'
+        outputView.setUint8(14, 0x74); // 't'
+        outputView.setUint8(15, 0x20); // ' '
+        outputView.setUint32(16, 16, true); // fmt chunk size
+        outputView.setUint16(20, 1, true); // PCM format
+        outputView.setUint16(22, 1, true); // Mono
+        outputView.setUint32(24, 48000, true); // Sample rate
+        outputView.setUint32(28, 48000 * 2, true); // Byte rate
+        outputView.setUint16(32, 2, true); // Block align
+        outputView.setUint16(34, 16, true); // Bits per sample
+        // data chunk
+        outputView.setUint8(36, 0x64); // 'd'
+        outputView.setUint8(37, 0x61); // 'a'
+        outputView.setUint8(38, 0x74); // 't'
+        outputView.setUint8(39, 0x61); // 'a'
+        outputView.setUint32(40, processedPCM.length * 2, true); // Data size
+        // Write PCM data
+        const outputPCMView = new Int16Array(outputBuffer, 44);
+        outputPCMView.set(processedPCM);
+        // Log summary
+        const averageVAD = totalVAD / numFrames;
+        const voicePercentage = (voiceFrames / numFrames) * 100;
+        const processingTime = Date.now() - startTime;
+        this.logger.info(`File processing complete: ${numFrames} frames processed in ${processingTime}ms. ` +
+            `Average VAD: ${averageVAD.toFixed(3)}, Voice frames: ${voicePercentage.toFixed(1)}%`);
+        return outputBuffer;
     }
 }

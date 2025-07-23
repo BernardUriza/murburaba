@@ -16,7 +16,7 @@ export { RNNoiseEngine } from './engines/RNNoiseEngine';
 // Type exports
 export * from './types';
 // Re-export API functions
-export { initializeAudioEngine, getEngine, processStream, processStreamChunked, destroyEngine, getEngineStatus, getDiagnostics, onMetricsUpdate } from './api';
+export { initializeAudioEngine, getEngine, processStream, processStreamChunked, destroyEngine, getEngineStatus, getDiagnostics, onMetricsUpdate, processFile } from './api';
 // Export version
 export const VERSION = '1.5.0';
 export const MURMURABA_VERSION = VERSION;

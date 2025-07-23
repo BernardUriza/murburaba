@@ -57,6 +57,7 @@ export interface UseMurmubaraEngineReturn {
       onChunkProcessed?: (chunk: ChunkMetrics) => void;
     }
   ) => Promise<StreamController>;
+  processFile: (arrayBuffer: ArrayBuffer) => Promise<ArrayBuffer>;
   
   // Recording Actions
   startRecording: (chunkDuration?: number) => Promise<void>;

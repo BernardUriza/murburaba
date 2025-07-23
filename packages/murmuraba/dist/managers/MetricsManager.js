@@ -13,6 +13,8 @@ export class MetricsManager extends EventEmitter {
         };
         this.frameTimestamps = [];
         this.maxFrameHistory = 100;
+        this.vadHistory = [];
+        this.currentVAD = 0;
     }
     startAutoUpdate(intervalMs = 100) {
         this.stopAutoUpdate();
@@ -90,5 +92,23 @@ export class MetricsManager extends EventEmitter {
             peak = Math.max(peak, Math.abs(samples[i]));
         }
         return peak;
+    }
+    updateVAD(vad) {
+        this.currentVAD = vad;
+        this.vadHistory.push(vad);
+        if (this.vadHistory.length > this.maxFrameHistory) {
+            this.vadHistory.shift();
+        }
+    }
+    getAverageVAD() {
+        if (this.vadHistory.length === 0)
+            return 0;
+        return this.vadHistory.reduce((a, b) => a + b, 0) / this.vadHistory.length;
+    }
+    getVoiceActivityPercentage() {
+        if (this.vadHistory.length === 0)
+            return 0;
+        const voiceFrames = this.vadHistory.filter(v => v > 0.5).length;
+        return (voiceFrames / this.vadHistory.length) * 100;
     }
 }

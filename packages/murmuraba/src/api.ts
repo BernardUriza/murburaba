@@ -60,3 +60,8 @@ export function onMetricsUpdate(callback: (metrics: any) => void) {
   const engine = getEngine();
   engine.onMetricsUpdate(callback);
 }
+
+export async function processFile(arrayBuffer: ArrayBuffer): Promise<ArrayBuffer> {
+  const engine = getEngine();
+  return engine.processFile(arrayBuffer);
+}

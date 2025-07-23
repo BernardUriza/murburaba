@@ -30,7 +30,8 @@ export {
   destroyEngine,
   getEngineStatus,
   getDiagnostics,
-  onMetricsUpdate
+  onMetricsUpdate,
+  processFile
 } from './api';
 
 // Export version

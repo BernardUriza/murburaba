@@ -10,6 +10,8 @@ export declare class MetricsManager extends EventEmitter<MetricsEvents> {
     private updateInterval?;
     private frameTimestamps;
     private maxFrameHistory;
+    private vadHistory;
+    private currentVAD;
     startAutoUpdate(intervalMs?: number): void;
     stopAutoUpdate(): void;
     updateInputLevel(level: number): void;
@@ -23,6 +25,9 @@ export declare class MetricsManager extends EventEmitter<MetricsEvents> {
     reset(): void;
     calculateRMS(samples: Float32Array): number;
     calculatePeak(samples: Float32Array): number;
+    updateVAD(vad: number): void;
+    getAverageVAD(): number;
+    getVoiceActivityPercentage(): number;
 }
 export {};
 //# sourceMappingURL=MetricsManager.d.ts.map

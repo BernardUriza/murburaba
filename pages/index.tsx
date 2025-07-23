@@ -9,6 +9,7 @@ import {
 } from 'murmuraba'
 import Swal from 'sweetalert2'
 import { WASMErrorDisplay } from '../components/WASMErrorDisplay'
+import AudioDemo from '../components/AudioDemo'
 
 export default function Home() {
   // Engine configuration state with localStorage persistence
@@ -746,6 +747,11 @@ export default function Home() {
           diagnostics={diagnostics}
           onClose={() => setShowAdvancedMetrics(false)}
         />
+        
+        {/* Audio Demo */}
+        <section className="audio-demo-section glass-panel mt-8">
+          <AudioDemo />
+        </section>
       </main>
       
       <BuildInfo version="1.3.0" buildDate={new Date().toLocaleDateString()} />

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { initializeAudioEngine, destroyEngine, processStream, processStreamChunked, getEngineStatus, getDiagnostics, onMetricsUpdate, } from '../../api';
+import { initializeAudioEngine, destroyEngine, processStream, processStreamChunked, getEngineStatus, getDiagnostics, onMetricsUpdate, processFile, } from '../../api';
 import { getAudioConverter, destroyAudioConverter } from '../../utils/audioConverter';
 // Import managers
 import { URLManager } from './urlManager';
@@ -278,6 +278,7 @@ export function useMurmubaraEngine(options = {}) {
         destroy,
         processStream,
         processStreamChunked,
+        processFile,
         // Recording Actions
         startRecording: recordingFunctions.startRecording,
         stopRecording: recordingFunctions.stopRecording,

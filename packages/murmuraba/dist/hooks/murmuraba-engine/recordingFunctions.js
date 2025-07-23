@@ -20,9 +20,9 @@ export function createRecordingFunctions({ isInitialized, recordingState, record
             }
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
-                    echoCancellation: true,
+                    echoCancellation: false, // REGLA 10: Desactivar TODO
                     noiseSuppression: false, // We're doing our own
-                    autoGainControl: false
+                    autoGainControl: false // We have our own AGC
                 }
             });
             setOriginalStream(stream);

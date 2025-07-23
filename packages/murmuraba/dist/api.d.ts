@@ -13,4 +13,5 @@ export declare function destroyEngine(options?: {
 export declare function getEngineStatus(): import("./types").EngineState;
 export declare function getDiagnostics(): import("./types").DiagnosticInfo;
 export declare function onMetricsUpdate(callback: (metrics: any) => void): void;
+export declare function processFile(arrayBuffer: ArrayBuffer): Promise<ArrayBuffer>;
 //# sourceMappingURL=api.d.ts.map

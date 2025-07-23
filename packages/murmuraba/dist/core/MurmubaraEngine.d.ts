@@ -49,5 +49,11 @@ export declare class MurmubaraEngine extends EventEmitter<EngineEvents> {
     private getBrowserVersion;
     private getAudioAPIsSupported;
     runDiagnosticTests(): Promise<DiagnosticReport>;
+    /**
+     * Process a WAV file with RNNoise
+     * @param arrayBuffer WAV file as ArrayBuffer
+     * @returns Processed WAV file as ArrayBuffer
+     */
+    processFile(arrayBuffer: ArrayBuffer): Promise<ArrayBuffer>;
 }
 //# sourceMappingURL=MurmubaraEngine.d.ts.map

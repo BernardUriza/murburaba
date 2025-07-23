@@ -64,9 +64,9 @@ export function createRecordingFunctions({
 
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
-          echoCancellation: true,
-          noiseSuppression: false, // We're doing our own
-          autoGainControl: false
+          echoCancellation: false,  // REGLA 10: Desactivar TODO
+          noiseSuppression: false,  // We're doing our own
+          autoGainControl: false    // We have our own AGC
         } 
       });
       

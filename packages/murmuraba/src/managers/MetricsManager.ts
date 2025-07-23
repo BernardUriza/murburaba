@@ -21,6 +21,8 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
   private updateInterval?: NodeJS.Timeout;
   private frameTimestamps: number[] = [];
   private maxFrameHistory = 100;
+  private vadHistory: number[] = [];
+  private currentVAD = 0;
   
   startAutoUpdate(intervalMs: number = 100): void {
     this.stopAutoUpdate();
@@ -112,5 +114,24 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
       peak = Math.max(peak, Math.abs(samples[i]));
     }
     return peak;
+  }
+  
+  updateVAD(vad: number): void {
+    this.currentVAD = vad;
+    this.vadHistory.push(vad);
+    if (this.vadHistory.length > this.maxFrameHistory) {
+      this.vadHistory.shift();
+    }
+  }
+  
+  getAverageVAD(): number {
+    if (this.vadHistory.length === 0) return 0;
+    return this.vadHistory.reduce((a, b) => a + b, 0) / this.vadHistory.length;
+  }
+  
+  getVoiceActivityPercentage(): number {
+    if (this.vadHistory.length === 0) return 0;
+    const voiceFrames = this.vadHistory.filter(v => v > 0.5).length;
+    return (voiceFrames / this.vadHistory.length) * 100;
   }
 }
