@@ -390,6 +390,13 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     lowShelfFilter.frequency.value = 200; // Reduce echo/room resonance
     lowShelfFilter.gain.value = -3; // Gentle reduction
     
+    // Create AGC if enabled
+    let agc: SimpleAGC | undefined;
+    if (this.agcEnabled) {
+      agc = new SimpleAGC(this.audioContext, 0.3);
+      this.agc = agc;
+    }
+    
     let isPaused = false;
     let isStopped = false;
     const inputBuffer: number[] = [];
@@ -451,6 +458,11 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       const inputPeak = this.metricsManager.calculatePeak(input);
       this.metricsManager.updateInputLevel(inputPeak);
       
+      // Update AGC if enabled
+      if (agc && !isPaused && !isStopped) {
+        agc.updateGain();
+      }
+      
       // Add to buffer
       for (let i = 0; i < input.length; i++) {
         inputBuffer.push(input[i]);
@@ -509,6 +521,13 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       const outputPeak = this.metricsManager.calculatePeak(output);
       this.metricsManager.updateOutputLevel(outputPeak);
       
+      // Track AGC gain for metrics if enabled
+      if (agc) {
+        const currentGain = agc.getCurrentGain();
+        // This gain info will be used for diagnostics
+        this.logger.debug(`AGC gain: ${currentGain.toFixed(2)}x`);
+      }
+      
       // Calculate noise reduction based on actual processed frames
       if (framesProcessed > 0) {
         const avgInputRMS = totalInputRMS / framesProcessed;
@@ -518,12 +537,20 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       }
     };
     
-    // Connect filters in chain: source -> filters -> processor -> destination
+    // Connect filters in chain: source -> filters -> (AGC) -> processor -> destination
     source.connect(highPassFilter);
     highPassFilter.connect(notchFilter1);
     notchFilter1.connect(notchFilter2);
     notchFilter2.connect(lowShelfFilter);
-    lowShelfFilter.connect(processor);
+    
+    if (agc) {
+      // With AGC: lowShelfFilter -> AGC -> processor
+      agc.connect(lowShelfFilter, processor);
+    } else {
+      // Without AGC: lowShelfFilter -> processor
+      lowShelfFilter.connect(processor);
+    }
+    
     processor.connect(destination);
     
     const controller: StreamController = {
