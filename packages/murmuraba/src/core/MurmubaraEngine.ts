@@ -979,7 +979,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
    * @returns Processed WAV file as ArrayBuffer
    */
   async processFile(arrayBuffer: ArrayBuffer): Promise<ArrayBuffer> {
-    this.stateManager.requireState('ready');
+    this.stateManager.requireState('ready', 'processing');
     
     this.logger.info('Processing WAV file...');
     const startTime = Date.now();

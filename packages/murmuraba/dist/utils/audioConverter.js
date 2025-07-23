@@ -91,10 +91,11 @@ export class AudioConverter {
         }
     }
     /**
-     * Convert AudioBuffer to WAV format
+     * Convert AudioBuffer to WAV format (MONO only for RNNoise compatibility)
      */
     audioBufferToWav(audioBuffer) {
-        const numberOfChannels = audioBuffer.numberOfChannels;
+        // Force MONO for RNNoise compatibility
+        const numberOfChannels = 1;
         const length = audioBuffer.length * numberOfChannels * 2;
         const buffer = new ArrayBuffer(44 + length);
         const view = new DataView(buffer);
@@ -120,15 +121,19 @@ export class AudioConverter {
         // Data sub-chunk
         writeString(36, 'data');
         view.setUint32(40, length, true);
-        // Write interleaved PCM samples
+        // Write PCM samples - convert stereo to mono by averaging channels
         let offset = 44;
+        const channelData0 = audioBuffer.getChannelData(0);
+        const channelData1 = audioBuffer.numberOfChannels > 1 ? audioBuffer.getChannelData(1) : null;
         for (let i = 0; i < audioBuffer.length; i++) {
-            for (let channel = 0; channel < numberOfChannels; channel++) {
-                const sample = audioBuffer.getChannelData(channel)[i];
-                const int16 = Math.max(-32768, Math.min(32767, sample * 32768));
-                view.setInt16(offset, int16, true);
-                offset += 2;
+            let sample = channelData0[i];
+            if (channelData1) {
+                // Average both channels for mono
+                sample = (sample + channelData1[i]) / 2;
             }
+            const int16 = Math.max(-32768, Math.min(32767, sample * 32768));
+            view.setInt16(offset, int16, true);
+            offset += 2;
         }
         return new Blob([buffer], { type: 'audio/wav' });
     }

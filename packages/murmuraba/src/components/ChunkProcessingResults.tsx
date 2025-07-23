@@ -1,5 +1,7 @@
 import React, { useMemo, useCallback } from 'react';
 import { ProcessedChunk } from '../hooks/murmuraba-engine/types';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import './ChunkProcessingResults.css';
 
 export interface ChunkProcessingResultsProps {
   /** Array of processed audio chunks */
@@ -242,6 +244,14 @@ export function ChunkProcessingResults({
                       <span className="meta-label">Latency:</span>
                       <span className="meta-value">{chunk.metrics.processingLatency.toFixed(1)}ms</span>
                     </span>
+                    {chunk.averageVad !== undefined && (
+                      <span className="meta-item">
+                        <span className="meta-label">Avg VAD:</span>
+                        <span className="meta-value meta-value--info">
+                          {chunk.averageVad.toFixed(3)}
+                        </span>
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -359,6 +369,75 @@ export function ChunkProcessingResults({
                       </div>
                     </div>
                   </div>
+
+                  {/* VAD Timeline Graph */}
+                  {chunk.vadData && chunk.vadData.length > 0 && (
+                    <div className="details__section">
+                      <h4 className="section__title">📈 Voice Activity Detection (VAD) Timeline</h4>
+                      <div className="vad-chart-container">
+                        <ResponsiveContainer width="100%" height={200}>
+                          <AreaChart
+                            data={chunk.vadData}
+                            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                          >
+                            <defs>
+                              <linearGradient id={`vadGradient-${chunk.id}`} x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#7ED321" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#7ED321" stopOpacity={0.1}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                            <XAxis 
+                              dataKey="time" 
+                              tickFormatter={(value) => `${value.toFixed(1)}s`}
+                              stroke="#666"
+                            />
+                            <YAxis 
+                              domain={[0, 1]}
+                              ticks={[0, 0.25, 0.5, 0.75, 1]}
+                              tickFormatter={(value) => value.toFixed(2)}
+                              stroke="#666"
+                            />
+                            <Tooltip 
+                              contentStyle={{ 
+                                backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                                border: '1px solid #ddd',
+                                borderRadius: '8px'
+                              }}
+                              formatter={(value: number) => [`VAD: ${value.toFixed(3)}`, '']}
+                              labelFormatter={(label) => `Time: ${label}s`}
+                            />
+                            <Area 
+                              type="monotone" 
+                              dataKey="vad" 
+                              stroke="#7ED321" 
+                              strokeWidth={2}
+                              fill={`url(#vadGradient-${chunk.id})`}
+                            />
+                            <Line 
+                              type="monotone" 
+                              dataKey="vad" 
+                              stroke="#5FB829" 
+                              strokeWidth={0}
+                              dot={{ fill: '#7ED321', r: 0 }}
+                              activeDot={{ r: 4 }}
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                        <div className="vad-stats">
+                          <span className="vad-stat">
+                            <strong>Voice Detected:</strong> {((chunk.vadData.filter(d => d.vad > 0.5).length / chunk.vadData.length) * 100).toFixed(1)}%
+                          </span>
+                          <span className="vad-stat">
+                            <strong>Peak VAD:</strong> {Math.max(...chunk.vadData.map(d => d.vad)).toFixed(3)}
+                          </span>
+                          <span className="vad-stat">
+                            <strong>Min VAD:</strong> {Math.min(...chunk.vadData.map(d => d.vad)).toFixed(3)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Audio controls */}
                   <div className="details__section">

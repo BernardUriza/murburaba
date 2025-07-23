@@ -40,7 +40,7 @@ export const WASMErrorDisplay: React.FC<WASMErrorProps> = ({ error, onDismiss })
         <button onClick={onDismiss} className="error-dismiss-btn">
           Try Again
         </button>
-        <style jsx>{`
+        <style>{`
           .wasm-error-container {
             background: #2a1a1a;
             border: 2px solid #ff4444;

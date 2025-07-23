@@ -1,4 +1,6 @@
+import { processFileWithMetrics } from '../../api/processFileWithMetrics';
 import { MIN_VALID_BLOB_SIZE, LOG_PREFIX } from './constants';
+import { AudioConverter } from '../../utils/audioConverter';
 export class RecordingManager {
     constructor(urlManager) {
         this.urlManager = urlManager;
@@ -173,33 +175,54 @@ export class RecordingManager {
     /**
      * Process recorded chunk data
      */
-    processChunkRecording(chunkId, chunkRecording, cycleStartTime, mimeType, onChunkProcessed) {
-        const processedBlob = new Blob(chunkRecording.processed, { type: mimeType });
+    async processChunkRecording(chunkId, chunkRecording, cycleStartTime, mimeType, onChunkProcessed) {
         const originalBlob = new Blob(chunkRecording.original, { type: mimeType });
-        console.log(`📦 ${LOG_PREFIX.CONCAT_STREAM} Created blobs - Processed: ${processedBlob.size} bytes, Original: ${originalBlob.size} bytes`);
-        // Validate blob sizes - already filtered but double-check
+        console.log(`📦 ${LOG_PREFIX.CONCAT_STREAM} Original blob: ${originalBlob.size} bytes`);
+        // Validate blob size
         let isValid = true;
         let errorMessage = '';
-        if (processedBlob.size === 0 && originalBlob.size === 0) {
-            // Both empty - skip this chunk entirely
-            console.error(`❌ ${LOG_PREFIX.CONCAT_STREAM} Both blobs are empty, skipping chunk creation`);
+        if (originalBlob.size === 0) {
+            console.error(`❌ ${LOG_PREFIX.CONCAT_STREAM} Original blob is empty, skipping chunk creation`);
             this.chunkRecordings.delete(chunkId);
             return;
         }
-        if (processedBlob.size < MIN_VALID_BLOB_SIZE || originalBlob.size < MIN_VALID_BLOB_SIZE) {
+        if (originalBlob.size < MIN_VALID_BLOB_SIZE) {
             isValid = false;
-            errorMessage = `Audio too small (Processed: ${processedBlob.size} bytes, Original: ${originalBlob.size} bytes). Recording may be corrupted.`;
-            console.error(`❌ ${LOG_PREFIX.CONCAT_STREAM} Invalid blob size in final chunk!`);
+            errorMessage = `Audio too small (${originalBlob.size} bytes). Recording may be corrupted.`;
+            console.error(`❌ ${LOG_PREFIX.CONCAT_STREAM} Invalid blob size in chunk!`);
         }
-        // Create URLs if valid
-        const processedUrl = isValid ? this.urlManager.createObjectURL(chunkId, processedBlob) : undefined;
+        // Create original URL immediately
         const originalUrl = isValid ? this.urlManager.createObjectURL(chunkId, originalBlob) : undefined;
         const cycleEndTime = Date.now();
         const actualDuration = cycleEndTime - cycleStartTime;
-        // TDD Integration: Get REAL metrics from ChunkProcessor
-        const realMetrics = this.getRealMetrics(cycleStartTime, cycleEndTime);
-        console.log(`🎯 [RECORDING-INTEGRATION] Using real metrics for chunk ${chunkId}: ${realMetrics.averageNoiseReduction.toFixed(1)}% noise reduction`);
-        // Create chunk with REAL metrics
+        // Process original audio through RNNoise to get metrics and processed audio
+        let processedUrl;
+        let noiseReduction = 0;
+        let frameCount = 0;
+        if (isValid) {
+            try {
+                // Convert WebM to WAV first
+                console.log(`🔄 ${LOG_PREFIX.CONCAT_STREAM} Converting WebM to WAV for chunk ${chunkId}`);
+                const wavBlob = await AudioConverter.webmToWav(originalBlob);
+                // Convert WAV blob to ArrayBuffer
+                const arrayBuffer = await wavBlob.arrayBuffer();
+                // Process with metrics like AudioDemo
+                const result = await processFileWithMetrics(arrayBuffer);
+                // Create processed blob from result
+                const processedBlob = new Blob([result.processedBuffer], { type: 'audio/wav' });
+                processedUrl = this.urlManager.createObjectURL(chunkId, processedBlob);
+                // Calculate noise reduction from VAD metrics
+                noiseReduction = result.averageVad * 100;
+                frameCount = result.metrics.length;
+                console.log(`🎯 ${LOG_PREFIX.CONCAT_STREAM} Processed chunk ${chunkId}: ${noiseReduction.toFixed(1)}% noise reduction, ${frameCount} frames`);
+            }
+            catch (error) {
+                console.error(`❌ ${LOG_PREFIX.CONCAT_STREAM} Failed to process chunk:`, error);
+                isValid = false;
+                errorMessage = `Processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+            }
+        }
+        // Create chunk with real metrics from processing
         const newChunk = {
             id: chunkId,
             startTime: cycleStartTime,
@@ -211,32 +234,21 @@ export class RecordingManager {
             isExpanded: false,
             isValid,
             errorMessage,
-            noiseRemoved: realMetrics.averageNoiseReduction, // REAL noise reduction from audio analysis
+            noiseRemoved: noiseReduction,
             originalSize: originalBlob.size,
-            processedSize: processedBlob.size,
+            processedSize: processedUrl ? originalBlob.size : 0, // Same size for WAV
             metrics: {
-                processingLatency: realMetrics.averageLatency || 0,
-                frameCount: realMetrics.totalFrames || Math.floor(actualDuration / 10),
+                processingLatency: 0,
+                frameCount: frameCount,
                 inputLevel: 1.0,
-                outputLevel: processedBlob.size / originalBlob.size,
-                noiseReductionLevel: realMetrics.averageNoiseReduction / 100, // Convert to 0-1 range
+                outputLevel: 1.0,
+                noiseReductionLevel: noiseReduction / 100,
                 timestamp: Date.now(),
                 droppedFrames: 0
             }
         };
         chunkRecording.finalized = true;
         console.log(`✅ ${LOG_PREFIX.CONCAT_STREAM} Cycle #${this.cycleCount} complete: ${(actualDuration / 1000).toFixed(1)}s chunk`);
-        // TDD Integration: Trigger period completion in ChunkProcessor
-        // This will cause ChunkProcessor to emit aggregated metrics for the next chunk
-        if (global.__murmurabaTDDBridge?.chunkProcessor) {
-            try {
-                const aggregatedMetrics = global.__murmurabaTDDBridge.chunkProcessor.completePeriod(actualDuration);
-                console.log(`🎯 [TDD-INTEGRATION] Triggered period completion: ${aggregatedMetrics.totalFrames} frames processed`);
-            }
-            catch (error) {
-                console.warn(`⚠️ [TDD-INTEGRATION] Period completion failed:`, error);
-            }
-        }
         onChunkProcessed(newChunk);
     }
     /**

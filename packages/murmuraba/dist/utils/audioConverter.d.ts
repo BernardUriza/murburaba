@@ -19,7 +19,7 @@ export declare class AudioConverter {
      */
     static webmToMp3(webmBlob: Blob, bitrate?: number): Promise<Blob>;
     /**
-     * Convert AudioBuffer to WAV format
+     * Convert AudioBuffer to WAV format (MONO only for RNNoise compatibility)
      */
     private audioBufferToWav;
     /**

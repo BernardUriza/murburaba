@@ -115,7 +115,8 @@ export default function App() {
   const [chunkDuration, setChunkDuration] = useState(8)
   const [showAdvancedMetrics, setShowAdvancedMetrics] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-  const [noiseReductionLevel, setNoiseReductionLevel] = useState(75)
+  const [showAudioDemo, setShowAudioDemo] = useState(false)
+  const [_noiseReductionLevel, _setNoiseReductionLevel] = useState(75)
   const [selectedChunk, setSelectedChunk] = useState<string | null>(null)
   const [recordingHistory, setRecordingHistory] = useState<Array<{
     id: string;
@@ -221,6 +222,40 @@ export default function App() {
     <>
       <main className="main-container">
         <div className="prairie-grass"></div>
+        {/* Floating Audio Demo Panel */}
+        {showAudioDemo && (
+          <div className="floating-panel audio-demo-panel">
+            <div className="panel-header">
+              <h3>🎵 Audio Demo</h3>
+              <button className="close-btn" onClick={() => setShowAudioDemo(false)}>×</button>
+            </div>
+            <div className="panel-content">
+              <AudioDemo 
+                getEngineStatus={getEngineStatus}
+                processFile={processFile}
+                processFileWithMetrics={processFileWithMetrics}
+                autoProcess={true}
+                onProcessComplete={(buffer) => {
+                  console.log('Audio processing completed', buffer)
+                }}
+                onError={(err) => {
+                  console.error('AudioDemo error:', err)
+                  Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'error',
+                    title: 'Audio processing failed',
+                    text: err.message,
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true
+                  })
+                }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Floating Settings Panel */}
         {showSettings && (
           <div className="floating-panel settings-panel">
@@ -707,6 +742,13 @@ export default function App() {
           {/* Settings and Metrics */}
           <button 
             className="fab fab-secondary"
+            onClick={() => setShowAudioDemo(!showAudioDemo)}
+            title="Audio Demo"
+          >
+            🎵
+          </button>
+          <button 
+            className="fab fab-secondary"
             onClick={() => setShowSettings(!showSettings)}
             title="Settings"
           >
@@ -745,31 +787,6 @@ export default function App() {
           onClose={() => setShowAdvancedMetrics(false)}
         />
         
-        {/* Audio Demo */}
-        <section className="audio-demo-section glass-panel mt-8">
-          <AudioDemo 
-            getEngineStatus={getEngineStatus}
-            processFile={processFile}
-            processFileWithMetrics={processFileWithMetrics}
-            autoProcess={true}
-            onProcessComplete={(buffer) => {
-              console.log('Audio processing completed', buffer)
-            }}
-            onError={(err) => {
-              console.error('AudioDemo error:', err)
-              Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: 'error',
-                title: 'Audio processing failed',
-                text: err.message,
-                showConfirmButton: false,
-                timer: 3000,
-                timerProgressBar: true
-              })
-            }}
-          />
-        </section>
       </main>
       
       <BuildInfo version="1.3.0" buildDate={new Date().toLocaleDateString()} />

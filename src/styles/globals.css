@@ -95,14 +95,14 @@
   --font-4xl: 2.25rem;
   --font-5xl: 3rem;
   
-  /* Shadows - Soft & Natural */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.16);
-  --shadow-glow-green: 0 0 40px rgba(126, 211, 33, 0.2);
-  --shadow-glow-blue: 0 0 40px rgba(74, 144, 226, 0.2);
+  /* Dark Mode Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.7);
+  --shadow-glow-green: 0 0 20px rgba(82, 163, 47, 0.15);
+  --shadow-glow-blue: 0 0 20px rgba(44, 84, 136, 0.15);
   
   /* Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -820,8 +820,8 @@ p {
 }
 
 .fab-secondary {
-  background: white;
-  color: var(--grass-deep);
+  background: var(--neutral-100);
+  color: var(--grass-light);
   border: 2px solid var(--grass-light);
 }
 
@@ -944,14 +944,14 @@ p {
   100% { transform: translateX(100%); }
 }
 
-/* Build Info - Clean & Minimal */
+/* Build Info - Dark Mode */
 .build-info {
   position: fixed;
   bottom: var(--spacing-md);
   left: var(--spacing-md);
   font-size: var(--font-xs);
   color: var(--neutral-500);
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(28, 29, 34, 0.9);
   padding: var(--spacing-xs) var(--spacing-md);
   border-radius: var(--radius-full);
   backdrop-filter: blur(10px);
@@ -1052,21 +1052,21 @@ p {
   align-items: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-md);
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(28, 29, 34, 0.7);
   border-radius: var(--radius-full);
   font-size: var(--font-xs);
   font-weight: 600;
-  color: var(--neutral-700);
+  color: var(--neutral-600);
 }
 
-/* Recording Status Bar */
+/* Recording Status Bar - Dark Mode */
 .recording-status-bar {
   position: sticky;
   top: 80px;
   z-index: 999;
-  background: linear-gradient(135deg, var(--error-light) 0%, rgba(255, 77, 79, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(255, 77, 79, 0.15) 0%, rgba(255, 77, 79, 0.05) 100%);
   padding: var(--spacing-md) var(--spacing-xl);
-  border-bottom: 2px solid var(--error-main);
+  border-bottom: 2px solid rgba(255, 77, 79, 0.5);
   backdrop-filter: blur(10px);
 }
 
@@ -2252,6 +2252,27 @@ p {
 
 .audio-player.enhanced.playing {
   background: rgba(126, 211, 33, 0.15);
+}
+
+/* Dark Mode Variables Override */
+:root {
+  /* Override CSS variables for dark mode */
+  --color-background: var(--prairie-night);
+  --color-surface: var(--neutral-50);
+  --color-surface-hover: var(--neutral-100);
+  --color-surface-active: var(--neutral-200);
+  --color-border: var(--neutral-300);
+  --color-border-hover: var(--neutral-400);
+  --color-text-primary: var(--neutral-800);
+  --color-text-secondary: var(--neutral-600);
+  --color-primary: var(--grass-light);
+  --color-primary-hover: var(--grass-meadow);
+  --color-success: var(--grass-light);
+  --color-success-hover: var(--grass-meadow);
+  --color-success-bg: rgba(82, 163, 47, 0.15);
+  --color-warning: var(--wildflower-gold);
+  --color-error: var(--prairie-sunset);
+  --color-error-bg: rgba(255, 77, 79, 0.15);
 }
 
 /* End of Illinois Prairie Theme */

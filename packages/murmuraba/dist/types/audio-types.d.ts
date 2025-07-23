@@ -46,6 +46,11 @@ export interface ChunkMetrics {
     duration: number;
     startTime: number;
     endTime: number;
+    vadData?: Array<{
+        time: number;
+        vad: number;
+    }>;
+    averageVad?: number;
 }
 export interface ChunkConfig {
     chunkDuration: number;
