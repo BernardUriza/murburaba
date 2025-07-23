@@ -7,7 +7,7 @@ export default defineConfig({
     environmentOptions: {
       happyDOM: {
         settings: {
-          disableJavaScriptFileLoading: true,
+          disableJavaScriptFileLoading: false,
           disableCSSFileLoading: true,
           enableFileSystemHttpRequests: false
         }

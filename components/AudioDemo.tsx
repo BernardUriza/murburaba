@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { useMurmubaraEngine } from 'murmuraba'
-import type { ProcessingLog } from 'murmuraba'
+import { useMurmubaraEngine, getEngineStatus } from 'murmuraba'
 
 interface AudioLog {
   timestamp: number
@@ -17,6 +16,8 @@ export default function AudioDemo() {
   const [processedAudioUrl, setProcessedAudioUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [autoProcessStarted, setAutoProcessStarted] = useState(false)
+  const [engineGloballyInitialized, setEngineGloballyInitialized] = useState(false)
+  const [engineStatus, setEngineStatus] = useState<string>('uninitialized')
   
   const originalAudioRef = useRef<HTMLAudioElement>(null)
   const processedAudioRef = useRef<HTMLAudioElement>(null)
@@ -25,31 +26,31 @@ export default function AudioDemo() {
   const {
     processFile,
     isInitialized,
-    initializationError,
-    initializeEngine
+    error: initializationError,
+    initialize
   } = useMurmubaraEngine({
-    autoInitialize: true,
+    autoInitialize: false,
     logLevel: 'debug',
     allowDegraded: true,
-    onLog: (log: ProcessingLog) => {
-      if (log.level === 'info' || log.level === 'debug') {
-        const match = log.message.match(/Frame (\d+): VAD=([\d.]+), RMS=([\d.]+)/)
+    onLog: (level, message) => {
+      if (level === 'info' || level === 'debug') {
+        const match = message.match(/Frame (\d+): VAD=([\d.]+), RMS=([\d.]+)/)
         if (match) {
           const newLog: AudioLog = {
             timestamp: Date.now(),
             frame: parseInt(match[1]),
             vad: parseFloat(match[2]),
             rms: parseFloat(match[3]),
-            message: log.message
+            message: message
           }
           setLogs(prev => [...prev, newLog])
-        } else if (log.message.includes('Processing') || log.message.includes('VAD')) {
+        } else if (message.includes('Processing') || message.includes('VAD')) {
           const newLog: AudioLog = {
             timestamp: Date.now(),
             frame: logs.length,
             vad: 0,
             rms: 0,
-            message: log.message
+            message: message
           }
           setLogs(prev => [...prev, newLog])
         }
@@ -57,23 +58,16 @@ export default function AudioDemo() {
     }
   })
 
-  // Auto-scroll logs
-  useEffect(() => {
-    if (logContainerRef.current) {
-      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight
-    }
-  }, [logs])
-
-  // Auto-process on mount
-  useEffect(() => {
-    if (isInitialized && !autoProcessStarted) {
-      setAutoProcessStarted(true)
-      processAudioDemo()
-    }
-  }, [isInitialized, autoProcessStarted, processAudioDemo])
-
   const processAudioDemo = useCallback(async () => {
     try {
+      // CRITICAL: Check engine state FIRST
+      const currentStatus = getEngineStatus()
+      if (currentStatus !== 'ready') {
+        setError(`Cannot process audio: Engine is in '${currentStatus}' state. Must be 'ready'.`)
+        console.error(`Engine not ready: ${currentStatus}`)
+        return
+      }
+      
       setIsProcessing(true)
       setError(null)
       setLogs([])
@@ -131,6 +125,65 @@ export default function AudioDemo() {
     }
   }, [processFile])
 
+  // Auto-scroll logs
+  useEffect(() => {
+    if (logContainerRef.current) {
+      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight
+    }
+  }, [logs])
+
+  // Check engine status periodically
+  useEffect(() => {
+    const checkEngineStatus = () => {
+      try {
+        const status = getEngineStatus()
+        setEngineStatus(status)
+        setEngineGloballyInitialized(status !== 'uninitialized')
+      } catch {
+        setEngineStatus('uninitialized')
+        setEngineGloballyInitialized(false)
+      }
+    }
+    
+    checkEngineStatus()
+    const interval = setInterval(checkEngineStatus, 500)
+    
+    return () => clearInterval(interval)
+  }, [])
+
+  // Auto-process on mount
+  useEffect(() => {
+    const checkAndProcess = async () => {
+      try {
+        // Check if engine is already initialized globally
+        const status = getEngineStatus()
+        
+        if (!autoProcessStarted) {
+          setAutoProcessStarted(true)
+          
+          // If engine is already initialized globally, wait for it to be ready
+          if (status !== 'uninitialized') {
+            console.log('Engine already initialized globally, waiting for ready state...')
+            setEngineGloballyInitialized(true)
+            // Don't process immediately, wait for ready state
+          } else if (!isInitialized) {
+            // No engine exists, need to initialize
+            console.log('No engine found, initializing...')
+            await initialize()
+          }
+        } else if (isInitialized && status === 'ready') {
+          // Engine is ready, process now
+          await processAudioDemo()
+        }
+      } catch (err) {
+        console.error('Auto-process error:', err)
+        setError(err instanceof Error ? err.message : 'Auto-process error')
+      }
+    }
+    
+    checkAndProcess()
+  }, [isInitialized, autoProcessStarted, processAudioDemo, initialize])
+
   const downloadProcessedAudio = () => {
     if (!processedAudioUrl) return
     
@@ -159,16 +212,31 @@ export default function AudioDemo() {
   }
 
   return (
-    <div className="bg-gray-900 rounded-xl p-6 space-y-6">
+    <div className="bg-gray-900 rounded-xl p-6 space-y-6" data-testid="audio-demo">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-white">🎵 Audio Demo Automático</h2>
         <button
           onClick={processAudioDemo}
-          disabled={isProcessing || !isInitialized}
+          disabled={isProcessing || engineStatus !== 'ready'}
           className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isProcessing ? '⏳ Procesando...' : '🔄 Probar Audio Demo'}
         </button>
+      </div>
+
+      {/* Engine Status Display */}
+      <div className="bg-gray-800 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <span className="text-gray-400">Engine State:</span>
+          <span className={`font-semibold ${
+            engineStatus === 'ready' ? 'text-green-400' : 
+            engineStatus === 'initializing' ? 'text-yellow-400' : 
+            engineStatus === 'error' ? 'text-red-400' : 
+            'text-gray-400'
+          }`} data-testid="engine-status">
+            {engineStatus}
+          </span>
+        </div>
       </div>
 
       {error && (
@@ -178,7 +246,7 @@ export default function AudioDemo() {
       )}
 
       {initializationError && (
-        <div className="bg-yellow-900/20 border border-yellow-500 rounded-lg p-4">
+        <div className="bg-yellow-900/20 border border-yellow-500 rounded-lg p-4" data-testid="degraded-mode-warning">
           <p className="text-yellow-400">⚠️ Modo degradado: {initializationError}</p>
         </div>
       )}
@@ -237,6 +305,7 @@ export default function AudioDemo() {
         <div
           ref={logContainerRef}
           className="h-64 overflow-y-auto bg-gray-900 rounded p-3 font-mono text-xs text-gray-300"
+          data-testid="audio-logs"
         >
           {logs.map((log, index) => (
             <div key={index} className="mb-1">

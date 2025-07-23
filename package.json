@@ -17,7 +17,10 @@
     "test:watch": "npm run test:watch --workspace=murmuraba",
     "test:ui": "npm run test:ui --workspace=murmuraba",
     "test:coverage": "npm run test:coverage --workspace=murmuraba",
-    "test:integration": "npm run test --workspace=murmuraba -- --run ChunkProcessorRecordingManagerIntegration"
+    "test:integration": "npm run test --workspace=murmuraba -- --run ChunkProcessorRecordingManagerIntegration",
+    "test:e2e": "vitest run --config ./vitest.e2e.config.ts",
+    "test:e2e:watch": "vitest watch --config ./vitest.e2e.config.ts",
+    "test:all": "npm run test && npm run test:e2e"
   },
   "dependencies": {
     "murmuraba": "workspace:*",
