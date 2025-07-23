@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { useMurmubaraEngine, getEngineStatus } from 'murmuraba'
+import { getEngineStatus, processFile } from 'murmuraba'
 
 interface AudioLog {
   timestamp: number
@@ -23,40 +23,7 @@ export default function AudioDemo() {
   const processedAudioRef = useRef<HTMLAudioElement>(null)
   const logContainerRef = useRef<HTMLDivElement>(null)
 
-  const {
-    processFile,
-    isInitialized,
-    error: initializationError,
-    initialize
-  } = useMurmubaraEngine({
-    autoInitialize: false,
-    logLevel: 'debug',
-    allowDegraded: true,
-    onLog: (level, message) => {
-      if (level === 'info' || level === 'debug') {
-        const match = message.match(/Frame (\d+): VAD=([\d.]+), RMS=([\d.]+)/)
-        if (match) {
-          const newLog: AudioLog = {
-            timestamp: Date.now(),
-            frame: parseInt(match[1]),
-            vad: parseFloat(match[2]),
-            rms: parseFloat(match[3]),
-            message: message
-          }
-          setLogs(prev => [...prev, newLog])
-        } else if (message.includes('Processing') || message.includes('VAD')) {
-          const newLog: AudioLog = {
-            timestamp: Date.now(),
-            frame: logs.length,
-            vad: 0,
-            rms: 0,
-            message: message
-          }
-          setLogs(prev => [...prev, newLog])
-        }
-      }
-    }
-  })
+  // Use global engine functions directly - no hook needed
 
   const processAudioDemo = useCallback(async () => {
     try {
@@ -123,7 +90,7 @@ export default function AudioDemo() {
     } finally {
       setIsProcessing(false)
     }
-  }, [processFile])
+  }, [])
 
   // Auto-scroll logs
   useEffect(() => {
@@ -163,16 +130,18 @@ export default function AudioDemo() {
           
           // If engine is already initialized globally, wait for it to be ready
           if (status !== 'uninitialized') {
-            console.log('Engine already initialized globally, waiting for ready state...')
+            console.log('Engine already initialized globally, status:', status)
             setEngineGloballyInitialized(true)
-            // Don't process immediately, wait for ready state
-          } else if (!isInitialized) {
-            // No engine exists, need to initialize
-            console.log('No engine found, initializing...')
-            await initialize()
+            // If already ready, process immediately
+            if (status === 'ready') {
+              await processAudioDemo()
+            }
+          } else {
+            // No engine exists, parent component should handle initialization
+            console.log('No engine found, waiting for parent to initialize...')
           }
-        } else if (isInitialized && status === 'ready') {
-          // Engine is ready, process now
+        } else if (status === 'ready' && !isProcessing) {
+          // Engine became ready, process now
           await processAudioDemo()
         }
       } catch (err) {
@@ -182,7 +151,7 @@ export default function AudioDemo() {
     }
     
     checkAndProcess()
-  }, [isInitialized, autoProcessStarted, processAudioDemo, initialize])
+  }, [autoProcessStarted, processAudioDemo, engineStatus, isProcessing])
 
   const downloadProcessedAudio = () => {
     if (!processedAudioUrl) return
@@ -245,11 +214,6 @@ export default function AudioDemo() {
         </div>
       )}
 
-      {initializationError && (
-        <div className="bg-yellow-900/20 border border-yellow-500 rounded-lg p-4" data-testid="degraded-mode-warning">
-          <p className="text-yellow-400">⚠️ Modo degradado: {initializationError}</p>
-        </div>
-      )}
 
       {/* Dual Audio Players */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
