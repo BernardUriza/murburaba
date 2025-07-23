@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { getEngineStatus, processFile } from 'murmuraba'
 
-interface AudioLog {
+export interface AudioLog {
   timestamp: number
   frame: number
   vad: number
@@ -9,29 +8,52 @@ interface AudioLog {
   message: string
 }
 
-export default function AudioDemo() {
+export interface AudioDemoProps {
+  // Engine functions passed from parent
+  getEngineStatus: () => string
+  processFile: (arrayBuffer: ArrayBuffer) => Promise<ArrayBuffer>
+  
+  // Optional props
+  autoProcess?: boolean
+  onProcessComplete?: (processedBuffer: ArrayBuffer) => void
+  onError?: (error: Error) => void
+  onLog?: (log: AudioLog) => void
+}
+
+export default function AudioDemo({ 
+  getEngineStatus, 
+  processFile,
+  autoProcess = true,
+  onProcessComplete,
+  onError,
+  onLog
+}: AudioDemoProps) {
   const [logs, setLogs] = useState<AudioLog[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
   const [originalAudioUrl, setOriginalAudioUrl] = useState<string | null>(null)
   const [processedAudioUrl, setProcessedAudioUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [autoProcessStarted, setAutoProcessStarted] = useState(false)
-  const [engineGloballyInitialized, setEngineGloballyInitialized] = useState(false)
   const [engineStatus, setEngineStatus] = useState<string>('uninitialized')
   
   const originalAudioRef = useRef<HTMLAudioElement>(null)
   const processedAudioRef = useRef<HTMLAudioElement>(null)
   const logContainerRef = useRef<HTMLDivElement>(null)
 
-  // Use global engine functions directly - no hook needed
+  const addLog = useCallback((log: AudioLog) => {
+    setLogs(prev => [...prev, log])
+    onLog?.(log)
+  }, [onLog])
 
   const processAudioDemo = useCallback(async () => {
     try {
       // CRITICAL: Check engine state FIRST
       const currentStatus = getEngineStatus()
       if (currentStatus !== 'ready') {
-        setError(`Cannot process audio: Engine is in '${currentStatus}' state. Must be 'ready'.`)
+        const errorMsg = `Cannot process audio: Engine is in '${currentStatus}' state. Must be 'ready'.`
+        setError(errorMsg)
         console.error(`Engine not ready: ${currentStatus}`)
+        onError?.(new Error(errorMsg))
         return
       }
       
@@ -52,13 +74,13 @@ export default function AudioDemo() {
 
       // Process with RNNoise
       const startTime = Date.now()
-      setLogs([{
+      addLog({
         timestamp: startTime,
         frame: 0,
         vad: 0,
         rms: 0,
         message: '🎙️ Iniciando procesamiento de jfk_speech.wav...'
-      }])
+      })
 
       const processedBuffer = await processFile(arrayBuffer)
       
@@ -69,28 +91,34 @@ export default function AudioDemo() {
       const processedBlob = new Blob([processedBuffer], { type: 'audio/wav' })
       setProcessedAudioUrl(URL.createObjectURL(processedBlob))
 
-      setLogs(prev => [...prev, {
+      addLog({
         timestamp: endTime,
-        frame: prev.length,
+        frame: logs.length + 1,
         vad: 0,
         rms: 0,
         message: `✅ Procesamiento completado en ${duration.toFixed(2)}s`
-      }])
+      })
+
+      onProcessComplete?.(processedBuffer)
 
     } catch (err) {
       console.error('Audio demo error:', err)
-      setError(err instanceof Error ? err.message : 'Error desconocido')
-      setLogs(prev => [...prev, {
+      const errorMsg = err instanceof Error ? err.message : 'Error desconocido'
+      setError(errorMsg)
+      addLog({
         timestamp: Date.now(),
-        frame: prev.length,
+        frame: logs.length,
         vad: 0,
         rms: 0,
         message: `❌ Error: ${err}`
-      }])
+      })
+      if (err instanceof Error) {
+        onError?.(err)
+      }
     } finally {
       setIsProcessing(false)
     }
-  }, [])
+  }, [getEngineStatus, processFile, logs.length, addLog, onProcessComplete, onError])
 
   // Auto-scroll logs
   useEffect(() => {
@@ -105,10 +133,8 @@ export default function AudioDemo() {
       try {
         const status = getEngineStatus()
         setEngineStatus(status)
-        setEngineGloballyInitialized(status !== 'uninitialized')
       } catch {
         setEngineStatus('uninitialized')
-        setEngineGloballyInitialized(false)
       }
     }
     
@@ -116,29 +142,25 @@ export default function AudioDemo() {
     const interval = setInterval(checkEngineStatus, 500)
     
     return () => clearInterval(interval)
-  }, [])
+  }, [getEngineStatus])
 
-  // Auto-process on mount
+  // Auto-process on mount (if enabled)
   useEffect(() => {
+    if (!autoProcess) return
+
     const checkAndProcess = async () => {
       try {
-        // Check if engine is already initialized globally
         const status = getEngineStatus()
         
         if (!autoProcessStarted) {
           setAutoProcessStarted(true)
           
-          // If engine is already initialized globally, wait for it to be ready
-          if (status !== 'uninitialized') {
-            console.log('Engine already initialized globally, status:', status)
-            setEngineGloballyInitialized(true)
-            // If already ready, process immediately
-            if (status === 'ready') {
-              await processAudioDemo()
-            }
+          // If engine is already ready, process immediately
+          if (status === 'ready') {
+            console.log('Engine ready, auto-processing...')
+            await processAudioDemo()
           } else {
-            // No engine exists, parent component should handle initialization
-            console.log('No engine found, waiting for parent to initialize...')
+            console.log(`Engine not ready (${status}), waiting...`)
           }
         } else if (status === 'ready' && !isProcessing) {
           // Engine became ready, process now
@@ -151,7 +173,7 @@ export default function AudioDemo() {
     }
     
     checkAndProcess()
-  }, [autoProcessStarted, processAudioDemo, engineStatus, isProcessing])
+  }, [autoProcess, autoProcessStarted, processAudioDemo, engineStatus, isProcessing, getEngineStatus])
 
   const downloadProcessedAudio = () => {
     if (!processedAudioUrl) return
@@ -179,6 +201,14 @@ export default function AudioDemo() {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
+
+  // Cleanup URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (originalAudioUrl) URL.revokeObjectURL(originalAudioUrl)
+      if (processedAudioUrl) URL.revokeObjectURL(processedAudioUrl)
+    }
+  }, [originalAudioUrl, processedAudioUrl])
 
   return (
     <div className="bg-gray-900 rounded-xl p-6 space-y-6" data-testid="audio-demo">

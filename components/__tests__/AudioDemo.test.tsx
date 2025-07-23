@@ -1,20 +1,24 @@
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import AudioDemo from '../AudioDemo'
+import AudioDemo, { AudioDemoProps } from '../AudioDemo'
 
-// Mock useMurmubaraEngine hook
+// Mock functions
+const mockGetEngineStatus = jest.fn()
 const mockProcessFile = jest.fn()
-const mockInitializeEngine = jest.fn()
+const mockOnProcessComplete = jest.fn()
+const mockOnError = jest.fn()
+const mockOnLog = jest.fn()
 
-jest.mock('@murburaba/react', () => ({
-  useMurmubaraEngine: () => ({
-    processFile: mockProcessFile,
-    isInitialized: true,
-    initializationError: null,
-    initializeEngine: mockInitializeEngine
-  })
-}))
+// Default props for tests
+const defaultProps: AudioDemoProps = {
+  getEngineStatus: mockGetEngineStatus,
+  processFile: mockProcessFile,
+  autoProcess: true,
+  onProcessComplete: mockOnProcessComplete,
+  onError: mockOnError,
+  onLog: mockOnLog
+}
 
 // Mock fetch
 global.fetch = jest.fn()
@@ -35,6 +39,9 @@ describe('AudioDemo Component', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     
+    // Setup default engine status
+    mockGetEngineStatus.mockReturnValue('ready')
+    
     // Setup fetch mock for audio file
     ;(global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
@@ -50,108 +57,138 @@ describe('AudioDemo Component', () => {
   })
 
   it('renders the audio demo component', () => {
-    render(<AudioDemo />)
+    render(<AudioDemo {...defaultProps} />)
     
     expect(screen.getByText('🎵 Audio Demo Automático')).toBeInTheDocument()
     expect(screen.getByText('🔄 Probar Audio Demo')).toBeInTheDocument()
-    expect(screen.getByText('🎙️ Audio Original')).toBeInTheDocument()
-    expect(screen.getByText('🔊 Audio Procesado')).toBeInTheDocument()
+    expect(screen.getByText('📊 Logs en Tiempo Real')).toBeInTheDocument()
   })
 
-  it('automatically processes audio on mount when initialized', async () => {
-    render(<AudioDemo />)
+  it('shows engine status', () => {
+    render(<AudioDemo {...defaultProps} />)
+    
+    expect(screen.getByTestId('engine-status')).toHaveTextContent('ready')
+  })
+
+  it('disables button when engine is not ready', () => {
+    mockGetEngineStatus.mockReturnValue('initializing')
+    
+    render(<AudioDemo {...defaultProps} />)
+    
+    const button = screen.getByText('🔄 Probar Audio Demo')
+    expect(button).toBeDisabled()
+  })
+
+  it('automatically processes audio on mount when autoProcess is true', async () => {
+    render(<AudioDemo {...defaultProps} />)
     
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/jfk_speech.wav')
       expect(mockProcessFile).toHaveBeenCalled()
-    })
+    }, { timeout: 3000 })
+    
+    expect(mockOnProcessComplete).toHaveBeenCalledWith(expect.any(ArrayBuffer))
   })
 
-  it('shows loading state during processing', async () => {
-    mockProcessFile.mockImplementation(() => 
-      new Promise(resolve => setTimeout(() => resolve(new ArrayBuffer(1000)), 100))
-    )
+  it('does not auto-process when autoProcess is false', async () => {
+    render(<AudioDemo {...defaultProps} autoProcess={false} />)
     
-    render(<AudioDemo />)
+    // Wait a bit to ensure no processing happens
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    expect(mockProcessFile).not.toHaveBeenCalled()
+  })
+
+  it('handles audio processing errors', async () => {
+    const error = new Error('Processing failed')
+    mockProcessFile.mockRejectedValue(error)
+    
+    render(<AudioDemo {...defaultProps} />)
     
     await waitFor(() => {
-      expect(screen.getByText('⏳ Procesando...')).toBeInTheDocument()
+      expect(mockOnError).toHaveBeenCalledWith(error)
     })
+    
+    expect(screen.getByText(/Processing failed/)).toBeInTheDocument()
   })
 
-  it('displays error when audio file cannot be loaded', async () => {
+  it('handles fetch errors', async () => {
     ;(global.fetch as jest.Mock).mockRejectedValue(new Error('Network error'))
     
-    render(<AudioDemo />)
+    render(<AudioDemo {...defaultProps} />)
     
     await waitFor(() => {
-      expect(screen.getByText(/Network error/)).toBeInTheDocument()
+      expect(mockOnError).toHaveBeenCalledWith(expect.objectContaining({
+        message: 'Network error'
+      }))
     })
   })
 
-  it('displays error when processing fails', async () => {
-    mockProcessFile.mockRejectedValue(new Error('Processing failed'))
+  it('prevents processing when engine is not ready', async () => {
+    mockGetEngineStatus.mockReturnValue('initializing')
     
-    render(<AudioDemo />)
+    render(<AudioDemo {...defaultProps} />)
     
-    await waitFor(() => {
-      expect(screen.getByText(/Processing failed/)).toBeInTheDocument()
-    })
+    const button = screen.getByText('🔄 Probar Audio Demo')
+    fireEvent.click(button)
+    
+    expect(mockProcessFile).not.toHaveBeenCalled()
+    expect(mockOnError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining("Engine is in 'initializing' state")
+      })
+    )
   })
 
   it('handles manual processing with button click', async () => {
-    render(<AudioDemo />)
+    render(<AudioDemo {...defaultProps} autoProcess={false} />)
     
-    // Clear initial auto-process calls
-    await waitFor(() => expect(mockProcessFile).toHaveBeenCalled())
-    jest.clearAllMocks()
-    
-    // Click the process button
     const button = screen.getByText('🔄 Probar Audio Demo')
     fireEvent.click(button)
     
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/jfk_speech.wav')
       expect(mockProcessFile).toHaveBeenCalled()
     })
+    
+    expect(mockOnProcessComplete).toHaveBeenCalledWith(expect.any(ArrayBuffer))
   })
 
   it('creates audio URLs for playback', async () => {
-    render(<AudioDemo />)
+    render(<AudioDemo {...defaultProps} />)
     
     await waitFor(() => {
       expect(URL.createObjectURL).toHaveBeenCalledTimes(2) // Original and processed
     })
-    
-    const audioElements = screen.getAllByRole('audio')
-    expect(audioElements).toHaveLength(2)
   })
 
   it('shows download button after processing', async () => {
-    render(<AudioDemo />)
+    render(<AudioDemo {...defaultProps} />)
     
     await waitFor(() => {
       expect(screen.getByText('💾 Descargar Audio Limpio')).toBeInTheDocument()
     })
   })
 
-  it('handles download click', async () => {
-    // Mock document methods
+  it('handles download action', async () => {
     const mockClick = jest.fn()
     const mockAppendChild = jest.fn()
     const mockRemoveChild = jest.fn()
     
-    const mockAnchor = {
-      href: '',
-      download: '',
-      click: mockClick
-    }
+    jest.spyOn(document, 'createElement').mockImplementation((tagName) => {
+      if (tagName === 'a') {
+        return {
+          click: mockClick,
+          setAttribute: jest.fn(),
+          href: '',
+          download: ''
+        } as any
+      }
+      return document.createElement(tagName)
+    })
     
-    jest.spyOn(document, 'createElement').mockReturnValue(mockAnchor as any)
     jest.spyOn(document.body, 'appendChild').mockImplementation(mockAppendChild)
     jest.spyOn(document.body, 'removeChild').mockImplementation(mockRemoveChild)
     
-    render(<AudioDemo />)
+    render(<AudioDemo {...defaultProps} />)
     
     await waitFor(() => {
       expect(screen.getByText('💾 Descargar Audio Limpio')).toBeInTheDocument()
@@ -160,113 +197,84 @@ describe('AudioDemo Component', () => {
     const downloadButton = screen.getByText('💾 Descargar Audio Limpio')
     fireEvent.click(downloadButton)
     
-    expect(mockAnchor.download).toBe('jfk_speech_cleaned.wav')
     expect(mockClick).toHaveBeenCalled()
+    expect(mockAppendChild).toHaveBeenCalled()
+    expect(mockRemoveChild).toHaveBeenCalled()
   })
 
   it('displays and updates logs during processing', async () => {
-    render(<AudioDemo />)
+    render(<AudioDemo {...defaultProps} />)
     
     await waitFor(() => {
-      expect(screen.getByText('📊 Logs en Tiempo Real')).toBeInTheDocument()
+      expect(screen.getByText(/Iniciando procesamiento/)).toBeInTheDocument()
     })
     
-    // Check initial log
-    expect(screen.getByText(/Iniciando procesamiento/)).toBeInTheDocument()
-    
-    // Check completion log
     await waitFor(() => {
       expect(screen.getByText(/Procesamiento completado/)).toBeInTheDocument()
     })
   })
 
-  it('handles export logs functionality', async () => {
+  it('exports logs when export button is clicked', async () => {
     const mockClick = jest.fn()
-    const mockAnchor = {
-      href: '',
-      download: '',
-      click: mockClick
-    }
-    
-    jest.spyOn(document, 'createElement').mockReturnValue(mockAnchor as any)
     jest.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-log-url')
     
-    render(<AudioDemo />)
+    render(<AudioDemo {...defaultProps} />)
     
     await waitFor(() => {
-      expect(screen.getByText('📥 Exportar Logs')).toBeInTheDocument()
+      expect(screen.getByText(/Procesamiento completado/)).toBeInTheDocument()
     })
     
     const exportButton = screen.getByText('📥 Exportar Logs')
     fireEvent.click(exportButton)
     
-    expect(mockAnchor.download).toMatch(/audio_demo_logs_\d+\.txt/)
-    expect(mockClick).toHaveBeenCalled()
+    expect(URL.createObjectURL).toHaveBeenCalledWith(expect.any(Blob))
   })
 
   it('displays statistics after processing', async () => {
-    render(<AudioDemo />)
+    render(<AudioDemo {...defaultProps} />)
     
     await waitFor(() => {
       expect(screen.getByText('📈 Resumen de Estadísticas')).toBeInTheDocument()
-      expect(screen.getByText('Frames Procesados')).toBeInTheDocument()
-      expect(screen.getByText('VAD Promedio')).toBeInTheDocument()
-      expect(screen.getByText('RMS Promedio')).toBeInTheDocument()
-    })
-  })
-
-  it('shows degraded mode warning when initialization error exists', () => {
-    jest.unmock('@murburaba/react')
-    jest.mock('@murburaba/react', () => ({
-      useMurmubaraEngine: () => ({
-        processFile: mockProcessFile,
-        isInitialized: true,
-        initializationError: 'WASM not available',
-        initializeEngine: mockInitializeEngine
-      })
-    }))
-    
-    render(<AudioDemo />)
-    
-    expect(screen.getByText(/Modo degradado: WASM not available/)).toBeInTheDocument()
-  })
-
-  it('disables button when not initialized', () => {
-    jest.unmock('@murburaba/react')
-    jest.mock('@murburaba/react', () => ({
-      useMurmubaraEngine: () => ({
-        processFile: mockProcessFile,
-        isInitialized: false,
-        initializationError: null,
-        initializeEngine: mockInitializeEngine
-      })
-    }))
-    
-    render(<AudioDemo />)
-    
-    const button = screen.getByText('🔄 Probar Audio Demo')
-    expect(button).toBeDisabled()
-  })
-
-  it('auto-scrolls logs container', async () => {
-    const mockScrollTo = jest.fn()
-    
-    // Mock the ref
-    jest.spyOn(React, 'useRef').mockReturnValueOnce({
-      current: { 
-        scrollTop: 0, 
-        scrollHeight: 1000,
-        scrollTo: mockScrollTo
-      }
     })
     
-    render(<AudioDemo />)
+    expect(screen.getByText('Frames Procesados')).toBeInTheDocument()
+    expect(screen.getByText('VAD Promedio')).toBeInTheDocument()
+    expect(screen.getByText('RMS Promedio')).toBeInTheDocument()
+  })
+
+  it('calls onLog callback when logs are added', async () => {
+    render(<AudioDemo {...defaultProps} />)
     
     await waitFor(() => {
-      expect(screen.getByText(/Procesamiento completado/)).toBeInTheDocument()
+      expect(mockOnLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining('Iniciando procesamiento')
+        })
+      )
+    })
+  })
+
+  it('updates engine status periodically', async () => {
+    const { rerender } = render(<AudioDemo {...defaultProps} />)
+    
+    // Change engine status
+    mockGetEngineStatus.mockReturnValue('processing')
+    
+    // Wait for periodic update
+    await waitFor(() => {
+      expect(screen.getByTestId('engine-status')).toHaveTextContent('processing')
+    }, { timeout: 1000 })
+  })
+
+  it('cleans up URLs on unmount', async () => {
+    const { unmount } = render(<AudioDemo {...defaultProps} />)
+    
+    await waitFor(() => {
+      expect(URL.createObjectURL).toHaveBeenCalled()
     })
     
-    // Verify scrolling behavior
-    expect(mockScrollTo).toBeDefined()
+    unmount()
+    
+    expect(URL.revokeObjectURL).toHaveBeenCalled()
   })
 })

@@ -5,7 +5,9 @@ import {
   WaveformAnalyzer,
   BuildInfo,
   AdvancedMetricsPanel,
-  ChunkProcessingResults
+  ChunkProcessingResults,
+  getEngineStatus,
+  processFile
 } from 'murmuraba'
 import Swal from 'sweetalert2'
 import { WASMErrorDisplay } from '../components/WASMErrorDisplay'
@@ -750,7 +752,27 @@ export default function Home() {
         
         {/* Audio Demo */}
         <section className="audio-demo-section glass-panel mt-8">
-          <AudioDemo />
+          <AudioDemo 
+            getEngineStatus={getEngineStatus}
+            processFile={processFile}
+            autoProcess={true}
+            onProcessComplete={(buffer) => {
+              console.log('Audio processing completed', buffer)
+            }}
+            onError={(err) => {
+              console.error('AudioDemo error:', err)
+              Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'error',
+                title: 'Audio processing failed',
+                text: err.message,
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+              })
+            }}
+          />
         </section>
       </main>
       
