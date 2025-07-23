@@ -2,9 +2,7 @@ import { MurmubaraEngine } from './core/MurmubaraEngine';
 let globalEngine = null;
 export async function initializeAudioEngine(config) {
     if (globalEngine) {
-        console.warn('Audio engine already exists. Destroying previous instance...');
-        await globalEngine.destroy(true);
-        globalEngine = null;
+        throw new Error('Audio engine is already initialized. Call destroyEngine() first.');
     }
     globalEngine = new MurmubaraEngine(config);
     await globalEngine.initialize();

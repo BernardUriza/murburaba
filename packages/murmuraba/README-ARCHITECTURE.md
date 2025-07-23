@@ -1,6 +1,6 @@
 # Murmuraba Package Architecture
 
-## Current State (v1.3.0)
+## Current State (1.5.2)
 
 ### ✅ What's Inside the Package (Good)
 - **Core Engine**: MurmubaraEngine class with full audio processing pipeline

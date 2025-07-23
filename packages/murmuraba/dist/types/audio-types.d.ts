@@ -82,6 +82,9 @@ export interface DiagnosticInfo {
         contextCreationTime: number;
         totalInitTime: number;
     };
+    systemInfo: {
+        memory?: number;
+    };
 }
 export interface EngineEvents {
     initialized: () => void;

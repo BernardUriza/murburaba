@@ -10,10 +10,13 @@ export class StateManager extends EventEmitter<StateEvents> {
   private currentState: EngineState = 'uninitialized';
   private allowedTransitions: Map<EngineState, EngineState[]> = new Map([
     ['uninitialized', ['initializing', 'error']],
-    ['initializing', ['ready', 'error']],
+    ['initializing', ['creating-context', 'loading-wasm', 'ready', 'degraded', 'error']],
+    ['creating-context', ['loading-wasm', 'ready', 'degraded', 'error']],
+    ['loading-wasm', ['ready', 'degraded', 'error']],
     ['ready', ['processing', 'destroying', 'error']],
     ['processing', ['ready', 'paused', 'destroying', 'error']],
     ['paused', ['processing', 'ready', 'destroying', 'error']],
+    ['degraded', ['processing', 'destroying', 'error']],
     ['destroying', ['destroyed', 'error']],
     ['destroyed', []],
     ['error', ['initializing', 'destroying']],

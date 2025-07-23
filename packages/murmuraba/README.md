@@ -616,9 +616,9 @@ This guide covers:
 
 3. Enable auto-cleanup to free resources when inactive
 
-## Migration from v1.2.x to v1.3.0
+## Migration from v1.2.x to 1.5.2
 
-### Before v1.3.0 (Complex Setup)
+### Before 1.5.2 (Complex Setup)
 ```typescript
 // Multiple hooks and manual setup required
 const { processStream, cleanup } = useAudioEngine();
@@ -633,7 +633,7 @@ const mediaRecorder = new MediaRecorder(stream);
 cleanup(); // Partial cleanup
 ```
 
-### After v1.3.0 (Zero Setup)
+### After 1.5.2 (Zero Setup)
 ```typescript
 // Single hook with everything built-in
 const { 
@@ -649,7 +649,7 @@ const {
 await startRecording(8); // 8-second chunks, automatic WAV conversion, playback ready
 ```
 
-### Key Improvements in v1.3.0
+### Key Improvements in 1.5.2
 - **🔥 90% Less Code**: Frontend reduced from 1700+ lines to <100 lines
 - **📦 Complete Package**: All logic moved to reusable package
 - **🎯 Zero Setup**: No manual MediaRecorder or chunk management

@@ -44,6 +44,7 @@ export declare class MurmubaraEngine extends EventEmitter<EngineEvents> {
     destroy(force?: boolean): Promise<void>;
     getMetrics(): ProcessingMetrics;
     onMetricsUpdate(callback: (metrics: ProcessingMetrics) => void): void;
+    isActive(): boolean;
     getDiagnostics(): DiagnosticInfo;
     private getBrowserName;
     private getBrowserVersion;

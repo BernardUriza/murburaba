@@ -183,7 +183,14 @@ beforeEach(() => {
       src: ''
     }),
     head: {
-      appendChild: vi.fn()
+      appendChild: vi.fn().mockImplementation((script) => {
+        // Simulate script loading by calling onload after a microtask
+        setTimeout(() => {
+          if (script.onload) {
+            script.onload();
+          }
+        }, 0);
+      })
     }
   } as any;
   

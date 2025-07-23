@@ -1,4 +1,4 @@
-# 🧙‍♂️ Requerimientos para Murmuraba v1.3.0
+# 🧙‍♂️ Requerimientos para Murmuraba 1.5.2
 *"Un mago debe atender los detalles más pequeños para prevenir las catástrofes más grandes"*
 
 ## 🐛 Problemas Identificados en v1.2.2
@@ -18,7 +18,7 @@
 - No hay feedback claro cuando la inicialización falla
 - La auto-inicialización no funciona correctamente
 
-## 📋 Requerimientos para v1.3.0
+## 📋 Requerimientos para 1.5.2
 
 ### 1. **Compatibilidad con React 19**
 ```json
@@ -241,10 +241,10 @@ export const useAudioEngine = (options?) => {
 
 ## 📦 Entregables
 
-- [ ] murmuraba v1.3.0 con todos los fixes
+- [ ] murmuraba 1.5.2 con todos los fixes
 - [ ] Documentación actualizada
 - [ ] Ejemplos para React 16, 17, 18 y 19
-- [ ] Migration guide de v1.2.x a v1.3.0
+- [ ] Migration guide de v1.2.x a 1.5.2
 - [ ] Suite de tests completa
 
 ---

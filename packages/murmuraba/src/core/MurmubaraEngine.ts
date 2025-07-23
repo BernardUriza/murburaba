@@ -746,7 +746,13 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     try {
       // Stop all active streams
       for (const [id, controller] of this.activeStreams) {
-        controller.stop();
+        try {
+          if (controller && typeof controller.stop === 'function') {
+            controller.stop();
+          }
+        } catch (error) {
+          this.logger.warn(`Failed to stop stream ${id}:`, error);
+        }
       }
       this.activeStreams.clear();
       
@@ -765,7 +771,13 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       
       // Close audio context
       if (this.audioContext && this.audioContext.state !== 'closed') {
-        await this.audioContext.close();
+        try {
+          await this.audioContext.close();
+        } catch (error) {
+          this.logger.warn('Failed to close audio context:', error);
+          // Re-throw to maintain expected error behavior for tests
+          throw error;
+        }
       }
       
       // Clear timers
@@ -800,6 +812,10 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     this.on('metrics-update', callback);
   }
   
+  isActive(): boolean {
+    return this.activeStreams.size > 0;
+  }
+  
   getDiagnostics(): DiagnosticInfo {
     const reactVersion = (window as any).React?.version || 'unknown';
     const capabilities = {
@@ -832,6 +848,9 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         wasmLoadTime: 0, // TODO: Track actual load times
         contextCreationTime: 0,
         totalInitTime: 0,
+      },
+      systemInfo: {
+        memory: (performance as any).memory?.usedJSHeapSize,
       },
     };
   }

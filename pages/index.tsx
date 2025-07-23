@@ -220,7 +220,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Murmuraba Studio v1.3.0 | 🎙️ Next-Gen Audio Processing</title>
+        <title>Murmuraba Studio v1.5.2 | 🎙️ Next-Gen Audio Processing</title>
         <meta name="description" content="Real-time neural audio enhancement with advanced chunk processing" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
@@ -367,7 +367,7 @@ export default function Home() {
                 <h1 className="studio-title">
               <span className="logo-emoji">🎵</span>
               Murmuraba
-              <span className="version-badge">v1.3.0</span>
+              <span className="version-badge">1.5.2</span>
             </h1>
                 <p className="studio-subtitle">Neural Audio Processing Engine</p>
               </div>

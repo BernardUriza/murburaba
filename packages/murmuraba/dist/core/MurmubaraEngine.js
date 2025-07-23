@@ -584,7 +584,14 @@ export class MurmubaraEngine extends EventEmitter {
         try {
             // Stop all active streams
             for (const [id, controller] of this.activeStreams) {
-                controller.stop();
+                try {
+                    if (controller && typeof controller.stop === 'function') {
+                        controller.stop();
+                    }
+                }
+                catch (error) {
+                    this.logger.warn(`Failed to stop stream ${id}:`, error);
+                }
             }
             this.activeStreams.clear();
             // Stop metrics
@@ -627,6 +634,9 @@ export class MurmubaraEngine extends EventEmitter {
     onMetricsUpdate(callback) {
         this.on('metrics-update', callback);
     }
+    isActive() {
+        return this.activeStreams.size > 0;
+    }
     getDiagnostics() {
         const reactVersion = window.React?.version || 'unknown';
         const capabilities = {
@@ -657,6 +667,9 @@ export class MurmubaraEngine extends EventEmitter {
                 wasmLoadTime: 0, // TODO: Track actual load times
                 contextCreationTime: 0,
                 totalInitTime: 0,
+            },
+            systemInfo: {
+                memory: performance.memory?.usedJSHeapSize,
             },
         };
     }

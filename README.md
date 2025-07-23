@@ -1,12 +1,12 @@
 # Murmuraba - Advanced Real-time Audio Noise Reduction Engine
 
-A production-ready audio processing library and Next.js application featuring real-time noise reduction using RNNoise neural network, with **completely refactored clean architecture** (v1.3.0).
+A production-ready audio processing library and Next.js application featuring real-time noise reduction using RNNoise neural network, with **completely refactored clean architecture** (1.5.2).
 
 ## 🎯 Overview
 
 Murmuraba provides a complete audio processing solution with a powerful React hook (`useMurmubaraEngine`) that handles **everything internally** - from recording to playback, with automatic format conversion and cross-browser compatibility. Built on RNNoise technology, it delivers state-of-the-art noise suppression with an ultra-clean API.
 
-### ✨ **v1.3.0 - Clean Architecture**
+### ✨ **1.5.2 - Clean Architecture**
 - **Frontend**: Pure UI layer (<100 lines) - just imports and renders
 - **Package**: All audio logic centralized in `murmuraba` package
 - **Zero Boilerplate**: Hook handles MediaRecorder, chunks, playback automatically
@@ -22,7 +22,7 @@ Murmuraba provides a complete audio processing solution with a powerful React ho
 - **Performance Metrics**: Real-time latency, noise reduction, and processing metrics
 - **Waveform Visualization**: Live audio waveform display with synced playback
 
-### ⚡ **v1.3.0 - Revolutionary Hook Features**
+### ⚡ **1.5.2 - Revolutionary Hook Features**
 - **🎯 Zero-Setup Recording**: `startRecording()` handles everything - MediaRecorder, streams, chunks
 - **🔄 WAV-First Strategy**: Prioritizes WAV format, auto-fallback to WebM/Opus
 - **📊 Built-in Chunk Management**: Automatic chunk creation with original/processed audio URLs
