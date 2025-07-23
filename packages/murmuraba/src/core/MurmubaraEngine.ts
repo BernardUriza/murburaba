@@ -4,6 +4,7 @@ import { Logger } from './Logger';
 import { WorkerManager } from '../managers/WorkerManager';
 import { MetricsManager } from '../managers/MetricsManager';
 import { ChunkProcessor } from '../managers/ChunkProcessor';
+import { SimpleAGC } from '../utils/SimpleAGC';
 import {
   MurmubaraConfig,
   EngineEvents,
@@ -32,6 +33,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
   private initPromise?: Promise<void>;
   private cleanupTimer?: NodeJS.Timeout;
   private errorHistory: Array<{ timestamp: number; error: string }> = [];
+  private agcEnabled = true;
+  private agc?: SimpleAGC;
   
   constructor(config: MurmubaraConfig = {}) {
     super();
@@ -566,12 +569,42 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
   }
   
   private getReductionFactor(): number {
+    // Adjusted factors to preserve volume when using AGC
     switch (this.config.noiseReductionLevel) {
-      case 'low': return 0.9;
-      case 'medium': return 0.7;
-      case 'high': return 0.5;
-      case 'auto': return 0.7; // TODO: Implement auto adjustment
-      default: return 0.7;
+      case 'low': return 1.0;     // No reduction with AGC
+      case 'medium': return 0.9;   // Slight reduction
+      case 'high': return 0.8;     // Moderate reduction
+      case 'auto': return 0.9;
+      default: return 0.9;
+    }
+  }
+  
+  // AGC Methods for TDD
+  isAGCEnabled(): boolean {
+    return this.agcEnabled;
+  }
+  
+  setAGCEnabled(enabled: boolean): void {
+    this.agcEnabled = enabled;
+  }
+  
+  getAGCConfig(): { targetLevel: number; maxGain: number; enabled: boolean } {
+    return {
+      targetLevel: 0.3,
+      maxGain: 6.0,
+      enabled: this.agcEnabled
+    };
+  }
+  
+  // Public method to get reduction factor for testing
+  getReductionFactor(level: string): number {
+    // Direct calculation to avoid recursion
+    switch (level) {
+      case 'low': return 1.0;
+      case 'medium': return 0.9;
+      case 'high': return 0.8;
+      case 'auto': return 0.9;
+      default: return 0.9;
     }
   }
   

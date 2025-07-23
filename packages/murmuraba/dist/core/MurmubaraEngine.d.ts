@@ -15,6 +15,8 @@ export declare class MurmubaraEngine extends EventEmitter<EngineEvents> {
     private initPromise?;
     private cleanupTimer?;
     private errorHistory;
+    private agcEnabled;
+    private agc?;
     constructor(config?: MurmubaraConfig);
     private setupEventForwarding;
     private setupAutoCleanup;
@@ -30,7 +32,13 @@ export declare class MurmubaraEngine extends EventEmitter<EngineEvents> {
     private processFrame;
     processStream(stream: MediaStream, chunkConfig?: ChunkConfig): Promise<StreamController>;
     private createStreamController;
-    private getReductionFactor;
+    isAGCEnabled(): boolean;
+    setAGCEnabled(enabled: boolean): void;
+    getAGCConfig(): {
+        targetLevel: number;
+        maxGain: number;
+        enabled: boolean;
+    };
     private generateStreamId;
     destroy(force?: boolean): Promise<void>;
     getMetrics(): ProcessingMetrics;

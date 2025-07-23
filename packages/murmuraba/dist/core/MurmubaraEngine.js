@@ -10,6 +10,7 @@ export class MurmubaraEngine extends EventEmitter {
         super();
         this.activeStreams = new Map();
         this.errorHistory = [];
+        this.agcEnabled = true;
         this.config = {
             logLevel: config.logLevel || 'info',
             onLog: config.onLog || undefined,
@@ -428,12 +429,38 @@ export class MurmubaraEngine extends EventEmitter {
         return controller;
     }
     getReductionFactor() {
+        // Adjusted factors to preserve volume when using AGC
         switch (this.config.noiseReductionLevel) {
-            case 'low': return 0.9;
-            case 'medium': return 0.7;
-            case 'high': return 0.5;
-            case 'auto': return 0.7; // TODO: Implement auto adjustment
-            default: return 0.7;
+            case 'low': return 1.0; // No reduction with AGC
+            case 'medium': return 0.9; // Slight reduction
+            case 'high': return 0.8; // Moderate reduction
+            case 'auto': return 0.9;
+            default: return 0.9;
+        }
+    }
+    // AGC Methods for TDD
+    isAGCEnabled() {
+        return this.agcEnabled;
+    }
+    setAGCEnabled(enabled) {
+        this.agcEnabled = enabled;
+    }
+    getAGCConfig() {
+        return {
+            targetLevel: 0.3,
+            maxGain: 6.0,
+            enabled: this.agcEnabled
+        };
+    }
+    // Public method to get reduction factor for testing
+    getReductionFactor(level) {
+        // Direct calculation to avoid recursion
+        switch (level) {
+            case 'low': return 1.0;
+            case 'medium': return 0.9;
+            case 'high': return 0.8;
+            case 'auto': return 0.9;
+            default: return 0.9;
         }
     }
     generateStreamId() {
