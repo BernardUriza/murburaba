@@ -1,4 +1,4 @@
-import resample from 'audio-resampler';
+// import resample from 'audio-resampler'; // This library doesn't work as expected
 import { Logger } from '../core/Logger';
 
 export interface ResamplingOptions {
@@ -87,7 +87,33 @@ export class AudioResampler {
   
   private static resamplePCM(pcm: Int16Array, fromRate: number, toRate: number): Int16Array {
     const input = this.pcm16ToFloat32(pcm);
-    const output = resample(input, fromRate, toRate);
+    const output = this.linearInterpolationResample(input, fromRate, toRate);
     return this.float32ToPcm16(output);
+  }
+  
+  /**
+   * Simple linear interpolation resampler
+   * This is a basic implementation that should work for most audio resampling needs
+   */
+  private static linearInterpolationResample(input: Float32Array, fromRate: number, toRate: number): Float32Array {
+    if (fromRate === toRate) {
+      return input;
+    }
+    
+    const ratio = fromRate / toRate;
+    const outputLength = Math.floor(input.length / ratio);
+    const output = new Float32Array(outputLength);
+    
+    for (let i = 0; i < outputLength; i++) {
+      const srcIndex = i * ratio;
+      const srcIndexFloor = Math.floor(srcIndex);
+      const srcIndexCeil = Math.min(srcIndexFloor + 1, input.length - 1);
+      const fraction = srcIndex - srcIndexFloor;
+      
+      // Linear interpolation between two samples
+      output[i] = input[srcIndexFloor] * (1 - fraction) + input[srcIndexCeil] * fraction;
+    }
+    
+    return output;
   }
 }

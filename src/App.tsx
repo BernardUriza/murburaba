@@ -1,4 +1,3 @@
-import Head from 'next/head'
 import React, { useState } from 'react'
 import { 
   useMurmubaraEngine,
@@ -10,10 +9,10 @@ import {
   processFile
 } from 'murmuraba'
 import Swal from 'sweetalert2'
-import { WASMErrorDisplay } from '../components/WASMErrorDisplay'
-import AudioDemo from '../components/AudioDemo'
+import { WASMErrorDisplay } from './components/WASMErrorDisplay'
+import AudioDemo from './components/AudioDemo'
 
-export default function Home() {
+export default function App() {
   // Engine configuration state with localStorage persistence
   const [engineConfig, setEngineConfig] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -219,11 +218,6 @@ export default function Home() {
 
   return (
     <>
-      <Head>
-        <title>Murmuraba Studio v1.5.2 | 🎙️ Next-Gen Audio Processing</title>
-        <meta name="description" content="Real-time neural audio enhancement with advanced chunk processing" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-      </Head>
       <main className="main-container">
         <div className="prairie-grass"></div>
         {/* Floating Settings Panel */}
@@ -777,7 +771,6 @@ export default function Home() {
       </main>
       
       <BuildInfo version="1.3.0" buildDate={new Date().toLocaleDateString()} />
-
     </>
   )
 }

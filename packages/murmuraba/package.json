@@ -93,7 +93,6 @@
   },
   "dependencies": {
     "@jitsi/rnnoise-wasm": "^0.2.1",
-    "audio-resampler": "^1.0.1",
     "lamejs": "^1.2.1"
   }
 }

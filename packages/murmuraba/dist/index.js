@@ -2,9 +2,6 @@
  * Murmuraba v1.5.0
  * Real-time audio noise reduction with comprehensive UI component library
  */
-// 🔥 PROTECCIÓN BRUTAL CONTRA WINDOW VIOLATIONS EN NEXT.JS SSR
-// Aunque este proyecto es client-side, Next.js intenta renderizar en servidor
-import './utils/ssrGuard';
 // Core exports
 export { MurmubaraEngine } from './core/MurmubaraEngine';
 export { EventEmitter } from './core/EventEmitter';

@@ -14,12 +14,12 @@ const buildDate = new Date().toLocaleString('en-US', {
   minute: '2-digit'
 });
 
-// Create .env.local file with build info
-const envContent = `NEXT_PUBLIC_VERSION=${version}
-NEXT_PUBLIC_BUILD_DATE="${buildDate}"
+// Create .env file with build info for Vite
+const envContent = `VITE_VERSION=${version}
+VITE_BUILD_DATE="${buildDate}"
 `;
 
-fs.writeFileSync(path.join(__dirname, '..', '.env.local'), envContent);
+fs.writeFileSync(path.join(__dirname, '..', '.env'), envContent);
 
 console.log(`Build info generated:`);
 console.log(`  Version: ${version}`);

@@ -2,7 +2,6 @@
  * Murmuraba v1.5.0
  * Real-time audio noise reduction with comprehensive UI component library
  */
-import './utils/ssrGuard';
 export { MurmubaraEngine } from './core/MurmubaraEngine';
 export { EventEmitter } from './core/EventEmitter';
 export { StateManager } from './core/StateManager';
