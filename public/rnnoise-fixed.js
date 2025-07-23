@@ -240,7 +240,7 @@ function isDataURI(filename) {
 
 var wasmBinaryFile;
 
-wasmBinaryFile = "/dist/rnnoise.wasm";
+wasmBinaryFile = "/rnnoise.wasm";
 
 if (!isDataURI(wasmBinaryFile)) {
  wasmBinaryFile = locateFile(wasmBinaryFile);

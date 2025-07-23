@@ -1,3 +1,4 @@
+import { AudioResampler } from '../utils/AudioResampler'
 import { EventEmitter } from './EventEmitter';
 import { StateManager } from './StateManager';
 import { Logger } from './Logger';
@@ -1025,9 +1026,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     if (numChannels !== 1) {
       throw new Error(`Unsupported channel count: ${numChannels}. Only mono (1 channel) is supported`);
     }
-    if (sampleRate !== 48000) {
-      throw new Error(`Unsupported sample rate: ${sampleRate}Hz. Only 48kHz is supported. Please resample your audio to 48kHz before processing.`);
-    }
+    
     if (bitsPerSample !== 16) {
       throw new Error(`Unsupported bit depth: ${bitsPerSample}. Only 16-bit is supported`);
     }
@@ -1061,11 +1060,18 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     }
     
     // Extract PCM data
-    const pcmData = new Int16Array(arrayBuffer, dataOffset, dataSize / 2);
+    let pcmData = new Int16Array(arrayBuffer, dataOffset, dataSize / 2);
+    let workingSampleRate = sampleRate;
+    
+    // Resample to 48kHz if needed (RNNoise requires 48kHz)
+    const resamplingResult = AudioResampler.resampleToRNNoiseRate(pcmData, sampleRate, this.logger);
+    pcmData = resamplingResult.resampledData;
+    workingSampleRate = resamplingResult.outputSampleRate;
+    
     const numSamples = pcmData.length;
     const numFrames = Math.floor(numSamples / 480);
     
-    this.logger.info(`Processing ${numSamples} samples (${numFrames} frames of 480 samples)`);
+    this.logger.info(`Processing ${numSamples} samples (${numFrames} frames of 480 samples) at ${workingSampleRate}Hz`);
     
     // Process audio in 480-sample frames
     const processedSamples = new Float32Array(numFrames * 480);
