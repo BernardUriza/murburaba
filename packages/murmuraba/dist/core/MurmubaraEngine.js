@@ -184,31 +184,59 @@ export class MurmubaraEngine extends EventEmitter {
     }
     async loadWasmModule() {
         this.logger.debug('Loading WASM module...');
-        // Load the RNNoise script
-        const script = document.createElement('script');
-        script.src = '/rnnoise-fixed.js';
-        await new Promise((resolve, reject) => {
-            script.onload = () => resolve();
-            script.onerror = () => reject(new Error('Failed to load RNNoise script'));
-            document.head.appendChild(script);
-        });
-        // Create WASM module
-        const createRNNWasmModule = window.createRNNWasmModule;
-        if (!createRNNWasmModule) {
-            throw new Error('RNNoise WASM module creator not found');
+        // Check WebAssembly support
+        if (typeof WebAssembly === 'undefined') {
+            throw new Error('WebAssembly is not supported in this environment');
         }
-        this.wasmModule = await createRNNWasmModule({
-            locateFile: (filename) => {
-                if (filename.endsWith('.wasm')) {
-                    return `/dist/${filename}`;
-                }
-                return filename;
+        try {
+            // Load the RNNoise script
+            const script = document.createElement('script');
+            script.src = '/rnnoise-fixed.js';
+            await new Promise((resolve, reject) => {
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error('Failed to load RNNoise script from /rnnoise-fixed.js'));
+                document.head.appendChild(script);
+            });
+            // Create WASM module
+            const createRNNWasmModule = window.createRNNWasmModule;
+            if (!createRNNWasmModule) {
+                throw new Error('RNNoise WASM module creator not found on window object');
             }
-        });
-        // Create RNNoise state
-        this.rnnoiseState = this.wasmModule._rnnoise_create(0);
-        if (!this.rnnoiseState) {
-            throw new Error('Failed to create RNNoise state');
+            try {
+                this.wasmModule = await createRNNWasmModule({
+                    locateFile: (filename) => {
+                        // If it's the WASM file, ensure correct path
+                        if (filename.endsWith('.wasm')) {
+                            const path = `/dist/${filename}`;
+                            this.logger.debug(`WASM file requested: ${filename}, returning path: ${path}`);
+                            return path;
+                        }
+                        return filename;
+                    }
+                });
+            }
+            catch (wasmError) {
+                const errorMsg = wasmError?.message || String(wasmError);
+                // Check for the specific WASM loading error
+                if (errorMsg.includes('Aborted') && errorMsg.includes('wasm')) {
+                    throw new Error(`Failed to load WASM file. This usually means the rnnoise.wasm file is not accessible at /dist/rnnoise.wasm. ` +
+                        `Please ensure: 1) The file exists in the public/dist directory, 2) Your server is configured to serve .wasm files with the correct MIME type (application/wasm). ` +
+                        `Original error: ${errorMsg}`);
+                }
+                throw new Error(`Failed to initialize WASM module: ${errorMsg}`);
+            }
+            // Create RNNoise state
+            this.rnnoiseState = this.wasmModule._rnnoise_create(0);
+            if (!this.rnnoiseState) {
+                throw new Error('Failed to create RNNoise state');
+            }
+        }
+        catch (error) {
+            // Re-throw with proper context
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error(`Unexpected error loading WASM: ${String(error)}`);
         }
         // Allocate memory
         this.inputPtr = this.wasmModule._malloc(480 * 4);
@@ -452,16 +480,6 @@ export class MurmubaraEngine extends EventEmitter {
         };
         return controller;
     }
-    getReductionFactor() {
-        // Adjusted factors to preserve volume when using AGC
-        switch (this.config.noiseReductionLevel) {
-            case 'low': return 1.0; // No reduction with AGC
-            case 'medium': return 0.9; // Slight reduction
-            case 'high': return 0.8; // Moderate reduction
-            case 'auto': return 0.9;
-            default: return 0.9;
-        }
-    }
     // AGC Methods for TDD
     isAGCEnabled() {
         return this.agcEnabled;
@@ -478,8 +496,9 @@ export class MurmubaraEngine extends EventEmitter {
     }
     // Public method to get reduction factor for testing
     getReductionFactor(level) {
-        // Direct calculation to avoid recursion
-        switch (level) {
+        const targetLevel = level || this.config.noiseReductionLevel;
+        // Adjusted factors to preserve volume when using AGC
+        switch (targetLevel) {
             case 'low': return 1.0;
             case 'medium': return 0.9;
             case 'high': return 0.8;

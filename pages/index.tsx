@@ -8,6 +8,7 @@ import {
   ChunkProcessingResults
 } from 'murmuraba'
 import Swal from 'sweetalert2'
+import { WASMErrorDisplay } from '../components/WASMErrorDisplay'
 
 export default function Home() {
   // Engine configuration state with localStorage persistence
@@ -584,10 +585,7 @@ export default function Home() {
             </div>
 
             {error && (
-              <div className="error-message shake">
-                <span>⚠️ {error}</span>
-                <button onClick={resetError} className="error-dismiss">✕</button>
-              </div>
+              <WASMErrorDisplay error={error} onDismiss={resetError} />
             )}
           </section>
         )}

@@ -16,6 +16,11 @@ export class RNNoiseEngine {
         if (this.isInitialized)
             return;
         console.log('[RNNoiseEngine] Starting initialization...');
+        // Check WebAssembly support first
+        if (typeof WebAssembly === 'undefined') {
+            throw new Error('WebAssembly is not supported in this environment');
+        }
+        const errors = [];
         try {
             // Option 1: Try dynamic import with bundler resolution
             const rnnoiseModule = await import('@jitsi/rnnoise-wasm');
@@ -23,8 +28,10 @@ export class RNNoiseEngine {
             this.module = await rnnoiseModule.default();
         }
         catch (error) {
-            console.error('[RNNoiseEngine] Failed to load from import, trying embedded loader...', error);
-            // Option 3: Use embedded WASM loader
+            const errorMsg = error?.message || String(error);
+            console.error('[RNNoiseEngine] Failed to load from import:', errorMsg);
+            errors.push(`Import method: ${errorMsg}`);
+            // Option 2: Use embedded WASM loader
             try {
                 const { initializeRNNoise } = await import('./rnnoise-universal-loader');
                 const rnnoiseInstance = await initializeRNNoise();
@@ -32,27 +39,45 @@ export class RNNoiseEngine {
                 this.state = rnnoiseInstance.state;
             }
             catch (embeddedError) {
-                console.error('[RNNoiseEngine] Failed to load embedded, trying script tag...', embeddedError);
-                // Fallback to script tag if import fails
-                const script = document.createElement('script');
-                script.src = this.config.scriptPath || '/rnnoise-fixed.js';
-                await new Promise((resolve, reject) => {
-                    script.onload = resolve;
-                    script.onerror = reject;
-                    document.head.appendChild(script);
-                });
-                // Create module
-                const createRNNWasmModule = window.createRNNWasmModule;
-                this.module = await createRNNWasmModule({
-                    locateFile: (filename) => {
-                        if (filename.endsWith('.wasm')) {
-                            return this.config.wasmPath ?
-                                `${this.config.wasmPath}/${filename}` :
-                                `/dist/${filename}`;
-                        }
-                        return filename;
+                const embeddedErrorMsg = embeddedError?.message || String(embeddedError);
+                console.error('[RNNoiseEngine] Failed to load embedded:', embeddedErrorMsg);
+                errors.push(`Embedded loader: ${embeddedErrorMsg}`);
+                // Option 3: Fallback to script tag if import fails
+                try {
+                    const script = document.createElement('script');
+                    script.src = this.config.scriptPath || '/rnnoise-fixed.js';
+                    await new Promise((resolve, reject) => {
+                        script.onload = resolve;
+                        script.onerror = (e) => reject(new Error('Failed to load RNNoise script'));
+                        document.head.appendChild(script);
+                    });
+                    // Create module
+                    const createRNNWasmModule = window.createRNNWasmModule;
+                    if (!createRNNWasmModule) {
+                        throw new Error('createRNNWasmModule not found on window after script load');
                     }
-                });
+                    this.module = await createRNNWasmModule({
+                        locateFile: (filename) => {
+                            if (filename.endsWith('.wasm')) {
+                                return this.config.wasmPath ?
+                                    `${this.config.wasmPath}/${filename}` :
+                                    `/dist/${filename}`;
+                            }
+                            return filename;
+                        }
+                    });
+                }
+                catch (scriptError) {
+                    const scriptErrorMsg = scriptError?.message || String(scriptError);
+                    console.error('[RNNoiseEngine] Failed to load via script tag:', scriptErrorMsg);
+                    errors.push(`Script tag method: ${scriptErrorMsg}`);
+                    // Check for specific WASM loading error
+                    if (scriptErrorMsg.includes('Aborted') && scriptErrorMsg.includes('wasm')) {
+                        throw new Error(`Failed to initialize RNNoise: WASM file could not be loaded. Please ensure rnnoise.wasm is accessible at the correct path. Original error: ${scriptErrorMsg}`);
+                    }
+                    // All methods failed
+                    throw new Error(`Failed to initialize RNNoise: Unable to load WASM module through any available method. Errors: ${errors.join('; ')}`);
+                }
             }
         }
         // Create state if not already created

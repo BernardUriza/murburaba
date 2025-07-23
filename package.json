@@ -14,7 +14,7 @@
     "lint": "next lint",
     "generate-build-info": "node scripts/generate-build-info.js",
     "test": "npm run test --workspace=murmuraba",
-    "test:watch": "npm run test:watch --workspace=murmuraba", 
+    "test:watch": "npm run test:watch --workspace=murmuraba",
     "test:ui": "npm run test:ui --workspace=murmuraba",
     "test:coverage": "npm run test:coverage --workspace=murmuraba",
     "test:integration": "npm run test --workspace=murmuraba -- --run ChunkProcessorRecordingManagerIntegration"
@@ -33,8 +33,9 @@
     "concurrently": "^9.2.0",
     "eslint": "^8",
     "eslint-config-next": "14.0.4",
+    "happy-dom": "^18.0.1",
+    "puppeteer": "^24.15.0",
     "typescript": "^5",
-    "vitest": "^3.2.4",
-    "happy-dom": "^18.0.1"
+    "vitest": "^3.2.4"
   }
 }

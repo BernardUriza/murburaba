@@ -644,11 +644,98 @@ class ChunkProcessor extends EventEmitter {
     }
 }
 
+/**
+ * Simple Automatic Gain Control - REFACTORED
+ * Based on WebSearch results for Web Audio API AGC
+ *
+ * Key findings from WebSearch:
+ * - Use DynamicsCompressorNode for reducing dynamics range
+ * - Use AnalyserNode + GainNode for manual AGC
+ * - Always use setTargetAtTime to prevent clicks
+ * - RMS calculation for accurate level detection
+ */
+class SimpleAGC {
+    constructor(audioContext, targetLevel = 0.3) {
+        this.audioContext = audioContext;
+        this.targetLevel = targetLevel;
+        this.attackTime = 0.1; // 100ms attack
+        this.releaseTime = 0.5; // 500ms release (from WebSearch)
+        this.maxGain = 10.0; // Safety limit
+        // Create nodes as per WebSearch recommendation
+        this.analyser = audioContext.createAnalyser();
+        this.gainNode = audioContext.createGain();
+        // Configure analyser for time-domain analysis
+        this.analyser.fftSize = 256;
+        this.bufferLength = this.analyser.frequencyBinCount;
+        this.dataArray = new Uint8Array(this.bufferLength);
+        // Connect nodes
+        this.analyser.connect(this.gainNode);
+    }
+    /**
+     * Update gain based on current audio level
+     * Implements attack/release timing as recommended by WebSearch
+     */
+    updateGain() {
+        const currentRMS = this.calculateRMS();
+        // Only adjust if we have signal (avoid divide by zero)
+        if (currentRMS > 0) {
+            const targetGain = this.calculateTargetGain(currentRMS);
+            this.applyGainSmoothing(targetGain);
+        }
+    }
+    /**
+     * Calculate RMS (Root Mean Square) level
+     * Formula from WebSearch MDN examples
+     */
+    calculateRMS() {
+        this.analyser.getByteTimeDomainData(this.dataArray);
+        let sum = 0;
+        for (let i = 0; i < this.bufferLength; i++) {
+            // Convert from 0-255 to -1 to 1
+            const normalized = (this.dataArray[i] - 128) / 128;
+            sum += normalized * normalized;
+        }
+        return Math.sqrt(sum / this.bufferLength);
+    }
+    /**
+     * Calculate target gain with safety limits
+     */
+    calculateTargetGain(currentRMS) {
+        const rawGain = this.targetLevel / currentRMS;
+        return Math.min(rawGain, this.maxGain);
+    }
+    /**
+     * Apply gain with proper timing to prevent clicks
+     * Uses exponential ramp as per WebSearch recommendation
+     */
+    applyGainSmoothing(targetGain) {
+        const currentGain = this.gainNode.gain.value;
+        const isIncreasing = targetGain > currentGain;
+        // Use attack time when increasing, release time when decreasing
+        const timeConstant = isIncreasing ? this.attackTime : this.releaseTime;
+        this.gainNode.gain.setTargetAtTime(targetGain, this.audioContext.currentTime, timeConstant);
+    }
+    /**
+     * Get current gain value for monitoring
+     */
+    getCurrentGain() {
+        return this.gainNode.gain.value;
+    }
+    /**
+     * Connect source -> analyser -> gain -> destination
+     */
+    connect(source, destination) {
+        source.connect(this.analyser);
+        this.gainNode.connect(destination);
+    }
+}
+
 class MurmubaraEngine extends EventEmitter {
     constructor(config = {}) {
         super();
         this.activeStreams = new Map();
         this.errorHistory = [];
+        this.agcEnabled = true;
         this.config = {
             logLevel: config.logLevel || 'info',
             onLog: config.onLog || undefined,
@@ -836,9 +923,8 @@ class MurmubaraEngine extends EventEmitter {
         }
         this.wasmModule = await createRNNWasmModule({
             locateFile: (filename) => {
-                if (filename.endsWith('.wasm')) {
-                    return `/dist/${filename}`;
-                }
+                // The emscripten-generated code already has the path set to /dist/rnnoise.wasm
+                // So we just return the filename as-is to avoid double /dist/ paths
                 return filename;
             }
         });
@@ -919,6 +1005,12 @@ class MurmubaraEngine extends EventEmitter {
         lowShelfFilter.type = 'lowshelf';
         lowShelfFilter.frequency.value = 200; // Reduce echo/room resonance
         lowShelfFilter.gain.value = -3; // Gentle reduction
+        // Create AGC if enabled
+        let agc;
+        if (this.agcEnabled) {
+            agc = new SimpleAGC(this.audioContext, 0.3);
+            this.agc = agc;
+        }
         let isPaused = false;
         let isStopped = false;
         const inputBuffer = [];
@@ -966,6 +1058,10 @@ class MurmubaraEngine extends EventEmitter {
             this.metricsManager.calculateRMS(input);
             const inputPeak = this.metricsManager.calculatePeak(input);
             this.metricsManager.updateInputLevel(inputPeak);
+            // Update AGC if enabled
+            if (agc && !isPaused && !isStopped) {
+                agc.updateGain();
+            }
             // Add to buffer
             for (let i = 0; i < input.length; i++) {
                 inputBuffer.push(input[i]);
@@ -1014,6 +1110,12 @@ class MurmubaraEngine extends EventEmitter {
             this.metricsManager.calculateRMS(output);
             const outputPeak = this.metricsManager.calculatePeak(output);
             this.metricsManager.updateOutputLevel(outputPeak);
+            // Track AGC gain for metrics if enabled
+            if (agc) {
+                const currentGain = agc.getCurrentGain();
+                // This gain info will be used for diagnostics
+                this.logger.debug(`AGC gain: ${currentGain.toFixed(2)}x`);
+            }
             // Calculate noise reduction based on actual processed frames
             if (framesProcessed > 0) {
                 const avgInputRMS = totalInputRMS / framesProcessed;
@@ -1022,12 +1124,19 @@ class MurmubaraEngine extends EventEmitter {
                 this.metricsManager.updateNoiseReduction(reduction);
             }
         };
-        // Connect filters in chain: source -> filters -> processor -> destination
+        // Connect filters in chain: source -> filters -> (AGC) -> processor -> destination
         source.connect(highPassFilter);
         highPassFilter.connect(notchFilter1);
         notchFilter1.connect(notchFilter2);
         notchFilter2.connect(lowShelfFilter);
-        lowShelfFilter.connect(processor);
+        if (agc) {
+            // With AGC: lowShelfFilter -> AGC -> processor
+            agc.connect(lowShelfFilter, processor);
+        }
+        else {
+            // Without AGC: lowShelfFilter -> processor
+            lowShelfFilter.connect(processor);
+        }
         processor.connect(destination);
         const controller = {
             stream: destination.stream,
@@ -1066,13 +1175,30 @@ class MurmubaraEngine extends EventEmitter {
         };
         return controller;
     }
-    getReductionFactor() {
-        switch (this.config.noiseReductionLevel) {
-            case 'low': return 0.9;
-            case 'medium': return 0.7;
-            case 'high': return 0.5;
-            case 'auto': return 0.7; // TODO: Implement auto adjustment
-            default: return 0.7;
+    // AGC Methods for TDD
+    isAGCEnabled() {
+        return this.agcEnabled;
+    }
+    setAGCEnabled(enabled) {
+        this.agcEnabled = enabled;
+    }
+    getAGCConfig() {
+        return {
+            targetLevel: 0.3,
+            maxGain: 6.0,
+            enabled: this.agcEnabled
+        };
+    }
+    // Public method to get reduction factor for testing
+    getReductionFactor(level) {
+        const targetLevel = level || this.config.noiseReductionLevel;
+        // Adjusted factors to preserve volume when using AGC
+        switch (targetLevel) {
+            case 'low': return 1.0;
+            case 'medium': return 0.9;
+            case 'high': return 0.8;
+            case 'auto': return 0.9;
+            default: return 0.9;
         }
     }
     generateStreamId() {

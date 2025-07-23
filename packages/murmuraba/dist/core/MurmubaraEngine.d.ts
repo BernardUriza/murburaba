@@ -39,6 +39,7 @@ export declare class MurmubaraEngine extends EventEmitter<EngineEvents> {
         maxGain: number;
         enabled: boolean;
     };
+    getReductionFactor(level?: string): number;
     private generateStreamId;
     destroy(force?: boolean): Promise<void>;
     getMetrics(): ProcessingMetrics;
