@@ -1,5 +1,6 @@
 # dependencies
 /node_modules
+packages/*/node_modules/
 /.pnp
 .pnp.js
 
@@ -8,7 +9,6 @@
 packages/*/coverage/
 packages/*/html/
 packages/*/dist/
-packages/*/node_modules/.vite/
 
 # next.js
 /.next/
