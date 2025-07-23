@@ -96,5 +96,48 @@ describe('SimpleAGC - TDD Red Phase', () => {
       const [targetGain] = mockGainNode.gain.setTargetAtTime.mock.calls[0];
       expect(targetGain).toBeLessThanOrEqual(10.0); // Max gain limit
     });
+
+    it('should handle silence without errors', () => {
+      const agc = new SimpleAGC(mockAudioContext, 0.3);
+      
+      // Complete silence
+      const silentData = new Uint8Array(128).fill(128); // 128 = 0 amplitude
+      mockAnalyser.getByteTimeDomainData.mockImplementation((array: Uint8Array) => {
+        array.set(silentData);
+      });
+
+      // Should not throw or call setTargetAtTime
+      expect(() => agc.updateGain()).not.toThrow();
+      expect(mockGainNode.gain.setTargetAtTime).not.toHaveBeenCalled();
+    });
+
+    it('should use smooth transitions with attack time', () => {
+      const agc = new SimpleAGC(mockAudioContext, 0.3);
+      
+      const normalData = new Uint8Array(128).fill(150); // Normal volume
+      mockAnalyser.getByteTimeDomainData.mockImplementation((array: Uint8Array) => {
+        array.set(normalData);
+      });
+
+      agc.updateGain();
+
+      // Check attack time parameter (3rd argument)
+      const [, , attackTime] = mockGainNode.gain.setTargetAtTime.mock.calls[0];
+      expect(attackTime).toBe(0.1); // 100ms attack time
+    });
+  });
+
+  describe('Integration with AudioContext', () => {
+    it('should connect analyser to gain node', () => {
+      const agc = new SimpleAGC(mockAudioContext, 0.3);
+      
+      expect(mockAnalyser.connect).toHaveBeenCalledWith(mockGainNode);
+    });
+
+    it('should configure analyser correctly', () => {
+      const agc = new SimpleAGC(mockAudioContext, 0.3);
+      
+      expect(mockAnalyser.fftSize).toBe(256);
+    });
   });
 });
