@@ -5,7 +5,9 @@ let globalEngine: MurmubaraEngine | null = null;
 
 export async function initializeAudioEngine(config?: MurmubaraConfig): Promise<void> {
   if (globalEngine) {
-    throw new Error('Audio engine is already initialized. Call destroyEngine() first.');
+    console.warn('Audio engine already exists. Destroying previous instance...');
+    await globalEngine.destroy(true);
+    globalEngine = null;
   }
   
   globalEngine = new MurmubaraEngine(config);

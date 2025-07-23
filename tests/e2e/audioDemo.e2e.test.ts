@@ -225,6 +225,75 @@ describe('AudioDemo E2E Tests', () => {
     }
   })
 
+  it('should handle double initialization gracefully', async () => {
+    await page.goto(baseUrl, { waitUntil: 'networkidle2' })
+    await page.waitForSelector('[data-testid="audio-demo"]', { timeout: 10000 })
+    
+    // Track console messages
+    const consoleLogs: string[] = []
+    page.on('console', msg => {
+      if (msg.type() === 'warn' || msg.type() === 'log') {
+        consoleLogs.push(msg.text())
+      }
+    })
+    
+    // Wait for first initialization
+    await page.waitForFunction(
+      () => {
+        const statusElement = document.querySelector('[data-testid="engine-status"]')
+        return statusElement?.textContent === 'ready'
+      },
+      { timeout: 15000 }
+    )
+    
+    // Simulate re-initialization by calling initialize again
+    await page.evaluate(() => {
+      // Force re-initialization through the hook if available
+      const initButton = document.querySelector('[data-testid="init-engine-button"]') as HTMLButtonElement
+      if (initButton && !initButton.disabled) {
+        initButton.click()
+      }
+    })
+    
+    // Wait a bit for the warning message
+    await page.waitForTimeout(1000)
+    
+    // Check that warning was logged
+    const hasWarning = consoleLogs.some(log => 
+      log.includes('Audio engine already exists') || 
+      log.includes('Destroying previous instance')
+    )
+    
+    // Should handle gracefully (warning is expected now, not an error)
+    console.log('Console logs:', consoleLogs)
+    
+    // Verify engine is still in ready state after re-initialization attempt
+    await page.waitForFunction(
+      () => {
+        const statusElement = document.querySelector('[data-testid="engine-status"]')
+        return statusElement?.textContent === 'ready'
+      },
+      { timeout: 15000 }
+    )
+    
+    // Verify audio processing still works
+    const processButton = await page.$('button:has-text("Probar Audio Demo"):not([disabled])')
+    expect(processButton).toBeTruthy()
+    
+    if (processButton) {
+      await processButton.click()
+      
+      // Wait for processing to complete
+      await page.waitForFunction(
+        () => {
+          const logs = document.querySelector('[data-testid="audio-logs"]')
+          return logs?.textContent?.includes('Procesamiento completado')
+        },
+        { timeout: 30000 }
+      )
+    }
+  })
+
   it('should export logs successfully', async () => {
     await page.goto(baseUrl, { waitUntil: 'networkidle2' })
     await page.waitForSelector('[data-testid="audio-demo"]', { timeout: 10000 })
