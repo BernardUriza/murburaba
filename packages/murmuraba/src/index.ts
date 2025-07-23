@@ -34,6 +34,13 @@ export {
   processFile
 } from './api';
 
+// Export enhanced processing functions
+export { 
+  processFileWithMetrics,
+  type ProcessingMetrics,
+  type ProcessFileWithMetricsResult
+} from './api/processFileWithMetrics';
+
 // Export version
 export const VERSION = '1.5.0';
 export const MURMURABA_VERSION = VERSION;

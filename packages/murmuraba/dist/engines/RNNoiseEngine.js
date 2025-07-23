@@ -108,14 +108,15 @@ export class RNNoiseEngine {
         }
         // Copy to WASM heap
         this.module.HEAPF32.set(inputBuffer, this.inputPtr >> 2);
-        // Process with RNNoise
-        this.module._rnnoise_process_frame(this.state, this.outputPtr, this.inputPtr);
+        // Process with RNNoise and capture VAD
+        const vad = this.module._rnnoise_process_frame(this.state, this.outputPtr, this.inputPtr);
         // Get output
         const outputData = new Float32Array(480);
         for (let i = 0; i < 480; i++) {
             outputData[i] = this.module.HEAPF32[(this.outputPtr >> 2) + i];
         }
-        return outputData;
+        // Return both audio and VAD
+        return { audio: outputData, vad: vad || 0 };
     }
     cleanup() {
         if (this.module && this.state) {

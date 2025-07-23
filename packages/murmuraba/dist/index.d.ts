@@ -13,6 +13,7 @@ export { RNNoiseEngine } from './engines/RNNoiseEngine';
 export type { AudioEngine } from './engines/types';
 export * from './types';
 export { initializeAudioEngine, getEngine, processStream, processStreamChunked, destroyEngine, getEngineStatus, getDiagnostics, onMetricsUpdate, processFile } from './api';
+export { processFileWithMetrics, type ProcessingMetrics, type ProcessFileWithMetricsResult } from './api/processFileWithMetrics';
 export declare const VERSION = "1.5.0";
 export declare const MURMURABA_VERSION = "1.5.0";
 export { ErrorCodes } from './types';

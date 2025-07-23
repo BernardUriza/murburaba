@@ -6,7 +6,8 @@ import {
   AdvancedMetricsPanel,
   ChunkProcessingResults,
   getEngineStatus,
-  processFile
+  processFile,
+  processFileWithMetrics
 } from 'murmuraba'
 import Swal from 'sweetalert2'
 import { WASMErrorDisplay } from './components/WASMErrorDisplay'
@@ -749,6 +750,7 @@ export default function App() {
           <AudioDemo 
             getEngineStatus={getEngineStatus}
             processFile={processFile}
+            processFileWithMetrics={processFileWithMetrics}
             autoProcess={true}
             onProcessComplete={(buffer) => {
               console.log('Audio processing completed', buffer)

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VAD Debug Test</title>
+</head>
+<body>
+    <h1>RNNoise VAD Debug Test</h1>
+    <button id="testBtn">Run VAD Test</button>
+    <pre id="output"></pre>
+    
+    <script>
+        const log = (msg) => {
+            document.getElementById('output').textContent += msg + '\n';
+            console.log(msg);
+        };
+        
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            log('Starting VAD test...\n');
+            
+            try {
+                // Load RNNoise
+                const script = document.createElement('script');
+                script.src = '/rnnoise-fixed.js';
+                
+                await new Promise((resolve, reject) => {
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+                
+                log('✅ Script loaded');
+                
+                // Create module
+                const module = await window.createRNNWasmModule({
+                    locateFile: (filename) => {
+                        if (filename.endsWith('.wasm')) {
+                            return `/dist/${filename}`;
+                        }
+                        return filename;
+                    }
+                });
+                
+                log('✅ WASM module created');
+                log(`Module functions: ${Object.keys(module).filter(k => k.startsWith('_rnnoise')).join(', ')}`);
+                
+                // Initialize RNNoise
+                if (module._rnnoise_init) {
+                    module._rnnoise_init();
+                    log('✅ RNNoise initialized');
+                }
+                
+                // Create state
+                const state = module._rnnoise_create(0);
+                log(`✅ State created: ${state}`);
+                
+                // Allocate memory
+                const FRAME_SIZE = 480;
+                const BYTES = FRAME_SIZE * 4;
+                const ptr = module._malloc(BYTES);
+                log(`✅ Memory allocated: ${ptr} (${BYTES} bytes)`);
+                
+                // Test 1: Silent frame
+                log('\n🔇 Test 1: Silent frame');
+                const silentFrame = new Float32Array(FRAME_SIZE);
+                module.HEAPF32.set(silentFrame, ptr >> 2);
+                
+                const vad1 = module._rnnoise_process_frame(state, ptr, ptr);
+                log(`VAD (silence): ${vad1} (type: ${typeof vad1})`);
+                
+                // Test 2: Noise
+                log('\n🎵 Test 2: White noise');
+                const noiseFrame = new Float32Array(FRAME_SIZE);
+                for (let i = 0; i < FRAME_SIZE; i++) {
+                    noiseFrame[i] = (Math.random() - 0.5) * 0.1 * 32768;
+                }
+                module.HEAPF32.set(noiseFrame, ptr >> 2);
+                
+                const vad2 = module._rnnoise_process_frame(state, ptr, ptr);
+                log(`VAD (noise): ${vad2}`);
+                
+                // Test 3: Sine wave (voice-like)
+                log('\n🎤 Test 3: Sine wave (200Hz)');
+                const sineFrame = new Float32Array(FRAME_SIZE);
+                for (let i = 0; i < FRAME_SIZE; i++) {
+                    sineFrame[i] = Math.sin(2 * Math.PI * 200 * i / 48000) * 0.3 * 32768;
+                }
+                module.HEAPF32.set(sineFrame, ptr >> 2);
+                
+                const vad3 = module._rnnoise_process_frame(state, ptr, ptr);
+                log(`VAD (sine): ${vad3}`);
+                
+                // Test 4: Complex voice-like signal
+                log('\n🗣️ Test 4: Complex voice pattern');
+                const voiceFrame = new Float32Array(FRAME_SIZE);
+                for (let i = 0; i < FRAME_SIZE; i++) {
+                    // Mix of frequencies typical in voice
+                    voiceFrame[i] = (
+                        Math.sin(2 * Math.PI * 200 * i / 48000) * 0.2 +
+                        Math.sin(2 * Math.PI * 400 * i / 48000) * 0.1 +
+                        Math.sin(2 * Math.PI * 800 * i / 48000) * 0.05
+                    ) * 32768;
+                }
+                module.HEAPF32.set(voiceFrame, ptr >> 2);
+                
+                const vad4 = module._rnnoise_process_frame(state, ptr, ptr);
+                log(`VAD (voice): ${vad4}`);
+                
+                // Check if there's a separate VAD function
+                log('\n🔍 Checking for other VAD functions...');
+                const vadFunctions = Object.keys(module).filter(k => 
+                    k.includes('vad') || k.includes('VAD') || k.includes('prob')
+                );
+                log(`Found: ${vadFunctions.length ? vadFunctions.join(', ') : 'none'}`);
+                
+                // Clean up
+                module._free(ptr);
+                module._rnnoise_destroy(state);
+                
+                log('\n✅ Test complete!');
+                
+            } catch (error) {
+                log(`❌ Error: ${error}`);
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>

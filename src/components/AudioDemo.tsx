@@ -11,6 +11,7 @@ export interface AudioLog {
 export interface AudioDemoProps {
   getEngineStatus: () => string
   processFile: (arrayBuffer: ArrayBuffer) => Promise<ArrayBuffer>
+  processFileWithMetrics?: (buffer: ArrayBuffer, onFrame?: (metrics: any) => void) => Promise<{ processedBuffer: ArrayBuffer; metrics: any[]; averageVad: number }>
   autoProcess?: boolean
   onProcessComplete?: (processedBuffer: ArrayBuffer) => void
   onError?: (error: Error) => void
@@ -20,6 +21,7 @@ export interface AudioDemoProps {
 export default function AudioDemo({
   getEngineStatus,
   processFile,
+  processFileWithMetrics,
   autoProcess = true,
   onProcessComplete,
   onError,
@@ -100,10 +102,37 @@ export default function AudioDemo({
       setOriginalAudioUrl(URL.createObjectURL(originalBlob))
       const startTime = Date.now()
       addLog({ timestamp: startTime, frame: 0, vad: 0, rms: 0, message: '🎙️ Iniciando procesamiento de jfk_speech.wav...' })
-      const processedBuffer = await processFile(arrayBuffer)
-      const endTime = Date.now()
+      
+      let processedBuffer: ArrayBuffer
+      
+      if (processFileWithMetrics) {
+        // Use enhanced processing with VAD metrics
+        const result = await processFileWithMetrics(arrayBuffer, (metrics) => {
+          addLog({
+            timestamp: metrics.timestamp,
+            frame: metrics.frame,
+            vad: metrics.vad,
+            rms: metrics.rms,
+            message: metrics.vad > 0.5 ? '🎤 Voice detected' : '🔇 Processing...'
+          })
+        })
+        processedBuffer = result.processedBuffer
+        const endTime = Date.now()
+        addLog({ 
+          timestamp: endTime, 
+          frame: result.metrics.length, 
+          vad: result.averageVad, 
+          rms: 0, 
+          message: `✅ Procesamiento completado en ${((endTime-startTime)/1000).toFixed(2)}s - VAD promedio: ${result.averageVad.toFixed(3)}` 
+        })
+      } else {
+        // Fallback to standard processing
+        processedBuffer = await processFile(arrayBuffer)
+        const endTime = Date.now()
+        addLog({ timestamp: endTime, frame: logs.length + 1, vad: 0, rms: 0, message: `✅ Procesamiento completado en ${((endTime-startTime)/1000).toFixed(2)}s` })
+      }
+      
       setProcessedAudioUrl(URL.createObjectURL(new Blob([processedBuffer], { type: 'audio/wav' })))
-      addLog({ timestamp: endTime, frame: logs.length + 1, vad: 0, rms: 0, message: `✅ Procesamiento completado en ${((endTime-startTime)/1000).toFixed(2)}s` })
       onProcessComplete?.(processedBuffer)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
