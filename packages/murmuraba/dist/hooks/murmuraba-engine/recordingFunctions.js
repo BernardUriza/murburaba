@@ -18,12 +18,22 @@ export function createRecordingFunctions({ isInitialized, recordingState, record
                     throw new Error(`Failed to initialize audio engine: ${initError instanceof Error ? initError.message : 'Unknown error'}`);
                 }
             }
+            logger.info('Requesting microphone access...');
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
                     echoCancellation: false, // REGLA 10: Desactivar TODO
                     noiseSuppression: false, // We're doing our own
                     autoGainControl: false // We have our own AGC
                 }
+            });
+            logger.info('Microphone access granted', {
+                streamId: stream.id,
+                tracks: stream.getTracks().map(t => ({
+                    kind: t.kind,
+                    enabled: t.enabled,
+                    readyState: t.readyState,
+                    label: t.label
+                }))
             });
             setOriginalStream(stream);
             const controller = await processStream(stream);

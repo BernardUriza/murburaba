@@ -61,6 +61,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
 
   useEffect(() => {
     if (stream && isActive && !isPaused && !disabled) {
+      console.log('WaveformAnalyzer: Stream effect triggered', { stream: !!stream, isActive, isPaused, disabled });
       initializeLiveStream();
     }
     
@@ -69,7 +70,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [stream, isActive, isPaused, disabled]);
+  }, [stream, isActive, isPaused, disabled, initializeLiveStream]);
 
   useEffect(() => {
     return () => {
@@ -129,7 +130,19 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     if (!stream || audioContext || disabled) return;
 
     try {
+      console.log('WaveformAnalyzer: Initializing live stream...');
+      console.log('Stream tracks:', stream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
+      
       const ctx = new AudioContext();
+      console.log('AudioContext state:', ctx.state);
+      
+      // Resume AudioContext if suspended
+      if (ctx.state === 'suspended') {
+        console.log('AudioContext suspended, resuming...');
+        await ctx.resume();
+        console.log('AudioContext resumed, new state:', ctx.state);
+      }
+      
       const analyserNode = ctx.createAnalyser();
       analyserNode.fftSize = 2048;
       analyserNode.smoothingTimeConstant = 0.8;
@@ -144,6 +157,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       setSource(sourceNode);
       setError(null);
       
+      console.log('WaveformAnalyzer: Live stream initialized successfully');
       drawLiveWaveform(analyserNode);
     } catch (error) {
       console.error('Error initializing live stream:', error);
