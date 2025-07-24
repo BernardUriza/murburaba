@@ -71,138 +71,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     }
   }, [audioContext]);
 
-  const initializeLiveStream = useCallback(async () => {
-    if (!stream || audioContext || disabled) return;
-
-    try {
-      console.log('WaveformAnalyzer: Initializing live stream...');
-      console.log('Stream tracks:', stream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
-      
-      const ctx = new AudioContext();
-      console.log('AudioContext state:', ctx.state);
-      
-      // Resume AudioContext if suspended
-      if (ctx.state === 'suspended') {
-        console.log('AudioContext suspended, resuming...');
-        await ctx.resume();
-        console.log('AudioContext resumed, new state:', ctx.state);
-      }
-      
-      const analyserNode = ctx.createAnalyser();
-      analyserNode.fftSize = 2048;
-      analyserNode.smoothingTimeConstant = 0.8;
-      analyserNode.minDecibels = -90;
-      analyserNode.maxDecibels = -10;
-
-      const sourceNode = ctx.createMediaStreamSource(stream);
-      sourceNode.connect(analyserNode);
-      
-      setAudioContext(ctx);
-      setAnalyser(analyserNode);
-      setSource(sourceNode);
-      setError(null);
-      
-      console.log('WaveformAnalyzer: Live stream initialized successfully');
-      drawLiveWaveform(analyserNode);
-    } catch (error) {
-      console.error('Error initializing live stream:', error);
-      setError('Failed to initialize live stream');
-    }
-  }, [stream, audioContext, disabled]);
-
-  useEffect(() => {
-    if (stream && isActive && !isPaused && !disabled) {
-      console.log('WaveformAnalyzer: Stream effect triggered', { stream: !!stream, isActive, isPaused, disabled });
-      initializeLiveStream();
-    }
-    
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [stream, isActive, isPaused, disabled, initializeLiveStream]);
-
-  useEffect(() => {
-    return () => {
-      cleanup();
-    };
-  }, [cleanup]);
-
-  // Initialize audio URL when hideControls is true and handle external playback
-  useEffect(() => {
-    if (audioUrl && hideControls && audioRef.current && !disabled) {
-      const timer = setTimeout(() => {
-        initializeAudio();
-        
-        if (!isPaused && analyser) {
-          draw();
-        }
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [audioUrl, hideControls, volume, isMuted, disabled, analyser, isPaused]);
-  
-  // Handle playback state changes
-  useEffect(() => {
-    if (hideControls && audioRef.current && !disabled) {
-      audioRef.current.muted = isMuted;
-      audioRef.current.volume = Math.max(0, Math.min(1, volume));
-      
-      if (!isPaused) {
-        audioRef.current.play().catch((err) => {
-          console.error('Audio play failed:', err);
-          setError('Failed to play audio');
-        });
-        if (analyser) draw();
-      } else {
-        audioRef.current.pause();
-        if (animationRef.current) {
-          cancelAnimationFrame(animationRef.current);
-        }
-      }
-    }
-  }, [isPaused, analyser, hideControls, isMuted, volume, disabled, draw]);
-
-  const initializeAudio = useCallback(async () => {
-    if (!audioRef.current || disabled) return;
-    
-    if (audioContext && audioContext.state !== 'closed') {
-      return;
-    }
-
-    try {
-      const ctx = new AudioContext();
-      const analyserNode = ctx.createAnalyser();
-      analyserNode.fftSize = 2048;
-      analyserNode.smoothingTimeConstant = 0.85;
-
-      if (!audioRef.current.dataset.sourceCreated) {
-        const sourceNode = ctx.createMediaElementSource(audioRef.current);
-        sourceNode.connect(analyserNode);
-        analyserNode.connect(ctx.destination);
-        
-        audioRef.current.dataset.sourceCreated = 'true';
-        setSource(sourceNode);
-      } else {
-        analyserNode.connect(ctx.destination);
-      }
-
-      setAudioContext(ctx);
-      setAnalyser(analyserNode);
-      setError(null);
-      
-      if (audioRef.current) {
-        audioRef.current.volume = Math.max(0, Math.min(1, volume));
-        audioRef.current.muted = isMuted;
-      }
-    } catch (error) {
-      console.error('Error initializing audio:', error);
-      setError('Failed to initialize audio');
-    }
-  }, [volume, isMuted, audioContext, disabled]);
-
+  // Drawing functions
   const drawLiveWaveform = useCallback((analyserNode: AnalyserNode) => {
     if (!canvasRef.current || disabled) return;
 
@@ -390,6 +259,139 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     drawVisual();
   }, [analyser, hideControls, isPaused, color, disabled]);
 
+  // Initialization functions
+  const initializeAudio = useCallback(async () => {
+    if (!audioRef.current || disabled) return;
+    
+    if (audioContext && audioContext.state !== 'closed') {
+      return;
+    }
+
+    try {
+      const ctx = new AudioContext();
+      const analyserNode = ctx.createAnalyser();
+      analyserNode.fftSize = 2048;
+      analyserNode.smoothingTimeConstant = 0.85;
+
+      if (!audioRef.current.dataset.sourceCreated) {
+        const sourceNode = ctx.createMediaElementSource(audioRef.current);
+        sourceNode.connect(analyserNode);
+        analyserNode.connect(ctx.destination);
+        
+        audioRef.current.dataset.sourceCreated = 'true';
+        setSource(sourceNode);
+      } else {
+        analyserNode.connect(ctx.destination);
+      }
+
+      setAudioContext(ctx);
+      setAnalyser(analyserNode);
+      setError(null);
+      
+      if (audioRef.current) {
+        audioRef.current.volume = Math.max(0, Math.min(1, volume));
+        audioRef.current.muted = isMuted;
+      }
+    } catch (error) {
+      console.error('Error initializing audio:', error);
+      setError('Failed to initialize audio');
+    }
+  }, [volume, isMuted, audioContext, disabled]);
+
+  const initializeLiveStream = useCallback(async () => {
+    if (!stream || audioContext || disabled) return;
+
+    try {
+      console.log('WaveformAnalyzer: Initializing live stream...');
+      console.log('Stream tracks:', stream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
+      
+      const ctx = new AudioContext();
+      console.log('AudioContext state:', ctx.state);
+      
+      // Resume AudioContext if suspended
+      if (ctx.state === 'suspended') {
+        console.log('AudioContext suspended, resuming...');
+        await ctx.resume();
+        console.log('AudioContext resumed, new state:', ctx.state);
+      }
+      
+      const analyserNode = ctx.createAnalyser();
+      analyserNode.fftSize = 2048;
+      analyserNode.smoothingTimeConstant = 0.8;
+      analyserNode.minDecibels = -90;
+      analyserNode.maxDecibels = -10;
+
+      const sourceNode = ctx.createMediaStreamSource(stream);
+      sourceNode.connect(analyserNode);
+      
+      setAudioContext(ctx);
+      setAnalyser(analyserNode);
+      setSource(sourceNode);
+      setError(null);
+      
+      console.log('WaveformAnalyzer: Live stream initialized successfully');
+      drawLiveWaveform(analyserNode);
+    } catch (error) {
+      console.error('Error initializing live stream:', error);
+      setError('Failed to initialize live stream');
+    }
+  }, [stream, audioContext, disabled, drawLiveWaveform]);
+
+  // Effects
+  useEffect(() => {
+    if (stream && isActive && !isPaused && !disabled) {
+      console.log('WaveformAnalyzer: Stream effect triggered', { stream: !!stream, isActive, isPaused, disabled });
+      initializeLiveStream();
+    }
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [stream, isActive, isPaused, disabled, initializeLiveStream]);
+
+  useEffect(() => {
+    return () => {
+      cleanup();
+    };
+  }, [cleanup]);
+
+  // Initialize audio URL when hideControls is true and handle external playback
+  useEffect(() => {
+    if (audioUrl && hideControls && audioRef.current && !disabled) {
+      const timer = setTimeout(() => {
+        initializeAudio();
+        
+        // Will be drawn after initialization
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [audioUrl, hideControls, volume, isMuted, disabled, analyser, isPaused, initializeAudio]);
+  
+  // Handle playback state changes
+  useEffect(() => {
+    if (hideControls && audioRef.current && !disabled) {
+      audioRef.current.muted = isMuted;
+      audioRef.current.volume = Math.max(0, Math.min(1, volume));
+      
+      if (!isPaused) {
+        audioRef.current.play().catch((err) => {
+          console.error('Audio play failed:', err);
+          setError('Failed to play audio');
+        });
+        // Drawing will be handled by the analyser
+      } else {
+        audioRef.current.pause();
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+        }
+      }
+    }
+  }, [isPaused, analyser, hideControls, isMuted, volume, disabled]);
+
+  // Event handlers
   const handlePlay = useCallback(async () => {
     if (!audioRef.current || disabled) return;
 
@@ -414,6 +416,13 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       setError('Playback failed');
     }
   }, [audioContext, isPlaying, initializeAudio, handlePlayStateChange, draw, disabled]);
+
+  // Handle drawing when analyser is ready
+  useEffect(() => {
+    if (analyser && !stream && !isPaused && !disabled) {
+      draw();
+    }
+  }, [analyser, stream, isPaused, disabled, draw]);
 
   // Handle keyboard navigation
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
@@ -518,4 +527,4 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   }
 
   return null;
-};
+}

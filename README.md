@@ -49,8 +49,8 @@ Murmuraba provides a complete audio processing solution with a powerful React ho
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/murburaba.git
-cd murburaba
+git clone https://github.com/yourusername/murmuraba.git
+cd murmuraba
 ```
 
 2. Install dependencies:
@@ -199,7 +199,7 @@ interface ProcessedChunk {
 ## 🏗️ Project Structure
 
 ```
-murburaba/
+murmuraba/
 ├── packages/murmuraba/          # NPM package source
 │   ├── src/
 │   │   ├── hooks/

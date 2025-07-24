@@ -38,7 +38,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bernarducs/murburaba"
+    "url": "https://github.com/BernardUriza/murmuraba"
   },
   "scripts": {
     "build": "npm run clean && npm run build:ts && npm run build:rollup",
