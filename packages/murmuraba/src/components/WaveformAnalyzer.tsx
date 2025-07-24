@@ -59,61 +59,6 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     onPlayStateChange?.(playing);
   }, [onPlayStateChange]);
 
-  useEffect(() => {
-    if (stream && isActive && !isPaused && !disabled) {
-      console.log('WaveformAnalyzer: Stream effect triggered', { stream: !!stream, isActive, isPaused, disabled });
-      initializeLiveStream();
-    }
-    
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [stream, isActive, isPaused, disabled, initializeLiveStream]);
-
-  useEffect(() => {
-    return () => {
-      cleanup();
-    };
-  }, []);
-
-  // Initialize audio URL when hideControls is true and handle external playback
-  useEffect(() => {
-    if (audioUrl && hideControls && audioRef.current && !disabled) {
-      const timer = setTimeout(() => {
-        initializeAudio();
-        
-        if (!isPaused && analyser) {
-          draw();
-        }
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [audioUrl, hideControls, volume, isMuted, disabled]);
-  
-  // Handle playback state changes
-  useEffect(() => {
-    if (hideControls && audioRef.current && !disabled) {
-      audioRef.current.muted = isMuted;
-      audioRef.current.volume = Math.max(0, Math.min(1, volume));
-      
-      if (!isPaused) {
-        audioRef.current.play().catch((err) => {
-          console.error('Audio play failed:', err);
-          setError('Failed to play audio');
-        });
-        if (analyser) draw();
-      } else {
-        audioRef.current.pause();
-        if (animationRef.current) {
-          cancelAnimationFrame(animationRef.current);
-        }
-      }
-    }
-  }, [isPaused, analyser, hideControls, isMuted, volume, disabled]);
-
   const cleanup = useCallback(() => {
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
@@ -164,6 +109,61 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       setError('Failed to initialize live stream');
     }
   }, [stream, audioContext, disabled]);
+
+  useEffect(() => {
+    if (stream && isActive && !isPaused && !disabled) {
+      console.log('WaveformAnalyzer: Stream effect triggered', { stream: !!stream, isActive, isPaused, disabled });
+      initializeLiveStream();
+    }
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [stream, isActive, isPaused, disabled, initializeLiveStream]);
+
+  useEffect(() => {
+    return () => {
+      cleanup();
+    };
+  }, [cleanup]);
+
+  // Initialize audio URL when hideControls is true and handle external playback
+  useEffect(() => {
+    if (audioUrl && hideControls && audioRef.current && !disabled) {
+      const timer = setTimeout(() => {
+        initializeAudio();
+        
+        if (!isPaused && analyser) {
+          draw();
+        }
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [audioUrl, hideControls, volume, isMuted, disabled, analyser, isPaused]);
+  
+  // Handle playback state changes
+  useEffect(() => {
+    if (hideControls && audioRef.current && !disabled) {
+      audioRef.current.muted = isMuted;
+      audioRef.current.volume = Math.max(0, Math.min(1, volume));
+      
+      if (!isPaused) {
+        audioRef.current.play().catch((err) => {
+          console.error('Audio play failed:', err);
+          setError('Failed to play audio');
+        });
+        if (analyser) draw();
+      } else {
+        audioRef.current.pause();
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+        }
+      }
+    }
+  }, [isPaused, analyser, hideControls, isMuted, volume, disabled, draw]);
 
   const initializeAudio = useCallback(async () => {
     if (!audioRef.current || disabled) return;
