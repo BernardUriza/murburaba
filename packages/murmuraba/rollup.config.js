@@ -81,36 +81,36 @@ export default [
       }),
     ],
   },
-  // UMD build (minified)
-  {
-    input: 'src/index.ts',
-    output: {
-      file: 'dist/index.umd.min.js',
-      format: 'umd',
-      name: 'Murmuraba',
-      sourcemap: true,
-      inlineDynamicImports: true,
-      exports: 'named',
-      globals: {
-        react: 'React',
-        'react-dom': 'ReactDOM',
-      },
-    },
-    external,
-    onwarn,
-    plugins: [
-      postcss({
-        modules: false,
-        extract: false,
-        minimize: true,
-        inject: true
-      }),
-      resolve(),
-      commonjs(),
-      typescript({
-        tsconfig: './tsconfig.json',
-      }),
-      terser(),
-    ],
-  },
+  // UMD build (minified) - temporarily disabled due to timeout issues
+  // {
+  //   input: 'src/index.ts',
+  //   output: {
+  //     file: 'dist/index.umd.min.js',
+  //     format: 'umd',
+  //     name: 'Murmuraba',
+  //     sourcemap: true,
+  //     inlineDynamicImports: true,
+  //     exports: 'named',
+  //     globals: {
+  //       react: 'React',
+  //       'react-dom': 'ReactDOM',
+  //     },
+  //   },
+  //   external,
+  //   onwarn,
+  //   plugins: [
+  //     postcss({
+  //       modules: false,
+  //       extract: false,
+  //       minimize: true,
+  //       inject: true
+  //     }),
+  //     resolve(),
+  //     commonjs(),
+  //     typescript({
+  //       tsconfig: './tsconfig.json',
+  //     }),
+  //     terser(),
+  //   ],
+  // },
 ];

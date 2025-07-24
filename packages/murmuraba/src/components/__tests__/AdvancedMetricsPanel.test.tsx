@@ -14,7 +14,7 @@ const createMockDiagnostics = (overrides: Partial<DiagnosticInfo> = {}): Diagnos
   browserInfo: {
     name: 'Chrome',
     version: '91.0',
-    audioAPIsSupported: true,
+    audioAPIsSupported: ['AudioContext', 'AudioWorklet'],
   },
   ...overrides,
 });
@@ -237,7 +237,7 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
   describe('Browser Information', () => {
     it('should display browser name when available', () => {
       const diagnostics = createMockDiagnostics({
-        browserInfo: { name: 'Firefox', audioAPIsSupported: true }
+        browserInfo: { name: 'Firefox', audioAPIsSupported: ['AudioContext'] }
       });
       
       render(
@@ -254,7 +254,7 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
 
     it('should display Unknown when browser name is not available', () => {
       const diagnostics = createMockDiagnostics({
-        browserInfo: { audioAPIsSupported: true }
+        browserInfo: { audioAPIsSupported: ['AudioContext'] }
       });
       
       render(
@@ -286,7 +286,7 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
 
     it('should display audio APIs supported status - supported', () => {
       const diagnostics = createMockDiagnostics({
-        browserInfo: { name: 'Chrome', audioAPIsSupported: true }
+        browserInfo: { name: 'Chrome', audioAPIsSupported: ['AudioContext', 'AudioWorklet'] }
       });
       
       render(
@@ -303,7 +303,7 @@ describe('AdvancedMetricsPanel TDD Tests', () => {
 
     it('should display audio APIs supported status - limited', () => {
       const diagnostics = createMockDiagnostics({
-        browserInfo: { name: 'Safari', audioAPIsSupported: false }
+        browserInfo: { name: 'Safari', audioAPIsSupported: [] }
       });
       
       render(

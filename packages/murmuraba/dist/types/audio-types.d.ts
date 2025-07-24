@@ -64,7 +64,7 @@ export interface DiagnosticInfo {
     browserInfo?: {
         name: string;
         version: string;
-        audioAPIsSupported: boolean;
+        audioAPIsSupported: string[];
     };
     wasmLoaded: boolean;
     activeProcessors: number;

@@ -114,7 +114,7 @@ export function AdvancedMetricsPanel({
 
   // Safe browser info access
   const browserName = diagnostics.browserInfo?.name || 'Unknown';
-  const audioAPIsSupported = diagnostics.browserInfo?.audioAPIsSupported ?? false;
+  const audioAPIsSupported = diagnostics.browserInfo?.audioAPIsSupported ?? [];
 
   return (
     <div
@@ -177,7 +177,7 @@ export function AdvancedMetricsPanel({
             
             <MetricItem 
               label="Audio APIs:" 
-              value={audioAPIsSupported ? '✅ Supported' : '❌ Limited'}
+              value={audioAPIsSupported.length > 0 ? `✅ ${audioAPIsSupported.join(', ')}` : '❌ Limited'}
               data-testid="metric-audio-apis"
             />
             

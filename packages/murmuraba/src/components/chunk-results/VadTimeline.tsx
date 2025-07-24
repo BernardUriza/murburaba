@@ -85,7 +85,6 @@ export function VadTimeline({ vadData, chunkId }: VadTimelineProps) {
               data={vadData}
               margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
               onMouseEnter={handleChartReady} // Chart is ready when it can handle mouse events
-              onAnimationEnd={handleChartReady} // Also trigger when animation completes
             >
               <defs>
                 <linearGradient id={`vadGradient-${chunkId}`} x1="0" y1="0" x2="0" y2="1">
