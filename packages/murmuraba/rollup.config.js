@@ -13,7 +13,21 @@ const onwarn = (warning, warn) => {
   warn(warning);
 };
 
-const external = ['react', 'react-dom'];
+// CRÍTICO: Externalizar React para evitar conflictos con React 19
+const external = [
+  'react',
+  'react-dom',
+  'react/jsx-runtime',
+  'react/jsx-dev-runtime'
+];
+
+// Configuración para manejar React como peer dependency
+const globals = {
+  react: 'React',
+  'react-dom': 'ReactDOM',
+  'react/jsx-runtime': 'React',
+  'react/jsx-dev-runtime': 'React'
+};
 
 export default [
   // ESM build
@@ -35,8 +49,15 @@ export default [
         minimize: true,
         inject: true
       }),
-      resolve(),
-      commonjs(),
+      resolve({
+        preferBuiltins: false,
+        // Evitar bundlear React internals
+        dedupe: ['react', 'react-dom']
+      }),
+      commonjs({
+        // Excluir React del bundling
+        exclude: ['node_modules/react/**', 'node_modules/react-dom/**']
+      }),
       typescript({
         tsconfig: './tsconfig.json',
       }),
@@ -74,8 +95,15 @@ export default [
         minimize: true,
         inject: true
       }),
-      resolve(),
-      commonjs(),
+      resolve({
+        preferBuiltins: false,
+        // Evitar bundlear React internals
+        dedupe: ['react', 'react-dom']
+      }),
+      commonjs({
+        // Excluir React del bundling
+        exclude: ['node_modules/react/**', 'node_modules/react-dom/**']
+      }),
       typescript({
         tsconfig: './tsconfig.json',
       }),
@@ -91,10 +119,7 @@ export default [
   //     sourcemap: true,
   //     inlineDynamicImports: true,
   //     exports: 'named',
-  //     globals: {
-  //       react: 'React',
-  //       'react-dom': 'ReactDOM',
-  //     },
+  //     globals,
   //   },
   //   external,
   //   onwarn,
