@@ -1,6 +1,11 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { ProcessedChunk } from '../hooks/murmuraba-engine/types';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { ChunkHeader } from './chunk-results/ChunkHeader';
+import { ProcessingMetrics } from './chunk-results/ProcessingMetrics';
+import { FileInfo } from './chunk-results/FileInfo';
+import { VadTimeline } from './chunk-results/VadTimeline';
+import { AudioControls } from './chunk-results/AudioControls';
+import { formatTime, formatPercentage, formatFileSize, calculateChunkStats } from './chunk-results/formatters';
 import './ChunkProcessingResults.css';
 
 export interface ChunkProcessingResultsProps {
@@ -43,54 +48,7 @@ export function ChunkProcessingResults({
   className = '',
 }: ChunkProcessingResultsProps) {
   
-  // Memoize chunk statistics for performance
-  const chunkStats = useMemo(() => {
-    if (chunks.length === 0) return null;
-    
-    const totalDuration = chunks.reduce((sum, chunk) => sum + chunk.duration, 0);
-    const validChunks = chunks.filter(chunk => chunk.isValid !== false);
-    const averageLatency = validChunks.length > 0 
-      ? validChunks.reduce((sum, chunk) => sum + chunk.metrics.processingLatency, 0) / validChunks.length 
-      : 0;
-    
-    return {
-      totalChunks: chunks.length,
-      validChunks: validChunks.length,
-      totalDuration,
-      averageLatency,
-    };
-  }, [chunks]);
-
-  // Format time helper
-  const formatTime = useCallback((seconds: number): string => {
-    if (!isFinite(seconds) || seconds < 0) return '0:00';
-    
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  }, []);
-
-  // Format percentage helper
-  const formatPercentage = useCallback((value: number): string => {
-    if (!isFinite(value)) return '0.0%';
-    return `${Math.max(0, Math.min(100, value)).toFixed(1)}%`;
-  }, []);
-
-  // Format file size helper
-  const formatFileSize = useCallback((bytes: number): string => {
-    if (!isFinite(bytes) || bytes <= 0) return '0 KB';
-    
-    const units = ['B', 'KB', 'MB', 'GB'];
-    let size = bytes;
-    let unitIndex = 0;
-    
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024;
-      unitIndex++;
-    }
-    
-    return `${size.toFixed(1)} ${units[unitIndex]}`;
-  }, []);
+  const chunkStats = calculateChunkStats(chunks);
 
   // Handle clear all with confirmation
   const handleClearAll = useCallback(() => {
@@ -220,75 +178,23 @@ export function ChunkProcessingResults({
               className={`chunk ${isSelected ? 'chunk--selected' : ''} ${!isValid ? 'chunk--invalid' : ''}`.trim()}
               role="listitem"
             >
-              {/* Chunk header */}
-              <div className="chunk__header">
-                <div className="chunk__info">
-                  <h3 className="chunk__title">
-                    Chunk {index + 1}
-                    {!isValid && (
-                      <span className="chunk__error-badge" aria-label="Error">❌</span>
-                    )}
-                  </h3>
-                  <div className="chunk__meta">
-                    <span className="meta-item">
-                      <span className="meta-label">Duration:</span>
-                      <span className="meta-value">{formatTime(chunk.duration)}</span>
-                    </span>
-                    <span className="meta-item">
-                      <span className="meta-label">Noise Reduced:</span>
-                      <span className="meta-value meta-value--highlight">
-                        {formatPercentage(chunk.metrics.noiseReductionLevel)}
-                      </span>
-                    </span>
-                    <span className="meta-item">
-                      <span className="meta-label">Latency:</span>
-                      <span className="meta-value">{chunk.metrics.processingLatency.toFixed(1)}ms</span>
-                    </span>
-                    {chunk.averageVad !== undefined && (
-                      <span className="meta-item">
-                        <span className="meta-label">Avg VAD:</span>
-                        <span className="meta-value meta-value--info">
-                          {chunk.averageVad.toFixed(3)}
-                        </span>
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="chunk__controls">
-                  {/* Play/Pause button */}
-                  <button
-                    className={`btn btn-primary ${chunk.isPlaying ? 'btn--playing' : ''}`}
-                    onClick={() => handlePlaybackToggle(chunk.id, 'processed')}
-                    onKeyDown={(e) => handleKeyDown(e, () => handlePlaybackToggle(chunk.id, 'processed'))}
-                    disabled={!hasProcessedAudio || !isValid}
-                    aria-label={`${chunk.isPlaying ? 'Pause' : 'Play'} processed chunk ${index + 1}`}
-                    type="button"
-                  >
-                    <span className="btn__icon" aria-hidden="true">
-                      {chunk.isPlaying ? '⏸️' : '▶️'}
-                    </span>
-                    <span className="btn__text">
-                      {chunk.isPlaying ? 'Pause' : 'Play'}
-                    </span>
-                  </button>
-
-                  {/* Expand/Collapse button */}
-                  <button
-                    className={`btn btn-ghost ${chunk.isExpanded ? 'btn--active' : ''}`}
-                    onClick={() => onToggleExpansion(chunk.id)}
-                    onKeyDown={(e) => handleKeyDown(e, () => onToggleExpansion(chunk.id))}
-                    aria-label={`${chunk.isExpanded ? 'Collapse' : 'Expand'} details for chunk ${index + 1}`}
-                    aria-expanded={chunk.isExpanded}
-                    type="button"
-                  >
-                    <span className="btn__icon" aria-hidden="true">
-                      {chunk.isExpanded ? '▲' : '▼'}
-                    </span>
-                    <span className="btn__text">Details</span>
-                  </button>
-                </div>
-              </div>
+              <ChunkHeader
+                index={index}
+                duration={chunk.duration}
+                noiseReduction={chunk.metrics.noiseReductionLevel}
+                processingLatency={chunk.metrics.processingLatency}
+                averageVad={chunk.averageVad}
+                vadData={chunk.vadData}
+                isValid={isValid}
+                isPlaying={chunk.isPlaying}
+                isExpanded={chunk.isExpanded}
+                hasProcessedAudio={hasProcessedAudio}
+                onTogglePlayback={() => handlePlaybackToggle(chunk.id, 'processed')}
+                onToggleExpansion={() => onToggleExpansion(chunk.id)}
+                onKeyDown={handleKeyDown}
+                formatTime={formatTime}
+                formatPercentage={formatPercentage}
+              />
 
               {/* Error message for invalid chunks */}
               {!isValid && chunk.errorMessage && (
@@ -301,237 +207,37 @@ export function ChunkProcessingResults({
               {/* Expanded content */}
               {chunk.isExpanded && (
                 <div className="chunk__details" aria-label="Chunk details">
-                  {/* Processing metrics */}
-                  <div className="details__section">
-                    <h4 className="section__title">📊 Processing Metrics</h4>
-                    <div className="metrics-grid">
-                      <div className="metric-item">
-                        <span className="metric__label">Input Level</span>
-                        <span className="metric__value">
-                          {formatPercentage(chunk.metrics.inputLevel * 100)}
-                        </span>
-                        <div className="metric__bar">
-                          <div 
-                            className="metric__fill metric__fill--input"
-                            style={{ width: `${chunk.metrics.inputLevel * 100}%` }}
-                            aria-hidden="true"
-                          />
-                        </div>
-                      </div>
+                  <ProcessingMetrics
+                    inputLevel={chunk.metrics.inputLevel}
+                    outputLevel={chunk.metrics.outputLevel}
+                    frameCount={chunk.metrics.frameCount}
+                    droppedFrames={chunk.metrics.droppedFrames}
+                  />
 
-                      <div className="metric-item">
-                        <span className="metric__label">Output Level</span>
-                        <span className="metric__value">
-                          {formatPercentage(chunk.metrics.outputLevel * 100)}
-                        </span>
-                        <div className="metric__bar">
-                          <div 
-                            className="metric__fill metric__fill--output"
-                            style={{ width: `${chunk.metrics.outputLevel * 100}%` }}
-                            aria-hidden="true"
-                          />
-                        </div>
-                      </div>
+                  <FileInfo
+                    originalSize={chunk.originalSize}
+                    processedSize={chunk.processedSize}
+                    noiseRemoved={chunk.noiseRemoved}
+                  />
 
-                      <div className="metric-item">
-                        <span className="metric__label">Frames Processed</span>
-                        <span className="metric__value">
-                          {chunk.metrics.frameCount.toLocaleString()}
-                        </span>
-                      </div>
+                  {(() => {
+                    console.log(`🎯 Chunk ${chunk.id} has vadData:`, !!chunk.vadData, chunk.vadData?.length || 0);
+                    return chunk.vadData && <VadTimeline vadData={chunk.vadData} chunkId={chunk.id} />;
+                  })()}
 
-                      <div className="metric-item">
-                        <span className="metric__label">Dropped Frames</span>
-                        <span className="metric__value metric__value--warning">
-                          {chunk.metrics.droppedFrames}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* File information */}
-                  <div className="details__section">
-                    <h4 className="section__title">📁 File Information</h4>
-                    <div className="file-info-grid">
-                      <div className="file-info-item">
-                        <span className="info__label">Original Size</span>
-                        <span className="info__value">{formatFileSize(chunk.originalSize)}</span>
-                      </div>
-                      <div className="file-info-item">
-                        <span className="info__label">Processed Size</span>
-                        <span className="info__value">{formatFileSize(chunk.processedSize)}</span>
-                      </div>
-                      <div className="file-info-item">
-                        <span className="info__label">Size Reduction</span>
-                        <span className="info__value info__value--success">
-                          {formatFileSize(chunk.noiseRemoved)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* VAD Timeline Graph */}
-                  {chunk.vadData && chunk.vadData.length > 0 && (
-                    <div className="details__section">
-                      <h4 className="section__title">📈 Voice Activity Detection (VAD) Timeline</h4>
-                      <div className="vad-chart-container">
-                        <ResponsiveContainer width="100%" height={200}>
-                          <AreaChart
-                            data={chunk.vadData}
-                            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                          >
-                            <defs>
-                              <linearGradient id={`vadGradient-${chunk.id}`} x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#7ED321" stopOpacity={0.8}/>
-                                <stop offset="95%" stopColor="#7ED321" stopOpacity={0.1}/>
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                            <XAxis 
-                              dataKey="time" 
-                              tickFormatter={(value) => `${value.toFixed(1)}s`}
-                              stroke="#666"
-                            />
-                            <YAxis 
-                              domain={[0, 1]}
-                              ticks={[0, 0.25, 0.5, 0.75, 1]}
-                              tickFormatter={(value) => value.toFixed(2)}
-                              stroke="#666"
-                            />
-                            <Tooltip 
-                              contentStyle={{ 
-                                backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-                                border: '1px solid #ddd',
-                                borderRadius: '8px'
-                              }}
-                              formatter={(value: number) => [`VAD: ${value.toFixed(3)}`, '']}
-                              labelFormatter={(label) => `Time: ${label}s`}
-                            />
-                            <Area 
-                              type="monotone" 
-                              dataKey="vad" 
-                              stroke="#7ED321" 
-                              strokeWidth={2}
-                              fill={`url(#vadGradient-${chunk.id})`}
-                            />
-                            <Line 
-                              type="monotone" 
-                              dataKey="vad" 
-                              stroke="#5FB829" 
-                              strokeWidth={0}
-                              dot={{ fill: '#7ED321', r: 0 }}
-                              activeDot={{ r: 4 }}
-                            />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                        <div className="vad-stats">
-                          <span className="vad-stat">
-                            <strong>Voice Detected:</strong> {((chunk.vadData.filter(d => d.vad > 0.5).length / chunk.vadData.length) * 100).toFixed(1)}%
-                          </span>
-                          <span className="vad-stat">
-                            <strong>Peak VAD:</strong> {Math.max(...chunk.vadData.map(d => d.vad)).toFixed(3)}
-                          </span>
-                          <span className="vad-stat">
-                            <strong>Min VAD:</strong> {Math.min(...chunk.vadData.map(d => d.vad)).toFixed(3)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Audio controls */}
-                  <div className="details__section">
-                    <h4 className="section__title">🎵 Audio Controls</h4>
-                    <div className="audio-controls">
-                      {/* Processed audio controls */}
-                      <div className="audio-group">
-                        <h5 className="audio-group__title">Processed Audio</h5>
-                        <div className="audio-controls__row">
-                          <button
-                            className={`btn btn-secondary ${chunk.isPlaying ? 'btn--playing' : ''}`}
-                            onClick={() => handlePlaybackToggle(chunk.id, 'processed')}
-                            disabled={!hasProcessedAudio || !isValid}
-                            aria-label={`${chunk.isPlaying ? 'Pause' : 'Play'} processed audio`}
-                            type="button"
-                          >
-                            <span className="btn__icon" aria-hidden="true">
-                              {chunk.isPlaying ? '⏸️' : '▶️'}
-                            </span>
-                            <span>{chunk.isPlaying ? 'Pause' : 'Play'} Processed</span>
-                          </button>
-
-                          <button
-                            className="btn btn-ghost btn--small"
-                            onClick={() => handleExport(chunk.id, 'wav', 'processed')}
-                            disabled={!hasProcessedAudio || !isValid}
-                            aria-label="Export processed audio as WAV"
-                            type="button"
-                          >
-                            📄 WAV
-                          </button>
-
-                          <button
-                            className="btn btn-ghost btn--small"
-                            onClick={() => handleExport(chunk.id, 'mp3', 'processed')}
-                            disabled={!hasProcessedAudio || !isValid}
-                            aria-label="Export processed audio as MP3"
-                            type="button"
-                          >
-                            🎵 MP3
-                          </button>
-
-                          <button
-                            className="btn btn-ghost btn--small"
-                            onClick={() => handleDownload(chunk.id, 'webm', 'processed')}
-                            disabled={!hasProcessedAudio || !isValid}
-                            aria-label="Download processed audio"
-                            type="button"
-                          >
-                            💾 Download
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Original audio controls */}
-                      {hasOriginalAudio && (
-                        <div className="audio-group">
-                          <h5 className="audio-group__title">Original Audio</h5>
-                          <div className="audio-controls__row">
-                            <button
-                              className="btn btn-secondary"
-                              onClick={() => handlePlaybackToggle(chunk.id, 'original')}
-                              disabled={!hasOriginalAudio || !isValid}
-                              aria-label="Play original audio"
-                              type="button"
-                            >
-                              <span className="btn__icon" aria-hidden="true">▶️</span>
-                              <span>Play Original</span>
-                            </button>
-
-                            <button
-                              className="btn btn-ghost btn--small"
-                              onClick={() => handleExport(chunk.id, 'wav', 'original')}
-                              disabled={!hasOriginalAudio || !isValid}
-                              aria-label="Export original audio as WAV"
-                              type="button"
-                            >
-                              📄 Original WAV
-                            </button>
-
-                            <button
-                              className="btn btn-ghost btn--small"
-                              onClick={() => handleExport(chunk.id, 'mp3', 'original')}
-                              disabled={!hasOriginalAudio || !isValid}
-                              aria-label="Export original audio as MP3"
-                              type="button"
-                            >
-                              🎵 Original MP3
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <AudioControls
+                    chunkId={chunk.id}
+                    index={index}
+                    isPlaying={chunk.isPlaying}
+                    hasProcessedAudio={hasProcessedAudio}
+                    hasOriginalAudio={hasOriginalAudio}
+                    isValid={isValid}
+                    onTogglePlayback={(audioType) => handlePlaybackToggle(chunk.id, audioType)}
+                    onExport={(format, audioType) => handleExport(chunk.id, format, audioType)}
+                    onDownload={(format, audioType) => handleDownload(chunk.id, format, audioType)}
+                    processedAudioUrl={chunk.processedAudioUrl}
+                    originalAudioUrl={chunk.originalAudioUrl}
+                  />
                 </div>
               )}
             </div>

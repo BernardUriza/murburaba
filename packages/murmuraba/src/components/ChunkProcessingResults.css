@@ -1,5 +1,5 @@
 /* ChunkProcessingResults Component Styles */
-/* Note: Updated styles for VAD chart integration */
+/* Note: Updated styles for VAD chart integration and prominent VAD display */
 
 /* Container */
 .chunk-results {
@@ -44,6 +44,153 @@
   color: var(--color-text-secondary, #a0a0a0);
   line-height: 1.6;
   margin: 0;
+}
+
+/* VAD Display Component */
+.vad-display {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: rgba(126, 211, 33, 0.1);
+  border: 2px solid rgba(126, 211, 33, 0.3);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.vad-display[data-vad-level="high"] {
+  background: rgba(126, 211, 33, 0.15);
+  border-color: rgba(126, 211, 33, 0.5);
+  box-shadow: 0 0 10px rgba(126, 211, 33, 0.2);
+}
+
+.vad-display[data-vad-level="medium"] {
+  background: rgba(255, 193, 7, 0.1);
+  border-color: rgba(255, 193, 7, 0.3);
+}
+
+.vad-display[data-vad-level="low"] {
+  background: rgba(244, 67, 54, 0.1);
+  border-color: rgba(244, 67, 54, 0.3);
+}
+
+.vad-display__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.vad-display__icon {
+  font-size: 1.25rem;
+}
+
+.vad-display__title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-text-primary, #e0e0e0);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.vad-display__primary {
+  margin-bottom: 0.75rem;
+}
+
+.vad-display__metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.vad-display__metric--featured {
+  align-items: center;
+}
+
+.vad-metric__label {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #a0a0a0);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.vad-metric__value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #e0e0e0);
+}
+
+.vad-metric__value--large {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #7ED321;
+}
+
+.vad-metric__bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 0.25rem;
+}
+
+.vad-metric__fill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.vad-metric__fill--high {
+  background: linear-gradient(90deg, #7ED321, #5FB829);
+}
+
+.vad-metric__fill--medium {
+  background: linear-gradient(90deg, #FFC107, #FF9800);
+}
+
+.vad-metric__fill--low {
+  background: linear-gradient(90deg, #F44336, #D32F2F);
+}
+
+.vad-display__secondary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.vad-display__secondary .vad-metric__value {
+  font-size: 0.875rem;
+}
+
+.vad-display__status {
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.vad-status {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.vad-status--high {
+  background: rgba(126, 211, 33, 0.2);
+  color: #7ED321;
+}
+
+.vad-status--medium {
+  background: rgba(255, 193, 7, 0.2);
+  color: #FFC107;
+}
+
+.vad-status--low {
+  background: rgba(244, 67, 54, 0.2);
+  color: #F44336;
 }
 
 /* Header */
@@ -527,6 +674,70 @@
 /* Meta value for VAD */
 .meta-value--info {
   color: var(--color-primary, #6366f1);
+}
+
+/* VAD Loading State */
+.vad-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  background: var(--color-surface, #24253a);
+  border: 1px solid var(--color-border, #3b3c5a);
+  border-radius: 8px;
+  margin-top: 1rem;
+  min-height: 200px;
+}
+
+.vad-loading-spinner {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.spinner-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #7ED321;
+  animation: vadLoadingPulse 1.4s ease-in-out infinite;
+}
+
+.spinner-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.spinner-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes vadLoadingPulse {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+.vad-loading-text {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #a0a0a0);
+  text-align: center;
+  margin: 0;
+  animation: fadeInOut 2s ease-in-out infinite;
+}
+
+@keyframes fadeInOut {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* Dark Mode Color Variables */

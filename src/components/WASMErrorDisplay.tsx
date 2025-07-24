@@ -42,8 +42,8 @@ export const WASMErrorDisplay: React.FC<WASMErrorProps> = ({ error, onDismiss })
         </button>
         <style>{`
           .wasm-error-container {
-            background: #2a1a1a;
-            border: 2px solid #ff4444;
+            background: var(--dark-surface, #1F2028);
+            border: 2px solid var(--error-main, #ef4444);
             border-radius: 12px;
             padding: 20px;
             margin: 20px 0;
@@ -66,11 +66,11 @@ export const WASMErrorDisplay: React.FC<WASMErrorProps> = ({ error, onDismiss })
           
           .wasm-error-header h3 {
             margin: 0;
-            color: #ff6666;
+            color: var(--error-main, #ef4444);
           }
           
           .wasm-error-content {
-            color: #e0e0e0;
+            color: var(--dark-text-primary, #CACBDA);
             line-height: 1.6;
           }
           
@@ -84,15 +84,15 @@ export const WASMErrorDisplay: React.FC<WASMErrorProps> = ({ error, onDismiss })
           }
           
           .wasm-error-content code {
-            background: #1a1a1a;
+            background: var(--dark-bg-primary, #0A0B0E);
             padding: 2px 6px;
             border-radius: 4px;
-            color: #66ff66;
+            color: var(--accent-green, #52A32F);
             font-family: monospace;
           }
           
           .wasm-error-solution {
-            background: #1a1a2e;
+            background: var(--dark-bg-tertiary, #1A1B23);
             border-radius: 8px;
             padding: 15px;
             margin: 15px 0;
@@ -100,7 +100,7 @@ export const WASMErrorDisplay: React.FC<WASMErrorProps> = ({ error, onDismiss })
           
           .wasm-error-solution h4 {
             margin: 0 0 10px 0;
-            color: #66ccff;
+            color: var(--accent-blue, #3B82F6);
           }
           
           .wasm-error-solution ol {
@@ -110,29 +110,29 @@ export const WASMErrorDisplay: React.FC<WASMErrorProps> = ({ error, onDismiss })
           
           .error-details {
             margin-top: 15px;
-            background: #1a1a1a;
+            background: var(--dark-bg-primary, #0A0B0E);
             padding: 10px;
             border-radius: 6px;
           }
           
           .error-details summary {
             cursor: pointer;
-            color: #888;
+            color: var(--dark-text-tertiary, #7B7D8E);
             user-select: none;
           }
           
           .error-details pre {
             margin: 10px 0 0 0;
             padding: 10px;
-            background: #0a0a0a;
+            background: var(--dark-bg-primary, #0A0B0E);
             border-radius: 4px;
             overflow-x: auto;
             font-size: 12px;
-            color: #ff9999;
+            color: var(--error-light, #450a0a);
           }
           
           .error-dismiss-btn {
-            background: #ff4444;
+            background: var(--error-main, #ef4444);
             color: white;
             border: none;
             padding: 10px 20px;
@@ -144,7 +144,7 @@ export const WASMErrorDisplay: React.FC<WASMErrorProps> = ({ error, onDismiss })
           }
           
           .error-dismiss-btn:hover {
-            background: #ff6666;
+            background: var(--error-dark, #dc2626);
           }
           
           @keyframes slideIn {

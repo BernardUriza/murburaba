@@ -199,6 +199,8 @@ export class RecordingManager {
         let processedUrl;
         let noiseReduction = 0;
         let frameCount = 0;
+        let averageVad = 0;
+        let vadData = [];
         if (isValid) {
             try {
                 // Convert WebM to WAV first
@@ -211,10 +213,20 @@ export class RecordingManager {
                 // Create processed blob from result
                 const processedBlob = new Blob([result.processedBuffer], { type: 'audio/wav' });
                 processedUrl = this.urlManager.createObjectURL(chunkId, processedBlob);
-                // Calculate noise reduction from VAD metrics
-                noiseReduction = result.averageVad * 100;
+                // Extract VAD metrics
+                averageVad = result.averageVad;
                 frameCount = result.metrics.length;
-                console.log(`🎯 ${LOG_PREFIX.CONCAT_STREAM} Processed chunk ${chunkId}: ${noiseReduction.toFixed(1)}% noise reduction, ${frameCount} frames`);
+                // Convert metrics to VAD timeline data
+                const sampleRate = 48000; // Assuming 48kHz
+                const frameSize = 480; // RNNoise frame size
+                vadData = result.metrics.map((metric, index) => ({
+                    time: (index * frameSize) / sampleRate,
+                    vad: metric.vad
+                }));
+                console.log(`📊 VAD Data generated: ${vadData.length} points, avg=${averageVad.toFixed(3)}`);
+                // Calculate actual noise reduction (inverse of VAD - lower VAD means more noise reduction)
+                noiseReduction = (1 - averageVad) * 100;
+                console.log(`🎯 ${LOG_PREFIX.CONCAT_STREAM} Processed chunk ${chunkId}: VAD=${averageVad.toFixed(3)}, noise reduction=${noiseReduction.toFixed(1)}%, ${frameCount} frames`);
             }
             catch (error) {
                 console.error(`❌ ${LOG_PREFIX.CONCAT_STREAM} Failed to process chunk:`, error);
@@ -237,6 +249,8 @@ export class RecordingManager {
             noiseRemoved: noiseReduction,
             originalSize: originalBlob.size,
             processedSize: processedUrl ? originalBlob.size : 0, // Same size for WAV
+            averageVad,
+            vadData,
             metrics: {
                 processingLatency: 0,
                 frameCount: frameCount,

@@ -12,6 +12,7 @@ import {
 import Swal from 'sweetalert2'
 import { WASMErrorDisplay } from './components/WASMErrorDisplay'
 import AudioDemo from './components/AudioDemo'
+import { CopilotChat } from './components/CopilotChat'
 
 export default function App() {
   // Engine configuration state with localStorage persistence
@@ -221,214 +222,113 @@ export default function App() {
   return (
     <>
       <main className="main-container">
-        <div className="prairie-grass"></div>
-        {/* Floating Audio Demo Panel */}
-        {showAudioDemo && (
-          <div className="floating-panel audio-demo-panel">
-            <div className="panel-header">
-              <h3>🎵 Audio Demo</h3>
-              <button className="close-btn" onClick={() => setShowAudioDemo(false)}>×</button>
-            </div>
-            <div className="panel-content">
-              <AudioDemo 
-                getEngineStatus={getEngineStatus}
-                processFile={processFile}
-                processFileWithMetrics={processFileWithMetrics}
-                autoProcess={true}
-                onProcessComplete={(buffer) => {
-                  console.log('Audio processing completed', buffer)
-                }}
-                onError={(err) => {
-                  console.error('AudioDemo error:', err)
-                  Swal.fire({
-                    toast: true,
-                    position: 'top-end',
-                    icon: 'error',
-                    title: 'Audio processing failed',
-                    text: err.message,
-                    showConfirmButton: false,
-                    timer: 3000,
-                    timerProgressBar: true
-                  })
-                }}
-              />
-            </div>
+        {/* Modern Slide-in Audio Demo Panel */}
+        <div className={`slide-panel-overlay ${showAudioDemo ? 'active' : ''}`} onClick={() => setShowAudioDemo(false)} />
+        <div className={`slide-panel audio-demo-panel ${showAudioDemo ? 'active' : ''}`}>
+          <div className="panel-header">
+            <h3>🎵 Audio Demo</h3>
+            <button className="close-btn" onClick={() => setShowAudioDemo(false)}>×</button>
           </div>
-        )}
+          <div className="panel-content">
+            <AudioDemo 
+              getEngineStatus={getEngineStatus}
+              processFile={processFile}
+              processFileWithMetrics={processFileWithMetrics}
+              autoProcess={true}
+              onProcessComplete={(buffer) => {
+                console.log('Audio processing completed', buffer)
+                Swal.fire({
+                  toast: true,
+                  position: 'top-end',
+                  icon: 'success',
+                  title: '¡Audio procesado exitosamente!',
+                  showConfirmButton: false,
+                  timer: 2000,
+                  timerProgressBar: true
+                })
+              }}
+              onError={(err) => {
+                console.error('AudioDemo error:', err)
+                Swal.fire({
+                  toast: true,
+                  position: 'top-end',
+                  icon: 'error',
+                  title: 'Error al procesar audio',
+                  text: err.message,
+                  showConfirmButton: false,
+                  timer: 3000,
+                  timerProgressBar: true
+                })
+              }}
+            />
+          </div>
+        </div>
 
-        {/* Floating Settings Panel */}
-        {showSettings && (
-          <div className="floating-panel settings-panel">
-            <div className="panel-header">
-              <h3>Settings</h3>
-              <button className="close-btn" onClick={() => setShowSettings(false)}>×</button>
+        {/* Copilot Chat Interface */}
+        <CopilotChat
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+          engineConfig={engineConfig}
+          setEngineConfig={setEngineConfig}
+          isRecording={isRecording}
+          isInitialized={isInitialized}
+          onApplyChanges={async () => {
+            await destroy();
+            await initialize();
+            Swal.fire({
+              toast: true,
+              position: 'top-end',
+              icon: 'success',
+              title: 'Settings applied!',
+              showConfirmButton: false,
+              timer: 2000
+            });
+          }}
+        />
+
+        {/* Modern Minimal Header */}
+        <div className="studio-header">
+          <div className="header-content">
+            <div className="brand-modern">
+              <h1 className="brand-name">
+                <span className="brand-icon">◐</span>
+                murmuraba
+              </h1>
+              <div className="brand-meta">
+                <span className="version">v1.5.2</span>
+                <span className="separator">•</span>
+                <span className="tagline">Neural Audio Engine</span>
+              </div>
             </div>
-            <div className="panel-content">
-              {/* Noise Reduction Level */}
-              <div className="setting-group">
-                <label className="setting-label">Noise Reduction Level</label>
-                <div className="radio-group">
-                  {(['low', 'medium', 'high', 'auto'] as const).map(level => (
-                    <label key={level} className="radio-label">
-                      <input
-                        type="radio"
-                        name="noiseLevel"
-                        checked={engineConfig.noiseReductionLevel === level}
-                        onChange={() => setEngineConfig((prev: any) => ({ ...prev, noiseReductionLevel: level }))}
-                        disabled={isRecording}
-                      />
-                      <span>{level.charAt(0).toUpperCase() + level.slice(1)}</span>
-                    </label>
-                  ))}
-                </div>
+            {/* Modern Status Section */}
+            <div className="engine-status-modern">
+              <div className={`status-indicator ${engineState}`}>
+                <span className="status-pulse"></span>
+                <span className="status-label">
+                  {engineState === 'uninitialized' && 'offline'}
+                  {engineState === 'initializing' && 'loading'}
+                  {engineState === 'ready' && 'ready'}
+                  {engineState === 'processing' && 'processing'}
+                  {engineState === 'error' && 'error'}
+                </span>
               </div>
-
-              {/* Algorithm Selection */}
-              <div className="setting-group">
-                <label className="setting-label">Processing Algorithm</label>
-                <select 
-                  value={engineConfig.algorithm}
-                  onChange={(e) => setEngineConfig((prev: any) => ({ 
-                    ...prev, 
-                    algorithm: e.target.value as 'rnnoise' | 'spectral' | 'adaptive' 
-                  }))}
-                  disabled={isRecording}
-                  className="select-input"
-                >
-                  <option value="rnnoise">RNNoise (Neural Network)</option>
-                  <option value="spectral">Spectral Subtraction</option>
-                  <option value="adaptive">Adaptive Filtering</option>
-                </select>
-              </div>
-
-              {/* Buffer Size */}
-              <div className="setting-group">
-                <label className="setting-label">Buffer Size</label>
-                <select 
-                  value={engineConfig.bufferSize}
-                  onChange={(e) => setEngineConfig((prev: any) => ({ 
-                    ...prev, 
-                    bufferSize: Number(e.target.value) as 256 | 512 | 1024 | 2048 | 4096
-                  }))}
-                  disabled={isRecording}
-                  className="select-input"
-                >
-                  <option value="256">256 samples (lowest latency)</option>
-                  <option value="512">512 samples (balanced)</option>
-                  <option value="1024">1024 samples (recommended)</option>
-                  <option value="2048">2048 samples (better quality)</option>
-                  <option value="4096">4096 samples (highest quality)</option>
-                </select>
-              </div>
-
-              {/* Advanced Options */}
-              <div className="setting-group">
-                <label className="setting-label">Performance Options</label>
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={engineConfig.useWorker}
-                    onChange={(e) => setEngineConfig((prev: any) => ({ ...prev, useWorker: e.target.checked }))}
-                    disabled={isRecording}
-                  />
-                  <span>Use Web Worker (better performance)</span>
-                </label>
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={engineConfig.allowDegraded}
-                    onChange={(e) => setEngineConfig((prev: any) => ({ ...prev, allowDegraded: e.target.checked }))}
-                    disabled={isRecording}
-                  />
-                  <span>Allow degraded mode (fallback)</span>
-                </label>
-              </div>
-              
-              {/* Chunk Duration */}
-              <div className="setting-group">
-                <label className="setting-label">Chunk Duration</label>
-                <div className="duration-buttons">
-                  {[5, 8, 10, 15, 20, 30].map(duration => (
-                    <button 
-                      key={duration}
-                      className={`duration-btn ${chunkDuration === duration ? 'active' : ''}`}
-                      onClick={() => setChunkDuration(duration)}
-                      disabled={isRecording}
-                    >
-                      {duration}s
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Apply Button */}
-              {isInitialized && (
-                <div className="setting-group">
-                  <button 
-                    className="control-btn primary"
-                    onClick={async () => {
-                      await destroy();
-                      await initialize();
-                      Swal.fire({
-                        toast: true,
-                        position: 'top-end',
-                        icon: 'success',
-                        title: 'Settings applied!',
-                        showConfirmButton: false,
-                        timer: 2000
-                      });
-                    }}
-                    disabled={isRecording}
-                  >
-                    Apply Changes
-                  </button>
+              {diagnostics && engineState === 'ready' && (
+                <div className="engine-metrics">
+                  <div className="metric-item">
+                    <span className="metric-value">{diagnostics.activeProcessors}</span>
+                    <span className="metric-label">active</span>
+                  </div>
+                  <div className="metric-item">
+                    <span className="metric-value">{(diagnostics.memoryUsage / 1024 / 1024).toFixed(0)}</span>
+                    <span className="metric-label">MB</span>
+                  </div>
+                  <div className="metric-item">
+                    <span className="metric-dot" data-status={diagnostics.wasmLoaded ? 'active' : 'inactive'}></span>
+                    <span className="metric-label">WASM</span>
+                  </div>
                 </div>
               )}
             </div>
-          </div>
-        )}
-
-        {/* Header with Glassmorphism */}
-        <div className="studio-header">
-          <div className="header-content">
-            <div className="logo-area">
-              <div className="logo-icon">🌾</div>
-              <div>
-                <h1 className="studio-title">
-              <span className="logo-emoji">🎵</span>
-              Murmuraba
-              <span className="version-badge">1.5.2</span>
-            </h1>
-                <p className="studio-subtitle">Neural Audio Processing Engine</p>
-              </div>
-            </div>
-          </div>
-          
-          {/* Engine Status Bar */}
-          <div className="nav-pills">
-            <button className={`nav-pill ${engineState === 'ready' ? 'active' : ''}`}>
-              <span className="status-dot"></span>
-              <span className="status-text">
-                {engineState === 'uninitialized' && '💤 Not Initialized'}
-                {engineState === 'initializing' && '🔄 Initializing...'}
-                {engineState === 'ready' && '✅ Ready'}
-                {engineState === 'processing' && '🎙️ Processing'}
-                {engineState === 'error' && '❌ Error'}
-              </span>
-            </button>
-            {diagnostics && (
-              <div className="engine-info">
-                <span className="info-badge">
-                  {diagnostics.wasmLoaded ? '🟢' : '🔴'} WASM
-                </span>
-                <span className="info-badge">
-                  👥 {diagnostics.activeProcessors} Active
-                </span>
-                <span className="info-badge">
-                  💾 {(diagnostics.memoryUsage / 1024 / 1024).toFixed(1)}MB
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -456,14 +356,13 @@ export default function App() {
                   <div className="meter-label">Input</div>
                   <div className="meter-bar">
                     <div 
-                      className="meter-fill input-level"
+                      className={`meter-fill input-level ${
+                        metrics.inputLevel > 0.8 ? 'high' :
+                        metrics.inputLevel > 0.6 ? 'medium' : 
+                        'low'
+                      }`}
                       style={{
-                        width: `${metrics.inputLevel * 100}%`,
-                        background: metrics.inputLevel > 0.8 ? 
-                          'var(--error-main)' : 
-                          metrics.inputLevel > 0.6 ? 
-                            'var(--warning-main)' : 
-                            'var(--grass-light)'
+                        width: `${metrics.inputLevel * 100}%`
                       }}
                     />
                   </div>
@@ -474,8 +373,7 @@ export default function App() {
                     <div 
                       className="meter-fill output-level"
                       style={{
-                        width: `${metrics.outputLevel * 100}%`,
-                        background: 'var(--prairie-sky)'
+                        width: `${metrics.outputLevel * 100}%`
                       }}
                     />
                   </div>
@@ -750,9 +648,9 @@ export default function App() {
           <button 
             className="fab fab-secondary"
             onClick={() => setShowSettings(!showSettings)}
-            title="Settings"
+            title="Copilot Chat"
           >
-            ⚙️
+            🤖
           </button>
           <button 
             className="fab"

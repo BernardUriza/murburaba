@@ -22,7 +22,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   stream,
   audioUrl, 
   label, 
-  color = '#667eea',
+  color = 'var(--grass-glow, #52A32F)',
   isActive = true,
   isPaused = false,
   hideControls = false,
@@ -49,7 +49,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     width: '100%',
     height: stream ? '200px' : '150px',
     borderRadius: '10px',
-    backgroundColor: '#141414',
+    backgroundColor: 'var(--dark-bg-primary, #0A0B0E)',
     boxShadow: stream ? '0 4px 20px rgba(102, 126, 234, 0.3)' : 'none'
   }), [stream]);
 
@@ -204,8 +204,8 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       animationRef.current = requestAnimationFrame(drawVisual);
 
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      gradient.addColorStop(0, 'rgba(10, 10, 20, 0.8)');
-      gradient.addColorStop(1, 'rgba(20, 20, 40, 0.8)');
+      gradient.addColorStop(0, 'var(--dark-bg-primary, #0A0B0E)');
+      gradient.addColorStop(1, 'var(--dark-bg-secondary, #13141A)');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -264,34 +264,34 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       const normalizedAmplitude = average / 128;
       
       const ampGradient = ctx.createLinearGradient(10, 0, 110, 0);
-      ampGradient.addColorStop(0, '#4facfe');
-      ampGradient.addColorStop(1, '#00f2fe');
+      ampGradient.addColorStop(0, 'var(--info-main, #4A90E2)');
+      ampGradient.addColorStop(1, 'var(--info-dark, #5B9BD5)');
       ctx.fillStyle = ampGradient;
       ctx.fillRect(10, 10, normalizedAmplitude * 100, 10);
       
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.strokeStyle = 'var(--dark-border, #2E3039)';
       ctx.strokeRect(10, 10, 100, 10);
       
-      ctx.fillStyle = 'white';
+      ctx.fillStyle = 'var(--dark-text-primary, #CACBDA)';
       ctx.font = '12px monospace';
       ctx.fillText(`Volume: ${(normalizedAmplitude * 100).toFixed(1)}%`, 10, 35);
       
       // Status indicator
       if (stream) {
         if (isActive && !isPaused) {
-          ctx.fillStyle = '#4caf50';
+          ctx.fillStyle = 'var(--success-main, #22c55e)';
           ctx.beginPath();
           ctx.arc(canvas.width - 20, 20, 5, 0, Math.PI * 2);
           ctx.fill();
-          ctx.fillStyle = 'white';
+          ctx.fillStyle = 'var(--dark-text-primary, #CACBDA)';
           ctx.font = '10px monospace';
           ctx.fillText('LIVE', canvas.width - 50, 25);
         } else if (isPaused) {
-          ctx.fillStyle = '#ff9800';
+          ctx.fillStyle = 'var(--warning-main, #f59e0b)';
           ctx.beginPath();
           ctx.arc(canvas.width - 20, 20, 5, 0, Math.PI * 2);
           ctx.fill();
-          ctx.fillStyle = 'white';
+          ctx.fillStyle = 'var(--dark-text-primary, #CACBDA)';
           ctx.font = '10px monospace';
           ctx.fillText('PAUSED', canvas.width - 60, 25);
         }
@@ -321,8 +321,8 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       }
 
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      gradient.addColorStop(0, 'rgba(10, 10, 20, 0.8)');
-      gradient.addColorStop(1, 'rgba(20, 20, 40, 0.8)');
+      gradient.addColorStop(0, 'var(--dark-bg-primary, #0A0B0E)');
+      gradient.addColorStop(1, 'var(--dark-bg-secondary, #13141A)');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -365,10 +365,10 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       ctx.fillStyle = ampGradient;
       ctx.fillRect(10, 10, normalizedAmplitude * 100, 10);
       
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.strokeStyle = 'var(--dark-border, #2E3039)';
       ctx.strokeRect(10, 10, 100, 10);
       
-      ctx.fillStyle = 'white';
+      ctx.fillStyle = 'var(--dark-text-primary, #CACBDA)';
       ctx.font = '12px monospace';
       ctx.fillText(`Level: ${(normalizedAmplitude * 100).toFixed(1)}%`, 10, 35);
     };
@@ -415,7 +415,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   if (error) {
     return (
       <div className={`waveform-analyzer error ${className}`} role="alert">
-        <div style={{ color: 'red', textAlign: 'center', padding: '20px' }}>
+        <div style={{ color: 'var(--error-main, #ef4444)', textAlign: 'center', padding: '20px' }}>
           ⚠️ {error}
         </div>
       </div>
@@ -445,7 +445,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
             left: 0, 
             right: 0, 
             bottom: 0, 
-            backgroundColor: 'rgba(0,0,0,0.5)',
+            backgroundColor: 'rgba(10, 11, 14, 0.7)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -481,8 +481,8 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
                 padding: '8px 16px',
                 borderRadius: '4px',
                 border: 'none',
-                backgroundColor: disabled ? '#666' : '#667eea',
-                color: 'white',
+                backgroundColor: disabled ? 'var(--dark-surface, #1F2028)' : 'var(--grass-glow, #52A32F)',
+                color: 'var(--dark-text-primary, #CACBDA)',
                 cursor: disabled ? 'not-allowed' : 'pointer',
                 opacity: disabled ? 0.6 : 1
               }}

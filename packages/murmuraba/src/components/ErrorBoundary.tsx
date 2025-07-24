@@ -177,7 +177,7 @@ const defaultStyles = {
     alignItems: 'center',
     justifyContent: 'center',
     padding: '2rem',
-    backgroundColor: '#f8fafc',
+    backgroundColor: 'var(--dark-bg-primary, #0A0B0E)',
     fontFamily: 'system-ui, -apple-system, sans-serif',
   } as React.CSSProperties,
 
@@ -185,11 +185,11 @@ const defaultStyles = {
     maxWidth: '500px',
     width: '100%',
     padding: '3rem 2rem',
-    backgroundColor: 'white',
+    backgroundColor: 'var(--dark-surface, #1F2028)',
     borderRadius: '12px',
     boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
     textAlign: 'center' as const,
-    border: '1px solid #e2e8f0',
+    border: '1px solid var(--neutral-400, #4E5165)',
   } as React.CSSProperties,
 
   icon: {
@@ -201,14 +201,14 @@ const defaultStyles = {
   title: {
     fontSize: '1.75rem',
     fontWeight: 'bold' as const,
-    color: '#1a202c',
+    color: 'var(--dark-text-primary, #CACBDA)',
     marginBottom: '1rem',
     margin: '0 0 1rem 0',
   } as React.CSSProperties,
 
   message: {
     fontSize: '1rem',
-    color: '#4a5568',
+    color: 'var(--dark-text-secondary, #A0A1B3)',
     lineHeight: '1.6',
     marginBottom: '2rem',
     margin: '0 0 2rem 0',
@@ -219,8 +219,8 @@ const defaultStyles = {
     alignItems: 'center',
     gap: '0.5rem',
     padding: '0.75rem 1.5rem',
-    backgroundColor: '#667eea',
-    color: 'white',
+    backgroundColor: 'var(--accent-green, #52A32F)',
+    color: 'var(--dark-text-primary, #CACBDA)',
     border: 'none',
     borderRadius: '6px',
     fontSize: '1rem',
@@ -228,7 +228,7 @@ const defaultStyles = {
     cursor: 'pointer',
     transition: 'all 0.2s ease',
     ':hover': {
-      backgroundColor: '#5a6fd8',
+      backgroundColor: 'var(--accent-green-light, #6BC748)',
     },
   } as React.CSSProperties,
 
@@ -239,7 +239,7 @@ const defaultStyles = {
   details: {
     marginTop: '2rem',
     textAlign: 'left' as const,
-    backgroundColor: '#f7fafc',
+    backgroundColor: 'var(--dark-bg-tertiary, #1A1B23)',
     borderRadius: '6px',
     padding: '1rem',
   } as React.CSSProperties,
@@ -247,7 +247,7 @@ const defaultStyles = {
   summary: {
     cursor: 'pointer',
     fontWeight: '500' as const,
-    color: '#4a5568',
+    color: 'var(--dark-text-secondary, #A0A1B3)',
     marginBottom: '1rem',
     fontSize: '0.9rem',
   } as React.CSSProperties,
@@ -259,7 +259,7 @@ const defaultStyles = {
   errorTitle: {
     fontSize: '0.875rem',
     fontWeight: '600' as const,
-    color: '#2d3748',
+    color: 'var(--dark-text-primary, #CACBDA)',
     marginBottom: '0.5rem',
     margin: '1rem 0 0.5rem 0',
   } as React.CSSProperties,
@@ -273,7 +273,7 @@ const defaultStyles = {
     overflow: 'auto',
     whiteSpace: 'pre-wrap' as const,
     wordBreak: 'break-word' as const,
-    color: '#2d3748',
+    color: 'var(--dark-text-primary, #CACBDA)',
     border: '1px solid #cbd5e0',
     margin: '0 0 0.5rem 0',
   } as React.CSSProperties,

@@ -43,8 +43,11 @@ export default function AudioDemo({
   useEffect(() => {
     if (!autoProcess || autoProcessStarted || isProcessing || engineStatus !== 'ready') return
     setAutoProcessStarted(true)
-    processAudioDemo()
-  }, [autoProcess, autoProcessStarted, isProcessing, engineStatus])
+    // Add small delay to ensure engine is fully ready
+    setTimeout(() => {
+      processAudioDemo()
+    }, 500)
+  }, [autoProcess, autoProcessStarted, isProcessing, engineStatus, processAudioDemo])
 
   // Poll engine status
   useEffect(() => {
@@ -76,7 +79,14 @@ export default function AudioDemo({
   }, [logs])
 
   const addLog = useCallback((log: AudioLog) => {
-    setLogs(prev => [...prev, log])
+    setLogs(prev => {
+      // Limit logs to prevent memory issues
+      const newLogs = [...prev, log]
+      if (newLogs.length > 1000) {
+        return newLogs.slice(-500)
+      }
+      return newLogs
+    })
     onLog?.(log)
   }, [onLog])
 
@@ -95,7 +105,14 @@ export default function AudioDemo({
     setLogs([])
     setProcessedAudioUrl(null)
     try {
-      const response = await fetch('/jfk_speech.wav')
+      // Try multiple paths to ensure compatibility in dev and prod
+      let response = await fetch('/jfk_speech.wav')
+      if (!response.ok) {
+        response = await fetch('./jfk_speech.wav')
+      }
+      if (!response.ok) {
+        response = await fetch('jfk_speech.wav')
+      }
       if (!response.ok) throw new Error(`Failed to load audio: ${response.status}`)
       const arrayBuffer = await response.arrayBuffer()
       const originalBlob = new Blob([arrayBuffer], { type: 'audio/wav' })
@@ -107,14 +124,19 @@ export default function AudioDemo({
       
       if (processFileWithMetrics) {
         // Use enhanced processing with VAD metrics
+        let frameCount = 0
         const result = await processFileWithMetrics(arrayBuffer, (metrics) => {
-          addLog({
-            timestamp: metrics.timestamp,
-            frame: metrics.frame,
-            vad: metrics.vad,
-            rms: metrics.rms,
-            message: metrics.vad > 0.5 ? '🎤 Voice detected' : '🔇 Processing...'
-          })
+          frameCount++
+          // Only log every 10th frame to avoid overwhelming the UI
+          if (frameCount % 10 === 0 || metrics.vad > 0.5) {
+            addLog({
+              timestamp: metrics.timestamp || Date.now(),
+              frame: metrics.frame || frameCount,
+              vad: metrics.vad || 0,
+              rms: metrics.rms || 0,
+              message: metrics.vad > 0.5 ? '🎤 Voz detectada' : '🔇 Procesando...'
+            })
+          }
         })
         processedBuffer = result.processedBuffer
         const endTime = Date.now()
@@ -174,6 +196,7 @@ export default function AudioDemo({
           onClick={processAudioDemo}
           disabled={isProcessing || engineStatus !== 'ready'}
           className="btn btn-primary"
+          title={engineStatus !== 'ready' ? `Engine status: ${engineStatus}. Debe estar 'ready' para procesar.` : ''}
         >
           <span className="btn-icon">{isProcessing ? '⏳' : '🔄'}</span>
           <span>{isProcessing ? 'Procesando...' : 'Probar Audio Demo'}</span>
@@ -186,6 +209,18 @@ export default function AudioDemo({
             {engineStatus}
           </span>
         </div>
+        {engineStatus !== 'ready' && engineStatus !== 'uninitialized' && (
+          <div className="status-row">
+            <span className="status-label">Info:</span>
+            <span className="status-value">
+              {engineStatus === 'initializing' ? '⏳ Inicializando motor de audio...' :
+               engineStatus === 'error' ? '❌ Error en el motor' :
+               engineStatus === 'processing' ? '🔄 Procesando audio...' :
+               engineStatus === 'degraded' ? '⚠️ Modo degradado activo' : 
+               '🔄 Estado: ' + engineStatus}
+            </span>
+          </div>
+        )}
       </div>
       {error && (
         <div className="error-banner">
@@ -235,7 +270,14 @@ export default function AudioDemo({
               <span className="log-message"> {log.message}</span>
             </div>
           ))}
-          {logs.length === 0 && (<div className="logs-empty">Esperando procesamiento...</div>)}
+          {logs.length === 0 && (
+            <div className="logs-empty">
+              {engineStatus === 'ready' ? 'Esperando procesamiento...' : 
+               engineStatus === 'initializing' ? '⏳ Inicializando motor...' :
+               engineStatus === 'uninitialized' ? '❌ Motor no inicializado' :
+               'Estado del motor: ' + engineStatus}
+            </div>
+          )}
         </div>
       </div>
       {logs.length > 0 && (

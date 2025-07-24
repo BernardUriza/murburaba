@@ -9,7 +9,6 @@ interface BuildInfoProps {
   separator?: string;
   format?: 'inline' | 'block' | 'badge';
   size?: 'small' | 'medium' | 'large';
-  theme?: 'light' | 'dark' | 'auto';
 }
 
 export const BuildInfo: React.FC<BuildInfoProps> = ({
@@ -20,8 +19,7 @@ export const BuildInfo: React.FC<BuildInfoProps> = ({
   showPrefix = true,
   separator = '•',
   format = 'inline',
-  size = 'medium',
-  theme = 'auto'
+  size = 'medium'
 }) => {
   const formattedBuildDate = useMemo(() => {
     try {
@@ -48,27 +46,20 @@ export const BuildInfo: React.FC<BuildInfoProps> = ({
       lineHeight: '1.4',
     };
 
-    // Theme styles
-    if (theme === 'light') {
-      baseStyles.color = '#4a5568';
-    } else if (theme === 'dark') {
-      baseStyles.color = '#a0aec0';
-    } else {
-      // Auto theme uses CSS custom properties
-      baseStyles.color = 'var(--text-secondary, #4a5568)';
-    }
+    // Theme styles - Always use dark mode
+    baseStyles.color = 'var(--dark-text-tertiary, #7B7D8E)';
 
     // Format-specific styles
     if (format === 'badge') {
-      baseStyles.backgroundColor = theme === 'dark' ? '#2d3748' : '#f7fafc';
-      baseStyles.border = theme === 'dark' ? '1px solid #4a5568' : '1px solid #e2e8f0';
+      baseStyles.backgroundColor = 'var(--dark-surface-hover, #252631)';
+      baseStyles.border = '1px solid var(--neutral-400, #4E5165)';
       baseStyles.borderRadius = '12px';
       baseStyles.padding = size === 'small' ? '0.25rem 0.5rem' : '0.375rem 0.75rem';
       baseStyles.fontSize = size === 'small' ? '0.6875rem' : size === 'large' ? '0.875rem' : '0.75rem';
     }
 
     return baseStyles;
-  }, [format, size, theme]);
+  }, [format, size]);
 
   const separatorStyles = useMemo(() => ({
     opacity: 0.5,
@@ -78,7 +69,7 @@ export const BuildInfo: React.FC<BuildInfoProps> = ({
 
   return (
     <div 
-      className={`murmuraba-build-info murmuraba-build-info--${format} murmuraba-build-info--${size} murmuraba-build-info--${theme} ${className}`}
+      className={`murmuraba-build-info murmuraba-build-info--${format} murmuraba-build-info--${size} ${className}`}
       style={styles}
       role="status"
       aria-label={ariaLabel || `Build information: Version ${version}, built on ${formattedBuildDate}`}

@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { WaveformAnalyzer } from './WaveformAnalyzer';
+import './SyncedWaveforms.css';
 
 interface SyncedWaveformsProps {
   originalAudioUrl?: string;
@@ -15,6 +16,15 @@ interface SyncedWaveformsProps {
   processedLabel?: string;
   originalColor?: string;
   processedColor?: string;
+}
+
+interface WaveformColumn {
+  audioUrl?: string;
+  label: string;
+  color: string;
+  volume: number;
+  onVolumeChange: (value: number) => void;
+  emoji: string;
 }
 
 export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
@@ -98,123 +108,177 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
     },
   }), [disabled, isPlaying]);
 
+  const waveformColumns: WaveformColumn[] = [
+    {
+      audioUrl: originalAudioUrl,
+      label: originalLabel,
+      color: originalColor,
+      volume: originalVolume,
+      onVolumeChange: setOriginalVolume,
+      emoji: '🔴'
+    },
+    {
+      audioUrl: processedAudioUrl,
+      label: processedLabel,
+      color: processedColor,
+      volume: processedVolume,
+      onVolumeChange: setProcessedVolume,
+      emoji: '🟢'
+    }
+  ];
+
   return (
     <div 
       className={`synced-waveforms ${className}`}
-      style={containerStyle}
+      style={{
+        ...containerStyle,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.5rem',
+        padding: '1.5rem',
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%)',
+        borderRadius: '16px',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+      }}
       role="region"
       aria-label={ariaLabel || 'Synchronized audio waveform comparison'}
     >
-      {/* Original waveform */}
-      <div className="waveform-section" style={{ marginBottom: '1rem' }}>
-        <WaveformAnalyzer
-          audioUrl={originalAudioUrl}
-          label={originalLabel}
-          color={originalColor}
-          isActive={true}
-          isPaused={!isPlaying}
-          hideControls={true}
-          isMuted={false}
-          volume={originalVolume}
-          disabled={disabled}
-          aria-label={`${originalLabel} waveform visualization`}
-        />
-      </div>
+      {/* Waveforms Grid */}
+      <div 
+        className="waveforms-grid"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '1.5rem',
+          alignItems: 'stretch'
+        }}
+      >
+        {waveformColumns.map((column, index) => (
+          <div 
+            key={index}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              background: 'white',
+              padding: '1.25rem',
+              borderRadius: '12px',
+              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+              cursor: disabled ? 'default' : 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              if (!disabled) {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)';
+            }}
+          >
+            {/* Waveform */}
+            <div style={{ minHeight: '120px' }}>
+              <WaveformAnalyzer
+                audioUrl={column.audioUrl}
+                label={column.label}
+                color={column.color}
+                isActive={true}
+                isPaused={!isPlaying}
+                hideControls={true}
+                isMuted={false}
+                volume={column.volume}
+                disabled={disabled}
+                aria-label={`${column.label} waveform visualization`}
+              />
+            </div>
 
-      {/* Processed waveform */}
-      <div className="waveform-section" style={{ marginBottom: '1rem' }}>
-        <WaveformAnalyzer
-          audioUrl={processedAudioUrl}
-          label={processedLabel}
-          color={processedColor}
-          isActive={true}
-          isPaused={!isPlaying}
-          hideControls={true}
-          volume={processedVolume}
-          disabled={disabled}
-          aria-label={`${processedLabel} waveform visualization`}
-        />
+            {/* Volume Control */}
+            {showVolumeControls && (
+              <div 
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.75rem',
+                  padding: '0.75rem',
+                  background: 'rgba(0, 0, 0, 0.02)',
+                  borderRadius: '8px'
+                }}
+              >
+                <div 
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: column.color
+                  }}
+                >
+                  <span>{column.emoji} {column.label}</span>
+                  <span style={{ fontSize: '16px', fontWeight: '700' }}>
+                    {Math.round(column.volume * 100)}%
+                  </span>
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={column.volume}
+                    onChange={(e) => column.onVolumeChange(parseFloat(e.target.value))}
+                    disabled={disabled}
+                    style={{ 
+                      width: '100%',
+                      height: '6px',
+                      borderRadius: '3px',
+                      background: `linear-gradient(to right, ${column.color} 0%, ${column.color} ${column.volume * 100}%, #e5e7eb ${column.volume * 100}%, #e5e7eb 100%)`,
+                      outline: 'none',
+                      cursor: disabled ? 'not-allowed' : 'pointer',
+                      WebkitAppearance: 'none',
+                      appearance: 'none'
+                    }}
+                    aria-label={`${column.label} volume`}
+                  />
+                  <style dangerouslySetInnerHTML={{ __html: `
+                    input[type="range"]::-webkit-slider-thumb {
+                      appearance: none;
+                      width: 20px;
+                      height: 20px;
+                      background: white;
+                      border: 3px solid ${column.color};
+                      border-radius: 50%;
+                      cursor: ${disabled ? 'not-allowed' : 'pointer'};
+                      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                      transition: all 0.2s ease;
+                    }
+                    input[type="range"]::-webkit-slider-thumb:hover {
+                      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+                      transform: scale(1.1);
+                    }
+                    input[type="range"]::-moz-range-thumb {
+                      width: 20px;
+                      height: 20px;
+                      background: white;
+                      border: 3px solid ${column.color};
+                      border-radius: 50%;
+                      cursor: ${disabled ? 'not-allowed' : 'pointer'};
+                      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                      transition: all 0.2s ease;
+                    }
+                    input[type="range"]::-moz-range-thumb:hover {
+                      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+                      transform: scale(1.1);
+                    }
+                  ` }} />
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
-
-      {/* Volume controls */}
-      {showVolumeControls && (
-        <div 
-          className="volume-controls" 
-          style={volumeControlsStyle}
-          role="group"
-          aria-label="Volume controls"
-        >
-          <div style={volumeControlStyle}>
-            <label 
-              htmlFor="original-volume"
-              style={{ color: originalColor, display: 'flex', alignItems: 'center', gap: '0.25rem' }}
-            >
-              🔴 Original:
-            </label>
-            <input
-              id="original-volume"
-              type="range"
-              min="0"
-              max="1"
-              step="0.1"
-              value={originalVolume}
-              onChange={handleOriginalVolumeChange}
-              disabled={disabled}
-              style={{ 
-                width: '100px',
-                cursor: disabled ? 'not-allowed' : 'pointer'
-              }}
-              aria-label="Original audio volume"
-            />
-            <span 
-              style={{ 
-                minWidth: '40px', 
-                textAlign: 'right',
-                fontSize: '14px',
-                color: '#666'
-              }}
-              aria-live="polite"
-            >
-              {Math.round(originalVolume * 100)}%
-            </span>
-          </div>
-          
-          <div style={volumeControlStyle}>
-            <label 
-              htmlFor="processed-volume"
-              style={{ color: processedColor, display: 'flex', alignItems: 'center', gap: '0.25rem' }}
-            >
-              🟢 Enhanced:
-            </label>
-            <input
-              id="processed-volume"
-              type="range"
-              min="0"
-              max="1"
-              step="0.1"
-              value={processedVolume}
-              onChange={handleProcessedVolumeChange}
-              disabled={disabled}
-              style={{ 
-                width: '100px',
-                cursor: disabled ? 'not-allowed' : 'pointer'
-              }}
-              aria-label="Enhanced audio volume"
-            />
-            <span 
-              style={{ 
-                minWidth: '40px', 
-                textAlign: 'right',
-                fontSize: '14px',
-                color: '#666'
-              }}
-              aria-live="polite"
-            >
-              {Math.round(processedVolume * 100)}%
-            </span>
-          </div>
-        </div>
-      )}
 
       {/* Playback controls */}
       {showPlaybackControls && (
@@ -222,53 +286,70 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
           style={{ 
             display: 'flex', 
             justifyContent: 'center', 
-            marginTop: '1rem',
-            marginBottom: '1rem'
+            gap: '1rem',
+            flexWrap: 'wrap'
           }}
         >
           <button
             onClick={() => handlePlayingChange(!isPlaying)}
             onKeyDown={handleKeyDown}
             disabled={disabled}
-            style={buttonStyle}
+            style={{
+              ...buttonStyle,
+              padding: '12px 32px',
+              fontSize: '16px',
+              fontWeight: '600',
+              background: isPlaying 
+                ? 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)' 
+                : 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)',
+              border: 'none',
+              borderRadius: '12px',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              boxShadow: isPlaying
+                ? '0 4px 14px 0 rgba(220, 38, 38, 0.35)'
+                : '0 4px 14px 0 rgba(79, 70, 229, 0.35)',
+              transition: 'all 0.3s ease',
+              transform: 'translateY(0)'
+            }}
+            onMouseEnter={(e) => {
+              if (!disabled) {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = isPlaying
+                  ? '0 6px 20px 0 rgba(220, 38, 38, 0.4)'
+                  : '0 6px 20px 0 rgba(79, 70, 229, 0.4)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = isPlaying
+                ? '0 4px 14px 0 rgba(220, 38, 38, 0.35)'
+                : '0 4px 14px 0 rgba(79, 70, 229, 0.35)';
+            }}
             aria-label={isPlaying ? 'Pause synchronized playback' : 'Play synchronized playback'}
           >
-            {isPlaying ? '⏸ Pause' : '▶ Play Both'}
+            <span style={{ fontSize: '20px' }}>{isPlaying ? '⏸' : '▶'}</span>
+            <span>{isPlaying ? 'Pause' : 'Play Both'}</span>
           </button>
         </div>
       )}
-
-      {/* Visual comparison info */}
-      <div 
-        style={{ 
-          fontSize: '12px', 
-          color: '#666', 
-          textAlign: 'center', 
-          marginTop: '1rem',
-          lineHeight: '1.4'
-        }}
-        role="note"
-        aria-label="Comparison information"
-      >
-        <p style={{ margin: '0 0 0.25rem 0' }}>
-          🔴 Original audio | 🟢 Noise-reduced audio
-        </p>
-        <p style={{ margin: 0 }}>
-          Watch how the waveforms change to see the noise reduction in action
-        </p>
-      </div>
 
       {/* Error states */}
       {!originalAudioUrl && !processedAudioUrl && (
         <div 
           style={{ 
             textAlign: 'center', 
-            color: '#999', 
-            fontStyle: 'italic',
-            padding: '2rem'
+            color: '#6b7280', 
+            padding: '3rem',
+            background: 'rgba(0, 0, 0, 0.02)',
+            borderRadius: '12px',
+            fontSize: '14px'
           }}
           role="status"
         >
+          <span style={{ fontSize: '24px', marginBottom: '0.5rem', display: 'block' }}>🎵</span>
           No audio files provided for comparison
         </div>
       )}
