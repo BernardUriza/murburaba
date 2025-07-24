@@ -10,10 +10,10 @@ interface AudioControlsProps {
   hasOriginalAudio: boolean;
   isValid: boolean;
   onTogglePlayback: (audioType: 'processed' | 'original') => void;
-  onExport: (format: 'wav' | 'mp3', audioType: 'processed' | 'original') => void;
   onDownload: (format: 'webm' | 'wav' | 'mp3', audioType: 'processed' | 'original') => void;
   processedAudioUrl?: string;
   originalAudioUrl?: string;
+  currentlyPlayingType?: 'processed' | 'original' | null;
 }
 
 export function AudioControls({
@@ -24,10 +24,10 @@ export function AudioControls({
   hasOriginalAudio,
   isValid,
   onTogglePlayback,
-  onExport,
   onDownload,
   processedAudioUrl,
-  originalAudioUrl
+  originalAudioUrl,
+  currentlyPlayingType
 }: AudioControlsProps) {
   return (
     <div className="details__section">
@@ -39,86 +39,50 @@ export function AudioControls({
             <SyncedWaveforms
               processedAudioUrl={processedAudioUrl}
               originalAudioUrl={originalAudioUrl}
-              isPlaying={isPlaying}
-              onPlayingChange={(playing) => onTogglePlayback(playing ? 'processed' : 'original')}
-              disabled={!isValid}
+              isPlaying={isPlaying && currentlyPlayingType !== null}
+              disabled={false}
               showVolumeControls={true}
-              showPlaybackControls={false}
+              showPlaybackControls={true}
               processedLabel="Processed Audio"
               originalLabel="Original Audio"
+              onPlayingChange={(playing) => {
+                if (playing) {
+                  onTogglePlayback('processed');
+                } else {
+                  // Stop current playback
+                  if (currentlyPlayingType) {
+                    onTogglePlayback(currentlyPlayingType);
+                  }
+                }
+              }}
             />
           </div>
         )}
         
         <div className="audio-controls-grid">
-        <div className="audio-group">
-          <h5 className="audio-group__title">Processed Audio</h5>
-          <div className="audio-controls__row">
-            <button
-              className={`btn btn-secondary ${isPlaying ? 'btn--playing' : ''}`}
-              onClick={() => onTogglePlayback('processed')}
-              disabled={!hasProcessedAudio || !isValid}
-              aria-label={`${isPlaying ? 'Pause' : 'Play'} processed audio`}
-              type="button"
-            >
-              <span className="btn__icon" aria-hidden="true">
-                {isPlaying ? '⏸️' : '▶️'}
-              </span>
-              <span>{isPlaying ? 'Pause' : 'Play'} Processed</span>
-            </button>
-
-            <button
-              className="btn btn-ghost btn--small"
-              onClick={() => onExport('wav', 'processed')}
-              disabled={!hasProcessedAudio || !isValid}
-              aria-label="Export processed audio as WAV"
-              type="button"
-            >
-              📄 WAV
-            </button>
-
-            <button
-              className="btn btn-ghost btn--small"
-              onClick={() => onExport('mp3', 'processed')}
-              disabled={!hasProcessedAudio || !isValid}
-              aria-label="Export processed audio as MP3"
-              type="button"
-            >
-              🎵 MP3
-            </button>
-
-            <button
-              className="btn btn-ghost btn--small"
-              onClick={() => onDownload('webm', 'processed')}
-              disabled={!hasProcessedAudio || !isValid}
-              aria-label="Download processed audio"
-              type="button"
-            >
-              💾 Download
-            </button>
-          </div>
-        </div>
-
+          {/* Original Audio First */}
           {hasOriginalAudio && (
             <div className="audio-group">
               <h5 className="audio-group__title">Original Audio</h5>
               <div className="audio-controls__row">
                 <button
-                  className="btn btn-secondary"
+                  className={`btn btn-secondary ${isPlaying && currentlyPlayingType === 'original' ? 'btn--playing' : ''}`}
                   onClick={() => onTogglePlayback('original')}
                   disabled={!hasOriginalAudio || !isValid}
-                  aria-label="Play original audio"
+                  aria-label={`${isPlaying && currentlyPlayingType === 'original' ? 'Pause' : 'Play'} original audio`}
                   type="button"
                 >
-                  <span className="btn__icon" aria-hidden="true">▶️</span>
-                  <span>Play Original</span>
+                  <span className="btn__icon" aria-hidden="true">
+                    {isPlaying && currentlyPlayingType === 'original' ? '⏸️' : '▶️'}
+                  </span>
+                  <span>{isPlaying && currentlyPlayingType === 'original' ? 'Pause' : 'Play'} Original</span>
                 </button>
 
                 <button
                   className="btn btn-ghost btn--small"
-                  onClick={() => onExport('wav', 'original')}
+                  onClick={() => onDownload('wav', 'original')}
                   disabled={!hasOriginalAudio || !isValid}
-                  aria-label="Export original audio as WAV"
+                  aria-label="Download original audio as WAV"
                   type="button"
                 >
                   📄 Original WAV
@@ -126,9 +90,9 @@ export function AudioControls({
 
                 <button
                   className="btn btn-ghost btn--small"
-                  onClick={() => onExport('mp3', 'original')}
+                  onClick={() => onDownload('mp3', 'original')}
                   disabled={!hasOriginalAudio || !isValid}
-                  aria-label="Export original audio as MP3"
+                  aria-label="Download original audio as MP3"
                   type="button"
                 >
                   🎵 Original MP3
@@ -136,6 +100,45 @@ export function AudioControls({
               </div>
             </div>
           )}
+
+          {/* Processed Audio Second */}
+          <div className="audio-group">
+            <h5 className="audio-group__title">Processed Audio</h5>
+            <div className="audio-controls__row">
+              <button
+                className={`btn btn-secondary ${isPlaying && currentlyPlayingType === 'processed' ? 'btn--playing' : ''}`}
+                onClick={() => onTogglePlayback('processed')}
+                disabled={!hasProcessedAudio || !isValid}
+                aria-label={`${isPlaying && currentlyPlayingType === 'processed' ? 'Pause' : 'Play'} processed audio`}
+                type="button"
+              >
+                <span className="btn__icon" aria-hidden="true">
+                  {isPlaying && currentlyPlayingType === 'processed' ? '⏸️' : '▶️'}
+                </span>
+                <span>{isPlaying && currentlyPlayingType === 'processed' ? 'Pause' : 'Play'} Processed</span>
+              </button>
+
+              <button
+                className="btn btn-ghost btn--small"
+                onClick={() => onDownload('wav', 'processed')}
+                disabled={!hasProcessedAudio || !isValid}
+                aria-label="Download processed audio as WAV"
+                type="button"
+              >
+                📄 WAV
+              </button>
+
+              <button
+                className="btn btn-ghost btn--small"
+                onClick={() => onDownload('mp3', 'processed')}
+                disabled={!hasProcessedAudio || !isValid}
+                aria-label="Download processed audio as MP3"
+                type="button"
+              >
+                🎵 MP3
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

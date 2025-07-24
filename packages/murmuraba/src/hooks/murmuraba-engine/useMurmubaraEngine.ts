@@ -305,7 +305,7 @@ export function useMurmubaraEngine(
       chunk,
       audioType,
       (id, isPlaying) => {
-        recordingStateTogglePlayback(id, isPlaying);
+        recordingStateTogglePlayback(id, isPlaying, audioType);
       }
     );
   }, [recordingState.chunks, recordingStateTogglePlayback]);

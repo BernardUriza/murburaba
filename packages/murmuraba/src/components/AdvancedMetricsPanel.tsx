@@ -188,9 +188,39 @@ export function AdvancedMetricsPanel({
             />
             
             <MetricItem 
-              label="Uptime:" 
-              value="Active"
-              data-testid="metric-uptime"
+              label="Buffer Usage:" 
+              value={diagnostics.bufferUsage ? `${diagnostics.bufferUsage.toFixed(1)}%` : 'N/A'}
+              data-testid="metric-buffer-usage"
+            />
+            
+            <MetricItem 
+              label="Current Latency:" 
+              value={diagnostics.currentLatency ? `${diagnostics.currentLatency.toFixed(1)}ms` : 'N/A'}
+              data-testid="metric-current-latency"
+            />
+            
+            <MetricItem 
+              label="Frame Rate:" 
+              value={diagnostics.frameRate ? `${diagnostics.frameRate.toFixed(1)} fps` : 'N/A'}
+              data-testid="metric-frame-rate"
+            />
+            
+            <MetricItem 
+              label="Active Streams:" 
+              value={diagnostics.activeStreams?.toString() || '0'}
+              data-testid="metric-active-streams"
+            />
+            
+            <MetricItem 
+              label="Noise Reduction:" 
+              value={diagnostics.noiseReductionLevel ? `${(diagnostics.noiseReductionLevel * 100).toFixed(1)}%` : 'N/A'}
+              data-testid="metric-noise-reduction"
+            />
+            
+            <MetricItem 
+              label="Audio Quality:" 
+              value={diagnostics.audioQuality || 'Standard'}
+              data-testid="metric-audio-quality"
             />
             
           </div>

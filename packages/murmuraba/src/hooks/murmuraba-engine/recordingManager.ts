@@ -1,6 +1,4 @@
-import { ProcessedChunk, RecordingState } from './types';
-import { ChunkMetrics } from '../../types';
-import { processStream } from '../../api';
+import { ProcessedChunk } from './types';
 import { processFileWithMetrics } from '../../api/processFileWithMetrics';
 import { MIN_VALID_BLOB_SIZE, LOG_PREFIX } from './constants';
 import { URLManager } from './urlManager';
@@ -257,7 +255,6 @@ export class RecordingManager {
     const originalUrl = isValid ? this.urlManager.createObjectURL(chunkId, originalBlob) : undefined;
     
     const cycleEndTime = Date.now();
-    const actualDuration = cycleEndTime - cycleStartTime;
     
     // Process original audio through RNNoise to get metrics and processed audio
     let processedUrl: string | undefined;
@@ -265,6 +262,7 @@ export class RecordingManager {
     let frameCount = 0;
     let averageVad = 0;
     let vadData: Array<{ time: number; vad: number; }> = [];
+    let actualDuration = 0; // Calcularemos la duración real del audio
     
     if (isValid) {
       try {
@@ -274,6 +272,17 @@ export class RecordingManager {
         
         // Convert WAV blob to ArrayBuffer
         const arrayBuffer = await wavBlob.arrayBuffer();
+        
+        // Calcular duración real del audio WAV
+        const dataView = new DataView(arrayBuffer);
+        const sampleRate = dataView.getUint32(24, true); // Sample rate está en offset 24
+        const dataSize = dataView.getUint32(40, true); // Tamaño de datos está en offset 40
+        const bytesPerSample = dataView.getUint16(34, true) / 8; // Bits per sample / 8
+        const numChannels = dataView.getUint16(22, true); // Número de canales
+        const totalSamples = dataSize / (bytesPerSample * numChannels);
+        actualDuration = (totalSamples / sampleRate) * 1000; // Duración en milisegundos
+        
+        console.log(`📏 ${LOG_PREFIX.CONCAT_STREAM} Chunk ${chunkId} - Duración real: ${(actualDuration/1000).toFixed(2)}s (SR: ${sampleRate}Hz, ${numChannels}ch)`);
         
         // Process with metrics like AudioDemo
         const result = await processFileWithMetrics(arrayBuffer);
@@ -287,10 +296,10 @@ export class RecordingManager {
         frameCount = result.metrics.length;
         
         // Convert metrics to VAD timeline data
-        const sampleRate = 48000; // Assuming 48kHz
+        const vadSampleRate = 48000; // Assuming 48kHz
         const frameSize = 480; // RNNoise frame size
         vadData = result.metrics.map((metric, index) => ({
-          time: (index * frameSize) / sampleRate,
+          time: (index * frameSize) / vadSampleRate,
           vad: metric.vad
         }));
         
@@ -307,12 +316,18 @@ export class RecordingManager {
       }
     }
     
+    // Si por alguna razón no pudimos calcular la duración real, usar la estimada
+    if (actualDuration === 0) {
+      actualDuration = cycleEndTime - cycleStartTime;
+      console.warn(`⚠️ ${LOG_PREFIX.CONCAT_STREAM} No se pudo calcular duración real, usando estimada: ${(actualDuration/1000).toFixed(2)}s`);
+    }
+    
     // Create chunk with real metrics from processing
     const newChunk: ProcessedChunk = {
       id: chunkId,
       startTime: cycleStartTime,
       endTime: cycleEndTime,
-      duration: actualDuration,
+      duration: actualDuration / 1000, // Convert milliseconds to seconds
       processedAudioUrl: processedUrl,
       originalAudioUrl: originalUrl,
       isPlaying: false,

@@ -209,7 +209,7 @@ export function useMurmubaraEngine(options = {}) {
         if (!chunk)
             return;
         await playbackManagerRef.current.toggleChunkPlayback(chunk, audioType, (id, isPlaying) => {
-            recordingStateTogglePlayback(id, isPlaying);
+            recordingStateTogglePlayback(id, isPlaying, audioType);
         });
     }, [recordingState.chunks, recordingStateTogglePlayback]);
     // Effects

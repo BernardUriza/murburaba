@@ -15,6 +15,7 @@ export interface ProcessedChunk extends ChunkMetrics {
   isExpanded: boolean;
   isValid?: boolean;
   errorMessage?: string;
+  currentlyPlayingType?: 'processed' | 'original' | null;
 }
 
 export interface RecordingState {

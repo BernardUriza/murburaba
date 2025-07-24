@@ -411,6 +411,7 @@ export class MurmubaraEngine extends EventEmitter {
                 recordingManagers: new Set()
             };
         }
+        let debugLogCount = 0;
         processor.onaudioprocess = (event) => {
             if (isStopped || isPaused) {
                 event.outputBuffer.getChannelData(0).fill(0);
@@ -418,6 +419,17 @@ export class MurmubaraEngine extends EventEmitter {
             }
             const input = event.inputBuffer.getChannelData(0);
             const output = event.outputBuffer.getChannelData(0);
+            // Debug: Log primeros frames para verificar audio
+            if (debugLogCount < 5) {
+                const maxInput = Math.max(...input.map(Math.abs));
+                console.log(`MurmubaraEngine: Audio frame ${debugLogCount}:`, {
+                    inputLength: input.length,
+                    maxInputLevel: maxInput.toFixed(6),
+                    hasAudio: maxInput > 0.0001,
+                    streamId: streamId
+                });
+                debugLogCount++;
+            }
             // Update metrics
             const inputLevel = this.metricsManager.calculateRMS(input);
             const inputPeak = this.metricsManager.calculatePeak(input);
@@ -464,13 +476,26 @@ export class MurmubaraEngine extends EventEmitter {
                 this.metricsManager.recordFrame();
             }
             // Output processed audio
+            let outputFramesWritten = 0;
             for (let i = 0; i < output.length; i++) {
                 if (outputBuffer.length > 0) {
                     output[i] = outputBuffer.shift();
+                    if (Math.abs(output[i]) > 0.001)
+                        outputFramesWritten++;
                 }
                 else {
                     output[i] = 0;
                 }
+            }
+            // Debug: Log output frames con audio
+            if (debugLogCount < 5 && outputFramesWritten > 0) {
+                const maxOutput = Math.max(...output.map(Math.abs));
+                console.log(`MurmubaraEngine: Output frame ${debugLogCount}:`, {
+                    outputLength: output.length,
+                    framesWithAudio: outputFramesWritten,
+                    maxOutputLevel: maxOutput.toFixed(6),
+                    outputBufferSize: outputBuffer.length
+                });
             }
             // Update output metrics
             const outputLevel = this.metricsManager.calculateRMS(output);
@@ -504,6 +529,17 @@ export class MurmubaraEngine extends EventEmitter {
             lowShelfFilter.connect(processor);
         }
         processor.connect(destination);
+        // Debug: Verificar el stream de destino
+        console.log('MurmubaraEngine: Destination stream created:', {
+            streamId: destination.stream.id,
+            audioTracks: destination.stream.getAudioTracks().map(t => ({
+                id: t.id,
+                label: t.label,
+                enabled: t.enabled,
+                readyState: t.readyState,
+                muted: t.muted
+            }))
+        });
         const controller = {
             stream: destination.stream,
             processor: {

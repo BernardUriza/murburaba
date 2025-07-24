@@ -190,6 +190,7 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
                 isMuted={false}
                 volume={column.volume}
                 disabled={disabled}
+                disablePlayback={true}
                 aria-label={`${column.label} waveform visualization`}
               />
             </div>

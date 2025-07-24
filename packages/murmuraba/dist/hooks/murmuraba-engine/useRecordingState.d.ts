@@ -6,7 +6,7 @@ export interface UseRecordingStateReturn {
     pauseRecording: () => void;
     resumeRecording: () => void;
     addChunk: (chunk: ProcessedChunk) => void;
-    toggleChunkPlayback: (chunkId: string, isPlaying: boolean) => void;
+    toggleChunkPlayback: (chunkId: string, isPlaying: boolean, audioType?: 'processed' | 'original') => void;
     toggleChunkExpansion: (chunkId: string) => void;
     clearRecordings: () => void;
     updateRecordingTime: (time: number) => void;

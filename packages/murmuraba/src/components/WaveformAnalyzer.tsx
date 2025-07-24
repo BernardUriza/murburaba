@@ -16,6 +16,7 @@ interface WaveformAnalyzerProps {
   width?: number;
   height?: number;
   disabled?: boolean;
+  disablePlayback?: boolean;
 }
 
 export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({ 
@@ -33,7 +34,8 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   onPlayStateChange,
   width = 800,
   height = 200,
-  disabled = false
+  disabled = false,
+  disablePlayback = false
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -63,13 +65,29 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
     }
+    
+    // Disconnect audio source node to release MediaStream reference
+    if (source) {
+      try {
+        source.disconnect();
+        console.log('🧹 WaveformAnalyzer: Audio source disconnected');
+      } catch (err) {
+        console.warn('Warning: Could not disconnect audio source:', err);
+      }
+    }
+    
     if (audioContext && audioContext.state !== 'closed') {
       audioContext.close().catch(console.error);
     }
     if (audioRef.current) {
       delete audioRef.current.dataset.sourceCreated;
     }
-  }, [audioContext]);
+    
+    // Reset state
+    setSource(null);
+    setAnalyser(null);
+    setAudioContext(null);
+  }, [audioContext, source]);
 
   // Drawing functions
   const drawLiveWaveform = useCallback((analyserNode: AnalyserNode) => {
@@ -95,6 +113,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       if (isActive && !isPaused) {
         analyserNode.getByteFrequencyData(dataArray);
         analyserNode.getByteTimeDomainData(waveformData);
+        
       } else {
         dataArray.fill(0);
         waveformData.fill(128);
@@ -193,22 +212,41 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
 
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
+    const frequencyData = new Uint8Array(bufferLength);
 
     const drawVisual = () => {
+      if (!analyser || disabled) return;
+      
       animationRef.current = requestAnimationFrame(drawVisual);
       
+      // Get audio data
       if (hideControls && isPaused) {
         dataArray.fill(128);
+        frequencyData.fill(0);
       } else {
         analyser.getByteTimeDomainData(dataArray);
+        analyser.getByteFrequencyData(frequencyData);
       }
 
+      // Clear canvas with gradient background
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
       gradient.addColorStop(0, '#0A0B0E');
       gradient.addColorStop(1, '#13141A');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // Draw frequency bars (background)
+      const barWidth = (canvas.width / bufferLength) * 2.5;
+      let x = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = (frequencyData[i] / 255) * canvas.height * 0.3;
+        const hue = (i / bufferLength) * 120 + 200;
+        ctx.fillStyle = `hsla(${hue}, 50%, 40%, 0.2)`;
+        ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+        x += barWidth + 1;
+      }
+
+      // Draw main waveform
       ctx.lineWidth = 3;
       ctx.strokeStyle = color;
       ctx.shadowBlur = 10;
@@ -216,7 +254,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       ctx.beginPath();
 
       const sliceWidth = canvas.width / bufferLength;
-      let x = 0;
+      x = 0;
 
       for (let i = 0; i < bufferLength; i++) {
         const v = dataArray[i] / 128.0;
@@ -254,6 +292,21 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       ctx.fillStyle = '#CACBDA';
       ctx.font = '12px monospace';
       ctx.fillText(`Level: ${(normalizedAmplitude * 100).toFixed(1)}%`, 10, 35);
+      
+      // Status indicator
+      if (audioRef.current) {
+        const status = audioRef.current.paused ? 'PAUSED' : 'PLAYING';
+        const statusColor = audioRef.current.paused ? '#f59e0b' : '#22c55e';
+        
+        ctx.fillStyle = statusColor;
+        ctx.beginPath();
+        ctx.arc(canvas.width - 20, 20, 5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#CACBDA';
+        ctx.font = '10px monospace';
+        ctx.fillText(status, canvas.width - 60, 25);
+      }
     };
 
     drawVisual();
@@ -309,7 +362,35 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
 
     try {
       console.log('WaveformAnalyzer: Initializing live stream...');
-      console.log('Stream tracks:', stream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
+      console.log('Stream tracks:', stream.getTracks().map(t => ({ 
+        kind: t.kind, 
+        enabled: t.enabled, 
+        readyState: t.readyState,
+        label: t.label,
+        id: t.id,
+        muted: t.muted
+      })));
+      
+      // Verificar que el stream tenga audio tracks activos
+      const audioTracks = stream.getAudioTracks();
+      if (audioTracks.length === 0) {
+        console.error('WaveformAnalyzer: No audio tracks found in stream!');
+        setError('No audio tracks found in stream');
+        return;
+      }
+      
+      const activeTrack = audioTracks.find(t => t.enabled && t.readyState === 'live');
+      if (!activeTrack) {
+        console.error('WaveformAnalyzer: No active audio tracks found!');
+        setError('No active audio tracks found');
+        return;
+      }
+      
+      console.log('WaveformAnalyzer: Active audio track found:', {
+        label: activeTrack.label,
+        enabled: activeTrack.enabled,
+        readyState: activeTrack.readyState
+      });
       
       // Clean up previous context if it exists
       if (audioContext && audioContext.state !== 'closed') {
@@ -356,12 +437,11 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
         setError('Failed to initialize live stream');
       }
     }
-  }, [stream, audioContext, disabled, drawLiveWaveform, source]);
+  }, [stream, audioContext, disabled, drawLiveWaveform, source, analyser]);
 
   // Effects
   useEffect(() => {
     if (stream && isActive && !isPaused && !disabled) {
-      console.log('WaveformAnalyzer: Stream effect triggered', { stream: !!stream, isActive, isPaused, disabled });
       initializeLiveStream();
     }
     
@@ -382,18 +462,21 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   useEffect(() => {
     if (audioUrl && hideControls && audioRef.current && !disabled) {
       const timer = setTimeout(() => {
-        initializeAudio();
-        
-        // Will be drawn after initialization
+        initializeAudio().then(() => {
+          // Start drawing immediately after initialization
+          if (!isPaused) {
+            draw();
+          }
+        });
       }, 100);
       
       return () => clearTimeout(timer);
     }
-  }, [audioUrl, hideControls, volume, isMuted, disabled, analyser, isPaused, initializeAudio]);
+  }, [audioUrl, hideControls, volume, isMuted, disabled, analyser, isPaused, initializeAudio, draw]);
   
   // Handle playback state changes
   useEffect(() => {
-    if (hideControls && audioRef.current && !disabled) {
+    if (hideControls && audioRef.current && !disabled && !disablePlayback) {
       audioRef.current.muted = isMuted;
       audioRef.current.volume = Math.max(0, Math.min(1, volume));
       
@@ -402,7 +485,10 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
           console.error('Audio play failed:', err);
           setError('Failed to play audio');
         });
-        // Drawing will be handled by the analyser
+        // Start drawing
+        if (analyser) {
+          draw();
+        }
       } else {
         audioRef.current.pause();
         if (animationRef.current) {
@@ -410,11 +496,11 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
         }
       }
     }
-  }, [isPaused, analyser, hideControls, isMuted, volume, disabled]);
+  }, [isPaused, analyser, hideControls, isMuted, volume, disabled, disablePlayback, draw]);
 
   // Event handlers
   const handlePlay = useCallback(async () => {
-    if (!audioRef.current || disabled) return;
+    if (!audioRef.current || disabled || disablePlayback) return;
 
     if (!audioContext) {
       await initializeAudio();
@@ -436,7 +522,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       console.error('Playback error:', err);
       setError('Playback failed');
     }
-  }, [audioContext, isPlaying, initializeAudio, handlePlayStateChange, draw, disabled]);
+  }, [audioContext, isPlaying, initializeAudio, handlePlayStateChange, draw, disabled, disablePlayback]);
 
   // Handle drawing when analyser is ready
   useEffect(() => {
@@ -444,6 +530,24 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       draw();
     }
   }, [analyser, stream, isPaused, disabled, draw]);
+
+  // Cleanup effect - called when component unmounts or stream changes
+  useEffect(() => {
+    return () => {
+      console.log('🧹 WaveformAnalyzer: Component unmounting, cleaning up...');
+      cleanup();
+    };
+  }, [cleanup]);
+
+  // Cleanup when stream changes
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        console.log('🧹 WaveformAnalyzer: Stream changed, cleaning up previous stream...');
+        cleanup();
+      }
+    };
+  }, [stream, cleanup]);
 
   // Handle keyboard navigation
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {

@@ -41,10 +41,20 @@ export function useRecordingState() {
             chunks: [...prev.chunks, chunk]
         }));
     }, []);
-    const toggleChunkPlayback = useCallback((chunkId, isPlaying) => {
+    const toggleChunkPlayback = useCallback((chunkId, isPlaying, audioType) => {
         setRecordingState(prev => ({
             ...prev,
-            chunks: prev.chunks.map(chunk => chunk.id === chunkId ? { ...chunk, isPlaying } : chunk)
+            chunks: prev.chunks.map(chunk => chunk.id === chunkId
+                ? {
+                    ...chunk,
+                    isPlaying,
+                    currentlyPlayingType: isPlaying ? audioType : null
+                }
+                : {
+                    ...chunk,
+                    isPlaying: false, // Stop other chunks when starting new one
+                    currentlyPlayingType: null
+                })
         }));
     }, []);
     const toggleChunkExpansion = useCallback((chunkId) => {

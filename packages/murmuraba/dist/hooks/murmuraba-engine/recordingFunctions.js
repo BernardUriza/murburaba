@@ -38,7 +38,19 @@ export function createRecordingFunctions({ isInitialized, recordingState, record
             setOriginalStream(stream);
             const controller = await processStream(stream);
             setStreamController(controller);
-            setCurrentStream(controller.stream);
+            // Debug: Verificar ambos streams
+            console.log('recordingFunctions: Stream comparison:', {
+                originalStream: {
+                    id: stream.id,
+                    audioTracks: stream.getAudioTracks().length
+                },
+                processedStream: {
+                    id: controller.stream.id,
+                    audioTracks: controller.stream.getAudioTracks().length
+                }
+            });
+            // Use original stream for Live Waveform Analysis
+            setCurrentStream(stream);
             // Use hook's state management
             startRecordingState();
             // Start the chunk processing

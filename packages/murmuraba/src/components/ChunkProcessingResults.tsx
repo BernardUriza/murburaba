@@ -21,10 +21,6 @@ export interface ChunkProcessingResultsProps {
   onToggleExpansion: (chunkId: string) => void;
   /** Callback to clear all recordings */
   onClearAll: () => void;
-  /** Callback to export chunk as WAV */
-  onExportWav: (chunkId: string, audioType: 'processed' | 'original') => Promise<Blob>;
-  /** Callback to export chunk as MP3 */
-  onExportMp3: (chunkId: string, audioType: 'processed' | 'original') => Promise<Blob>;
   /** Callback to download chunk */
   onDownloadChunk: (chunkId: string, format: 'webm' | 'wav' | 'mp3', audioType: 'processed' | 'original') => Promise<void>;
   /** Additional CSS classes */
@@ -42,8 +38,6 @@ export function ChunkProcessingResults({
   onTogglePlayback,
   onToggleExpansion,
   onClearAll,
-  onExportWav,
-  onExportMp3,
   onDownloadChunk,
   className = '',
 }: ChunkProcessingResultsProps) {
@@ -63,23 +57,6 @@ export function ChunkProcessingResults({
     }
   }, [chunks.length, onClearAll]);
 
-  // Handle export actions with error handling
-  const handleExport = useCallback(async (
-    chunkId: string, 
-    format: 'wav' | 'mp3', 
-    audioType: 'processed' | 'original'
-  ) => {
-    try {
-      if (format === 'wav') {
-        await onExportWav(chunkId, audioType);
-      } else {
-        await onExportMp3(chunkId, audioType);
-      }
-    } catch (error) {
-      console.error(`Failed to export ${format.toUpperCase()}:`, error);
-      // Could add toast notification here
-    }
-  }, [onExportWav, onExportMp3]);
 
   // Handle download with error handling
   const handleDownload = useCallback(async (
@@ -190,11 +167,7 @@ export function ChunkProcessingResults({
                 isExpanded={chunk.isExpanded}
                 hasProcessedAudio={hasProcessedAudio}
                 onTogglePlayback={() => handlePlaybackToggle(chunk.id, 'processed')}
-                onToggleExpansion={() => {
-                  console.log('🔧 ChunkProcessingResults: onToggleExpansion called for', chunk.id);
-                  console.log('🔧 onToggleExpansion prop exists:', !!onToggleExpansion);
-                  onToggleExpansion(chunk.id);
-                }}
+                onToggleExpansion={() => onToggleExpansion(chunk.id)}
                 onKeyDown={handleKeyDown}
                 formatTime={formatTime}
                 formatPercentage={formatPercentage}
@@ -224,10 +197,7 @@ export function ChunkProcessingResults({
                     noiseRemoved={chunk.noiseRemoved}
                   />
 
-                  {(() => {
-                    console.log(`🎯 Chunk ${chunk.id} has vadData:`, !!chunk.vadData, chunk.vadData?.length || 0);
-                    return chunk.vadData && <VadTimeline vadData={chunk.vadData} chunkId={chunk.id} />;
-                  })()}
+                  {chunk.vadData && <VadTimeline vadData={chunk.vadData} chunkId={chunk.id} />}
 
                   <AudioControls
                     chunkId={chunk.id}
@@ -237,10 +207,10 @@ export function ChunkProcessingResults({
                     hasOriginalAudio={hasOriginalAudio}
                     isValid={isValid}
                     onTogglePlayback={(audioType) => handlePlaybackToggle(chunk.id, audioType)}
-                    onExport={(format, audioType) => handleExport(chunk.id, format, audioType)}
                     onDownload={(format, audioType) => handleDownload(chunk.id, format, audioType)}
                     processedAudioUrl={chunk.processedAudioUrl}
                     originalAudioUrl={chunk.originalAudioUrl}
+                    currentlyPlayingType={chunk.currentlyPlayingType}
                   />
                 </div>
               )}

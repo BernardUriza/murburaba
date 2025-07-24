@@ -3,6 +3,7 @@ import { LOG_PREFIX } from './constants';
 
 export class PlaybackManager {
   private audioElements = new Map<string, HTMLAudioElement>();
+  private stateChangeCallback?: (chunkId: string, isPlaying: boolean) => void;
   
   /**
    * Toggle chunk playback
@@ -12,6 +13,8 @@ export class PlaybackManager {
     audioType: 'processed' | 'original',
     onPlayStateChange: (chunkId: string, isPlaying: boolean) => void
   ): Promise<void> {
+    // Store the callback for global state management
+    this.stateChangeCallback = onPlayStateChange;
     const audioUrl = audioType === 'processed' ? chunk.processedAudioUrl : chunk.originalAudioUrl;
     if (!audioUrl) {
       console.error(`❌ ${LOG_PREFIX.ERROR} No ${audioType} audio URL for chunk ${chunk.id}`);
@@ -37,14 +40,26 @@ export class PlaybackManager {
       });
     }
     
-    if (chunk.isPlaying) {
-      // Stop playback
+    // Check if this specific audio is already playing
+    const isThisAudioPlaying = !audio.paused;
+    
+    if (isThisAudioPlaying) {
+      // Stop this specific audio
       audio.pause();
       audio.currentTime = 0;
       onPlayStateChange(chunk.id, false);
     } else {
-      // Stop all other audio first
-      this.stopAllAudio();
+      // Stop all audio from OTHER chunks, but not from this chunk
+      this.stopAllAudioExceptChunk(chunk.id);
+      
+      // Stop the other audio type of the same chunk
+      const otherAudioType = audioType === 'processed' ? 'original' : 'processed';
+      const otherAudioKey = `${chunk.id}-${otherAudioType}`;
+      const otherAudio = this.audioElements.get(otherAudioKey);
+      if (otherAudio && !otherAudio.paused) {
+        otherAudio.pause();
+        otherAudio.currentTime = 0;
+      }
       
       // Start playback
       try {
@@ -61,10 +76,34 @@ export class PlaybackManager {
    * Stop all audio playback
    */
   stopAllAudio(): void {
-    this.audioElements.forEach(audio => {
+    this.audioElements.forEach((audio, key) => {
       if (!audio.paused) {
         audio.pause();
         audio.currentTime = 0;
+        
+        // Extract chunk ID from key and update state
+        const keyChunkId = key.split('-')[0];
+        if (this.stateChangeCallback) {
+          this.stateChangeCallback(keyChunkId, false);
+        }
+      }
+    });
+  }
+  
+  /**
+   * Stop all audio except for a specific chunk
+   */
+  private stopAllAudioExceptChunk(chunkId: string): void {
+    this.audioElements.forEach((audio, key) => {
+      if (!key.startsWith(chunkId) && !audio.paused) {
+        audio.pause();
+        audio.currentTime = 0;
+        
+        // Extract chunk ID from key (format: "chunkId-audioType")
+        const keyChunkId = key.split('-')[0];
+        if (this.stateChangeCallback) {
+          this.stateChangeCallback(keyChunkId, false);
+        }
       }
     });
   }

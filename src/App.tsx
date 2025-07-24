@@ -9,6 +9,7 @@ import {
   processFile,
   processFileWithMetrics
 } from 'murmuraba'
+import { SimpleWaveformAnalyzer } from '../packages/murmuraba/src/components/SimpleWaveformAnalyzer'
 import Swal from 'sweetalert2'
 import { WASMErrorDisplay } from './components/WASMErrorDisplay'
 import AudioDemo from './components/AudioDemo'
@@ -580,7 +581,7 @@ export default function App() {
           <section className="waveform-section glass-panel">
             <h2 className="section-title">🌊 Live Waveform Analysis</h2>
             <div className="waveform-container">
-              <WaveformAnalyzer 
+              <SimpleWaveformAnalyzer 
                 stream={currentStream} 
                 isActive={isRecording && !isPaused}
                 isPaused={isPaused}

@@ -61,35 +61,41 @@ export interface DiagnosticInfo {
     version: string;
     engineVersion: string;
     reactVersion: string;
-    browserInfo: {
+    browserInfo?: {
         name: string;
         version: string;
-        audioAPIsSupported: string[];
+        audioAPIsSupported: boolean;
     };
     wasmLoaded: boolean;
     activeProcessors: number;
     memoryUsage: number;
     processingTime: number;
     engineState: EngineState;
-    capabilities: {
+    capabilities?: {
         hasWASM: boolean;
         hasAudioContext: boolean;
         hasWorklet: boolean;
         maxChannels: number;
     };
-    errors: Array<{
+    errors?: Array<{
         timestamp: number;
         error: string;
     }>;
-    initializationLog: string[];
-    performanceMetrics: {
+    initializationLog?: string[];
+    performanceMetrics?: {
         wasmLoadTime: number;
         contextCreationTime: number;
         totalInitTime: number;
     };
-    systemInfo: {
+    systemInfo?: {
         memory?: number;
     };
+    bufferUsage?: number;
+    currentLatency?: number;
+    frameRate?: number;
+    activeStreams?: number;
+    noiseReductionLevel?: number;
+    audioQuality?: string;
 }
 export interface EngineEvents {
     initialized: () => void;

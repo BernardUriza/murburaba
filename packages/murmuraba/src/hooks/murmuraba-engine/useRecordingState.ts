@@ -8,7 +8,7 @@ export interface UseRecordingStateReturn {
   pauseRecording: () => void;
   resumeRecording: () => void;
   addChunk: (chunk: ProcessedChunk) => void;
-  toggleChunkPlayback: (chunkId: string, isPlaying: boolean) => void;
+  toggleChunkPlayback: (chunkId: string, isPlaying: boolean, audioType?: 'processed' | 'original') => void;
   toggleChunkExpansion: (chunkId: string) => void;
   clearRecordings: () => void;
   updateRecordingTime: (time: number) => void;
@@ -62,11 +62,21 @@ export function useRecordingState(): UseRecordingStateReturn {
     }));
   }, []);
 
-  const toggleChunkPlayback = useCallback((chunkId: string, isPlaying: boolean) => {
+  const toggleChunkPlayback = useCallback((chunkId: string, isPlaying: boolean, audioType?: 'processed' | 'original') => {
     setRecordingState(prev => ({
       ...prev,
       chunks: prev.chunks.map(chunk =>
-        chunk.id === chunkId ? { ...chunk, isPlaying } : chunk
+        chunk.id === chunkId 
+          ? { 
+              ...chunk, 
+              isPlaying,
+              currentlyPlayingType: isPlaying ? audioType : null
+            } 
+          : { 
+              ...chunk, 
+              isPlaying: false, // Stop other chunks when starting new one
+              currentlyPlayingType: null 
+            }
       )
     }));
   }, []);

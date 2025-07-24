@@ -194,13 +194,13 @@ export class RecordingManager {
         // Create original URL immediately
         const originalUrl = isValid ? this.urlManager.createObjectURL(chunkId, originalBlob) : undefined;
         const cycleEndTime = Date.now();
-        const actualDuration = cycleEndTime - cycleStartTime;
         // Process original audio through RNNoise to get metrics and processed audio
         let processedUrl;
         let noiseReduction = 0;
         let frameCount = 0;
         let averageVad = 0;
         let vadData = [];
+        let actualDuration = 0; // Calcularemos la duración real del audio
         if (isValid) {
             try {
                 // Convert WebM to WAV first
@@ -208,6 +208,15 @@ export class RecordingManager {
                 const wavBlob = await AudioConverter.webmToWav(originalBlob);
                 // Convert WAV blob to ArrayBuffer
                 const arrayBuffer = await wavBlob.arrayBuffer();
+                // Calcular duración real del audio WAV
+                const dataView = new DataView(arrayBuffer);
+                const sampleRate = dataView.getUint32(24, true); // Sample rate está en offset 24
+                const dataSize = dataView.getUint32(40, true); // Tamaño de datos está en offset 40
+                const bytesPerSample = dataView.getUint16(34, true) / 8; // Bits per sample / 8
+                const numChannels = dataView.getUint16(22, true); // Número de canales
+                const totalSamples = dataSize / (bytesPerSample * numChannels);
+                actualDuration = (totalSamples / sampleRate) * 1000; // Duración en milisegundos
+                console.log(`📏 ${LOG_PREFIX.CONCAT_STREAM} Chunk ${chunkId} - Duración real: ${(actualDuration / 1000).toFixed(2)}s (SR: ${sampleRate}Hz, ${numChannels}ch)`);
                 // Process with metrics like AudioDemo
                 const result = await processFileWithMetrics(arrayBuffer);
                 // Create processed blob from result
@@ -217,10 +226,10 @@ export class RecordingManager {
                 averageVad = result.averageVad;
                 frameCount = result.metrics.length;
                 // Convert metrics to VAD timeline data
-                const sampleRate = 48000; // Assuming 48kHz
+                const vadSampleRate = 48000; // Assuming 48kHz
                 const frameSize = 480; // RNNoise frame size
                 vadData = result.metrics.map((metric, index) => ({
-                    time: (index * frameSize) / sampleRate,
+                    time: (index * frameSize) / vadSampleRate,
                     vad: metric.vad
                 }));
                 console.log(`📊 VAD Data generated: ${vadData.length} points, avg=${averageVad.toFixed(3)}`);
@@ -234,12 +243,17 @@ export class RecordingManager {
                 errorMessage = `Processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
             }
         }
+        // Si por alguna razón no pudimos calcular la duración real, usar la estimada
+        if (actualDuration === 0) {
+            actualDuration = cycleEndTime - cycleStartTime;
+            console.warn(`⚠️ ${LOG_PREFIX.CONCAT_STREAM} No se pudo calcular duración real, usando estimada: ${(actualDuration / 1000).toFixed(2)}s`);
+        }
         // Create chunk with real metrics from processing
         const newChunk = {
             id: chunkId,
             startTime: cycleStartTime,
             endTime: cycleEndTime,
-            duration: actualDuration,
+            duration: actualDuration / 1000, // Convert milliseconds to seconds
             processedAudioUrl: processedUrl,
             originalAudioUrl: originalUrl,
             isPlaying: false,

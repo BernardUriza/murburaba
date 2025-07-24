@@ -1,6 +1,7 @@
 import { ProcessedChunk } from './types';
 export declare class PlaybackManager {
     private audioElements;
+    private stateChangeCallback?;
     /**
      * Toggle chunk playback
      */
@@ -9,6 +10,10 @@ export declare class PlaybackManager {
      * Stop all audio playback
      */
     stopAllAudio(): void;
+    /**
+     * Stop all audio except for a specific chunk
+     */
+    private stopAllAudioExceptChunk;
     /**
      * Clean up audio elements for a chunk
      */
