@@ -299,11 +299,23 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   }, [volume, isMuted, audioContext, disabled]);
 
   const initializeLiveStream = useCallback(async () => {
-    if (!stream || audioContext || disabled) return;
+    if (!stream || disabled) return;
+    
+    // If we already have an audio context for this stream, don't create a new one
+    if (audioContext && source && source instanceof MediaStreamAudioSourceNode) {
+      console.log('WaveformAnalyzer: Audio context already initialized for stream');
+      return;
+    }
 
     try {
       console.log('WaveformAnalyzer: Initializing live stream...');
       console.log('Stream tracks:', stream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
+      
+      // Clean up previous context if it exists
+      if (audioContext && audioContext.state !== 'closed') {
+        console.log('Closing previous AudioContext...');
+        await audioContext.close();
+      }
       
       const ctx = new AudioContext();
       console.log('AudioContext state:', ctx.state);
@@ -333,9 +345,18 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       drawLiveWaveform(analyserNode);
     } catch (error) {
       console.error('Error initializing live stream:', error);
-      setError('Failed to initialize live stream');
+      if (error instanceof Error) {
+        console.error('Error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        });
+        setError(`Failed to initialize live stream: ${error.message}`);
+      } else {
+        setError('Failed to initialize live stream');
+      }
     }
-  }, [stream, audioContext, disabled, drawLiveWaveform]);
+  }, [stream, audioContext, disabled, drawLiveWaveform, source]);
 
   // Effects
   useEffect(() => {
