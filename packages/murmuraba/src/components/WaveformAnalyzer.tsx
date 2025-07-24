@@ -87,8 +87,8 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       animationRef.current = requestAnimationFrame(drawVisual);
 
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      gradient.addColorStop(0, 'var(--dark-bg-primary, #0A0B0E)');
-      gradient.addColorStop(1, 'var(--dark-bg-secondary, #13141A)');
+      gradient.addColorStop(0, '#0A0B0E');
+      gradient.addColorStop(1, '#13141A');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -147,34 +147,34 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       const normalizedAmplitude = average / 128;
       
       const ampGradient = ctx.createLinearGradient(10, 0, 110, 0);
-      ampGradient.addColorStop(0, 'var(--info-main, #4A90E2)');
-      ampGradient.addColorStop(1, 'var(--info-dark, #5B9BD5)');
+      ampGradient.addColorStop(0, '#4A90E2');
+      ampGradient.addColorStop(1, '#5B9BD5');
       ctx.fillStyle = ampGradient;
       ctx.fillRect(10, 10, normalizedAmplitude * 100, 10);
       
-      ctx.strokeStyle = 'var(--dark-border, #2E3039)';
+      ctx.strokeStyle = '#2E3039';
       ctx.strokeRect(10, 10, 100, 10);
       
-      ctx.fillStyle = 'var(--dark-text-primary, #CACBDA)';
+      ctx.fillStyle = '#CACBDA';
       ctx.font = '12px monospace';
       ctx.fillText(`Volume: ${(normalizedAmplitude * 100).toFixed(1)}%`, 10, 35);
       
       // Status indicator
       if (stream) {
         if (isActive && !isPaused) {
-          ctx.fillStyle = 'var(--success-main, #22c55e)';
+          ctx.fillStyle = '#22c55e';
           ctx.beginPath();
           ctx.arc(canvas.width - 20, 20, 5, 0, Math.PI * 2);
           ctx.fill();
-          ctx.fillStyle = 'var(--dark-text-primary, #CACBDA)';
+          ctx.fillStyle = '#CACBDA';
           ctx.font = '10px monospace';
           ctx.fillText('LIVE', canvas.width - 50, 25);
         } else if (isPaused) {
-          ctx.fillStyle = 'var(--warning-main, #f59e0b)';
+          ctx.fillStyle = '#f59e0b';
           ctx.beginPath();
           ctx.arc(canvas.width - 20, 20, 5, 0, Math.PI * 2);
           ctx.fill();
-          ctx.fillStyle = 'var(--dark-text-primary, #CACBDA)';
+          ctx.fillStyle = '#CACBDA';
           ctx.font = '10px monospace';
           ctx.fillText('PAUSED', canvas.width - 60, 25);
         }
@@ -204,8 +204,8 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       }
 
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      gradient.addColorStop(0, 'var(--dark-bg-primary, #0A0B0E)');
-      gradient.addColorStop(1, 'var(--dark-bg-secondary, #13141A)');
+      gradient.addColorStop(0, '#0A0B0E');
+      gradient.addColorStop(1, '#13141A');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -248,10 +248,10 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       ctx.fillStyle = ampGradient;
       ctx.fillRect(10, 10, normalizedAmplitude * 100, 10);
       
-      ctx.strokeStyle = 'var(--dark-border, #2E3039)';
+      ctx.strokeStyle = '#2E3039';
       ctx.strokeRect(10, 10, 100, 10);
       
-      ctx.fillStyle = 'var(--dark-text-primary, #CACBDA)';
+      ctx.fillStyle = '#CACBDA';
       ctx.font = '12px monospace';
       ctx.fillText(`Level: ${(normalizedAmplitude * 100).toFixed(1)}%`, 10, 35);
     };
