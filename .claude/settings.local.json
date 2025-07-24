@@ -118,7 +118,8 @@
       "Bash(del \"C:\\Users\\Bernard\\Documents\\GitHub\\murburaba\\components\\DualAudioPlayer.tsx\")",
       "Bash(npm link:*)",
       "Bash(npx vitest run:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(npm:*)"
     ],
     "deny": []
   }

@@ -6,6 +6,7 @@ import { FileInfo } from './chunk-results/FileInfo';
 import { VadTimeline } from './chunk-results/VadTimeline';
 import { AudioControls } from './chunk-results/AudioControls';
 import { formatTime, formatPercentage, formatFileSize, calculateChunkStats } from './chunk-results/formatters';
+import './ChunkProcessingResults.css';
 
 export interface ChunkProcessingResultsProps {
   /** Array of processed audio chunks */
