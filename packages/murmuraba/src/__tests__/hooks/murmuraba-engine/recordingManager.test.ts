@@ -1,17 +1,24 @@
-/**
- * TDD Tests for RecordingManager - Empty Blob Handling
- */
-
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { RecordingManager } from '../../../hooks/murmuraba-engine/recordingManager';
-import { vi } from 'vitest';
 import { URLManager } from '../../../hooks/murmuraba-engine/urlManager';
 import { ProcessedChunk } from '../../../hooks/murmuraba-engine/types';
+import { MIN_VALID_BLOB_SIZE } from '../../../hooks/murmuraba-engine/constants';
+import * as processFileApi from '../../../api/processFileWithMetrics';
 
-describe('RecordingManager - Empty Blob Handling', () => {
+// Mock dependencies
+vi.mock('../../../api/processFileWithMetrics');
+vi.mock('../../../utils/audioConverter', () => ({
+  AudioConverter: {
+    concatenateBlobs: vi.fn((blobs) => Promise.resolve(new Blob(blobs)))
+  }
+}));
+
+describe('RecordingManager', () => {
   let recordingManager: RecordingManager;
   let urlManager: URLManager;
   let consoleWarnSpy: vi.SpyInstance;
   let consoleErrorSpy: vi.SpyInstance;
+  let consoleLogSpy: vi.SpyInstance;
 
   beforeEach(() => {
     urlManager = new URLManager();
@@ -20,7 +27,7 @@ describe('RecordingManager - Empty Blob Handling', () => {
     // Mock console methods
     consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
-    vi.spyOn(console, 'log').mockImplementation();
+    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation();
     
     // Mock URL methods
     global.URL.createObjectURL = vi.fn(() => `blob:test-${Math.random()}`);
@@ -29,6 +36,375 @@ describe('RecordingManager - Empty Blob Handling', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  describe('constructor', () => {
+    it('should create instance with URLManager', () => {
+      expect(recordingManager).toBeDefined();
+      expect(recordingManager).toBeInstanceOf(RecordingManager);
+    });
+
+    it('should register with global TDD bridge if available', () => {
+      // Setup global bridge
+      (global as any).__murmurabaTDDBridge = {};
+      
+      const manager = new RecordingManager(urlManager);
+      
+      expect((global as any).__murmurabaTDDBridge.recordingManagers).toBeDefined();
+      expect((global as any).__murmurabaTDDBridge.recordingManagers.has(manager)).toBe(true);
+      
+      // Cleanup
+      delete (global as any).__murmurabaTDDBridge;
+    });
+  });
+
+  describe('setMetricsProvider', () => {
+    it('should set metrics provider', () => {
+      const provider = {
+        getAggregatedMetrics: vi.fn()
+      };
+      
+      recordingManager.setMetricsProvider(provider);
+      
+      // Test by using getRealMetrics indirectly
+      expect(() => recordingManager.receiveMetrics({ averageNoiseReduction: 15 })).not.toThrow();
+    });
+  });
+
+  describe('receiveMetrics', () => {
+    it('should receive and store metrics', () => {
+      const metrics = {
+        averageNoiseReduction: 15.5,
+        totalFrames: 100,
+        averageLatency: 5.2
+      };
+      
+      recordingManager.receiveMetrics(metrics);
+      
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Received real metrics: 15.5% avg reduction')
+      );
+    });
+  });
+
+  describe('startCycle', () => {
+    let mockProcessedStream: MediaStream;
+    let mockOriginalStream: MediaStream;
+    let onChunkProcessed: vi.Mock;
+    let mediaRecorderInstances: any[] = [];
+
+    beforeEach(() => {
+      mockProcessedStream = {
+        getTracks: vi.fn(() => [])
+      } as any;
+      
+      mockOriginalStream = {
+        getTracks: vi.fn(() => [])
+      } as any;
+      
+      onChunkProcessed = vi.fn();
+      
+      // Enhanced MediaRecorder mock
+      mediaRecorderInstances = [];
+      (global.MediaRecorder as any) = vi.fn().mockImplementation((stream, options) => {
+        const recorder = {
+          start: vi.fn(),
+          stop: vi.fn(),
+          state: 'inactive',
+          ondataavailable: null,
+          onstop: null,
+          onerror: null,
+          stream,
+          options
+        };
+        
+        recorder.start = vi.fn(() => {
+          recorder.state = 'recording';
+        });
+        
+        recorder.stop = vi.fn(() => {
+          recorder.state = 'inactive';
+          if (recorder.onstop) recorder.onstop();
+        });
+        
+        mediaRecorderInstances.push(recorder);
+        return recorder;
+      });
+      
+      // Mock processFileWithMetrics
+      vi.mocked(processFileApi.processFileWithMetrics).mockResolvedValue({
+        processedBlob: new Blob(['processed'], { type: 'audio/webm' }),
+        metrics: {
+          durationMs: 8000,
+          noiseReduction: 15,
+          vadEvents: [],
+          processingTime: 100
+        }
+      });
+    });
+
+    it('should start recording cycle with correct parameters', async () => {
+      await recordingManager.startCycle(
+        mockProcessedStream,
+        mockOriginalStream,
+        8000,
+        onChunkProcessed
+      );
+      
+      expect(mediaRecorderInstances).toHaveLength(2);
+      expect(mediaRecorderInstances[0].start).toHaveBeenCalledWith(1000);
+      expect(mediaRecorderInstances[1].start).toHaveBeenCalledWith(1000);
+    });
+
+    it('should handle data from recorders', async () => {
+      await recordingManager.startCycle(
+        mockProcessedStream,
+        mockOriginalStream,
+        8000,
+        onChunkProcessed
+      );
+      
+      const processedRecorder = mediaRecorderInstances[0];
+      const originalRecorder = mediaRecorderInstances[1];
+      
+      // Simulate valid data
+      if (processedRecorder.ondataavailable) {
+        processedRecorder.ondataavailable({
+          data: new Blob(['x'.repeat(200)], { type: 'audio/webm' })
+        });
+      }
+      
+      if (originalRecorder.ondataavailable) {
+        originalRecorder.ondataavailable({
+          data: new Blob(['x'.repeat(200)], { type: 'audio/webm' })
+        });
+      }
+      
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Processed data: 200 bytes')
+      );
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Original data: 200 bytes')
+      );
+    });
+
+    it('should warn about invalid blob sizes', async () => {
+      await recordingManager.startCycle(
+        mockProcessedStream,
+        mockOriginalStream,
+        8000,
+        onChunkProcessed
+      );
+      
+      const processedRecorder = mediaRecorderInstances[0];
+      
+      // Simulate invalid data (too small)
+      if (processedRecorder.ondataavailable) {
+        processedRecorder.ondataavailable({
+          data: new Blob(['x'], { type: 'audio/webm' }) // 1 byte
+        });
+      }
+      
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Invalid blob size detected'),
+        expect.objectContaining({
+          blobSize: 1,
+          type: 'processed'
+        })
+      );
+    });
+
+    it('should handle recorder errors', async () => {
+      await recordingManager.startCycle(
+        mockProcessedStream,
+        mockOriginalStream,
+        8000,
+        onChunkProcessed
+      );
+      
+      const processedRecorder = mediaRecorderInstances[0];
+      
+      if (processedRecorder.onerror) {
+        processedRecorder.onerror(new Error('Recorder failed'));
+      }
+      
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Processed recorder error:'),
+        expect.any(Error)
+      );
+    });
+
+    it('should process chunk when recorder stops', async () => {
+      await recordingManager.startCycle(
+        mockProcessedStream,
+        mockOriginalStream,
+        8000,
+        onChunkProcessed
+      );
+      
+      const processedRecorder = mediaRecorderInstances[0];
+      const originalRecorder = mediaRecorderInstances[1];
+      
+      // Add valid data
+      if (processedRecorder.ondataavailable) {
+        processedRecorder.ondataavailable({
+          data: new Blob(['x'.repeat(500)], { type: 'audio/webm' })
+        });
+      }
+      
+      if (originalRecorder.ondataavailable) {
+        originalRecorder.ondataavailable({
+          data: new Blob(['x'.repeat(500)], { type: 'audio/webm' })
+        });
+      }
+      
+      // Trigger stop
+      if (processedRecorder.onstop) {
+        processedRecorder.onstop();
+      }
+      
+      // Wait for async processing
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      expect(onChunkProcessed).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: expect.stringMatching(/^chunk-/),
+          duration: 8,
+          noiseRemoved: 15
+        })
+      );
+    });
+
+    it('should not process empty chunks', async () => {
+      await recordingManager.startCycle(
+        mockProcessedStream,
+        mockOriginalStream,
+        8000,
+        onChunkProcessed
+      );
+      
+      const processedRecorder = mediaRecorderInstances[0];
+      
+      // Don't add any data, just stop
+      if (processedRecorder.onstop) {
+        processedRecorder.onstop();
+      }
+      
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('discarded - no valid blobs collected')
+      );
+      expect(onChunkProcessed).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('stopRecording', () => {
+    it('should stop all active recorders', async () => {
+      const mockStream = { getTracks: vi.fn(() => []) } as any;
+      let recorderInstance: any;
+      
+      (global.MediaRecorder as any) = vi.fn().mockImplementation(() => {
+        recorderInstance = {
+          start: vi.fn(() => { recorderInstance.state = 'recording'; }),
+          stop: vi.fn(() => { recorderInstance.state = 'inactive'; }),
+          state: 'inactive'
+        };
+        return recorderInstance;
+      });
+      
+      await recordingManager.startCycle(mockStream, mockStream, 8000, vi.fn());
+      
+      recordingManager.stopRecording();
+      
+      expect(recorderInstance.stop).toHaveBeenCalled();
+    });
+
+    it('should set stop flag to prevent new cycles', async () => {
+      vi.useFakeTimers();
+      
+      const mockStream = { getTracks: vi.fn(() => []) } as any;
+      const onChunkProcessed = vi.fn();
+      
+      await recordingManager.startCycle(mockStream, mockStream, 1000, onChunkProcessed);
+      
+      recordingManager.stopRecording();
+      
+      // Advance time to see if new cycles start
+      vi.advanceTimersByTime(5000);
+      
+      // Should only have initial recorders, no new ones
+      expect(MediaRecorder).toHaveBeenCalledTimes(2); // Only initial pair
+      
+      vi.useRealTimers();
+    });
+  });
+
+  describe('pauseRecording', () => {
+    it('should pause active recorders', async () => {
+      const mockStream = { getTracks: vi.fn(() => []) } as any;
+      let recorderInstance: any;
+      
+      (global.MediaRecorder as any) = vi.fn().mockImplementation(() => {
+        recorderInstance = {
+          start: vi.fn(() => { recorderInstance.state = 'recording'; }),
+          pause: vi.fn(() => { recorderInstance.state = 'paused'; }),
+          state: 'inactive'
+        };
+        return recorderInstance;
+      });
+      
+      await recordingManager.startCycle(mockStream, mockStream, 8000, vi.fn());
+      
+      recordingManager.pauseRecording();
+      
+      expect(recorderInstance.pause).toHaveBeenCalled();
+    });
+  });
+
+  describe('resumeRecording', () => {
+    it('should resume paused recorders', async () => {
+      const mockStream = { getTracks: vi.fn(() => []) } as any;
+      let recorderInstance: any;
+      
+      (global.MediaRecorder as any) = vi.fn().mockImplementation(() => {
+        recorderInstance = {
+          start: vi.fn(() => { recorderInstance.state = 'recording'; }),
+          pause: vi.fn(() => { recorderInstance.state = 'paused'; }),
+          resume: vi.fn(() => { recorderInstance.state = 'recording'; }),
+          state: 'inactive'
+        };
+        return recorderInstance;
+      });
+      
+      await recordingManager.startCycle(mockStream, mockStream, 8000, vi.fn());
+      recorderInstance.state = 'paused'; // Simulate paused state
+      
+      recordingManager.resumeRecording();
+      
+      expect(recorderInstance.resume).toHaveBeenCalled();
+    });
+  });
+
+  describe('startConcatenatedStreaming (legacy)', () => {
+    it('should redirect to startCycle', async () => {
+      const startCycleSpy = vi.spyOn(recordingManager, 'startCycle');
+      const mockStream = { getTracks: vi.fn(() => []) } as any;
+      const onChunkReady = vi.fn();
+      
+      await recordingManager.startConcatenatedStreaming(
+        mockStream,
+        mockStream,
+        'audio/webm',
+        8,
+        onChunkReady
+      );
+      
+      expect(startCycleSpy).toHaveBeenCalledWith(
+        mockStream,
+        mockStream,
+        8000,
+        onChunkReady
+      );
+    });
   });
 
   describe('Blob Size Validation', () => {
@@ -58,15 +434,14 @@ describe('RecordingManager - Empty Blob Handling', () => {
 
       const processedStream = { getTracks: () => [] } as any;
       const originalStream = { getTracks: () => [] } as any;
-      const onChunkReady = vi.fn();
+      const onChunkProcessed = vi.fn();
 
       // Start recording
-      await recordingManager.startConcatenatedStreaming(
+      await recordingManager.startCycle(
         processedStream,
         originalStream,
-        'audio/webm',
-        8,
-        onChunkReady
+        8000,
+        onChunkProcessed
       );
 
       // Simulate empty blob from MediaRecorder
@@ -116,14 +491,13 @@ describe('RecordingManager - Empty Blob Handling', () => {
       const processedStream = { getTracks: () => [] } as any;
       const originalStream = { getTracks: () => [] } as any;
       const chunks: ProcessedChunk[] = [];
-      const onChunkReady = (chunk: ProcessedChunk) => chunks.push(chunk);
+      const onChunkProcessed = (chunk: ProcessedChunk) => chunks.push(chunk);
 
-      await recordingManager.startConcatenatedStreaming(
+      await recordingManager.startCycle(
         processedStream,
         originalStream,
-        'audio/webm',
-        8,
-        onChunkReady
+        8000,
+        onChunkProcessed
       );
 
       // Send various sized blobs
@@ -185,14 +559,13 @@ describe('RecordingManager - Empty Blob Handling', () => {
       const processedStream = { getTracks: () => [] } as any;
       const originalStream = { getTracks: () => [] } as any;
       const chunks: ProcessedChunk[] = [];
-      const onChunkReady = (chunk: ProcessedChunk) => chunks.push(chunk);
+      const onChunkProcessed = (chunk: ProcessedChunk) => chunks.push(chunk);
 
-      await recordingManager.startConcatenatedStreaming(
+      await recordingManager.startCycle(
         processedStream,
         originalStream,
-        'audio/webm',
-        8,
-        onChunkReady
+        8000,
+        onChunkProcessed
       );
 
       // Send only empty blobs
@@ -257,14 +630,13 @@ describe('RecordingManager - Empty Blob Handling', () => {
       const processedStream = { getTracks: () => [] } as any;
       const originalStream = { getTracks: () => [] } as any;
       const chunks: ProcessedChunk[] = [];
-      const onChunkReady = (chunk: ProcessedChunk) => chunks.push(chunk);
+      const onChunkProcessed = (chunk: ProcessedChunk) => chunks.push(chunk);
 
-      await recordingManager.startConcatenatedStreaming(
+      await recordingManager.startCycle(
         processedStream,
         originalStream,
-        'audio/webm',
-        8,
-        onChunkReady
+        8000,
+        onChunkProcessed
       );
 
       // Send mixed blobs to processed recorder
@@ -308,7 +680,7 @@ describe('RecordingManager - Empty Blob Handling', () => {
       
       const processedStream = new MediaStream();
       const originalStream = new MediaStream();
-      const onChunkReady = vi.fn();
+      const onChunkProcessed = vi.fn();
       
       let mediaRecorderInstance: any;
       
@@ -339,12 +711,11 @@ describe('RecordingManager - Empty Blob Handling', () => {
       });
       
       // Iniciar grabación
-      await recordingManager.startConcatenatedStreaming(
+      await recordingManager.startCycle(
         processedStream,
         originalStream,
-        'audio/webm',
-        5, // 5 segundos por chunk
-        onChunkReady
+        5000, // 5 segundos por chunk
+        onChunkProcessed
       );
       
       // Verificar que está grabando
@@ -356,8 +727,8 @@ describe('RecordingManager - Empty Blob Handling', () => {
       // Avanzar tiempo para verificar que no se inician nuevos ciclos
       vi.advanceTimersByTime(10000); // 10 segundos
       
-      // No debería haber llamadas a onChunkReady porque se detuvo
-      expect(onChunkReady).not.toHaveBeenCalled();
+      // No debería haber llamadas a onChunkProcessed porque se detuvo
+      expect(onChunkProcessed).not.toHaveBeenCalled();
       
       vi.useRealTimers();
     });
@@ -370,7 +741,7 @@ describe('RecordingManager - Empty Blob Handling', () => {
       const processedStream = new MediaStream();
       const originalStream = new MediaStream();
       const chunks: ProcessedChunk[] = [];
-      const onChunkReady = vi.fn((chunk: ProcessedChunk) => {
+      const onChunkProcessed = vi.fn((chunk: ProcessedChunk) => {
         chunks.push(chunk);
       });
       
@@ -405,12 +776,11 @@ describe('RecordingManager - Empty Blob Handling', () => {
       });
       
       // Iniciar grabación con chunks de 2 segundos
-      await recordingManager.startConcatenatedStreaming(
+      await recordingManager.startCycle(
         processedStream,
         originalStream,
-        'audio/webm',
-        2,
-        onChunkReady
+        2000,
+        onChunkProcessed
       );
       
       // Simular 3 ciclos completos

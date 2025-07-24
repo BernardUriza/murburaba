@@ -52,6 +52,7 @@ export { ErrorCodes } from './types';
 export { AudioPlayer } from './components/AudioPlayer';
 export { AdvancedMetricsPanel } from './components/AdvancedMetricsPanel';
 export { ChunkProcessingResults } from './components/ChunkProcessingResults';
+export { SimpleWaveformAnalyzer } from './components/SimpleWaveformAnalyzer';
 
 // Audio Visualization Components
 export { WaveformAnalyzer } from './components/WaveformAnalyzer';

@@ -44,9 +44,12 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
 }) => {
   const [originalVolume, setOriginalVolume] = useState(0.5);
   const [processedVolume, setProcessedVolume] = useState(0.8);
+  const [localIsPlaying, setLocalIsPlaying] = useState(false);
+  const [currentAudioType, setCurrentAudioType] = useState<'original' | 'processed'>('processed');
 
   const handlePlayingChange = useCallback((playing: boolean) => {
     if (!disabled) {
+      setLocalIsPlaying(playing);
       onPlayingChange?.(playing);
     }
   }, [disabled, onPlayingChange]);
@@ -66,9 +69,9 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
     
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      handlePlayingChange(!isPlaying);
+      handlePlayingChange(!localIsPlaying);
     }
-  }, [disabled, isPlaying, handlePlayingChange]);
+  }, [disabled, localIsPlaying, handlePlayingChange]);
 
   // Memoized styles for performance
   const containerStyle = useMemo(() => ({
@@ -100,13 +103,17 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
     fontSize: '14px',
     transition: 'all 0.2s ease',
     cursor: disabled ? 'not-allowed' : 'pointer',
-    backgroundColor: disabled ? '#666' : (isPlaying ? '#dc2626' : '#4f46e5'),
+    backgroundColor: disabled ? '#666' : (localIsPlaying ? '#dc2626' : '#4f46e5'),
     color: 'white',
     opacity: disabled ? 0.6 : 1,
     ':hover': {
-      backgroundColor: disabled ? '#666' : (isPlaying ? '#b91c1c' : '#3730a3'),
+      backgroundColor: disabled ? '#666' : (localIsPlaying ? '#b91c1c' : '#3730a3'),
     },
-  }), [disabled, isPlaying]);
+  }), [disabled, localIsPlaying]);
+
+  const toggleAudioType = useCallback(() => {
+    setCurrentAudioType(prev => prev === 'original' ? 'processed' : 'original');
+  }, []);
 
   const waveformColumns: WaveformColumn[] = [
     {
@@ -184,14 +191,17 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
                 audioUrl={column.audioUrl}
                 label={column.label}
                 color={column.color}
-                isActive={true}
-                isPaused={!isPlaying}
                 hideControls={true}
-                isMuted={false}
+                isPaused={!localIsPlaying}
+                isMuted={index === 0 ? currentAudioType !== 'original' : currentAudioType !== 'processed'}
                 volume={column.volume}
+                onPlayStateChange={handlePlayingChange}
                 disabled={disabled}
-                disablePlayback={true}
-                aria-label={`${column.label} waveform visualization`}
+                disablePlayback={index === 0 ? currentAudioType !== 'original' : currentAudioType !== 'processed'}
+                className="synced-waveform-analyzer"
+                aria-label={`${column.label} waveform`}
+                width={300}
+                height={120}
               />
             </div>
 
@@ -292,7 +302,7 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
           }}
         >
           <button
-            onClick={() => handlePlayingChange(!isPlaying)}
+            onClick={() => handlePlayingChange(!localIsPlaying)}
             onKeyDown={handleKeyDown}
             disabled={disabled}
             style={{
@@ -300,7 +310,7 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
               padding: '12px 32px',
               fontSize: '16px',
               fontWeight: '600',
-              background: isPlaying 
+              background: localIsPlaying 
                 ? 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)' 
                 : 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)',
               border: 'none',
@@ -309,7 +319,7 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
-              boxShadow: isPlaying
+              boxShadow: localIsPlaying
                 ? '0 4px 14px 0 rgba(220, 38, 38, 0.35)'
                 : '0 4px 14px 0 rgba(79, 70, 229, 0.35)',
               transition: 'all 0.3s ease',
@@ -318,21 +328,49 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
             onMouseEnter={(e) => {
               if (!disabled) {
                 e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = isPlaying
+                e.currentTarget.style.boxShadow = localIsPlaying
                   ? '0 6px 20px 0 rgba(220, 38, 38, 0.4)'
                   : '0 6px 20px 0 rgba(79, 70, 229, 0.4)';
               }
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = isPlaying
+              e.currentTarget.style.boxShadow = localIsPlaying
                 ? '0 4px 14px 0 rgba(220, 38, 38, 0.35)'
                 : '0 4px 14px 0 rgba(79, 70, 229, 0.35)';
             }}
-            aria-label={isPlaying ? 'Pause synchronized playback' : 'Play synchronized playback'}
+            aria-label={localIsPlaying ? 'Pause synchronized playback' : 'Play synchronized playback'}
           >
-            <span style={{ fontSize: '20px' }}>{isPlaying ? '⏸' : '▶'}</span>
-            <span>{isPlaying ? 'Pause' : 'Play Both'}</span>
+            <span style={{ fontSize: '20px' }}>{localIsPlaying ? '⏸' : '▶'}</span>
+            <span>{localIsPlaying ? 'Pause' : 'Play Both'}</span>
+          </button>
+          <button
+            onClick={toggleAudioType}
+            disabled={disabled || !localIsPlaying}
+            style={{
+              padding: '12px 24px',
+              fontSize: '14px',
+              fontWeight: '600',
+              background: currentAudioType === 'original' 
+                ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' 
+                : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              border: 'none',
+              borderRadius: '12px',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              boxShadow: currentAudioType === 'original'
+                ? '0 4px 14px 0 rgba(239, 68, 68, 0.35)'
+                : '0 4px 14px 0 rgba(16, 185, 129, 0.35)',
+              transition: 'all 0.3s ease',
+              opacity: disabled || !localIsPlaying ? 0.5 : 1,
+              cursor: disabled || !localIsPlaying ? 'not-allowed' : 'pointer'
+            }}
+            aria-label={`Switch to ${currentAudioType === 'original' ? 'processed' : 'original'} audio`}
+          >
+            <span>{currentAudioType === 'original' ? '🔴' : '🟢'}</span>
+            <span>Playing: {currentAudioType === 'original' ? 'Original' : 'Processed'}</span>
           </button>
         </div>
       )}

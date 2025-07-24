@@ -64,6 +64,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   const cleanup = useCallback(() => {
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
+      animationRef.current = undefined;
     }
     
     // Disconnect audio source node to release MediaStream reference
@@ -85,6 +86,32 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     setAnalyser(null);
     setAudioContext(null);
   }, [audioContext, source]);
+
+  // Helper function to draw static waveform when no analyser available
+  const drawStaticWaveform = useCallback((ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
+    // Clear canvas with gradient background
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#0A0B0E');
+    gradient.addColorStop(1, '#13141A');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw a simple static waveform line
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = color;
+    ctx.shadowBlur = 5;
+    ctx.shadowColor = color;
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height / 2);
+    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Draw status text
+    ctx.fillStyle = '#CACBDA';
+    ctx.font = '12px monospace';
+    ctx.fillText('Audio Visualization', 10, 25);
+  }, [color]);
 
   // Drawing functions
   const drawLiveWaveform = useCallback((analyserNode: AnalyserNode) => {
@@ -201,11 +228,17 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   }, [isActive, isPaused, color, disabled]);
 
   const draw = useCallback(() => {
-    if (!canvasRef.current || !analyser || disabled) return;
+    if (!canvasRef.current || disabled) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    // If no analyser, draw a static waveform
+    if (!analyser) {
+      drawStaticWaveform(ctx, canvas);
+      return;
+    }
 
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
@@ -217,13 +250,8 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       animationRef.current = requestAnimationFrame(drawVisual);
       
       // Get audio data
-      if (hideControls && isPaused) {
-        dataArray.fill(128);
-        frequencyData.fill(0);
-      } else {
-        analyser.getByteTimeDomainData(dataArray);
-        analyser.getByteFrequencyData(frequencyData);
-      }
+      analyser.getByteTimeDomainData(dataArray);
+      analyser.getByteFrequencyData(frequencyData);
 
       // Clear canvas with gradient background
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
@@ -314,7 +342,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     if (!audioRef.current || disabled) return;
     
     // If we already have a working context with analyser, reuse it
-    if (audioContext && audioContext.state !== 'closed' && analyser) {
+    if (audioContext && audioContext.state !== 'closed' && analyser && source) {
       console.log('WaveformAnalyzer: Reusing existing audio context');
       return;
     }
@@ -331,7 +359,6 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       analyserNode.smoothingTimeConstant = 0.85;
 
       let sourceNode: MediaElementAudioSourceNode | null = null;
-      let isSourceCreated = false;
       
       try {
         // Try to create a new source. This will throw if element already has one
@@ -339,39 +366,14 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
         sourceNode.connect(analyserNode);
         analyserNode.connect(ctx.destination);
         setSource(sourceNode);
-        isSourceCreated = true;
         console.log('WaveformAnalyzer: Created new MediaElementSource');
       } catch (err) {
-        // If element already has a source from another context, we can't reuse it
-        // This happens when multiple WaveformAnalyzer instances try to use the same audio element
+        // If element already has a source from another context, close context and continue
         if (err instanceof Error && err.message.includes('already connected')) {
-          console.warn('WaveformAnalyzer: Audio element already connected, creating new audio element...');
-          
-          // Create a new audio element as a workaround
-          const newAudio = new Audio();
-          newAudio.src = audioRef.current.src;
-          newAudio.crossOrigin = audioRef.current.crossOrigin;
-          newAudio.volume = audioRef.current.volume;
-          newAudio.muted = audioRef.current.muted;
-          newAudio.preload = audioRef.current.preload;
-          
-          // Replace the ref
-          audioRef.current = newAudio;
-          
-          // Try again with the new audio element
-          try {
-            sourceNode = ctx.createMediaElementSource(newAudio);
-            sourceNode.connect(analyserNode);
-            analyserNode.connect(ctx.destination);
-            setSource(sourceNode);
-            isSourceCreated = true;
-            console.log('WaveformAnalyzer: Created MediaElementSource with new audio element');
-          } catch (retryErr) {
-            console.error('WaveformAnalyzer: Failed to create source with new audio element:', retryErr);
-            setError('Failed to initialize audio visualization');
-            await ctx.close();
-            return;
-          }
+          console.warn('WaveformAnalyzer: Audio element already connected, continuing without audio context');
+          await ctx.close();
+          setError(null);
+          return;
         } else {
           throw err;
         }
@@ -389,7 +391,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       console.error('Error initializing audio:', error);
       setError(`Failed to initialize audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  }, [volume, isMuted, audioContext, disabled, analyser]);
+  }, [volume, isMuted, audioContext, disabled, analyser, source]);
 
   const initializeLiveStream = useCallback(async () => {
     if (!stream || disabled) return;
@@ -517,19 +519,14 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
 
   // Initialize audio URL when hideControls is true and handle external playback
   useEffect(() => {
-    if (audioUrl && hideControls && audioRef.current && !disabled) {
+    if (audioUrl && hideControls && audioRef.current && !disabled && !audioContext) {
       const timer = setTimeout(() => {
-        initializeAudio().then(() => {
-          // Start drawing immediately after initialization
-          if (!isPaused) {
-            draw();
-          }
-        });
+        initializeAudio();
       }, 100);
       
       return () => clearTimeout(timer);
     }
-  }, [audioUrl, hideControls, volume, isMuted, disabled, analyser, isPaused, initializeAudio, draw]);
+  }, [audioUrl, hideControls, disabled, audioContext, initializeAudio]);
   
   // Handle playback state changes
   useEffect(() => {
@@ -546,18 +543,11 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
             setError(`Failed to play audio: ${err.message}`);
           }
         });
-        // Start drawing
-        if (analyser) {
-          draw();
-        }
       } else {
         audioRef.current.pause();
-        if (animationRef.current) {
-          cancelAnimationFrame(animationRef.current);
-        }
       }
     }
-  }, [isPaused, analyser, hideControls, isMuted, volume, disabled, disablePlayback, draw]);
+  }, [isPaused, hideControls, isMuted, volume, disabled, disablePlayback]);
 
   // Event handlers
   const handlePlay = useCallback(async () => {
@@ -593,12 +583,20 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     }
   }, [audioContext, isPlaying, initializeAudio, handlePlayStateChange, draw, disabled, disablePlayback]);
 
-  // Handle drawing when analyser is ready
+  // Handle drawing when component is ready
   useEffect(() => {
-    if (analyser && !stream && !isPaused && !disabled) {
+    if (!stream && !disabled && audioUrl && canvasRef.current) {
+      // For audio URLs, always try to draw (static or animated)
       draw();
     }
-  }, [analyser, stream, isPaused, disabled, draw]);
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = undefined;
+      }
+    };
+  }, [analyser, stream, disabled, audioUrl, draw]);
 
   // Cleanup effect - called when component unmounts or stream changes
   useEffect(() => {
@@ -715,6 +713,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
           onEnded={() => handlePlayStateChange(false)}
           style={{ display: 'none' }}
           preload="metadata"
+          crossOrigin="anonymous"
         />
       </div>
     );

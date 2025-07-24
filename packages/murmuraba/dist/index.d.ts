@@ -20,6 +20,7 @@ export { ErrorCodes } from './types';
 export { AudioPlayer } from './components/AudioPlayer';
 export { AdvancedMetricsPanel } from './components/AdvancedMetricsPanel';
 export { ChunkProcessingResults } from './components/ChunkProcessingResults';
+export { SimpleWaveformAnalyzer } from './components/SimpleWaveformAnalyzer';
 export { WaveformAnalyzer } from './components/WaveformAnalyzer';
 export { SyncedWaveforms } from './components/SyncedWaveforms';
 export { ErrorBoundary, withErrorBoundary } from './components/ErrorBoundary';

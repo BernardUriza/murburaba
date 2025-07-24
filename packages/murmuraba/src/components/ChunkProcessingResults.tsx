@@ -181,39 +181,56 @@ export function ChunkProcessingResults({
                 </div>
               )}
 
-              {/* Expanded content */}
-              {chunk.isExpanded && (
-                <div className="chunk__details" aria-label="Chunk details">
-                  <ProcessingMetrics
-                    inputLevel={chunk.metrics.inputLevel}
-                    outputLevel={chunk.metrics.outputLevel}
-                    frameCount={chunk.metrics.frameCount}
-                    droppedFrames={chunk.metrics.droppedFrames}
-                  />
+              {/* Expanded content - keep mounted but toggle visibility */}
+              <div 
+                className="chunk__details" 
+                aria-label="Chunk details"
+                style={{ display: chunk.isExpanded ? 'block' : 'none' }}
+              >
+                <ProcessingMetrics
+                  inputLevel={chunk.metrics.inputLevel}
+                  outputLevel={chunk.metrics.outputLevel}
+                  frameCount={chunk.metrics.frameCount}
+                  droppedFrames={chunk.metrics.droppedFrames}
+                />
 
-                  <FileInfo
-                    originalSize={chunk.originalSize}
-                    processedSize={chunk.processedSize}
-                    noiseRemoved={chunk.noiseRemoved}
-                  />
+                <FileInfo
+                  originalSize={chunk.originalSize}
+                  processedSize={chunk.processedSize}
+                  noiseRemoved={chunk.noiseRemoved}
+                />
 
-                  {chunk.vadData && <VadTimeline vadData={chunk.vadData} chunkId={chunk.id} />}
-
-                  <AudioControls
-                    chunkId={chunk.id}
-                    index={index}
-                    isPlaying={chunk.isPlaying}
-                    hasProcessedAudio={hasProcessedAudio}
-                    hasOriginalAudio={hasOriginalAudio}
-                    isValid={isValid}
-                    onTogglePlayback={(audioType) => handlePlaybackToggle(chunk.id, audioType)}
-                    onDownload={(format, audioType) => handleDownload(chunk.id, format, audioType)}
-                    processedAudioUrl={chunk.processedAudioUrl}
-                    originalAudioUrl={chunk.originalAudioUrl}
-                    currentlyPlayingType={chunk.currentlyPlayingType}
+                {chunk.vadData && chunk.vadData.length > 0 ? (
+                  <VadTimeline 
+                    key={`vad-${chunk.id}-${chunk.vadData.length}`}
+                    vadData={chunk.vadData} 
+                    chunkId={chunk.id} 
                   />
-                </div>
-              )}
+                ) : (
+                  <div className="details__section">
+                    <h4 className="section__title">📈 Voice Activity Detection (VAD) Timeline</h4>
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#a0a0a0' }}>
+                      <span style={{ fontSize: '2rem' }}>⚠️</span>
+                      <p>No VAD data available for this chunk</p>
+                      {!chunk.isValid && <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>Chunk processing failed</p>}
+                    </div>
+                  </div>
+                )}
+
+                <AudioControls
+                  chunkId={chunk.id}
+                  index={index}
+                  isPlaying={chunk.isPlaying}
+                  hasProcessedAudio={hasProcessedAudio}
+                  hasOriginalAudio={hasOriginalAudio}
+                  isValid={isValid}
+                  onTogglePlayback={(audioType) => handlePlaybackToggle(chunk.id, audioType)}
+                  onDownload={(format, audioType) => handleDownload(chunk.id, format, audioType)}
+                  processedAudioUrl={chunk.processedAudioUrl}
+                  originalAudioUrl={chunk.originalAudioUrl}
+                  currentlyPlayingType={chunk.currentlyPlayingType}
+                />
+              </div>
             </div>
           );
         })}
