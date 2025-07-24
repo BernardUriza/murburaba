@@ -943,7 +943,7 @@ p {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  z-index: 900;
+  z-index: 9999;
 }
 
 .fab {

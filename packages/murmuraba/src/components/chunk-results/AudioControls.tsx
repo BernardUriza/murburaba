@@ -1,5 +1,6 @@
 import React from 'react';
 import { SyncedWaveforms } from '../SyncedWaveforms';
+import './AudioControls.modern.css';
 
 interface AudioControlsProps {
   chunkId: string;

@@ -243,12 +243,13 @@ export default function App() {
             <button className="close-btn" onClick={() => setShowAudioDemo(false)}>×</button>
           </div>
           <div className="panel-content">
-            <AudioDemo 
-              getEngineStatus={getEngineStatus}
-              processFile={processFile}
-              processFileWithMetrics={processFileWithMetrics}
-              autoProcess={true}
-              onProcessComplete={(buffer) => {
+            {showAudioDemo && (
+              <AudioDemo 
+                getEngineStatus={getEngineStatus}
+                processFile={processFile}
+                processFileWithMetrics={processFileWithMetrics}
+                autoProcess={true}
+                onProcessComplete={(buffer) => {
                 console.log('Audio processing completed', buffer)
                 Swal.fire({
                   toast: true,
@@ -273,7 +274,8 @@ export default function App() {
                   timerProgressBar: true
                 })
               }}
-            />
+              />
+            )}
           </div>
         </div>
 
@@ -314,11 +316,11 @@ export default function App() {
           <div className="header-content">
             <div className="brand-modern">
               <h1 className="brand-name">
-                <span className="brand-icon">◐</span>
+                <span className="brand-icon" style={{animation: 'spin 2s linear infinite'}}>◐</span>
                 murmuraba
               </h1>
               <div className="brand-meta">
-                <span className="version">v1.5.2</span>
+                <span className="version">v2.0.0</span>
                 <span className="separator">•</span>
                 <span className="tagline">Neural Audio Engine</span>
               </div>

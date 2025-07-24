@@ -3,6 +3,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import typescript from '@rollup/plugin-typescript';
 import terser from '@rollup/plugin-terser';
 import copy from 'rollup-plugin-copy';
+import postcss from 'rollup-plugin-postcss';
 
 // Suppress circular dependency warnings for known external libraries
 const onwarn = (warning, warn) => {
@@ -28,6 +29,12 @@ export default [
     external,
     onwarn,
     plugins: [
+      postcss({
+        modules: false,
+        extract: false,
+        minimize: true,
+        inject: true
+      }),
       resolve(),
       commonjs(),
       typescript({
@@ -61,6 +68,12 @@ export default [
     external,
     onwarn,
     plugins: [
+      postcss({
+        modules: false,
+        extract: false,
+        minimize: true,
+        inject: true
+      }),
       resolve(),
       commonjs(),
       typescript({
@@ -86,6 +99,12 @@ export default [
     external,
     onwarn,
     plugins: [
+      postcss({
+        modules: false,
+        extract: false,
+        minimize: true,
+        inject: true
+      }),
       resolve(),
       commonjs(),
       typescript({
