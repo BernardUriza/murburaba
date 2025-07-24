@@ -124,6 +124,16 @@
   --transition-base: 300ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-spring: 500ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  /* Settings Panel Variables - Map to dark theme */
+  --bg-primary: var(--dark-bg-primary);
+  --bg-secondary: var(--dark-bg-secondary);
+  --text-primary: var(--dark-text-primary);
+  --text-secondary: var(--dark-text-secondary);
+  --border: var(--dark-border);
+  --hover: var(--dark-surface-hover);
+  --primary: var(--grass-glow);
+  --primary-hover: var(--grass-neon);
 }
 
 /* Typography System */

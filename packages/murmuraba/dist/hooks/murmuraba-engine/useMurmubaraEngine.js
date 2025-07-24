@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { initializeAudioEngine, destroyEngine, processStream, processStreamChunked, getEngineStatus, getDiagnostics, onMetricsUpdate, processFile, } from '../../api';
 import { getAudioConverter, destroyAudioConverter } from '../../utils/audioConverter';
 // Import managers
@@ -11,15 +11,13 @@ import { createRecordingFunctions } from './recordingFunctions';
 // Import hooks
 import { useRecordingState } from './useRecordingState';
 // Import constants
-import { DEFAULT_CHUNK_DURATION, RECORDING_UPDATE_INTERVAL, LOG_PREFIX } from './constants';
+import { RECORDING_UPDATE_INTERVAL, LOG_PREFIX } from './constants';
 /**
  * Main Murmuraba hook with medical-grade recording functionality
  * Refactored for better maintainability
  */
 export function useMurmubaraEngine(options = {}) {
-    const { autoInitialize = false, defaultChunkDuration = DEFAULT_CHUNK_DURATION, fallbackToManual = false, onInitError, react19Mode = false, ...config } = options;
-    // Check React version
-    const isReact19 = react19Mode || React.version.startsWith('19');
+    const { autoInitialize = false, onInitError, ...config } = options;
     // State management
     const [isInitialized, setIsInitialized] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -41,8 +39,6 @@ export function useMurmubaraEngine(options = {}) {
     // Other refs
     const metricsUnsubscribeRef = useRef(null);
     const initializePromiseRef = useRef(null);
-    const audioRefs = useRef({});
-    const recordingIntervalRef = useRef(null);
     const audioConverterRef = useRef(null);
     // Update diagnostics
     const updateDiagnostics = useCallback(() => {

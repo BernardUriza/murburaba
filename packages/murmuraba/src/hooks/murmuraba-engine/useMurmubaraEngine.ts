@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   initializeAudioEngine,
   destroyEngine,
@@ -7,15 +7,12 @@ import {
   getEngineStatus,
   getDiagnostics,
   onMetricsUpdate,
-  getEngine,
   processFile,
 } from '../../api';
 import { getAudioConverter, AudioConverter, destroyAudioConverter } from '../../utils/audioConverter';
 
 // Import types
 import {
-  ProcessedChunk,
-  RecordingState,
   UseMurmubaraEngineOptions,
   UseMurmubaraEngineReturn
 } from './types';
@@ -24,7 +21,6 @@ import {
   ProcessingMetrics,
   StreamController,
   DiagnosticInfo,
-  ChunkMetrics,
 } from '../../types';
 
 // Import managers
@@ -39,7 +35,7 @@ import { createRecordingFunctions } from './recordingFunctions';
 import { useRecordingState } from './useRecordingState';
 
 // Import constants
-import { DEFAULT_CHUNK_DURATION, RECORDING_UPDATE_INTERVAL, LOG_PREFIX } from './constants';
+import { RECORDING_UPDATE_INTERVAL, LOG_PREFIX } from './constants';
 
 /**
  * Main Murmuraba hook with medical-grade recording functionality
@@ -50,15 +46,10 @@ export function useMurmubaraEngine(
 ): UseMurmubaraEngineReturn {
   const { 
     autoInitialize = false, 
-    defaultChunkDuration = DEFAULT_CHUNK_DURATION,
-    fallbackToManual = false, 
     onInitError,
-    react19Mode = false,
     ...config 
   } = options;
 
-  // Check React version
-  const isReact19 = react19Mode || React.version.startsWith('19');
   
   // State management
   const [isInitialized, setIsInitialized] = useState(false);
@@ -96,8 +87,6 @@ export function useMurmubaraEngine(
   // Other refs
   const metricsUnsubscribeRef = useRef<(() => void) | null>(null);
   const initializePromiseRef = useRef<Promise<void> | null>(null);
-  const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
-  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioConverterRef = useRef<AudioConverter | null>(null);
   
   // Update diagnostics

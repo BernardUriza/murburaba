@@ -38,7 +38,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   disablePlayback = false
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const animationRef = useRef<number>();
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
@@ -78,9 +78,6 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     
     if (audioContext && audioContext.state !== 'closed') {
       audioContext.close().catch(console.error);
-    }
-    if (audioRef.current) {
-      delete audioRef.current.dataset.sourceCreated;
     }
     
     // Reset state
@@ -316,25 +313,68 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   const initializeAudio = useCallback(async () => {
     if (!audioRef.current || disabled) return;
     
-    if (audioContext && audioContext.state !== 'closed') {
+    // If we already have a working context with analyser, reuse it
+    if (audioContext && audioContext.state !== 'closed' && analyser) {
+      console.log('WaveformAnalyzer: Reusing existing audio context');
       return;
     }
 
     try {
+      // Always close existing context before creating new one
+      if (audioContext && audioContext.state !== 'closed') {
+        await audioContext.close();
+      }
+      
       const ctx = new AudioContext();
       const analyserNode = ctx.createAnalyser();
       analyserNode.fftSize = 2048;
       analyserNode.smoothingTimeConstant = 0.85;
 
-      if (!audioRef.current.dataset.sourceCreated) {
-        const sourceNode = ctx.createMediaElementSource(audioRef.current);
+      let sourceNode: MediaElementAudioSourceNode | null = null;
+      let isSourceCreated = false;
+      
+      try {
+        // Try to create a new source. This will throw if element already has one
+        sourceNode = ctx.createMediaElementSource(audioRef.current);
         sourceNode.connect(analyserNode);
         analyserNode.connect(ctx.destination);
-        
-        audioRef.current.dataset.sourceCreated = 'true';
         setSource(sourceNode);
-      } else {
-        analyserNode.connect(ctx.destination);
+        isSourceCreated = true;
+        console.log('WaveformAnalyzer: Created new MediaElementSource');
+      } catch (err) {
+        // If element already has a source from another context, we can't reuse it
+        // This happens when multiple WaveformAnalyzer instances try to use the same audio element
+        if (err instanceof Error && err.message.includes('already connected')) {
+          console.warn('WaveformAnalyzer: Audio element already connected, creating new audio element...');
+          
+          // Create a new audio element as a workaround
+          const newAudio = new Audio();
+          newAudio.src = audioRef.current.src;
+          newAudio.crossOrigin = audioRef.current.crossOrigin;
+          newAudio.volume = audioRef.current.volume;
+          newAudio.muted = audioRef.current.muted;
+          newAudio.preload = audioRef.current.preload;
+          
+          // Replace the ref
+          audioRef.current = newAudio;
+          
+          // Try again with the new audio element
+          try {
+            sourceNode = ctx.createMediaElementSource(newAudio);
+            sourceNode.connect(analyserNode);
+            analyserNode.connect(ctx.destination);
+            setSource(sourceNode);
+            isSourceCreated = true;
+            console.log('WaveformAnalyzer: Created MediaElementSource with new audio element');
+          } catch (retryErr) {
+            console.error('WaveformAnalyzer: Failed to create source with new audio element:', retryErr);
+            setError('Failed to initialize audio visualization');
+            await ctx.close();
+            return;
+          }
+        } else {
+          throw err;
+        }
       }
 
       setAudioContext(ctx);
@@ -347,9 +387,9 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       }
     } catch (error) {
       console.error('Error initializing audio:', error);
-      setError('Failed to initialize audio');
+      setError(`Failed to initialize audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  }, [volume, isMuted, audioContext, disabled]);
+  }, [volume, isMuted, audioContext, disabled, analyser]);
 
   const initializeLiveStream = useCallback(async () => {
     if (!stream || disabled) return;
@@ -358,6 +398,16 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     if (audioContext && source && source instanceof MediaStreamAudioSourceNode) {
       console.log('WaveformAnalyzer: Audio context already initialized for stream');
       return;
+    }
+    
+    // Check if canvas is visible and has valid dimensions
+    if (canvasRef.current) {
+      const { width, height } = canvasRef.current.getBoundingClientRect();
+      if (width === 0 || height === 0) {
+        console.warn('WaveformAnalyzer: Canvas has zero dimensions, cannot draw');
+        setError('Canvas not visible - cannot render waveform');
+        return;
+      }
     }
 
     try {
@@ -404,8 +454,15 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       // Resume AudioContext if suspended
       if (ctx.state === 'suspended') {
         console.log('AudioContext suspended, resuming...');
-        await ctx.resume();
-        console.log('AudioContext resumed, new state:', ctx.state);
+        try {
+          await ctx.resume();
+          console.log('AudioContext resumed, new state:', ctx.state);
+        } catch (resumeError) {
+          console.error('Failed to resume AudioContext:', resumeError);
+          setError('Audio playback blocked by browser - click to enable');
+          await ctx.close();
+          return;
+        }
       }
       
       const analyserNode = ctx.createAnalyser();
@@ -483,7 +540,11 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       if (!isPaused) {
         audioRef.current.play().catch((err) => {
           console.error('Audio play failed:', err);
-          setError('Failed to play audio');
+          if (err.name === 'NotAllowedError') {
+            setError('Audio playback blocked - user interaction required');
+          } else {
+            setError(`Failed to play audio: ${err.message}`);
+          }
         });
         // Start drawing
         if (analyser) {
@@ -520,7 +581,15 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       }
     } catch (err) {
       console.error('Playback error:', err);
-      setError('Playback failed');
+      if (err instanceof Error) {
+        if (err.name === 'NotAllowedError') {
+          setError('Audio playback blocked - click play to enable');
+        } else {
+          setError(`Playback failed: ${err.message}`);
+        }
+      } else {
+        setError('Playback failed');
+      }
     }
   }, [audioContext, isPlaying, initializeAudio, handlePlayStateChange, draw, disabled, disablePlayback]);
 
