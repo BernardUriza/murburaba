@@ -6,7 +6,6 @@ import { FileInfo } from './chunk-results/FileInfo';
 import { VadTimeline } from './chunk-results/VadTimeline';
 import { AudioControls } from './chunk-results/AudioControls';
 import { formatTime, formatPercentage, formatFileSize, calculateChunkStats } from './chunk-results/formatters';
-import './ChunkProcessingResults.css';
 
 export interface ChunkProcessingResultsProps {
   /** Array of processed audio chunks */
@@ -190,7 +189,11 @@ export function ChunkProcessingResults({
                 isExpanded={chunk.isExpanded}
                 hasProcessedAudio={hasProcessedAudio}
                 onTogglePlayback={() => handlePlaybackToggle(chunk.id, 'processed')}
-                onToggleExpansion={() => onToggleExpansion(chunk.id)}
+                onToggleExpansion={() => {
+                  console.log('🔧 ChunkProcessingResults: onToggleExpansion called for', chunk.id);
+                  console.log('🔧 onToggleExpansion prop exists:', !!onToggleExpansion);
+                  onToggleExpansion(chunk.id);
+                }}
                 onKeyDown={handleKeyDown}
                 formatTime={formatTime}
                 formatPercentage={formatPercentage}

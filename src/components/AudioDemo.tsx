@@ -38,16 +38,7 @@ export default function AudioDemo({
   const originalAudioRef = useRef<HTMLAudioElement>(null)
   const processedAudioRef = useRef<HTMLAudioElement>(null)
   const logContainerRef = useRef<HTMLDivElement>(null)
-
-  // Only call process once when engine is ready
-  useEffect(() => {
-    if (!autoProcess || autoProcessStarted || isProcessing || engineStatus !== 'ready') return
-    setAutoProcessStarted(true)
-    // Add small delay to ensure engine is fully ready
-    setTimeout(() => {
-      processAudioDemo()
-    }, 500)
-  }, [autoProcess, autoProcessStarted, isProcessing, engineStatus, processAudioDemo])
+  const processAudioDemoRef = useRef<(() => Promise<void>) | null>(null)
 
   // Poll engine status
   useEffect(() => {
@@ -163,7 +154,20 @@ export default function AudioDemo({
     } finally {
       setIsProcessing(false)
     }
-  }, [isProcessing, getEngineStatus, processFile, logs.length, addLog, onProcessComplete, onError])
+  }, [isProcessing, getEngineStatus, processFile, processFileWithMetrics, logs.length, addLog, onProcessComplete, onError])
+
+  // Store processAudioDemo in ref to avoid circular dependency
+  processAudioDemoRef.current = processAudioDemo
+
+  // Only call process once when engine is ready
+  useEffect(() => {
+    if (!autoProcess || autoProcessStarted || isProcessing || engineStatus !== 'ready') return
+    setAutoProcessStarted(true)
+    // Add small delay to ensure engine is fully ready
+    setTimeout(() => {
+      processAudioDemoRef.current?.()
+    }, 500)
+  }, [autoProcess, autoProcessStarted, isProcessing, engineStatus])
 
   const downloadProcessedAudio = () => {
     if (!processedAudioUrl) return

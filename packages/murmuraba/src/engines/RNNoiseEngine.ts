@@ -14,6 +14,7 @@ export class RNNoiseEngine implements AudioEngine {
   private state: any = null;
   private inputPtr: number = 0;
   private outputPtr: number = 0;
+  private lastVad: number = 0;
   private config: RNNoiseConfig;
   
   constructor(config?: RNNoiseConfig) {
@@ -147,8 +148,11 @@ export class RNNoiseEngine implements AudioEngine {
       outputData[i] = this.module.HEAPF32[(this.outputPtr >> 2) + i];
     }
     
-    // Return both audio and VAD
-    return { audio: outputData, vad: vad || 0 };
+    // Store VAD for later use if needed
+    this.lastVad = vad || 0;
+    
+    // Return audio data only
+    return outputData;
   }
   
   cleanup(): void {

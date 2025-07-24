@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { WaveformAnalyzer } from './WaveformAnalyzer';
-import './SyncedWaveforms.css';
 
 interface SyncedWaveformsProps {
   originalAudioUrl?: string;

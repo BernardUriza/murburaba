@@ -11,6 +11,7 @@ export declare class RNNoiseEngine implements AudioEngine {
     private state;
     private inputPtr;
     private outputPtr;
+    private lastVad;
     private config;
     constructor(config?: RNNoiseConfig);
     initialize(): Promise<void>;

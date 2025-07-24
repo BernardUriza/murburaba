@@ -280,6 +280,14 @@
   max-width: 95vw;
 }
 
+/* Hide studio header when slide panels are active */
+.audio-demo-panel.slide-panel.active ~ main .studio-header,
+body:has(.audio-demo-panel.slide-panel.active) .studio-header,
+.copilot-chat.slide-panel.active ~ main .studio-header,
+body:has(.copilot-chat.slide-panel.active) .studio-header {
+  display: none;
+}
+
 .audio-demo-panel .panel-content {
   padding: var(--spacing-xl);
 }
@@ -743,14 +751,48 @@
   border-color: var(--accent-green);
 }
 
-.message-content pre {
+.message-content .message-text {
   margin: 0;
   font-family: inherit;
-  white-space: pre-wrap;
-  word-wrap: break-word;
   color: var(--dark-text-primary);
   font-size: var(--font-sm);
-  line-height: 1.5;
+  line-height: 1.6;
+}
+
+.message-content .message-text p {
+  margin: 0 0 0.5rem 0;
+}
+
+.message-content .message-text p:last-child {
+  margin-bottom: 0;
+}
+
+.message-content .message-text strong {
+  font-weight: 600;
+  color: var(--accent-green);
+}
+
+.message-content .message-text em {
+  font-style: italic;
+  color: var(--dark-text-secondary);
+}
+
+.message-content .message-text code {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 0.875em;
+}
+
+.message-content .message-text ul {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.message-content .message-text li {
+  margin: 0.25rem 0;
+  list-style: disc;
 }
 
 .message-time {

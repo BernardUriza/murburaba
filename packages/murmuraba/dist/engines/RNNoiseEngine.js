@@ -7,6 +7,7 @@ export class RNNoiseEngine {
         this.state = null;
         this.inputPtr = 0;
         this.outputPtr = 0;
+        this.lastVad = 0;
         this.config = {
             wasmPath: config?.wasmPath || '',
             scriptPath: config?.scriptPath || ''
@@ -115,8 +116,10 @@ export class RNNoiseEngine {
         for (let i = 0; i < 480; i++) {
             outputData[i] = this.module.HEAPF32[(this.outputPtr >> 2) + i];
         }
-        // Return both audio and VAD
-        return { audio: outputData, vad: vad || 0 };
+        // Store VAD for later use if needed
+        this.lastVad = vad || 0;
+        // Return audio data only
+        return outputData;
     }
     cleanup() {
         if (this.module && this.state) {

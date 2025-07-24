@@ -1,6 +1,6 @@
 {
   "name": "murmuraba-studio",
-  "version": "1.52.0",
+  "version": "2.0.0",
   "private": true,
   "workspaces": [
     "packages/*"

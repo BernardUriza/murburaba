@@ -13,6 +13,7 @@ import Swal from 'sweetalert2'
 import { WASMErrorDisplay } from './components/WASMErrorDisplay'
 import AudioDemo from './components/AudioDemo'
 import { CopilotChat } from './components/CopilotChat'
+import { Settings } from './components/Settings'
 
 export default function App() {
   // Engine configuration state with localStorage persistence
@@ -116,7 +117,17 @@ export default function App() {
   const [chunkDuration, setChunkDuration] = useState(8)
   const [showAdvancedMetrics, setShowAdvancedMetrics] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showCopilot, setShowCopilot] = useState(false)
   const [showAudioDemo, setShowAudioDemo] = useState(false)
+  const [vadThresholds, setVadThresholds] = useState({
+    silence: 0.1,
+    voice: 0.5,
+    clearVoice: 0.8
+  })
+  const [displaySettings, setDisplaySettings] = useState({
+    showVadValues: true,
+    showVadTimeline: true
+  })
   const [_noiseReductionLevel, _setNoiseReductionLevel] = useState(75)
   const [selectedChunk, setSelectedChunk] = useState<string | null>(null)
   const [recordingHistory, setRecordingHistory] = useState<Array<{
@@ -157,6 +168,8 @@ export default function App() {
   
   // Handle chunk expansion with selection
   const handleToggleChunkExpansion = (chunkId: string) => {
+    console.log('🔧 handleToggleChunkExpansion called with:', chunkId)
+    console.log('🔧 toggleChunkExpansion function exists:', !!toggleChunkExpansion)
     toggleChunkExpansion(chunkId)
     setSelectedChunk(chunkId)
   }
@@ -264,10 +277,20 @@ export default function App() {
           </div>
         </div>
 
-        {/* Copilot Chat Interface */}
-        <CopilotChat
+        {/* Settings Panel */}
+        <Settings
           isOpen={showSettings}
           onClose={() => setShowSettings(false)}
+          vadThresholds={vadThresholds}
+          displaySettings={displaySettings}
+          onThresholdChange={setVadThresholds}
+          onDisplayChange={setDisplaySettings}
+        />
+
+        {/* Copilot Chat Interface */}
+        <CopilotChat
+          isOpen={showCopilot}
+          onClose={() => setShowCopilot(false)}
           engineConfig={engineConfig}
           setEngineConfig={setEngineConfig}
           isRecording={isRecording}
@@ -648,6 +671,13 @@ export default function App() {
           <button 
             className="fab fab-secondary"
             onClick={() => setShowSettings(!showSettings)}
+            title="Settings"
+          >
+            ⚙️
+          </button>
+          <button 
+            className="fab fab-secondary"
+            onClick={() => setShowCopilot(!showCopilot)}
             title="Copilot Chat"
           >
             🤖

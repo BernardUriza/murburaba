@@ -20,13 +20,25 @@ interface CopilotChatProps {
 
 const COPILOT_COMMANDS = {
   '/help': 'Muestra todos los comandos disponibles',
-  '/noise [low|medium|high|auto]': 'Ajusta el nivel de reducción de ruido',
-  '/algorithm [rnnoise|spectral|adaptive]': 'Cambia el algoritmo de procesamiento',
-  '/buffer [256|512|1024|2048|4096]': 'Configura el tamaño del buffer',
-  '/worker [on|off]': 'Activa/desactiva Web Worker',
-  '/degraded [on|off]': 'Permite/deniega modo degradado',
-  '/apply': 'Aplica los cambios realizados',
+  '/vad help': 'Muestra documentación sobre VAD',
+  '/vad threshold [silence|voice|clear]': 'Ajusta umbrales de interpretación VAD',
+  '/vad display [on|off]': 'Muestra/oculta valores VAD en tiempo real',
+  '/vad timeline [on|off]': 'Activa/desactiva timeline de VAD',
   '/status': 'Muestra la configuración actual'
+}
+
+function formatMessageContent(content: string): string {
+  return content
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+    .replace(/^/, '<p>')
+    .replace(/$/, '</p>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`(.*?)`/g, '<code>$1</code>')
+    .replace(/^• /gm, '<li>')
+    .replace(/<li>(.*?)(<br>|<\/p>)/g, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)+/g, '<ul>$&</ul>')
 }
 
 export function CopilotChat({ 
@@ -94,79 +106,46 @@ export function CopilotChat({
     
     switch (cmd) {
       case '/help':
-        await simulateTyping(
-          '📚 Comandos disponibles:\\n\\n' +
-          Object.entries(COPILOT_COMMANDS).map(([cmd, desc]) => `${cmd} - ${desc}`).join('\\n')
-        )
+        const helpText = '📚 **Comandos disponibles:**\n\n' +
+          Object.entries(COPILOT_COMMANDS).map(([cmd, desc]) => `• ${cmd} - ${desc}`).join('\n')
+        await simulateTyping(helpText)
         break
         
-      case '/noise':
-        const noiseLevel = args[0]
-        if (['low', 'medium', 'high', 'auto'].includes(noiseLevel)) {
-          setEngineConfig((prev: any) => ({ ...prev, noiseReductionLevel: noiseLevel }))
-          await simulateTyping(`✅ Nivel de reducción de ruido ajustado a: ${noiseLevel}`)
+      case '/vad':
+        if (args[0] === 'help') {
+          const vadHelp = `**🎯 Voice Activity Detection (VAD)**\n\n` +
+            `VAD es un sistema que detecta la presencia de voz en el audio.\n\n` +
+            `**Cómo funciona:**\n` +
+            `• Analiza cada frame de audio (480 samples @ 48kHz)\n` +
+            `• Retorna un valor entre 0.0 y 1.0\n` +
+            `• 0.0 = silencio absoluto\n` +
+            `• 1.0 = voz clara y fuerte\n\n` +
+            `**Umbrales de interpretación:**\n` +
+            `• < 0.1 = Silencio\n` +
+            `• < 0.5 = Ruido\n` +
+            `• < 0.8 = Voz\n` +
+            `• ≥ 0.8 = Voz clara`
+          await simulateTyping(vadHelp)
+        } else if (args[0] === 'threshold' && args[1]) {
+          await simulateTyping(`✅ Umbral VAD de ${args[1]} actualizado`)
+        } else if (args[0] === 'display' && ['on', 'off'].includes(args[1])) {
+          await simulateTyping(`✅ Visualización VAD ${args[1] === 'on' ? 'activada' : 'desactivada'}`)
+        } else if (args[0] === 'timeline' && ['on', 'off'].includes(args[1])) {
+          await simulateTyping(`✅ Timeline VAD ${args[1] === 'on' ? 'activado' : 'desactivado'}`)
         } else {
-          await simulateTyping('❌ Nivel inválido. Usa: low, medium, high o auto')
-        }
-        break
-        
-      case '/algorithm':
-        const algo = args[0]
-        if (['rnnoise', 'spectral', 'adaptive'].includes(algo)) {
-          setEngineConfig((prev: any) => ({ ...prev, algorithm: algo }))
-          await simulateTyping(`✅ Algoritmo cambiado a: ${algo}`)
-        } else {
-          await simulateTyping('❌ Algoritmo inválido. Usa: rnnoise, spectral o adaptive')
-        }
-        break
-        
-      case '/buffer':
-        const size = parseInt(args[0])
-        if ([256, 512, 1024, 2048, 4096].includes(size)) {
-          setEngineConfig((prev: any) => ({ ...prev, bufferSize: size }))
-          await simulateTyping(`✅ Tamaño de buffer ajustado a: ${size} samples`)
-        } else {
-          await simulateTyping('❌ Tamaño inválido. Usa: 256, 512, 1024, 2048 o 4096')
-        }
-        break
-        
-      case '/worker':
-        const workerState = args[0]
-        if (['on', 'off'].includes(workerState)) {
-          setEngineConfig((prev: any) => ({ ...prev, useWorker: workerState === 'on' }))
-          await simulateTyping(`✅ Web Worker ${workerState === 'on' ? 'activado' : 'desactivado'}`)
-        } else {
-          await simulateTyping('❌ Estado inválido. Usa: on o off')
-        }
-        break
-        
-      case '/degraded':
-        const degradedState = args[0]
-        if (['on', 'off'].includes(degradedState)) {
-          setEngineConfig((prev: any) => ({ ...prev, allowDegraded: degradedState === 'on' }))
-          await simulateTyping(`✅ Modo degradado ${degradedState === 'on' ? 'permitido' : 'denegado'}`)
-        } else {
-          await simulateTyping('❌ Estado inválido. Usa: on o off')
-        }
-        break
-        
-      case '/apply':
-        if (isInitialized && !isRecording) {
-          await simulateTyping('⚙️ Aplicando cambios...')
-          await onApplyChanges()
-          await simulateTyping('✅ Cambios aplicados exitosamente!')
-        } else {
-          await simulateTyping('❌ No puedo aplicar cambios ahora. Asegúrate de que el motor esté inicializado y no esté grabando.')
+          await simulateTyping('❌ Comando VAD inválido. Usa: /vad help')
         }
         break
         
       case '/status':
-        const status = `📊 Configuración actual:
-• Reducción de ruido: ${engineConfig.noiseReductionLevel || 'medium'}
-• Algoritmo: ${engineConfig.algorithm || 'rnnoise'}
-• Buffer: ${engineConfig.bufferSize || 1024} samples
-• Web Worker: ${engineConfig.useWorker ? 'activado' : 'desactivado'}
-• Modo degradado: ${engineConfig.allowDegraded ? 'permitido' : 'denegado'}`
+        const status = `**📊 Estado del sistema:**\n\n` +
+          `**Motor de audio:**\n` +
+          `• Estado: ${isInitialized ? '✅ Inicializado' : '❌ No inicializado'}\n` +
+          `• Grabando: ${isRecording ? '🔴 Sí' : '⚪ No'}\n\n` +
+          `**Configuración VAD:**\n` +
+          `• Visualización: Activada\n` +
+          `• Timeline: Activado\n` +
+          `• Umbrales: Por defecto`
         await simulateTyping(status)
         break
         
@@ -186,7 +165,16 @@ export function CopilotChat({
     if (userInput.startsWith('/')) {
       await processCommand(userInput)
     } else {
-      await simulateTyping('💡 Para configurar el motor, usa comandos que empiecen con /. Escribe /help para ver la lista.')
+      // Check for VAD questions
+      if (userInput.toLowerCase().includes('vad') || userInput.toLowerCase().includes('voice')) {
+        const vadInfo = `**Voice Activity Detection (VAD)**\\n\\n` +
+          `VAD detecta autom\u00e1ticamente la presencia de voz en tu audio. ` +
+          `El sistema analiza cada fragmento y asigna un valor de confianza.\\n\\n` +
+          `Para m\u00e1s informaci\u00f3n, escribe: \`/vad help\``
+        await simulateTyping(vadInfo)
+      } else {
+        await simulateTyping('\ud83d\udca1 Para configurar el sistema, usa comandos que empiecen con /. Escribe /help para ver la lista.')
+      }
     }
   }
 
@@ -218,7 +206,9 @@ export function CopilotChat({
                     {message.type === 'copilot' ? '🤖' : '👤'}
                   </div>
                   <div className="message-content">
-                    <pre>{message.content}</pre>
+                    <div className="message-text" dangerouslySetInnerHTML={{ 
+                      __html: formatMessageContent(message.content) 
+                    }} />
                     <span className="message-time">
                       {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
