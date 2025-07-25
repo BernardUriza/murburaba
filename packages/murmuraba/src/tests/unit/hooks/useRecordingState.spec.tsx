@@ -4,6 +4,30 @@ import { useRecordingState } from '../../../hooks/murmuraba-engine/useRecordingS
 import type { ProcessedChunk } from '../../../hooks/murmuraba-engine/types';
 
 describe('useRecordingState', () => {
+  const createTestChunk = (id: string): ProcessedChunk => ({
+    id,
+    startTime: Date.now(),
+    endTime: Date.now() + 1000,
+    duration: 1,
+    processedAudioUrl: `blob:processed-${id}`,
+    originalAudioUrl: `blob:original-${id}`,
+    originalSize: 1000,
+    processedSize: 800,
+    noiseRemoved: 20,
+    metrics: {
+      noiseReductionLevel: 60,
+      processingLatency: 10,
+      inputLevel: 0.8,
+      outputLevel: 0.5,
+      timestamp: Date.now(),
+      frameCount: 100,
+      droppedFrames: 0,
+    },
+    isExpanded: false,
+    isPlaying: false,
+    currentlyPlayingType: null,
+  });
+
   describe('Initial State', () => {
     it('should have correct initial state', () => {
       const { result } = renderHook(() => useRecordingState());
@@ -89,32 +113,6 @@ describe('useRecordingState', () => {
   });
 
   describe('Chunk Management', () => {
-    const createTestChunk = (id: string): ProcessedChunk => ({
-      id,
-      startTime: Date.now(),
-      endTime: Date.now() + 1000,
-      duration: 1,
-      processedBlob: new Blob(['processed'], { type: 'audio/webm' }),
-      originalBlob: new Blob(['original'], { type: 'audio/webm' }),
-      processedUrl: `blob:processed-${id}`,
-      originalUrl: `blob:original-${id}`,
-      originalSize: 1000,
-      processedSize: 800,
-      noiseRemoved: 20,
-      metrics: {
-        noiseReductionLevel: 60,
-        processingLatency: 10,
-        inputLevel: 0.8,
-        outputLevel: 0.5,
-        timestamp: Date.now(),
-        frameCount: 100,
-        droppedFrames: 0,
-      },
-      isExpanded: false,
-      isPlaying: false,
-      currentlyPlayingType: null,
-    });
-
     it('should add chunk', () => {
       const { result } = renderHook(() => useRecordingState());
       const chunk = createTestChunk('chunk-1');

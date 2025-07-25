@@ -14,6 +14,8 @@ export interface MurmubaraConfig {
     useWorker?: boolean;
     workerPath?: string;
     allowDegraded?: boolean;
+    enableAGC?: boolean;
+    workerCount?: number;
 }
 export interface StreamController {
     stream: MediaStream;

@@ -888,12 +888,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     }
     
     // Update worker manager config if applicable
-    if (this.workerManager) {
-      this.workerManager.updateConfiguration({
-        numWorkers: this.config.workerCount,
-        bufferSize: this.config.bufferSize,
-      });
-    }
+    // Note: WorkerManager doesn't support dynamic configuration updates currently
+    // This would require recreating workers which could interrupt processing
     
     // Emit config update event
     this.emit('config-updated');
