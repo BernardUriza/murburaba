@@ -17,6 +17,14 @@
 - 🎛️ **Advanced configuration** options
 - 🚀 **Zero dependencies** (except for RNNoise WASM)
 
+## 🌟 ¡LO NUEVO EN v2.3.1! 🎉 - WASM LOADING FIX
+
+### 🔧 **Critical WebAssembly Loading Fix**
+- **Fixed WASM module loading errors** that prevented RNNoise from initializing correctly
+- **No more manual file copying required** - the package is now truly self-contained
+- **Automatic WASM file handling** for both development and production environments
+- **Environment-aware path resolution** - works seamlessly in all deployment scenarios
+
 ## 🌟 ¡LO NUEVO EN v2.0.0! 🎉 - LA ACTUALIZACIÓN MÁS ÉPICA
 
 ### 🔥 **Professional UI Components with Brutal TDD**

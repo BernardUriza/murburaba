@@ -1,0 +1,292 @@
+npm WARN ignoring workspace config at /workspaces/murburaba/packages/murmuraba/.npmrc 
+
+> murmuraba@2.0.1 test:coverage
+> vitest run --coverage
+
+
+ RUN  v3.2.4 /workspaces/murburaba/packages/murmuraba
+      Coverage enabled with v8
+
+stdout | src/__tests__/integration/AudioDemo.browser-logs.test.tsx
+🎭 ========================================= 🎭
+🚀 INITIALIZING WEB AUDIO MOCKS 2025 EDITION 🚀
+🎭 ========================================= 🎭
+
+stdout | src/__tests__/integration/AudioDemo.browser-logs.test.tsx
+
+🚀 ========== VITEST SETUP STARTING ========== 🚀
+
+
+🎪 ====== SETTING UP ALL AUDIO MOCKS ====== 🎪
+
+🎮 Setting up navigator.mediaDevices mock...
+✅ navigator.mediaDevices mock setup complete!
+
+🎉 ====== ALL MOCKS READY TO ROCK! ====== 🎉
+
+
+stdout | src/__tests__/core/MurmubaraEngine.advanced.test.ts
+🎭 ========================================= 🎭
+🚀 INITIALIZING WEB AUDIO MOCKS 2025 EDITION 🚀
+🎭 ========================================= 🎭
+
+stdout | src/__tests__/core/MurmubaraEngine.advanced.test.ts
+
+🚀 ========== VITEST SETUP STARTING ========== 🚀
+
+
+🎪 ====== SETTING UP ALL AUDIO MOCKS ====== 🎪
+
+🎮 Setting up navigator.mediaDevices mock...
+
+🎉 ====== ALL MOCKS READY TO ROCK! ====== 🎉
+
+
+stdout | src/__tests__/core/MurmubaraEngine.advanced.test.ts > MurmubaraEngine Advanced Coverage > Initialization branches > should handle suspended audio context
+❌ [Murmuraba] [2025-07-24T14:42:31.155Z] [ERROR] WASM module loading timed out
+
+stdout | src/__tests__/core/MurmubaraEngine.advanced.test.ts > MurmubaraEngine Advanced Coverage > Initialization branches > should handle suspended audio context
+❌ [Murmuraba] [2025-07-24T14:42:31.168Z] [ERROR] WASM module loading timed out
+
+stdout | src/__tests__/core/MurmubaraEngine.advanced.test.ts > MurmubaraEngine Advanced Coverage > Initialization branches > should handle WebAssembly not supported
+❌ [Murmuraba] [2025-07-24T14:42:31.174Z] [ERROR] WebAssembly not supported
+
+stdout | src/__tests__/core/MurmubaraEngine.advanced.test.ts > MurmubaraEngine Advanced Coverage > Degraded mode > should initialize in degraded mode when configured
+❌ [Murmuraba] [2025-07-24T14:42:31.177Z] [ERROR] WebAssembly not supported
+⚠️ [Murmuraba] [2025-07-24T14:42:31.177Z] [WARN] Attempting degraded mode initialization...
+⚠️ Invalid state transition: error -> degraded
+
+stdout | src/__tests__/core/MurmubaraEngine.advanced.test.ts > MurmubaraEngine Advanced Coverage > Degraded mode > should initialize in degraded mode when configured
+⚠️ [Murmuraba] [2025-07-24T14:42:31.183Z] [WARN] Engine running in degraded mode - noise reduction disabled
+
+stdout | src/__tests__/core/MurmubaraEngine.advanced.test.ts > MurmubaraEngine Advanced Coverage > Degraded mode > should handle audio context failure in degraded mode
+❌ [Murmuraba] [2025-07-24T14:42:31.190Z] [ERROR] WebAssembly not supported
+⚠️ [Murmuraba] [2025-07-24T14:42:31.190Z] [WARN] Attempting degraded mode initialization...
+⚠️ Invalid state transition: error -> degraded
+
+stdout | src/__tests__/core/MurmubaraEngine.advanced.test.ts > MurmubaraEngine Advanced Coverage > Degraded mode > should handle audio context failure in degraded mode
+❌ [Murmuraba] [2025-07-24T14:42:31.190Z] [ERROR] Failed to create audio context even in degraded mode
+
+stdout | src/__tests__/core/MurmubaraEngine.advanced.test.ts > MurmubaraEngine Advanced Coverage > Destroy method > should force destroy from any state
+⚠️ [Murmuraba] [2025-07-24T14:42:31.204Z] [WARN] Force destroying engine
+⚠️ Invalid state transition: uninitialized -> destroying
+⚠️ Invalid state transition: uninitialized -> destroyed
+
+stdout | src/__tests__/core/MurmubaraEngine.advanced.test.ts > MurmubaraEngine Advanced Coverage > Destroy method > should handle errors during cleanup
+⚠️ [Murmuraba] [2025-07-24T14:42:31.213Z] [WARN] Failed to close audio context: Error: Close failed
+    at Object.<anonymous> [90m(/workspaces/murburaba/packages/murmuraba/[39msrc/__tests__/core/MurmubaraEngine.advanced.test.ts:329:43[90m)[39m
+    at Object.mockCall (file:///workspaces/murburaba/node_modules/[4m@vitest[24m/spy/dist/index.js:96:15)
+    at Object.spy [as close] (file:///workspaces/murburaba/node_modules/[4mtinyspy[24m/dist/index.js:47:103)
+    at MurmubaraEngine.destroy [90m(/workspaces/murburaba/packages/murmuraba/[39msrc/core/MurmubaraEngine.ts:813:35[90m)[39m
+    at [90m/workspaces/murburaba/packages/murmuraba/[39msrc/__tests__/core/MurmubaraEngine.advanced.test.ts:335:20
+    at file:///workspaces/murburaba/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:155:11
+    at file:///workspaces/murburaba/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:26
+    at file:///workspaces/murburaba/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///workspaces/murburaba/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1863:10)
+
+stdout | src/__tests__/core/MurmubaraEngine.advanced.test.ts > MurmubaraEngine Advanced Coverage > WASM loading > should handle WASM loading timeout
+❌ [Murmuraba] [2025-07-24T14:42:36.228Z] [ERROR] WASM module loading timed out
+
+ ❯ src/__tests__/core/MurmubaraEngine.advanced.test.ts (24 tests | 7 failed) 10093ms
+   ✓ MurmubaraEngine Advanced Coverage > Initialization branches > should handle already initialized state 4ms
+   × MurmubaraEngine Advanced Coverage > Initialization branches > should return existing promise if initialization in progress 7ms
+     → expected Promise{…} to be Promise{…} // Object.is equality
+
+If it should pass with deep equality, replace "toBe" with "toStrictEqual"
+
+Expected: Promise{…}
+Received: serializes to the same string
+
+   ✓ MurmubaraEngine Advanced Coverage > Initialization branches > should handle suspended audio context  5014ms
+   ✓ MurmubaraEngine Advanced Coverage > Initialization branches > should handle AudioContext creation failure 4ms
+   ✓ MurmubaraEngine Advanced Coverage > Initialization branches > should handle WebAssembly not supported 2ms
+   × MurmubaraEngine Advanced Coverage > Degraded mode > should initialize in degraded mode when configured 13ms
+     → expected 'error' to be 'degraded' // Object.is equality
+   × MurmubaraEngine Advanced Coverage > Degraded mode > should handle audio context failure in degraded mode 2ms
+     → expected 'error' to be 'degraded' // Object.is equality
+   ✓ MurmubaraEngine Advanced Coverage > Error history > should maintain error history limit of 10 1ms
+   ✓ MurmubaraEngine Advanced Coverage > Error history > should handle non-Error objects 1ms
+   ✓ MurmubaraEngine Advanced Coverage > Auto cleanup > should not setup cleanup when disabled 1ms
+   ✓ MurmubaraEngine Advanced Coverage > Auto cleanup > should clear cleanup timer on processing start 3ms
+   ✓ MurmubaraEngine Advanced Coverage > Auto cleanup > should trigger cleanup after delay when no active streams 4ms
+   ✓ MurmubaraEngine Advanced Coverage > Metrics forwarding > should forward metrics updates 2ms
+   × MurmubaraEngine Advanced Coverage > Destroy method > should force destroy from any state 6ms
+     → expected "spy" to be called at least once
+   × MurmubaraEngine Advanced Coverage > Destroy method > should cleanup resources on destroy 2ms
+     → expected "spy" to be called at least once
+   × MurmubaraEngine Advanced Coverage > Destroy method > should handle errors during cleanup 3ms
+     → Cleanup failed: Close failed
+   ✓ MurmubaraEngine Advanced Coverage > Configuration variations > should handle all log levels 4ms
+   ✓ MurmubaraEngine Advanced Coverage > Configuration variations > should handle custom log handler 1ms
+   ✓ MurmubaraEngine Advanced Coverage > Configuration variations > should handle all algorithms 3ms
+   ✓ MurmubaraEngine Advanced Coverage > Configuration variations > should handle worker configuration 1ms
+   × MurmubaraEngine Advanced Coverage > getDiagnostics coverage > should return comprehensive diagnostics 2ms
+     → expected undefined to be 'uninitialized' // Object.is equality
+   ✓ MurmubaraEngine Advanced Coverage > getDiagnostics coverage > should handle missing performance.memory 1ms
+   ✓ MurmubaraEngine Advanced Coverage > WASM loading > should handle WASM loading timeout  5005ms
+   ✓ MurmubaraEngine Advanced Coverage > WASM loading > should handle missing createRNNWasmModule 4ms
+stdout | src/__tests__/engines/RNNoiseEngine.test.ts
+🎭 ========================================= 🎭
+🚀 INITIALIZING WEB AUDIO MOCKS 2025 EDITION 🚀
+🎭 ========================================= 🎭
+
+stdout | src/__tests__/engines/RNNoiseEngine.test.ts
+
+🚀 ========== VITEST SETUP STARTING ========== 🚀
+
+
+🎪 ====== SETTING UP ALL AUDIO MOCKS ====== 🎪
+
+🎮 Setting up navigator.mediaDevices mock...
+
+🎉 ====== ALL MOCKS READY TO ROCK! ====== 🎉
+
+
+stdout | src/__tests__/engines/RNNoiseEngine.test.ts > RNNoiseEngine > edge cases > should handle concurrent initialization attempts
+❌ [RNNoiseEngine] Failed to load from import: rnnoiseModule.default is not a function
+❌ [RNNoiseEngine] Failed to load from import: rnnoiseModule.default is not a function
+
+ ❯ src/__tests__/engines/RNNoiseEngine.test.ts (25 tests | 7 failed) 457ms
+   ✓ RNNoiseEngine > constructor > should create instance with default config 3ms
+   ✓ RNNoiseEngine > constructor > should accept custom config 2ms
+   ✓ RNNoiseEngine > initialize > should not reinitialize if already initialized 3ms
+   ✓ RNNoiseEngine > initialize > should check WebAssembly support 5ms
+   ✓ RNNoiseEngine > initialize > should initialize with dynamic import (Option 1) 3ms
+   × RNNoiseEngine > initialize > should fallback to embedded loader when dynamic import fails (Option 2) 7ms
+     → Cannot find module '/workspaces/murburaba/node_modules/@jitsi/rnnoise-wasm/dist/rnnoise' imported from /workspaces/murburaba/node_modules/@jitsi/rnnoise-wasm/index.js
+   × RNNoiseEngine > initialize > should fallback to script tag when both imports fail (Option 3) 3ms
+     → Cannot find module '/workspaces/murburaba/node_modules/@jitsi/rnnoise-wasm/dist/rnnoise' imported from /workspaces/murburaba/node_modules/@jitsi/rnnoise-wasm/index.js
+   × RNNoiseEngine > initialize > should handle script loading with custom paths 2ms
+     → Cannot find module '/workspaces/murburaba/node_modules/@jitsi/rnnoise-wasm/dist/rnnoise' imported from /workspaces/murburaba/node_modules/@jitsi/rnnoise-wasm/index.js
+   × RNNoiseEngine > initialize > should handle script loading errors 3ms
+     → Cannot find module '/workspaces/murburaba/node_modules/@jitsi/rnnoise-wasm/dist/rnnoise' imported from /workspaces/murburaba/node_modules/@jitsi/rnnoise-wasm/index.js
+   × RNNoiseEngine > initialize > should handle missing createRNNWasmModule after script load 2ms
+     → Cannot find module '/workspaces/murburaba/node_modules/@jitsi/rnnoise-wasm/dist/rnnoise' imported from /workspaces/murburaba/node_modules/@jitsi/rnnoise-wasm/index.js
+   × RNNoiseEngine > initialize > should handle WASM loading errors with specific message 2ms
+     → Cannot find module '/workspaces/murburaba/node_modules/@jitsi/rnnoise-wasm/dist/rnnoise' imported from /workspaces/murburaba/node_modules/@jitsi/rnnoise-wasm/index.js
+   ✓ RNNoiseEngine > initialize > should handle RNNoise state creation failure 1ms
+   ✓ RNNoiseEngine > initialize > should perform warmup with silent frames 1ms
+   ✓ RNNoiseEngine > process > should throw if not initialized 3ms
+   ✓ RNNoiseEngine > process > should validate input buffer size 2ms
+   ✓ RNNoiseEngine > process > should process audio frame correctly 11ms
+   ✓ RNNoiseEngine > process > should store VAD value from processing 2ms
+   ✓ RNNoiseEngine > process > should handle zero VAD value 2ms
+   ✓ RNNoiseEngine > process > should handle undefined VAD value 2ms
+   ✓ RNNoiseEngine > cleanup > should clean up resources when initialized 2ms
+   ✓ RNNoiseEngine > cleanup > should handle cleanup when not initialized 1ms
+   ✓ RNNoiseEngine > cleanup > should handle cleanup when partially initialized 3ms
+   ✓ RNNoiseEngine > edge cases > should handle multiple initialization attempts after cleanup 1ms
+   ✓ RNNoiseEngine > edge cases > should handle process with special float values 1ms
+   × RNNoiseEngine > edge cases > should handle concurrent initialization attempts 390ms
+     → expected "spy" to be called 1 times, but got 2 times
+stdout | src/components/__tests__/AdvancedMetricsPanel.test.tsx
+🎭 ========================================= 🎭
+🚀 INITIALIZING WEB AUDIO MOCKS 2025 EDITION 🚀
+🎭 ========================================= 🎭
+
+stdout | src/components/__tests__/AdvancedMetricsPanel.test.tsx
+
+🚀 ========== VITEST SETUP STARTING ========== 🚀
+
+
+🎪 ====== SETTING UP ALL AUDIO MOCKS ====== 🎪
+
+🎮 Setting up navigator.mediaDevices mock...
+
+🎉 ====== ALL MOCKS READY TO ROCK! ====== 🎉
+
+
+ ❯ src/components/__tests__/AdvancedMetricsPanel.test.tsx (31 tests | 31 failed) 63ms
+   × AdvancedMetricsPanel TDD Tests > Visibility and Basic Rendering > should not render when isVisible is false 7ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Visibility and Basic Rendering > should not render when diagnostics is null 2ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Visibility and Basic Rendering > should render when both isVisible is true and diagnostics exists 2ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Visibility and Basic Rendering > should render with proper structure 2ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Header and Close Functionality > should display correct header title 2ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Header and Close Functionality > should render close button 1ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Header and Close Functionality > should call onClose when close button is clicked 1ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Diagnostics Data Display > should display engine version 1ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Diagnostics Data Display > should display WASM status - loaded 1ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Diagnostics Data Display > should display WASM status - not loaded 2ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Diagnostics Data Display > should display active processors count 2ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Diagnostics Data Display > should display memory usage in MB 3ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Diagnostics Data Display > should display processing time with decimal precision 3ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Diagnostics Data Display > should display engine state 2ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Browser Information > should display browser name when available 2ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Browser Information > should display Unknown when browser name is not available 2ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Browser Information > should display Unknown when browserInfo is null 2ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Browser Information > should display audio APIs supported status - supported 2ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Browser Information > should display audio APIs supported status - limited 2ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Performance Indicators > should show Good performance for low memory usage 2ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Performance Indicators > should show Moderate performance for medium memory usage 1ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Performance Indicators > should show High performance warning for high memory usage 7ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Performance Indicators > should handle edge case at 50MB threshold 1ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Performance Indicators > should handle edge case at 100MB threshold 1ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Uptime Display > should display uptime status as Active 1ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Edge Cases and Error Handling > should handle missing browserInfo gracefully 2ms
+     → expected [Function] to not throw an error but 'Error: createRoot(...): Target contai…' was thrown
+   × AdvancedMetricsPanel TDD Tests > Edge Cases and Error Handling > should handle zero memory usage 1ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Edge Cases and Error Handling > should handle negative memory usage 1ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Edge Cases and Error Handling > should handle zero processing time 1ms
+     → createRoot(...): Target container is not a DOM element.
+   × AdvancedMetricsPanel TDD Tests > Edge Cases and Error Handling > should handle very large numbers 2ms
+     → expected [Function] to not throw an error but 'Error: createRoot(...): Target contai…' was thrown
+   × AdvancedMetricsPanel TDD Tests > Component Unmounting > should unmount cleanly without errors 2ms
+     → createRoot(...): Target container is not a DOM element.
+stdout | src/__tests__/integration/noiseReduction.test.ts
+🎭 ========================================= 🎭
+🚀 INITIALIZING WEB AUDIO MOCKS 2025 EDITION 🚀
+🎭 ========================================= 🎭
+
+stdout | src/__tests__/integration/noiseReduction.test.ts
+
+🚀 ========== VITEST SETUP STARTING ========== 🚀
+
+
+🎪 ====== SETTING UP ALL AUDIO MOCKS ====== 🎪
+
+🎮 Setting up navigator.mediaDevices mock...
+
+🎉 ====== ALL MOCKS READY TO ROCK! ====== 🎉
+
+
+stdout | src/__tests__/integration/noiseReduction.test.ts > Noise Reduction Integration Tests > White Noise Reduction > should reduce white noise from sine wave
+❌ [RNNoiseEngine] Failed to load from import: rnnoiseModule.default is not a function
+
+stdout | src/__tests__/integration/noiseReduction.test.ts > Noise Reduction Integration Tests > White Noise Reduction > should reduce white noise from sine wave
+❌ [RNNoise] Initialization failed: TypeError: module.default is not a function
+    at loadWasmModule [90m(/workspaces/murburaba/packages/murmuraba/[39msrc/engines/rnnoise-universal-loader.ts:11:23[90m)[39m
+    at initializeRNNoise [90m(/workspaces/murburaba/packages/murmuraba/[39msrc/engines/rnnoise-universal-loader.ts:19:20[90m)[39m
+    at RNNoiseEngine.initialize [90m(/workspaces/murburaba/packages/murmuraba/[39msrc/engines/RNNoiseEngine.ts:53:33[90m)[39m
+    at [90m/workspaces/murburaba/packages/murmuraba/[39msrc/__tests__/integration/noiseReduction.test.ts:62:5
+
+stdout | src/__tests__/integration/noiseReduction.test.ts > Noise Reduction Integration Tests > White Noise Reduction > should reduce white noise from sine wave
+❌ [RNNoiseEngine] Failed to load embedded: module.default is not a function
+
