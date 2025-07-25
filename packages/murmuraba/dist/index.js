@@ -2674,7 +2674,7 @@ async function processFileWithMetrics(arrayBuffer, optionsOrCallback) {
                     chunkAudioData.set(frameData, offset);
                     offset += frameData.length;
                 }
-                // Convert chunk to desired format
+                // Convert chunk to desired format asynchronously
                 convertChunkToFormat(chunkAudioData, sampleRate, chunkOptions.outputFormat)
                     .then(blob => {
                     const chunk = {

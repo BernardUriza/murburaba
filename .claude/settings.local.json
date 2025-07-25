@@ -119,7 +119,8 @@
       "Bash(npm link:*)",
       "Bash(npx vitest run:*)",
       "Bash(test:*)",
-      "Bash(npm:*)"
+      "Bash(npm:*)",
+      "Bash(./scripts/release-flexible.sh:*)"
     ],
     "deny": []
   }

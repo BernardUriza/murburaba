@@ -47,23 +47,27 @@ if (typeof global.document === 'undefined' || !global.document.body) {
         firstChild: null,
         lastChild: null,
     });
-    global.document = {
-        createElement: vi.fn(() => mockElement()),
-        createTextNode: vi.fn(() => ({ textContent: '', nodeType: 3 })),
-        body: mockElement(),
-        head: mockElement(),
-        documentElement: mockElement(),
-        getElementById: vi.fn(() => mockElement()),
-        querySelector: vi.fn(() => mockElement()),
-        querySelectorAll: vi.fn(() => []),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        createEvent: vi.fn(() => ({
-            initEvent: vi.fn(),
-            preventDefault: vi.fn(),
-            stopPropagation: vi.fn(),
-        })),
-    };
+    Object.defineProperty(global, 'document', {
+        value: {
+            createElement: vi.fn(() => mockElement()),
+            createTextNode: vi.fn(() => ({ textContent: '', nodeType: 3 })),
+            body: mockElement(),
+            head: mockElement(),
+            documentElement: mockElement(),
+            getElementById: vi.fn(() => mockElement()),
+            querySelector: vi.fn(() => mockElement()),
+            querySelectorAll: vi.fn(() => []),
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            createEvent: vi.fn(() => ({
+                initEvent: vi.fn(),
+                preventDefault: vi.fn(),
+                stopPropagation: vi.fn(),
+            })),
+        },
+        writable: true,
+        configurable: true
+    });
     // Ensure window.document exists too
     if (typeof global.window !== 'undefined') {
         global.window.document = global.document;
