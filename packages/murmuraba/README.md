@@ -3,7 +3,7 @@
 [![npm version](https://badge.fury.io/js/murmuraba.svg)](https://www.npmjs.com/package/murmuraba)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Murmuraba** provides real-time audio noise reduction with advanced chunked processing for web applications. The new `processFileWithMetrics` API delivers chunks as ready-to-use blobs with integrated VAD metrics, eliminating client-side complexity.
+**Murmuraba** provides real-time audio noise reduction with advanced chunked processing for web applications. The new API delivers chunks as ready-to-use blobs with integrated VAD metrics, eliminating client-side complexity.
 
 ## 🌟 Key Features
 
@@ -24,409 +24,324 @@ yarn add murmuraba
 pnpm add murmuraba
 ```
 
-## 🎯 New Chunking API - processFileWithMetrics
+## 🎯 Core API Functions
 
-The `processFileWithMetrics` function is the core of Murmuraba's new chunking system. It can process **audio files** or **live microphone input** and returns ready-to-use chunks with integrated metrics.
+Murmuraba exposes two main API functions that work together:
 
-### 🎤 Live Microphone Recording
+### 1. `initializeAudioEngine()` - Engine Initialization
+
+**MUST be called before any audio processing.** This function prepares the WebAssembly engine and audio processing pipeline.
+
+```typescript
+import { initializeAudioEngine } from 'murmuraba';
+
+// Initialize the engine with configuration
+await initializeAudioEngine({
+  algorithm: 'spectral',    // 'spectral' | 'rnnoise' | 'custom'
+  logLevel: 'info',         // 'debug' | 'info' | 'warn' | 'error'
+  allowDegraded: true       // Allow fallback mode if WASM fails
+});
+
+console.log('✅ Audio engine initialized and ready!');
+```
+
+### 2. `processFileWithMetrics()` - Audio Processing
+
+After engine initialization, use this function to process audio from **files** or **microphone**.
+
+#### 🎤 Live Microphone Recording
 
 Use `'Use.Mic'` as the first parameter to record directly from the microphone:
 
 ```typescript
 import { processFileWithMetrics } from 'murmuraba';
 
-// Record 10 seconds from microphone with 6-second chunks
+// Record from microphone for 10 seconds
 const result = await processFileWithMetrics('Use.Mic', {
   recordingDuration: 10000,  // 10 seconds
   chunkOptions: {
     chunkDuration: 6000,     // 6-second chunks
-    outputFormat: 'wav'      // WAV output
+    outputFormat: 'wav'      // 'wav' | 'webm' | 'raw'
   }
 });
 
-console.log(`🎤 Recorded ${result.chunks.length} chunks from microphone`);
-result.chunks.forEach((chunk, index) => {
-  console.log(`Chunk ${index + 1}: ${chunk.duration / 1000}s`);
-  console.log(`VAD Score: ${(chunk.vadScore * 100).toFixed(1)}%`);
-  
-  // Ready to play immediately
-  const audioUrl = URL.createObjectURL(chunk.blob);
-  console.log(`Ready to play: ${audioUrl}`);
-});
+console.log(`🎤 Recorded ${result.chunks.length} chunks`);
 ```
 
-### 📁 File Processing
+#### 📁 File Processing
 
 Process uploaded audio files:
 
-### Basic Usage
-
 ```typescript
 import { processFileWithMetrics } from 'murmuraba';
 
-// Process file with default 8-second WAV chunks
-const result = await processFileWithMetrics(audioFile);
-
-console.log(result.chunks.length); // Number of chunks created
-result.chunks.forEach((chunk, index) => {
-  console.log(`Chunk ${index + 1}:`);
-  console.log(`- Duration: ${chunk.duration}ms`);
-  console.log(`- Format: ${chunk.format}`);
-  console.log(`- VAD Score: ${chunk.vadMetrics.voiceActivityScore}`);
-  console.log(`- Ready to use: ${chunk.blob.size} bytes`);
+// Process an audio file
+const result = await processFileWithMetrics(audioFile, {
+  chunkOptions: {
+    chunkDuration: 8000,     // 8-second chunks
+    outputFormat: 'wav'      // Output format
+  }
 });
+
+console.log(`📁 Processed ${result.chunks.length} chunks from file`);
 ```
 
-### Advanced Configuration
+## 🚀 Complete Example - Step by Step
 
 ```typescript
-import { processFileWithMetrics, ChunkOptions } from 'murmuraba';
+import { 
+  initializeAudioEngine, 
+  processFileWithMetrics 
+} from 'murmuraba';
 
-const options: ChunkOptions = {
-  duration: 10,        // 10-second chunks
-  format: 'webm',      // Output as WebM
-  quality: 'high'      // High quality processing
-};
+async function processAudio() {
+  try {
+    // Step 1: Initialize the engine (required!)
+    console.log('⚡ Initializing audio engine...');
+    await initializeAudioEngine({
+      algorithm: 'spectral',
+      logLevel: 'info',
+      allowDegraded: true
+    });
+    console.log('✅ Engine ready!');
 
-const result = await processFileWithMetrics(audioFile, options);
-
-// Each chunk is ready to use immediately
-result.chunks.forEach(chunk => {
-  // Create audio element
-  const audio = new Audio(URL.createObjectURL(chunk.blob));
-  
-  // Access integrated metrics
-  console.log('Voice detected:', chunk.vadMetrics.voiceDetected);
-  console.log('Noise level:', chunk.vadMetrics.noiseLevel);
-  console.log('Signal quality:', chunk.vadMetrics.signalQuality);
-});
-```
-
-## 🔧 TypeScript Interfaces
-
-### Core Interfaces
-
-```typescript
-// Chunk configuration options
-interface ChunkOptions {
-  duration?: number;           // Chunk duration in seconds (default: 8)
-  format?: 'wav' | 'webm' | 'raw';  // Output format (default: 'wav')
-  quality?: 'low' | 'medium' | 'high';  // Processing quality (default: 'medium')
-}
-
-// Processed chunk with ready-to-use blob
-interface ProcessedChunk {
-  id: string;                  // Unique chunk identifier
-  blob: Blob;                  // Ready-to-use audio blob
-  duration: number;            // Duration in milliseconds
-  format: string;              // Audio format (wav/webm/raw)
-  startTime: number;           // Start timestamp (ms)
-  endTime: number;             // End timestamp (ms)
-  vadMetrics: {
-    voiceActivityScore: number;     // 0-1 voice activity score
-    voiceDetected: boolean;         // Voice presence detection
-    noiseLevel: number;             // 0-1 noise level
-    signalQuality: number;          // 0-1 signal quality
-    energyLevel: number;            // Audio energy level
-  };
-}
-
-// Complete processing result
-interface ProcessFileResult {
-  chunks: ProcessedChunk[];    // Array of processed chunks
-  totalDuration: number;       // Total file duration (ms)
-  originalFormat: string;      // Original file format
-  processingTime: number;      // Processing time (ms)
-  metadata: {
-    sampleRate: number;        // Audio sample rate
-    channels: number;          // Number of channels
-    bitDepth?: number;         // Bit depth if available
-  };
-}
-
-// Unified options interface
-interface ProcessFileOptions {
-  chunk?: ChunkOptions;        // Chunking configuration
-  noiseReduction?: boolean;    // Enable noise reduction (default: true)
-  vadEnabled?: boolean;        // Enable VAD analysis (default: true)
+    // Step 2a: Process from microphone
+    console.log('🎤 Recording from microphone...');
+    const micResult = await processFileWithMetrics('Use.Mic', {
+      recordingDuration: 15000,  // 15 seconds
+      chunkOptions: {
+        chunkDuration: 5000,     // 5-second chunks
+        outputFormat: 'wav'
+      }
+    });
+    
+    console.log(`✅ Recorded ${micResult.chunks.length} chunks`);
+    
+    // Step 2b: Process from file
+    const fileInput = document.getElementById('audioFile') as HTMLInputElement;
+    const file = fileInput.files?.[0];
+    
+    if (file) {
+      console.log('📁 Processing audio file...');
+      const fileResult = await processFileWithMetrics(file, {
+        chunkOptions: {
+          chunkDuration: 8000,   // 8-second chunks
+          outputFormat: 'wav'
+        }
+      });
+      
+      console.log(`✅ Processed ${fileResult.chunks.length} chunks`);
+      
+      // Use the chunks
+      fileResult.chunks.forEach((chunk, index) => {
+        console.log(`Chunk ${index + 1}:`);
+        console.log(`  Duration: ${chunk.duration / 1000}s`);
+        console.log(`  VAD Score: ${(chunk.vadScore * 100).toFixed(1)}%`);
+        
+        // Play the chunk
+        const audioUrl = URL.createObjectURL(chunk.blob);
+        const audio = new Audio(audioUrl);
+        // audio.play();
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ Error:', error);
+  }
 }
 ```
 
-### Function Signatures
+## 🔧 API Reference
+
+### initializeAudioEngine(config?)
+
+Initializes the audio processing engine. **Must be called before any audio processing.**
 
 ```typescript
-// File processing
-function processFileWithMetrics(
-  file: File,
-  options?: ProcessFileOptions
-): Promise<ProcessFileResult>;
+interface MurmubaraConfig {
+  algorithm?: 'spectral' | 'rnnoise' | 'custom';  // Processing algorithm
+  logLevel?: 'debug' | 'info' | 'warn' | 'error'; // Logging level
+  allowDegraded?: boolean;                         // Allow fallback mode
+  bufferSize?: 2048 | 4096 | 8192 | 16384;       // Audio buffer size
+  noiseReductionLevel?: number;                    // 0-100 reduction strength
+}
 
-// Live microphone recording
+function initializeAudioEngine(config?: MurmubaraConfig): Promise<void>;
+```
+
+### processFileWithMetrics() - Overloaded Function
+
+#### Microphone Recording
+
+```typescript
 function processFileWithMetrics(
   useMic: 'Use.Mic',
-  options?: ProcessFileOptions & { recordingDuration?: number }
-): Promise<ProcessFileResult>;
-
-// Backward compatibility overload
-function processFileWithMetrics(
-  file: File,
-  chunkOptions: ChunkOptions
+  options?: {
+    recordingDuration?: number;    // Recording duration in ms
+    chunkOptions?: ChunkOptions;   // Chunking configuration
+  }
 ): Promise<ProcessFileResult>;
 ```
 
-## 🎵 Complete Example with Playback
+#### File Processing
 
 ```typescript
-import { processFileWithMetrics } from 'murmuraba';
-
-async function processAudioFile(file: File) {
-  try {
-    // Process with custom options
-    const result = await processFileWithMetrics(file, {
-      chunk: {
-        duration: 6,      // 6-second chunks
-        format: 'wav',    // WAV output
-        quality: 'high'   // High quality
-      },
-      noiseReduction: true,
-      vadEnabled: true
-    });
-
-    console.log(`✅ Processed ${result.chunks.length} chunks`);
-    console.log(`📊 Total duration: ${result.totalDuration / 1000}s`);
-    console.log(`⚡ Processing time: ${result.processingTime}ms`);
-
-    // Use chunks immediately
-    result.chunks.forEach((chunk, index) => {
-      console.log(`\n🎵 Chunk ${index + 1}:`);
-      console.log(`   Duration: ${chunk.duration / 1000}s`);
-      console.log(`   Voice Activity: ${(chunk.vadMetrics.voiceActivityScore * 100).toFixed(1)}%`);
-      console.log(`   Voice Detected: ${chunk.vadMetrics.voiceDetected ? '✅' : '❌'}`);
-      console.log(`   Noise Level: ${(chunk.vadMetrics.noiseLevel * 100).toFixed(1)}%`);
-      console.log(`   Signal Quality: ${(chunk.vadMetrics.signalQuality * 100).toFixed(1)}%`);
-      
-      // Create playable URL immediately
-      const audioUrl = URL.createObjectURL(chunk.blob);
-      console.log(`   🔗 Ready to play: ${audioUrl.substring(0, 50)}...`);
-      
-      // Cleanup URL when done (optional)
-      // URL.revokeObjectURL(audioUrl);
-    });
-
-  } catch (error) {
-    console.error('❌ Processing failed:', error);
+function processFileWithMetrics(
+  file: File,
+  options?: {
+    chunkOptions?: ChunkOptions;   // Chunking configuration
   }
-}
-
-// Use with file input
-const fileInput = document.getElementById('audioFile') as HTMLInputElement;
-fileInput.addEventListener('change', (event) => {
-  const file = (event.target as HTMLInputElement).files?.[0];
-  if (file) {
-    processAudioFile(file);
-  }
-});
+): Promise<ProcessFileResult>;
 ```
 
-## 🔄 React Integration Example
+### Type Definitions
+
+```typescript
+interface ChunkOptions {
+  chunkDuration: number;          // Chunk duration in milliseconds
+  outputFormat: 'wav' | 'webm' | 'raw';  // Output audio format
+}
+
+interface ProcessedChunk {
+  blob: Blob;                     // Ready-to-use audio blob
+  startTime: number;              // Start timestamp (ms)
+  endTime: number;                // End timestamp (ms) 
+  duration: number;               // Duration (ms)
+  vadScore: number;               // Voice Activity Detection score (0-1)
+  metrics: {
+    noiseRemoved: number;         // Noise reduction amount
+    averageLevel: number;         // Average audio level
+    vad: number;                  // VAD score
+  };
+}
+
+interface ProcessFileResult {
+  chunks: ProcessedChunk[];       // Array of processed chunks
+  processedBuffer: ArrayBuffer;   // Full processed audio (optional)
+  averageVad: number;             // Average VAD across all chunks
+  totalDuration: number;          // Total duration (ms)
+  metadata: {
+    sampleRate: number;           // Audio sample rate
+    channels: number;             // Number of channels
+    originalDuration: number;     // Original file duration
+  };
+}
+```
+
+## 💡 React Hook Example
 
 ```tsx
 import React, { useState, useCallback } from 'react';
-import { processFileWithMetrics, ProcessedChunk } from 'murmuraba';
+import { 
+  initializeAudioEngine, 
+  processFileWithMetrics,
+  ProcessedChunk 
+} from 'murmuraba';
 
-function AudioChunkProcessor() {
+function useAudioProcessor() {
+  const [isEngineReady, setIsEngineReady] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [chunks, setChunks] = useState<ProcessedChunk[]>([]);
-  const [processing, setProcessing] = useState(false);
-  const [currentPlaying, setCurrentPlaying] = useState<string | null>(null);
-  const [recordingFromMic, setRecordingFromMic] = useState(false);
 
-  const handleFileUpload = useCallback(async (file: File) => {
-    setProcessing(true);
+  // Initialize engine once
+  const initEngine = useCallback(async () => {
+    if (isEngineReady) return;
+    
+    try {
+      await initializeAudioEngine({
+        algorithm: 'spectral',
+        logLevel: 'info'
+      });
+      setIsEngineReady(true);
+    } catch (error) {
+      console.error('Engine initialization failed:', error);
+    }
+  }, [isEngineReady]);
+
+  // Process audio file
+  const processFile = useCallback(async (file: File) => {
+    if (!isEngineReady) {
+      console.warn('Engine not initialized');
+      return;
+    }
+
+    setIsProcessing(true);
     try {
       const result = await processFileWithMetrics(file, {
-        chunkOptions: { chunkDuration: 8000, outputFormat: 'wav' },
-        enableVAD: true
+        chunkOptions: {
+          chunkDuration: 8000,
+          outputFormat: 'wav'
+        }
       });
-      
       setChunks(result.chunks);
-      console.log(`✅ Created ${result.chunks.length} chunks from file`);
-    } catch (error) {
-      console.error('File processing failed:', error);
     } finally {
-      setProcessing(false);
+      setIsProcessing(false);
     }
-  }, []);
+  }, [isEngineReady]);
 
-  const handleMicrophoneRecording = useCallback(async () => {
-    setRecordingFromMic(true);
-    setProcessing(true);
+  // Record from microphone
+  const recordFromMic = useCallback(async (duration: number = 10000) => {
+    if (!isEngineReady) {
+      console.warn('Engine not initialized');
+      return;
+    }
+
+    setIsProcessing(true);
     try {
       const result = await processFileWithMetrics('Use.Mic', {
-        recordingDuration: 15000,  // 15 seconds
-        chunkOptions: { chunkDuration: 5000, outputFormat: 'wav' },
-        enableVAD: true
+        recordingDuration: duration,
+        chunkOptions: {
+          chunkDuration: 5000,
+          outputFormat: 'wav'
+        }
       });
-      
       setChunks(result.chunks);
-      console.log(`🎤 Recorded ${result.chunks.length} chunks from microphone`);
-    } catch (error) {
-      console.error('Microphone recording failed:', error);
     } finally {
-      setRecordingFromMic(false);
-      setProcessing(false);
+      setIsProcessing(false);
     }
-  }, []);
+  }, [isEngineReady]);
 
-  const playChunk = useCallback((chunk: ProcessedChunk) => {
-    // Stop any currently playing audio
-    if (currentPlaying) {
-      const currentAudio = document.getElementById(currentPlaying) as HTMLAudioElement;
-      currentAudio?.pause();
-    }
-
-    // Create and play new audio
-    const audioUrl = URL.createObjectURL(chunk.blob);
-    const audio = new Audio(audioUrl);
-    const audioId = `audio-${chunk.id}`;
-    
-    audio.id = audioId;
-    audio.onended = () => {
-      setCurrentPlaying(null);
-      URL.revokeObjectURL(audioUrl);
-    };
-    
-    setCurrentPlaying(audioId);
-    audio.play();
-  }, [currentPlaying]);
-
-  return (
-    <div className="audio-processor">
-      {/* File Upload */}
-      <div className="input-section">
-        <input
-          type="file"
-          accept="audio/*"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleFileUpload(file);
-          }}
-          disabled={processing}
-        />
-        <span>or</span>
-        <button 
-          onClick={handleMicrophoneRecording}
-          disabled={processing}
-        >
-          {recordingFromMic ? '🎤 Recording...' : '🎤 Record from Microphone'}
-        </button>
-      </div>
-      
-      {processing && (
-        <div>
-          {recordingFromMic ? '🎤 Recording from microphone...' : '🔄 Processing audio file...'}
-        </div>
-      )}
-      
-      <div className="chunks-grid">
-        {chunks.map((chunk, index) => (
-          <div key={chunk.id} className="chunk-card">
-            <h3>Chunk #{index + 1}</h3>
-            <p>Duration: {(chunk.duration / 1000).toFixed(1)}s</p>
-            <div className="metrics">
-              <div>🎤 Voice: {chunk.vadMetrics.voiceDetected ? '✅' : '❌'}</div>
-              <div>📊 Activity: {(chunk.vadMetrics.voiceActivityScore * 100).toFixed(1)}%</div>
-              <div>🔇 Noise: {(chunk.vadMetrics.noiseLevel * 100).toFixed(1)}%</div>
-              <div>⭐ Quality: {(chunk.vadMetrics.signalQuality * 100).toFixed(1)}%</div>
-            </div>
-            <button 
-              onClick={() => playChunk(chunk)}
-              disabled={currentPlaying === `audio-${chunk.id}`}
-            >
-              {currentPlaying === `audio-${chunk.id}` ? '⏸️ Playing' : '▶️ Play'}
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  return {
+    isEngineReady,
+    isProcessing,
+    chunks,
+    initEngine,
+    processFile,
+    recordFromMic
+  };
 }
-
-export default AudioChunkProcessor;
 ```
 
-## 🎤 Quick Microphone Example
+## 🎯 Quick Start Guide
+
+1. **Initialize the engine once when your app starts:**
 
 ```typescript
-// One-liner to record 30 seconds from microphone with chunking
-const micResult = await processFileWithMetrics('Use.Mic', {
-  recordingDuration: 30000,
+await initializeAudioEngine();
+```
+
+2. **Process audio from microphone:**
+
+```typescript
+const result = await processFileWithMetrics('Use.Mic', {
+  recordingDuration: 10000  // 10 seconds
+});
+```
+
+3. **Process audio from file:**
+
+```typescript
+const result = await processFileWithMetrics(file, {
   chunkOptions: { chunkDuration: 8000, outputFormat: 'wav' }
 });
-
-// Chunks are ready to use immediately!
-micResult.chunks.forEach((chunk, i) => {
-  console.log(`🎵 Chunk ${i + 1}: ${chunk.duration / 1000}s`);
-  console.log(`   VAD: ${chunk.vadScore.toFixed(2)}`);
-  console.log(`   Noise removed: ${chunk.metrics.noiseRemoved.toFixed(2)}`);
-  
-  // Play chunk
-  const audio = new Audio(URL.createObjectURL(chunk.blob));
-  audio.play();
-});
 ```
 
-## 🎯 Key Benefits
+## ⚠️ Important Notes
 
-### ✅ Before: Manual Client-Side Complexity
-```typescript
-// Old way - complex client setup
-const chunks = await processFile(file);
-for (const chunk of chunks) {
-  const audioBuffer = await convertToWAV(chunk.rawData);  // Manual conversion
-  const blob = new Blob([audioBuffer], { type: 'audio/wav' });  // Manual blob creation
-  const vadScore = await calculateVAD(chunk.rawData);  // Separate VAD calculation
-  const url = URL.createObjectURL(blob);  // Manual URL creation
-}
-```
-
-### ✅ After: Zero Client Complexity
-```typescript
-// Files - everything ready-to-use
-const result = await processFileWithMetrics(file);
-
-// Microphone - one line!
-const micResult = await processFileWithMetrics('Use.Mic');
-
-// Both return identical format:
-result.chunks.forEach(chunk => {
-  // chunk.blob is ready to use immediately
-  // chunk.vadMetrics are pre-calculated
-  // No manual conversions needed
-  const audioUrl = URL.createObjectURL(chunk.blob);
-  // Just play!
-});
-```
-
-## 🛡️ Backward Compatibility
-
-The API maintains full backward compatibility while providing new functionality:
-
-```typescript
-// Old API still works
-const result = await processFileWithMetrics(arrayBuffer, onFrameProcessed);
-
-// New file API
-const result = await processFileWithMetrics(file, {
-  chunkOptions: { chunkDuration: 10000, outputFormat: 'wav' },
-  enableVAD: true
-});
-
-// New microphone API
-const result = await processFileWithMetrics('Use.Mic', {
-  recordingDuration: 15000,
-  chunkOptions: { chunkDuration: 5000, outputFormat: 'wav' }
-});
-```
+- **Always call `initializeAudioEngine()` first** - The engine must be initialized before any audio processing
+- **Engine initialization is one-time** - Initialize once and use throughout your app lifecycle
+- **Microphone permissions** - When using `'Use.Mic'`, the browser will request microphone permissions
+- **Memory management** - Remember to call `URL.revokeObjectURL()` when done with blob URLs
 
 ## 🔧 Browser Requirements
 
@@ -446,5 +361,5 @@ MIT © Murmuraba Team
 
 ---
 
-**Ready to eliminate client-side audio complexity?**  
-Install Murmuraba and get chunks as ready-to-use blobs with integrated VAD metrics! 🚀
+**Ready to process audio with zero complexity?**  
+Initialize the engine and start processing! 🚀
