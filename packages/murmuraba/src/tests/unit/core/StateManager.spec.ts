@@ -41,7 +41,7 @@ describe('StateManager', () => {
       expect(stateManager.transitionTo('ready')).toBe(true);
       expect(stateManager.transitionTo('processing')).toBe(true);
       expect(stateManager.transitionTo('ready')).toBe(true);
-      expect(stateManager.transitionTo('cleanup')).toBe(true);
+      expect(stateManager.transitionTo('destroying')).toBe(true);
       expect(stateManager.transitionTo('destroyed')).toBe(true);
     });
 
@@ -67,7 +67,7 @@ describe('StateManager', () => {
       expect(stateManager.getState()).toBe('error');
       
       // Can transition from error to cleanup
-      expect(stateManager.canTransitionTo('cleanup')).toBe(true);
+      expect(stateManager.canTransitionTo('destroying')).toBe(true);
     });
 
     it('should allow force transitions', () => {
@@ -75,7 +75,7 @@ describe('StateManager', () => {
       stateManager.transitionTo('processing');
       
       // Act - Force transition to destroyed
-      const result = stateManager.transitionTo('destroyed', true);
+      const result = stateManager.transitionTo('destroyed');
 
       // Assert
       expect(result).toBe(true);
@@ -88,17 +88,21 @@ describe('StateManager', () => {
       // Test each state's allowed transitions
       const stateTransitions = {
         uninitialized: ['initializing', 'error'],
-        initializing: ['ready', 'error', 'cleanup'],
-        ready: ['processing', 'cleanup', 'error'],
-        processing: ['ready', 'error', 'cleanup'],
-        cleanup: ['destroyed', 'error'],
-        error: ['cleanup', 'destroyed'],
+        initializing: ['creating-context', 'loading-wasm', 'ready', 'degraded', 'error'],
+        'creating-context': ['loading-wasm', 'ready', 'degraded', 'error'],
+        'loading-wasm': ['ready', 'degraded', 'error'],
+        ready: ['processing', 'destroying', 'error'],
+        processing: ['ready', 'paused', 'destroying', 'error'],
+        paused: ['processing', 'ready', 'destroying', 'error'],
+        degraded: ['processing', 'destroying', 'error'],
+        destroying: ['destroyed', 'error'],
+        error: ['initializing', 'destroying'],
         destroyed: [],
       };
 
       Object.entries(stateTransitions).forEach(([fromState, allowedStates]) => {
         // Force transition to test state
-        stateManager.transitionTo(fromState as any, true);
+        stateManager['currentState'] = fromState as any;
         
         // Check allowed transitions
         allowedStates.forEach(toState => {
@@ -107,7 +111,7 @@ describe('StateManager', () => {
         
         // Check some disallowed transitions
         const allStates = Object.keys(stateTransitions);
-        const disallowedStates = allStates.filter(s => !allowedStates.includes(s) && s !== fromState);
+        const disallowedStates = allStates.filter(s => !(allowedStates as string[]).includes(s) && s !== fromState);
         
         disallowedStates.forEach(toState => {
           expect(stateManager.canTransitionTo(toState as any)).toBe(false);
@@ -133,7 +137,7 @@ describe('StateManager', () => {
 
     it('should maintain state integrity after failed transitions', () => {
       // Arrange
-      stateManager.transitionTo('ready', true);
+      stateManager['currentState'] = 'ready';
       const initialState = stateManager.getState();
 
       // Act - Attempt invalid transition
@@ -146,7 +150,7 @@ describe('StateManager', () => {
 
     it('should handle destroyed state as final', () => {
       // Arrange
-      stateManager.transitionTo('destroyed', true);
+      stateManager['currentState'] = 'destroyed';
 
       // Act & Assert - No transitions allowed from destroyed
       expect(stateManager.canTransitionTo('uninitialized')).toBe(false);
@@ -154,7 +158,7 @@ describe('StateManager', () => {
       expect(stateManager.canTransitionTo('error')).toBe(false);
       
       // Even force transitions should not work
-      expect(stateManager.transitionTo('ready', true)).toBe(false);
+      expect(stateManager.transitionTo('ready')).toBe(false);
     });
   });
 });

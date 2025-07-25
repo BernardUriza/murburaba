@@ -7,8 +7,13 @@ import postcss from 'rollup-plugin-postcss';
 
 // Suppress circular dependency warnings for known external libraries
 const onwarn = (warning, warn) => {
-  if (warning.code === 'CIRCULAR_DEPENDENCY' && warning.message.includes('lamejs')) {
-    return; // Suppress lamejs circular dependency warnings
+  if (warning.code === 'CIRCULAR_DEPENDENCY') {
+    // Suppress warnings from external libraries
+    if (warning.message.includes('lamejs') ||
+        warning.message.includes('es-toolkit') ||
+        warning.message.includes('d3-interpolate')) {
+      return;
+    }
   }
   warn(warning);
 };

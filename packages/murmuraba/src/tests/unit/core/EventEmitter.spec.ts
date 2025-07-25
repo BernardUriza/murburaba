@@ -7,7 +7,14 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { EventEmitter } from '../../../core/EventEmitter';
 
 describe('EventEmitter', () => {
-  let emitter: EventEmitter;
+  let emitter: EventEmitter<{
+    'test-event': (...args: any[]) => void;
+    'event-a': (data: string) => void;
+    'event-b': (data: string) => void;
+    'no-listeners': (data: string) => void;
+    'non-existent-event': (data: any) => void;
+    '': (data: string) => void;
+  }>;
 
   beforeEach(() => {
     emitter = new EventEmitter();

@@ -8,7 +8,8 @@
       "Bash(npm test:*)",
       "Bash(npm run quality:gate:*)",
       "Bash(npm run test:coverage:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }

@@ -14,17 +14,17 @@ export class AudioContextBuilder {
   };
 
   withState(state: AudioContextState) {
-    this.context.state = state;
+    (this.context as any).state = state;
     return this;
   }
 
   withSampleRate(rate: number) {
-    this.context.sampleRate = rate;
+    (this.context as any).sampleRate = rate;
     return this;
   }
 
   withCurrentTime(time: number) {
-    this.context.currentTime = time;
+    (this.context as any).currentTime = time;
     return this;
   }
 
@@ -49,12 +49,12 @@ export class MediaStreamBuilder {
   private tracks: MediaStreamTrack[] = [];
 
   withId(id: string) {
-    this.stream.id = id;
+    (this.stream as any).id = id;
     return this;
   }
 
   withActive(active: boolean) {
-    this.stream.active = active;
+    (this.stream as any).active = active;
     return this;
   }
 
@@ -149,7 +149,7 @@ export class EngineConfigBuilder {
     logLevel: 'info' as const,
   };
 
-  withAlgorithm(algorithm: 'rnnoise' | 'speex') {
+  withAlgorithm(algorithm: 'rnnoise') {
     this.config.algorithm = algorithm;
     return this;
   }

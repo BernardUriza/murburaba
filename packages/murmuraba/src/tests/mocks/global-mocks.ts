@@ -168,6 +168,14 @@ export class MockAudioWorkletNode {
 
 // Install global mocks
 export function installGlobalMocks() {
+  // Define window on global if it doesn't exist
+  if (typeof window === 'undefined') {
+    Object.defineProperty(global, 'window', {
+      writable: true,
+      value: global,
+    });
+  }
+  
   // Define AudioContext on global
   Object.defineProperty(global, 'AudioContext', {
     writable: true,
