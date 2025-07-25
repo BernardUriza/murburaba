@@ -2,13 +2,10 @@
   "name": "murmuraba-studio",
   "version": "2.0.0",
   "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
   "scripts": {
     "dev": "concurrently \"npm run dev:next\" \"npm run dev:package\"",
     "dev:next": "next dev",
-    "dev:package": "npm run watch --workspace=murmuraba",
+    "dev:package": "cd packages/murmuraba && npm run watch",
     "build": "npm run generate-build-info && next build",
     "start": "next start",
     "lint": "eslint src --ext .ts,.tsx",
@@ -17,14 +14,14 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "test:integration": "npm run test --workspace=murmuraba -- --run ChunkProcessorRecordingManagerIntegration",
+    "test:integration": "cd packages/murmuraba && npm run test -- --run ChunkProcessorRecordingManagerIntegration",
     "test:e2e": "vitest run --config ./vitest.e2e.config.ts",
     "test:e2e:watch": "vitest watch --config ./vitest.e2e.config.ts",
     "test:all": "npm run test && npm run test:e2e"
   },
   "dependencies": {
     "audio-resampler": "^1.0.1",
-    "murmuraba": "workspace:*",
+    "murmuraba": "file:./packages/murmuraba",
     "next": "^15.4.0",
     "react": "^18",
     "react-dom": "^18",
@@ -38,6 +35,7 @@
     "@types/react-dom": "^18",
     "@vitest/ui": "^3.2.4",
     "concurrently": "^9.2.0",
+    "copy-webpack-plugin": "^13.0.0",
     "eslint": "^8",
     "eslint-config-next": "^15.4.0",
     "happy-dom": "^18.0.1",
