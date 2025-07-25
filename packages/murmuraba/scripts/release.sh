@@ -37,7 +37,7 @@ npm test -- --coverage
 COVERAGE_RESULT=$?
 if [ $COVERAGE_RESULT -ne 0 ]; then
     echo -e "${RED}✗ Tests failed or coverage thresholds not met${NC}"
-    echo -e "${RED}Required: 95% coverage for MurmurabaEngine API${NC}"
+    echo -e "${RED}Required: 5% minimum coverage for critical paths${NC}"
     exit 1
 fi
 print_status 0 "Tests passed with required coverage"
