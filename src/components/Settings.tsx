@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import '../styles/settings-chat.css'
 
 interface SettingsProps {
   isOpen: boolean
