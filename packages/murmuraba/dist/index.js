@@ -2328,13 +2328,313 @@ async function processFile(arrayBuffer) {
 }
 
 /**
- * Process audio file and capture VAD metrics frame by frame
+ * Audio Format Converter Utility
+ * Converts WebM/Opus audio to WAV format for universal browser playback
  */
-async function processFileWithMetrics(arrayBuffer, onFrameProcessed) {
+class AudioConverter {
+    constructor() {
+        // CRITICAL FOR MEDICAL APP: Track created URLs for cleanup
+        this.createdUrls = new Set();
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    /**
+     * Convert a Blob from WebM/Opus to WAV format
+     */
+    async convertToWav(blob) {
+        try {
+            // First, try to decode the audio data
+            const arrayBuffer = await blob.arrayBuffer();
+            const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer.slice(0));
+            // Convert to WAV
+            const wavBlob = this.audioBufferToWav(audioBuffer);
+            console.log('Successfully converted to WAV, size:', wavBlob.size);
+            return wavBlob;
+        }
+        catch (error) {
+            console.error('Failed to convert audio:', error);
+            throw error;
+        }
+    }
+    /**
+     * Convert WebM blob to WAV blob (static method for easy use)
+     */
+    static async webmToWav(webmBlob) {
+        const converter = new AudioConverter();
+        return converter.convertToWav(webmBlob);
+    }
+    /**
+     * Convert WebM to MP3 using lamejs
+     */
+    static async webmToMp3(webmBlob, bitrate = 128) {
+        const converter = new AudioConverter();
+        try {
+            // Import lamejs dynamically
+            const lamejs = await Promise.resolve().then(function () { return index$1; });
+            // First decode to AudioBuffer
+            const arrayBuffer = await webmBlob.arrayBuffer();
+            const audioBuffer = await converter.audioContext.decodeAudioData(arrayBuffer);
+            // Convert to mono if stereo (lamejs works better with mono)
+            const channels = audioBuffer.numberOfChannels;
+            const sampleRate = audioBuffer.sampleRate;
+            const samples = audioBuffer.length;
+            // Get PCM data
+            const pcmData = new Int16Array(samples);
+            const channelData = audioBuffer.getChannelData(0); // Use first channel
+            // Convert float32 to int16
+            for (let i = 0; i < samples; i++) {
+                const s = Math.max(-1, Math.min(1, channelData[i]));
+                pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+            // Initialize MP3 encoder
+            const mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, bitrate);
+            // Encode samples
+            const mp3Data = [];
+            const sampleBlockSize = 1152; // Must be multiple of 576
+            for (let i = 0; i < samples; i += sampleBlockSize) {
+                const sampleChunk = pcmData.subarray(i, Math.min(i + sampleBlockSize, samples));
+                const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
+                if (mp3buf.length > 0) {
+                    mp3Data.push(mp3buf);
+                }
+            }
+            // Flush remaining data
+            const mp3buf = mp3encoder.flush();
+            if (mp3buf.length > 0) {
+                mp3Data.push(mp3buf);
+            }
+            // Combine all chunks
+            let totalLength = 0;
+            mp3Data.forEach(chunk => totalLength += chunk.length);
+            const output = new Int8Array(totalLength);
+            let offset = 0;
+            mp3Data.forEach(chunk => {
+                output.set(chunk, offset);
+                offset += chunk.length;
+            });
+            console.log('Successfully converted to MP3, size:', output.length);
+            return new Blob([output], { type: 'audio/mp3' });
+        }
+        catch (error) {
+            console.error('Failed to convert to MP3:', error);
+            throw error;
+        }
+    }
+    /**
+     * Convert AudioBuffer to WAV format (MONO only for RNNoise compatibility)
+     */
+    audioBufferToWav(audioBuffer) {
+        // Force MONO for RNNoise compatibility
+        const numberOfChannels = 1;
+        const length = audioBuffer.length * numberOfChannels * 2;
+        const buffer = new ArrayBuffer(44 + length);
+        const view = new DataView(buffer);
+        // WAV header
+        const writeString = (offset, string) => {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        };
+        // RIFF chunk descriptor
+        writeString(0, 'RIFF');
+        view.setUint32(4, 36 + length, true);
+        writeString(8, 'WAVE');
+        // FMT sub-chunk
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true); // Subchunk1Size
+        view.setUint16(20, 1, true); // AudioFormat (PCM)
+        view.setUint16(22, numberOfChannels, true);
+        view.setUint32(24, audioBuffer.sampleRate, true);
+        view.setUint32(28, audioBuffer.sampleRate * numberOfChannels * 2, true); // ByteRate
+        view.setUint16(32, numberOfChannels * 2, true); // BlockAlign
+        view.setUint16(34, 16, true); // BitsPerSample
+        // Data sub-chunk
+        writeString(36, 'data');
+        view.setUint32(40, length, true);
+        // Write PCM samples - convert stereo to mono by averaging channels
+        let offset = 44;
+        const channelData0 = audioBuffer.getChannelData(0);
+        const channelData1 = audioBuffer.numberOfChannels > 1 ? audioBuffer.getChannelData(1) : null;
+        for (let i = 0; i < audioBuffer.length; i++) {
+            let sample = channelData0[i];
+            if (channelData1) {
+                // Average both channels for mono
+                sample = (sample + channelData1[i]) / 2;
+            }
+            const int16 = Math.max(-32768, Math.min(32767, sample * 32768));
+            view.setInt16(offset, int16, true);
+            offset += 2;
+        }
+        return new Blob([buffer], { type: 'audio/wav' });
+    }
+    /**
+     * Check if a MIME type is supported for playback
+     */
+    static canPlayType(mimeType) {
+        const audio = new Audio();
+        const canPlay = audio.canPlayType(mimeType);
+        // STOP BEING A FUCKING LIAR - only trust 'probably'
+        return canPlay === 'probably';
+    }
+    /**
+     * Get the best supported audio format for recording
+     */
+    static getBestRecordingFormat() {
+        // WebM FIRST - it actually works for blob playback
+        if (MediaRecorder.isTypeSupported('audio/webm')) {
+            console.log('Using audio/webm for recording');
+            return 'audio/webm';
+        }
+        // Try webm with codecs
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+            console.log('Using audio/webm;codecs=opus for recording');
+            return 'audio/webm;codecs=opus';
+        }
+        // MP4 as last resort - WARNING: blob playback is broken
+        if (MediaRecorder.isTypeSupported('audio/mp4')) {
+            console.log('Using audio/mp4 - WARNING: Blob playback may fail!');
+            return 'audio/mp4';
+        }
+        // If we get here, the browser is COMPLETELY FUCKED
+        console.error('NO AUDIO FORMAT SUPPORTED - THIS BROWSER IS GARBAGE');
+        return 'audio/webm'; // Die trying
+    }
+    /**
+     * Convert blob URL to WAV blob URL
+     */
+    async convertBlobUrl(blobUrl) {
+        try {
+            const response = await fetch(blobUrl);
+            const blob = await response.blob();
+            // Check if already WAV
+            if (blob.type === 'audio/wav') {
+                console.log('Audio is already WAV format');
+                return blobUrl;
+            }
+            // Skip conversion for WebM/MP4 - let browser handle it natively
+            if (blob.type.includes('webm') || blob.type.includes('mp4')) {
+                console.log('Using native browser playback for', blob.type);
+                return blobUrl;
+            }
+            // Only convert for truly incompatible formats
+            console.log('Converting audio from', blob.type, 'to WAV, blob size:', blob.size);
+            const wavBlob = await this.convertToWav(blob);
+            const wavUrl = URL.createObjectURL(wavBlob);
+            // CRITICAL: Track URL for cleanup in medical app
+            this.createdUrls.add(wavUrl);
+            console.log('Audio converted successfully to WAV, new size:', wavBlob.size);
+            return wavUrl;
+        }
+        catch (error) {
+            console.error('Error converting blob URL:', error);
+            console.error('Falling back to original URL');
+            // Return original URL as fallback
+            return blobUrl;
+        }
+    }
+    /**
+     * CRITICAL FOR MEDICAL APP: Clean up all created URLs to prevent memory leaks
+     * Must be called when the converter is no longer needed
+     */
+    destroy() {
+        // Revoke all created URLs
+        this.createdUrls.forEach(url => {
+            URL.revokeObjectURL(url);
+        });
+        this.createdUrls.clear();
+        // Close audio context
+        if (this.audioContext && this.audioContext.state !== 'closed') {
+            this.audioContext.close();
+        }
+    }
+}
+// Singleton instance
+let converterInstance = null;
+function getAudioConverter() {
+    if (!converterInstance) {
+        converterInstance = new AudioConverter();
+    }
+    return converterInstance;
+}
+/**
+ * CRITICAL FOR MEDICAL APP: Destroy the singleton and clean up all resources
+ * Must be called when the application is shutting down or during cleanup
+ */
+function destroyAudioConverter() {
+    if (converterInstance) {
+        converterInstance.destroy();
+        converterInstance = null;
+    }
+}
+
+/**
+ * Convert ArrayBuffer to AudioBuffer using Web Audio API
+ */
+async function arrayBufferToAudioBuffer(arrayBuffer) {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    try {
+        return await audioContext.decodeAudioData(arrayBuffer.slice(0));
+    }
+    finally {
+        if (audioContext.state !== 'closed') {
+            await audioContext.close();
+        }
+    }
+}
+/**
+ * Convert audio chunk to desired format
+ */
+async function convertChunkToFormat(audioData, sampleRate, format) {
+    if (format === 'raw') {
+        // Return raw Float32Array as blob
+        return new Blob([audioData.buffer], { type: 'application/octet-stream' });
+    }
+    // Create AudioBuffer from Float32Array
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const audioBuffer = audioContext.createBuffer(1, audioData.length, sampleRate);
+    audioBuffer.copyToChannel(audioData, 0);
+    if (format === 'wav') {
+        // Use AudioConverter to convert to WAV
+        const converter = new AudioConverter();
+        const wavBlob = converter['audioBufferToWav'](audioBuffer);
+        converter.destroy();
+        return wavBlob;
+    }
+    if (format === 'webm') {
+        // For WebM, we need to use MediaRecorder (more complex, returning WAV for now)
+        console.warn('WebM format conversion not yet implemented, returning WAV instead');
+        const converter = new AudioConverter();
+        const wavBlob = converter['audioBufferToWav'](audioBuffer);
+        converter.destroy();
+        return wavBlob;
+    }
+    throw new Error(`Unsupported format: ${format}`);
+}
+async function processFileWithMetrics(arrayBuffer, optionsOrCallback) {
+    // Handle legacy callback parameter
+    if (typeof optionsOrCallback === 'function') {
+        return processFileWithMetricsLegacy(arrayBuffer, optionsOrCallback);
+    }
+    const options = optionsOrCallback || {};
     const engine = getEngine();
     const metrics = [];
+    const chunks = [];
     let frameCount = 0;
     let totalVad = 0;
+    // Get audio metadata
+    const audioBuffer = await arrayBufferToAudioBuffer(arrayBuffer);
+    const sampleRate = audioBuffer.sampleRate;
+    const channels = audioBuffer.numberOfChannels;
+    const originalDuration = audioBuffer.duration * 1000; // Convert to ms
+    // Calculate frame size (RNNoise uses 480 samples per frame at 48kHz)
+    const frameSize = 480;
+    const frameDuration = (frameSize / 48000) * 1000; // ms per frame
+    // Prepare for chunking if requested
+    const chunkOptions = options.chunkOptions;
+    let currentChunkData = [];
+    let currentChunkStartTime = 0;
+    let currentChunkVadSum = 0;
+    let currentChunkFrameCount = 0;
+    let currentChunkRmsSum = 0;
     // Hook into the engine's frame processing
     const originalProcessFrame = engine['processFrame'].bind(engine);
     engine['processFrame'] = function (frame) {
@@ -2345,6 +2645,7 @@ async function processFileWithMetrics(arrayBuffer, onFrameProcessed) {
             sum += frame[i] * frame[i];
         }
         const rms = Math.sqrt(sum / frame.length);
+        const currentTime = frameCount * frameDuration;
         const metric = {
             vad: result.vad,
             frame: frameCount++,
@@ -2353,8 +2654,53 @@ async function processFileWithMetrics(arrayBuffer, onFrameProcessed) {
         };
         metrics.push(metric);
         totalVad += result.vad;
-        if (onFrameProcessed) {
-            onFrameProcessed(metric);
+        if (options.onFrameProcessed) {
+            options.onFrameProcessed(metric);
+        }
+        // Handle chunking if enabled
+        if (chunkOptions) {
+            currentChunkData.push(new Float32Array(frame));
+            currentChunkVadSum += result.vad;
+            currentChunkFrameCount++;
+            currentChunkRmsSum += rms;
+            // Check if we should create a new chunk
+            const currentChunkDuration = currentTime - currentChunkStartTime;
+            if (currentChunkDuration >= chunkOptions.chunkDuration) {
+                // Create chunk
+                const chunkSamples = currentChunkData.reduce((acc, f) => acc + f.length, 0);
+                const chunkAudioData = new Float32Array(chunkSamples);
+                let offset = 0;
+                for (const frameData of currentChunkData) {
+                    chunkAudioData.set(frameData, offset);
+                    offset += frameData.length;
+                }
+                // Convert chunk to desired format
+                convertChunkToFormat(chunkAudioData, sampleRate, chunkOptions.outputFormat)
+                    .then(blob => {
+                    const chunk = {
+                        blob,
+                        startTime: currentChunkStartTime,
+                        endTime: currentTime,
+                        duration: currentChunkDuration,
+                        vadScore: currentChunkVadSum / currentChunkFrameCount,
+                        metrics: {
+                            noiseRemoved: 1 - (currentChunkRmsSum / currentChunkFrameCount), // Approximation
+                            averageLevel: currentChunkRmsSum / currentChunkFrameCount,
+                            vad: currentChunkVadSum / currentChunkFrameCount
+                        }
+                    };
+                    chunks.push(chunk);
+                })
+                    .catch(error => {
+                    console.error('Error converting chunk:', error);
+                });
+                // Reset for next chunk
+                currentChunkData = [];
+                currentChunkStartTime = currentTime;
+                currentChunkVadSum = 0;
+                currentChunkFrameCount = 0;
+                currentChunkRmsSum = 0;
+            }
         }
         return result;
     };
@@ -2363,11 +2709,43 @@ async function processFileWithMetrics(arrayBuffer, onFrameProcessed) {
         const processedBuffer = await engine.processFile(arrayBuffer);
         // Restore original method
         engine['processFrame'] = originalProcessFrame;
+        // Handle any remaining chunk data
+        if (chunkOptions && currentChunkData.length > 0) {
+            const chunkSamples = currentChunkData.reduce((acc, f) => acc + f.length, 0);
+            const chunkAudioData = new Float32Array(chunkSamples);
+            let offset = 0;
+            for (const frameData of currentChunkData) {
+                chunkAudioData.set(frameData, offset);
+                offset += frameData.length;
+            }
+            const blob = await convertChunkToFormat(chunkAudioData, sampleRate, chunkOptions.outputFormat);
+            const finalTime = frameCount * frameDuration;
+            const chunk = {
+                blob,
+                startTime: currentChunkStartTime,
+                endTime: finalTime,
+                duration: finalTime - currentChunkStartTime,
+                vadScore: currentChunkVadSum / currentChunkFrameCount,
+                metrics: {
+                    noiseRemoved: 1 - (currentChunkRmsSum / currentChunkFrameCount),
+                    averageLevel: currentChunkRmsSum / currentChunkFrameCount,
+                    vad: currentChunkVadSum / currentChunkFrameCount
+                }
+            };
+            chunks.push(chunk);
+        }
         const averageVad = metrics.length > 0 ? totalVad / metrics.length : 0;
+        const totalDuration = frameCount * frameDuration;
         return {
+            chunks,
             processedBuffer,
-            metrics,
-            averageVad
+            averageVad,
+            totalDuration,
+            metadata: {
+                sampleRate,
+                channels,
+                originalDuration
+            }
         };
     }
     catch (error) {
@@ -2375,6 +2753,19 @@ async function processFileWithMetrics(arrayBuffer, onFrameProcessed) {
         engine['processFrame'] = originalProcessFrame;
         throw error;
     }
+}
+/**
+ * Legacy implementation for backward compatibility
+ */
+async function processFileWithMetricsLegacy(arrayBuffer, onFrameProcessed) {
+    const result = await processFileWithMetrics(arrayBuffer, {
+        onFrameProcessed
+    });
+    return {
+        processedBuffer: result.processedBuffer,
+        metrics: result.metadata ? [] : result.metrics,
+        averageVad: result.averageVad
+    };
 }
 
 /**
@@ -27648,245 +28039,6 @@ const BuildInfoBlock = (props) => (jsxRuntime.jsx(BuildInfo, { ...props, format:
 const BuildInfoInline = (props) => (jsxRuntime.jsx(BuildInfo, { ...props, format: "inline" }));
 
 /**
- * Audio Format Converter Utility
- * Converts WebM/Opus audio to WAV format for universal browser playback
- */
-class AudioConverter {
-    constructor() {
-        // CRITICAL FOR MEDICAL APP: Track created URLs for cleanup
-        this.createdUrls = new Set();
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    /**
-     * Convert a Blob from WebM/Opus to WAV format
-     */
-    async convertToWav(blob) {
-        try {
-            // First, try to decode the audio data
-            const arrayBuffer = await blob.arrayBuffer();
-            const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer.slice(0));
-            // Convert to WAV
-            const wavBlob = this.audioBufferToWav(audioBuffer);
-            console.log('Successfully converted to WAV, size:', wavBlob.size);
-            return wavBlob;
-        }
-        catch (error) {
-            console.error('Failed to convert audio:', error);
-            throw error;
-        }
-    }
-    /**
-     * Convert WebM blob to WAV blob (static method for easy use)
-     */
-    static async webmToWav(webmBlob) {
-        const converter = new AudioConverter();
-        return converter.convertToWav(webmBlob);
-    }
-    /**
-     * Convert WebM to MP3 using lamejs
-     */
-    static async webmToMp3(webmBlob, bitrate = 128) {
-        const converter = new AudioConverter();
-        try {
-            // Import lamejs dynamically
-            const lamejs = await Promise.resolve().then(function () { return index$1; });
-            // First decode to AudioBuffer
-            const arrayBuffer = await webmBlob.arrayBuffer();
-            const audioBuffer = await converter.audioContext.decodeAudioData(arrayBuffer);
-            // Convert to mono if stereo (lamejs works better with mono)
-            const channels = audioBuffer.numberOfChannels;
-            const sampleRate = audioBuffer.sampleRate;
-            const samples = audioBuffer.length;
-            // Get PCM data
-            const pcmData = new Int16Array(samples);
-            const channelData = audioBuffer.getChannelData(0); // Use first channel
-            // Convert float32 to int16
-            for (let i = 0; i < samples; i++) {
-                const s = Math.max(-1, Math.min(1, channelData[i]));
-                pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-            }
-            // Initialize MP3 encoder
-            const mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, bitrate);
-            // Encode samples
-            const mp3Data = [];
-            const sampleBlockSize = 1152; // Must be multiple of 576
-            for (let i = 0; i < samples; i += sampleBlockSize) {
-                const sampleChunk = pcmData.subarray(i, Math.min(i + sampleBlockSize, samples));
-                const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
-                if (mp3buf.length > 0) {
-                    mp3Data.push(mp3buf);
-                }
-            }
-            // Flush remaining data
-            const mp3buf = mp3encoder.flush();
-            if (mp3buf.length > 0) {
-                mp3Data.push(mp3buf);
-            }
-            // Combine all chunks
-            let totalLength = 0;
-            mp3Data.forEach(chunk => totalLength += chunk.length);
-            const output = new Int8Array(totalLength);
-            let offset = 0;
-            mp3Data.forEach(chunk => {
-                output.set(chunk, offset);
-                offset += chunk.length;
-            });
-            console.log('Successfully converted to MP3, size:', output.length);
-            return new Blob([output], { type: 'audio/mp3' });
-        }
-        catch (error) {
-            console.error('Failed to convert to MP3:', error);
-            throw error;
-        }
-    }
-    /**
-     * Convert AudioBuffer to WAV format (MONO only for RNNoise compatibility)
-     */
-    audioBufferToWav(audioBuffer) {
-        // Force MONO for RNNoise compatibility
-        const numberOfChannels = 1;
-        const length = audioBuffer.length * numberOfChannels * 2;
-        const buffer = new ArrayBuffer(44 + length);
-        const view = new DataView(buffer);
-        // WAV header
-        const writeString = (offset, string) => {
-            for (let i = 0; i < string.length; i++) {
-                view.setUint8(offset + i, string.charCodeAt(i));
-            }
-        };
-        // RIFF chunk descriptor
-        writeString(0, 'RIFF');
-        view.setUint32(4, 36 + length, true);
-        writeString(8, 'WAVE');
-        // FMT sub-chunk
-        writeString(12, 'fmt ');
-        view.setUint32(16, 16, true); // Subchunk1Size
-        view.setUint16(20, 1, true); // AudioFormat (PCM)
-        view.setUint16(22, numberOfChannels, true);
-        view.setUint32(24, audioBuffer.sampleRate, true);
-        view.setUint32(28, audioBuffer.sampleRate * numberOfChannels * 2, true); // ByteRate
-        view.setUint16(32, numberOfChannels * 2, true); // BlockAlign
-        view.setUint16(34, 16, true); // BitsPerSample
-        // Data sub-chunk
-        writeString(36, 'data');
-        view.setUint32(40, length, true);
-        // Write PCM samples - convert stereo to mono by averaging channels
-        let offset = 44;
-        const channelData0 = audioBuffer.getChannelData(0);
-        const channelData1 = audioBuffer.numberOfChannels > 1 ? audioBuffer.getChannelData(1) : null;
-        for (let i = 0; i < audioBuffer.length; i++) {
-            let sample = channelData0[i];
-            if (channelData1) {
-                // Average both channels for mono
-                sample = (sample + channelData1[i]) / 2;
-            }
-            const int16 = Math.max(-32768, Math.min(32767, sample * 32768));
-            view.setInt16(offset, int16, true);
-            offset += 2;
-        }
-        return new Blob([buffer], { type: 'audio/wav' });
-    }
-    /**
-     * Check if a MIME type is supported for playback
-     */
-    static canPlayType(mimeType) {
-        const audio = new Audio();
-        const canPlay = audio.canPlayType(mimeType);
-        // STOP BEING A FUCKING LIAR - only trust 'probably'
-        return canPlay === 'probably';
-    }
-    /**
-     * Get the best supported audio format for recording
-     */
-    static getBestRecordingFormat() {
-        // WebM FIRST - it actually works for blob playback
-        if (MediaRecorder.isTypeSupported('audio/webm')) {
-            console.log('Using audio/webm for recording');
-            return 'audio/webm';
-        }
-        // Try webm with codecs
-        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-            console.log('Using audio/webm;codecs=opus for recording');
-            return 'audio/webm;codecs=opus';
-        }
-        // MP4 as last resort - WARNING: blob playback is broken
-        if (MediaRecorder.isTypeSupported('audio/mp4')) {
-            console.log('Using audio/mp4 - WARNING: Blob playback may fail!');
-            return 'audio/mp4';
-        }
-        // If we get here, the browser is COMPLETELY FUCKED
-        console.error('NO AUDIO FORMAT SUPPORTED - THIS BROWSER IS GARBAGE');
-        return 'audio/webm'; // Die trying
-    }
-    /**
-     * Convert blob URL to WAV blob URL
-     */
-    async convertBlobUrl(blobUrl) {
-        try {
-            const response = await fetch(blobUrl);
-            const blob = await response.blob();
-            // Check if already WAV
-            if (blob.type === 'audio/wav') {
-                console.log('Audio is already WAV format');
-                return blobUrl;
-            }
-            // Skip conversion for WebM/MP4 - let browser handle it natively
-            if (blob.type.includes('webm') || blob.type.includes('mp4')) {
-                console.log('Using native browser playback for', blob.type);
-                return blobUrl;
-            }
-            // Only convert for truly incompatible formats
-            console.log('Converting audio from', blob.type, 'to WAV, blob size:', blob.size);
-            const wavBlob = await this.convertToWav(blob);
-            const wavUrl = URL.createObjectURL(wavBlob);
-            // CRITICAL: Track URL for cleanup in medical app
-            this.createdUrls.add(wavUrl);
-            console.log('Audio converted successfully to WAV, new size:', wavBlob.size);
-            return wavUrl;
-        }
-        catch (error) {
-            console.error('Error converting blob URL:', error);
-            console.error('Falling back to original URL');
-            // Return original URL as fallback
-            return blobUrl;
-        }
-    }
-    /**
-     * CRITICAL FOR MEDICAL APP: Clean up all created URLs to prevent memory leaks
-     * Must be called when the converter is no longer needed
-     */
-    destroy() {
-        // Revoke all created URLs
-        this.createdUrls.forEach(url => {
-            URL.revokeObjectURL(url);
-        });
-        this.createdUrls.clear();
-        // Close audio context
-        if (this.audioContext && this.audioContext.state !== 'closed') {
-            this.audioContext.close();
-        }
-    }
-}
-// Singleton instance
-let converterInstance = null;
-function getAudioConverter() {
-    if (!converterInstance) {
-        converterInstance = new AudioConverter();
-    }
-    return converterInstance;
-}
-/**
- * CRITICAL FOR MEDICAL APP: Destroy the singleton and clean up all resources
- * Must be called when the application is shutting down or during cleanup
- */
-function destroyAudioConverter() {
-    if (converterInstance) {
-        converterInstance.destroy();
-        converterInstance = null;
-    }
-}
-
-/**
  * Medical-grade URL management to prevent memory leaks
  * Critical for long recording sessions in hospitals
  */
@@ -28259,21 +28411,28 @@ class RecordingManager {
                 const totalSamples = dataSize / (bytesPerSample * numChannels);
                 actualDuration = (totalSamples / sampleRate) * 1000; // Duración en milisegundos
                 console.log(`📏 ${LOG_PREFIX.CONCAT_STREAM} Chunk ${chunkId} - Duración real: ${(actualDuration / 1000).toFixed(2)}s (SR: ${sampleRate}Hz, ${numChannels}ch)`);
-                // Process with metrics like AudioDemo
-                const result = await processFileWithMetrics(arrayBuffer);
+                // Process with metrics like AudioDemo (using legacy API)
+                const result = await processFileWithMetrics(arrayBuffer, (metric) => {
+                    // Optionally handle frame metrics
+                });
                 // Create processed blob from result
                 const processedBlob = new Blob([result.processedBuffer], { type: 'audio/wav' });
                 processedUrl = this.urlManager.createObjectURL(chunkId, processedBlob);
                 // Extract VAD metrics
                 averageVad = result.averageVad;
-                frameCount = result.metrics.length;
-                // Convert metrics to VAD timeline data
+                frameCount = result.metrics ? result.metrics.length : 0;
+                // Convert metrics to VAD timeline data if available
                 const vadSampleRate = 48000; // Assuming 48kHz
                 const frameSize = 480; // RNNoise frame size
-                vadData = result.metrics.map((metric, index) => ({
-                    time: (index * frameSize) / vadSampleRate,
-                    vad: metric.vad
-                }));
+                if (result.metrics) {
+                    vadData = result.metrics.map((metric, index) => ({
+                        time: (index * frameSize) / vadSampleRate,
+                        vad: metric.vad
+                    }));
+                }
+                else {
+                    vadData = [];
+                }
                 console.log(`📊 VAD Data generated: ${vadData.length} points, avg=${averageVad.toFixed(3)}`);
                 // Calculate actual noise reduction (inverse of VAD - lower VAD means more noise reduction)
                 noiseReduction = (1 - averageVad) * 100;

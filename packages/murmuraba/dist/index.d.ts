@@ -13,7 +13,7 @@ export { RNNoiseEngine } from './engines/RNNoiseEngine';
 export type { AudioEngine } from './engines/types';
 export * from './types';
 export { initializeAudioEngine, getEngine, processStream, processStreamChunked, destroyEngine, getEngineStatus, getDiagnostics, onMetricsUpdate, processFile } from './api';
-export { processFileWithMetrics, type ProcessingMetrics, type ProcessFileWithMetricsResult } from './api/processFileWithMetrics';
+export { processFileWithMetrics, type ProcessingMetrics, type ProcessFileWithMetricsResult, type ChunkOptions, type ProcessedChunk, type ProcessFileResult, type ProcessFileOptions } from './api/processFileWithMetrics';
 export declare const VERSION = "1.5.0";
 export declare const MURMURABA_VERSION = "1.5.0";
 export { ErrorCodes } from './types';
@@ -28,7 +28,7 @@ export { BuildInfo, BuildInfoBadge, BuildInfoBlock, BuildInfoInline, getPackageV
 export { useMurmubaraEngine } from './hooks/useMurmubaraEngine';
 export { useAudioEngine } from './hooks/useAudioEngine';
 export { AudioConverter, getAudioConverter } from './utils/audioConverter';
-export type { ProcessedChunk, RecordingState, UseMurmubaraEngineOptions, UseMurmubaraEngineReturn } from './hooks/useMurmubaraEngine';
+export type { RecordingState, UseMurmubaraEngineOptions, UseMurmubaraEngineReturn } from './hooks/useMurmubaraEngine';
 import { useMurmubaraEngine } from './hooks/useMurmubaraEngine';
 import { MurmubaraEngine } from './core/MurmubaraEngine';
 declare const murmurabaExports: {

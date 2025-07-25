@@ -38,7 +38,11 @@ export {
 export { 
   processFileWithMetrics,
   type ProcessingMetrics,
-  type ProcessFileWithMetricsResult
+  type ProcessFileWithMetricsResult,
+  type ChunkOptions,
+  type ProcessedChunk,
+  type ProcessFileResult,
+  type ProcessFileOptions
 } from './api/processFileWithMetrics';
 
 // Export version
@@ -76,9 +80,8 @@ export { useAudioEngine } from './hooks/useAudioEngine';
 // Audio converter utility export
 export { AudioConverter, getAudioConverter } from './utils/audioConverter';
 
-// Export types from the hook
+// Export types from the hook (excluding ProcessedChunk to avoid duplication)
 export type { 
-  ProcessedChunk, 
   RecordingState, 
   UseMurmubaraEngineOptions, 
   UseMurmubaraEngineReturn 

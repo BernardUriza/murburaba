@@ -284,8 +284,10 @@ export class RecordingManager {
         
         console.log(`📏 ${LOG_PREFIX.CONCAT_STREAM} Chunk ${chunkId} - Duración real: ${(actualDuration/1000).toFixed(2)}s (SR: ${sampleRate}Hz, ${numChannels}ch)`);
         
-        // Process with metrics like AudioDemo
-        const result = await processFileWithMetrics(arrayBuffer);
+        // Process with metrics like AudioDemo (using legacy API)
+        const result = await processFileWithMetrics(arrayBuffer, (metric) => {
+          // Optionally handle frame metrics
+        });
         
         // Create processed blob from result
         const processedBlob = new Blob([result.processedBuffer], { type: 'audio/wav' });
@@ -293,15 +295,19 @@ export class RecordingManager {
         
         // Extract VAD metrics
         averageVad = result.averageVad;
-        frameCount = result.metrics.length;
+        frameCount = (result as any).metrics ? (result as any).metrics.length : 0;
         
-        // Convert metrics to VAD timeline data
+        // Convert metrics to VAD timeline data if available
         const vadSampleRate = 48000; // Assuming 48kHz
         const frameSize = 480; // RNNoise frame size
-        vadData = result.metrics.map((metric, index) => ({
-          time: (index * frameSize) / vadSampleRate,
-          vad: metric.vad
-        }));
+        if ((result as any).metrics) {
+          vadData = (result as any).metrics.map((metric: any, index: number) => ({
+            time: (index * frameSize) / vadSampleRate,
+            vad: metric.vad
+          }));
+        } else {
+          vadData = [];
+        }
         
         console.log(`📊 VAD Data generated: ${vadData.length} points, avg=${averageVad.toFixed(3)}`);
         

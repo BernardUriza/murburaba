@@ -11,7 +11,7 @@ export interface AudioLog {
 export interface AudioDemoProps {
   getEngineStatus: () => string
   processFile: (arrayBuffer: ArrayBuffer) => Promise<ArrayBuffer>
-  processFileWithMetrics?: (buffer: ArrayBuffer, onFrame?: (metrics: any) => void) => Promise<{ processedBuffer: ArrayBuffer; metrics: any[]; averageVad: number }>
+  processFileWithMetrics?: any // Accept both old and new signatures
   autoProcess?: boolean
   onProcessComplete?: (processedBuffer: ArrayBuffer) => void
   onError?: (error: Error) => void
@@ -116,28 +116,90 @@ export default function AudioDemo({
       if (processFileWithMetrics) {
         // Use enhanced processing with VAD metrics
         let frameCount = 0
-        const result = await processFileWithMetrics(arrayBuffer, (metrics) => {
-          frameCount++
-          // Only log every 10th frame to avoid overwhelming the UI
-          if (frameCount % 10 === 0 || metrics.vad > 0.5) {
-            addLog({
-              timestamp: metrics.timestamp || Date.now(),
-              frame: metrics.frame || frameCount,
-              vad: metrics.vad || 0,
-              rms: metrics.rms || 0,
-              message: metrics.vad > 0.5 ? '🎤 Voz detectada' : '🔇 Procesando...'
+        
+        // Check if new API with chunking is available
+        const isNewAPI = processFileWithMetrics.length === 2 // New API accepts 2 params
+        
+        if (isNewAPI) {
+          // Use new API with chunking
+          const result = await processFileWithMetrics(arrayBuffer, {
+            enableVAD: true,
+            chunkOptions: {
+              chunkDuration: 8000, // 8 seconds
+              outputFormat: 'wav'
+            },
+            onFrameProcessed: (metrics: any) => {
+              frameCount++
+              // Only log every 10th frame to avoid overwhelming the UI
+              if (frameCount % 10 === 0 || metrics.vad > 0.5) {
+                addLog({
+                  timestamp: metrics.timestamp || Date.now(),
+                  frame: metrics.frame || frameCount,
+                  vad: metrics.vad || 0,
+                  rms: metrics.rms || 0,
+                  message: metrics.vad > 0.5 ? '🎤 Voz detectada' : '🔇 Procesando...'
+                })
+              }
+            }
+          })
+          
+          processedBuffer = result.processedBuffer
+          const endTime = Date.now()
+          
+          // Log chunk information
+          if (result.chunks && result.chunks.length > 0) {
+            addLog({ 
+              timestamp: endTime, 
+              frame: frameCount, 
+              vad: result.averageVad, 
+              rms: 0, 
+              message: `✅ Procesamiento completado en ${((endTime-startTime)/1000).toFixed(2)}s - ${result.chunks.length} chunks generados - VAD promedio: ${result.averageVad.toFixed(3)}` 
+            })
+            
+            // Log each chunk info
+            result.chunks.forEach((chunk: any, index: number) => {
+              addLog({
+                timestamp: endTime + index,
+                frame: frameCount + index,
+                vad: chunk.vadScore,
+                rms: chunk.metrics.averageLevel,
+                message: `📦 Chunk ${index + 1}: ${(chunk.duration/1000).toFixed(1)}s, VAD: ${chunk.vadScore.toFixed(3)}, ${(chunk.blob.size/1024).toFixed(1)}KB`
+              })
+            })
+          } else {
+            addLog({ 
+              timestamp: endTime, 
+              frame: frameCount, 
+              vad: result.averageVad, 
+              rms: 0, 
+              message: `✅ Procesamiento completado en ${((endTime-startTime)/1000).toFixed(2)}s - VAD promedio: ${result.averageVad.toFixed(3)}` 
             })
           }
-        })
-        processedBuffer = result.processedBuffer
-        const endTime = Date.now()
-        addLog({ 
-          timestamp: endTime, 
-          frame: result.metrics.length, 
-          vad: result.averageVad, 
-          rms: 0, 
-          message: `✅ Procesamiento completado en ${((endTime-startTime)/1000).toFixed(2)}s - VAD promedio: ${result.averageVad.toFixed(3)}` 
-        })
+        } else {
+          // Use legacy API
+          const result = await processFileWithMetrics(arrayBuffer, (metrics) => {
+            frameCount++
+            // Only log every 10th frame to avoid overwhelming the UI
+            if (frameCount % 10 === 0 || metrics.vad > 0.5) {
+              addLog({
+                timestamp: metrics.timestamp || Date.now(),
+                frame: metrics.frame || frameCount,
+                vad: metrics.vad || 0,
+                rms: metrics.rms || 0,
+                message: metrics.vad > 0.5 ? '🎤 Voz detectada' : '🔇 Procesando...'
+              })
+            }
+          })
+          processedBuffer = result.processedBuffer
+          const endTime = Date.now()
+          addLog({ 
+            timestamp: endTime, 
+            frame: result.metrics.length, 
+            vad: result.averageVad, 
+            rms: 0, 
+            message: `✅ Procesamiento completado en ${((endTime-startTime)/1000).toFixed(2)}s - VAD promedio: ${result.averageVad.toFixed(3)}` 
+          })
+        }
       } else {
         // Fallback to standard processing
         processedBuffer = await processFile(arrayBuffer)
