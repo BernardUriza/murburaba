@@ -2,13 +2,17 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useAudioEngine } from '../../../hooks/useAudioEngine';
 import { createAudioEngine } from '../../../engines';
+import type { AudioEngine } from '../../../engines/types';
 
 // Mock the engines module
 vi.mock('../../../engines', () => ({
-  createAudioEngine: vi.fn(() => ({
+  createAudioEngine: vi.fn((): AudioEngine => ({
+    name: 'MockEngine',
+    description: 'Mock audio engine for testing',
     initialize: vi.fn().mockResolvedValue(undefined),
     process: vi.fn((input) => input),
     cleanup: vi.fn(),
+    isInitialized: false,
   })),
 }));
 
@@ -78,10 +82,13 @@ describe('useAudioEngine', () => {
     it('should handle initialization errors', async () => {
       const mockError = new Error('Init failed');
       vi.mocked(createAudioEngine).mockReturnValueOnce({
+        name: 'MockEngine',
+        description: 'Mock audio engine for testing',
         initialize: vi.fn().mockRejectedValue(mockError),
         process: vi.fn(),
         cleanup: vi.fn(),
-      });
+        isInitialized: false,
+      } as AudioEngine);
 
       const { result } = renderHook(() => useAudioEngine());
       
@@ -146,13 +153,16 @@ describe('useAudioEngine', () => {
     });
 
     it('should process audio chunks', async () => {
-      const mockEngine = {
+      const mockEngine: AudioEngine = {
+        name: 'MockEngine',
+        description: 'Mock audio engine for testing',
         initialize: vi.fn().mockResolvedValue(undefined),
-        process: vi.fn((input) => {
+        process: vi.fn((input: any) => {
           // Simulate noise reduction
-          return input.map(v => v * 0.8);
+          return input.map((v: any) => v * 0.8);
         }),
         cleanup: vi.fn(),
+        isInitialized: true,
       };
       
       vi.mocked(createAudioEngine).mockReturnValue(mockEngine);
@@ -175,7 +185,7 @@ describe('useAudioEngine', () => {
       };
       
       act(() => {
-        processor.onaudioprocess(event);
+        processor.onaudioprocess?.(event);
       });
       
       // Engine process should be called for chunks
@@ -236,7 +246,7 @@ describe('useAudioEngine', () => {
       };
       
       act(() => {
-        processor.onaudioprocess(event);
+        processor.onaudioprocess?.(event);
       });
       
       const metrics = result.current.getMetrics();
@@ -248,10 +258,13 @@ describe('useAudioEngine', () => {
 
   describe('Cleanup', () => {
     it('should cleanup resources', async () => {
-      const mockEngine = {
+      const mockEngine: AudioEngine = {
+        name: 'MockEngine',
+        description: 'Mock audio engine for testing',
         initialize: vi.fn().mockResolvedValue(undefined),
         process: vi.fn(),
         cleanup: vi.fn(),
+        isInitialized: true,
       };
       
       vi.mocked(createAudioEngine).mockReturnValue(mockEngine);
@@ -336,7 +349,7 @@ describe('useAudioEngine', () => {
       };
       
       act(() => {
-        processor.onaudioprocess(event);
+        processor.onaudioprocess?.(event);
       });
       
       const metrics = result.current.getMetrics();
@@ -368,7 +381,7 @@ describe('useAudioEngine', () => {
       };
       
       act(() => {
-        processor.onaudioprocess(event);
+        processor.onaudioprocess?.(event);
       });
       
       const metrics = result.current.getMetrics();

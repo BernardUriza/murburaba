@@ -110,6 +110,10 @@ export interface DiagnosticInfo {
   activeStreams?: number;
   noiseReductionLevel?: number;
   audioQuality?: string;
+  // Additional fields for tests
+  errorCount?: number;
+  lastError?: string;
+  audioContextState?: AudioContextState;
 }
 
 export interface EngineEvents {

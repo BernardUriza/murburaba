@@ -46,6 +46,7 @@ export declare class MurmubaraEngine extends EventEmitter<EngineEvents> {
     onMetricsUpdate(callback: (metrics: ProcessingMetrics) => void): void;
     isActive(): boolean;
     getDiagnostics(): DiagnosticInfo;
+    updateConfig(newConfig: Partial<MurmubaraConfig>): void;
     private getBrowserName;
     private getBrowserVersion;
     private getAudioAPIsSupported;

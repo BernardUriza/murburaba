@@ -59,4 +59,43 @@ export declare class PerformanceMarker {
     measure(name: string, fn: () => void): number;
     measureAsync<T>(name: string, fn: () => Promise<T>): Promise<[T, number]>;
 }
+/**
+ * Performance monitor for detailed tracking
+ */
+export declare class PerformanceMonitor {
+    private marks;
+    private measurements;
+    mark(name: string): void;
+    measure(name: string, startMark: string, endMark: string): number;
+    getMeasurements(): Record<string, number>;
+    getAverage(name: string): number;
+    reset(): void;
+    getMemoryUsage(): {
+        used: number;
+        total: number;
+        limit: number;
+        usedFormatted: string;
+        totalFormatted: string;
+        limitFormatted: string;
+    };
+}
+/**
+ * Measure execution time of a function
+ */
+export declare function measureExecutionTime<T>(fn: () => T | Promise<T>): Promise<{
+    result: T;
+    duration: number;
+}>;
+/**
+ * Calculate average time from array of durations
+ */
+export declare function calculateAverageTime(times: number[]): number;
+/**
+ * Format bytes to human readable format
+ */
+export declare function formatBytes(bytes: number, decimals?: number): string;
+/**
+ * Format duration from milliseconds to human readable format
+ */
+export declare function formatDuration(ms: number): string;
 //# sourceMappingURL=performance.d.ts.map

@@ -96,6 +96,9 @@ export interface DiagnosticInfo {
     activeStreams?: number;
     noiseReductionLevel?: number;
     audioQuality?: string;
+    errorCount?: number;
+    lastError?: string;
+    audioContextState?: AudioContextState;
 }
 export interface EngineEvents {
     initialized: () => void;

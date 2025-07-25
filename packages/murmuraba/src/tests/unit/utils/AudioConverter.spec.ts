@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { AudioConverter } from '../../../utils/AudioConverter';
+import { AudioConverter } from '../../../utils/audioConverter';
 
 describe('AudioConverter', () => {
   let converter: AudioConverter;
@@ -76,7 +76,7 @@ describe('AudioConverter', () => {
       const output = converter.int16ToFloat32(input);
       
       // All values should be in -1 to 1 range
-      expect(output.every(v => v >= -1 && v <= 1)).toBe(true);
+      expect(output.every((v: number) => v >= -1 && v <= 1)).toBe(true);
     });
   });
   
@@ -273,7 +273,7 @@ describe('AudioConverter', () => {
       
       const mono = converter.mixToMono(stereo);
       
-      expect(mono.every(v => v >= -1 && v <= 1)).toBe(true);
+      expect(mono.every((v: number) => v >= -1 && v <= 1)).toBe(true);
     });
   });
   

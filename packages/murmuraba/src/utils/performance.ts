@@ -190,3 +190,147 @@ export class PerformanceMarker {
     return [result, duration];
   }
 }
+
+/**
+ * Performance monitor for detailed tracking
+ */
+export class PerformanceMonitor {
+  private marks = new Map<string, number>();
+  private measurements = new Map<string, number[]>();
+
+  mark(name: string): void {
+    this.marks.set(name, performance.now());
+  }
+
+  measure(name: string, startMark: string, endMark: string): number {
+    const start = this.marks.get(startMark);
+    const end = this.marks.get(endMark);
+    
+    if (!start || !end) return 0;
+    
+    const duration = end - start;
+    
+    if (!this.measurements.has(name)) {
+      this.measurements.set(name, []);
+    }
+    this.measurements.get(name)!.push(duration);
+    
+    return duration;
+  }
+
+  getMeasurements(): Record<string, number> {
+    const result: Record<string, number> = {};
+    
+    for (const [name, durations] of this.measurements.entries()) {
+      if (durations.length > 0) {
+        result[name] = durations[durations.length - 1];
+      }
+    }
+    
+    return result;
+  }
+
+  getAverage(name: string): number {
+    const durations = this.measurements.get(name);
+    if (!durations || durations.length === 0) return 0;
+    
+    return durations.reduce((sum, d) => sum + d, 0) / durations.length;
+  }
+
+  reset(): void {
+    this.marks.clear();
+    this.measurements.clear();
+  }
+
+  getMemoryUsage(): { used: number; total: number; limit: number; usedFormatted: string; totalFormatted: string; limitFormatted: string } {
+    if (!('memory' in performance)) {
+      return {
+        used: 0,
+        total: 0,
+        limit: 0,
+        usedFormatted: '0 Bytes',
+        totalFormatted: '0 Bytes',
+        limitFormatted: '0 Bytes'
+      };
+    }
+    
+    const memory = (performance as any).memory;
+    return {
+      used: memory.usedJSHeapSize,
+      total: memory.totalJSHeapSize,
+      limit: memory.jsHeapSizeLimit,
+      usedFormatted: formatBytes(memory.usedJSHeapSize),
+      totalFormatted: formatBytes(memory.totalJSHeapSize),
+      limitFormatted: formatBytes(memory.jsHeapSizeLimit)
+    };
+  }
+}
+
+/**
+ * Measure execution time of a function
+ */
+export async function measureExecutionTime<T>(fn: () => T | Promise<T>): Promise<{ result: T; duration: number }> {
+  const start = performance.now();
+  const result = await fn();
+  const duration = performance.now() - start;
+  
+  return { result, duration };
+}
+
+/**
+ * Calculate average time from array of durations
+ */
+export function calculateAverageTime(times: number[]): number {
+  if (times.length === 0) return 0;
+  return times.reduce((sum, time) => sum + time, 0) / times.length;
+}
+
+/**
+ * Format bytes to human readable format
+ */
+export function formatBytes(bytes: number, decimals = 1): string {
+  if (bytes === 0) return '0 Bytes';
+  
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
+  
+  const isNegative = bytes < 0;
+  const absoluteBytes = Math.abs(bytes);
+  
+  const i = Math.floor(Math.log(absoluteBytes) / Math.log(k));
+  
+  return (isNegative ? '-' : '') + parseFloat((absoluteBytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+/**
+ * Format duration from milliseconds to human readable format
+ */
+export function formatDuration(ms: number): string {
+  if (ms === 0) return '0ms';
+  
+  const isNegative = ms < 0;
+  const absMs = Math.abs(ms);
+  
+  const hours = Math.floor(absMs / 3600000);
+  const minutes = Math.floor((absMs % 3600000) / 60000);
+  const seconds = (absMs % 60000) / 1000;
+  
+  const parts: string[] = [];
+  
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}m`);
+  if (seconds > 0) {
+    if (seconds % 1 === 0) {
+      parts.push(`${seconds}s`);
+    } else {
+      parts.push(`${seconds}s`);
+    }
+  }
+  
+  if (parts.length === 0 && absMs < 1000) {
+    parts.push(`${absMs}ms`);
+  }
+  
+  return (isNegative ? '-' : '') + parts.join(' ');
+}

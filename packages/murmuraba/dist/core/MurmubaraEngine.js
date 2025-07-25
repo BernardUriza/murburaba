@@ -693,7 +693,32 @@ export class MurmubaraEngine extends EventEmitter {
             systemInfo: {
                 memory: performance.memory?.usedJSHeapSize,
             },
+            // Additional fields for tests
+            errorCount: this.errorHistory.length,
+            lastError: this.errorHistory.length > 0 ? this.errorHistory[this.errorHistory.length - 1].error : undefined,
+            audioContextState: this.audioContext?.state,
         };
+    }
+    updateConfig(newConfig) {
+        // Update config properties
+        this.config = {
+            ...this.config,
+            ...newConfig,
+        };
+        // Apply AGC setting if changed
+        if ('enableAGC' in newConfig) {
+            this.agcEnabled = newConfig.enableAGC ?? true;
+            this.logger.info(`AGC ${this.agcEnabled ? 'enabled' : 'disabled'}`);
+        }
+        // Update worker manager config if applicable
+        if (this.workerManager) {
+            this.workerManager.updateConfiguration({
+                numWorkers: this.config.workerCount,
+                bufferSize: this.config.bufferSize,
+            });
+        }
+        // Emit config update event
+        this.emit('config-updated');
     }
     getBrowserName() {
         const userAgent = navigator.userAgent;

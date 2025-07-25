@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useRecordingState } from '../../../hooks/murmuraba-engine/useRecordingState';
+import type { ProcessedChunk } from '../../../hooks/murmuraba-engine/types';
 
 describe('useRecordingState', () => {
   describe('Initial State', () => {
@@ -88,7 +89,7 @@ describe('useRecordingState', () => {
   });
 
   describe('Chunk Management', () => {
-    const createTestChunk = (id: string) => ({
+    const createTestChunk = (id: string): ProcessedChunk => ({
       id,
       startTime: Date.now(),
       endTime: Date.now() + 1000,
@@ -97,14 +98,21 @@ describe('useRecordingState', () => {
       originalBlob: new Blob(['original'], { type: 'audio/webm' }),
       processedUrl: `blob:processed-${id}`,
       originalUrl: `blob:original-${id}`,
+      originalSize: 1000,
+      processedSize: 800,
+      noiseRemoved: 20,
       metrics: {
-        averageNoiseReduction: 60,
-        peakNoiseReduction: 80,
-        averageLevel: 0.5,
+        noiseReductionLevel: 60,
+        processingLatency: 10,
+        inputLevel: 0.8,
+        outputLevel: 0.5,
+        timestamp: Date.now(),
+        frameCount: 100,
+        droppedFrames: 0,
       },
       isExpanded: false,
-      isPlayingProcessed: false,
-      isPlayingOriginal: false,
+      isPlaying: false,
+      currentlyPlayingType: null,
     });
 
     it('should add chunk', () => {
@@ -161,14 +169,14 @@ describe('useRecordingState', () => {
         result.current.toggleChunkPlayback('chunk-1', true, 'processed');
       });
 
-      expect(result.current.recordingState.chunks[0].isPlayingProcessed).toBe(true);
-      expect(result.current.recordingState.chunks[0].isPlayingOriginal).toBe(false);
+      expect(result.current.recordingState.chunks[0].isPlaying).toBe(true);
+      expect(result.current.recordingState.chunks[0].currentlyPlayingType).toBe('processed');
 
       act(() => {
         result.current.toggleChunkPlayback('chunk-1', false, 'processed');
       });
 
-      expect(result.current.recordingState.chunks[0].isPlayingProcessed).toBe(false);
+      expect(result.current.recordingState.chunks[0].isPlaying).toBe(false);
     });
 
     it('should toggle chunk playback for original audio', () => {
@@ -180,8 +188,9 @@ describe('useRecordingState', () => {
         result.current.toggleChunkPlayback('chunk-1', true, 'original');
       });
 
-      expect(result.current.recordingState.chunks[0].isPlayingOriginal).toBe(true);
-      expect(result.current.recordingState.chunks[0].isPlayingProcessed).toBe(false);
+      expect(result.current.recordingState.chunks[0].isPlaying).toBe(true);
+      expect(result.current.recordingState.chunks[0].currentlyPlayingType).toBe('original');
+      expect(result.current.recordingState.chunks[0].isPlaying).toBe(false);
     });
 
     it('should stop other playback when starting new playback', () => {
@@ -197,7 +206,8 @@ describe('useRecordingState', () => {
         result.current.toggleChunkPlayback('chunk-1', true, 'processed');
       });
 
-      expect(result.current.recordingState.chunks[0].isPlayingProcessed).toBe(true);
+      expect(result.current.recordingState.chunks[0].isPlaying).toBe(true);
+      expect(result.current.recordingState.chunks[0].currentlyPlayingType).toBe('processed');
 
       act(() => {
         // Start playing chunk 2 original
@@ -205,8 +215,9 @@ describe('useRecordingState', () => {
       });
 
       // Chunk 1 should stop playing
-      expect(result.current.recordingState.chunks[0].isPlayingProcessed).toBe(false);
-      expect(result.current.recordingState.chunks[1].isPlayingOriginal).toBe(true);
+      expect(result.current.recordingState.chunks[0].isPlaying).toBe(false);
+      expect(result.current.recordingState.chunks[1].isPlaying).toBe(true);
+      expect(result.current.recordingState.chunks[1].currentlyPlayingType).toBe('original');
     });
 
     it('should handle toggling non-existent chunk', () => {

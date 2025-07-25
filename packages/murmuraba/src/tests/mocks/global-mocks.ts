@@ -49,9 +49,11 @@ export class MockAudioContext {
 }
 
 // Mock MediaStream
-export class MockMediaStream {
+export class MockMediaStream implements MediaStream {
   id = 'mock-stream-id';
   active = true;
+  onaddtrack: ((this: MediaStream, ev: MediaStreamTrackEvent) => any) | null = null;
+  onremovetrack: ((this: MediaStream, ev: MediaStreamTrackEvent) => any) | null = null;
   
   private tracks: MediaStreamTrack[] = [];
   
@@ -68,16 +70,38 @@ export class MockMediaStream {
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
       dispatchEvent: vi.fn(),
+      onended: null,
+      onmute: null,
+      onunmute: null,
+      clone: vi.fn(),
+      getCapabilities: vi.fn(() => ({})),
+      getConstraints: vi.fn(() => ({})),
+      getSettings: vi.fn(() => ({})),
+      applyConstraints: vi.fn(() => Promise.resolve()),
     } as unknown as MediaStreamTrack);
   }
   
   getTracks = () => [...this.tracks];
   getAudioTracks = () => this.tracks.filter(t => t.kind === 'audio');
   getVideoTracks = () => this.tracks.filter(t => t.kind === 'video');
-  addTrack = vi.fn();
-  removeTrack = vi.fn();
+  getTrackById = (id: string) => this.tracks.find(t => t.id === id) || null;
+  addTrack = vi.fn((track: MediaStreamTrack) => {
+    this.tracks.push(track);
+  });
+  removeTrack = vi.fn((track: MediaStreamTrack) => {
+    const index = this.tracks.indexOf(track);
+    if (index > -1) {
+      this.tracks.splice(index, 1);
+    }
+  });
+  clone = vi.fn(() => {
+    const cloned = new MockMediaStream();
+    cloned.tracks = [...this.tracks];
+    return cloned;
+  });
   addEventListener = vi.fn();
   removeEventListener = vi.fn();
+  dispatchEvent = vi.fn(() => true);
 }
 
 // Mock MediaRecorder
