@@ -1,0 +1,61 @@
+/* SyncedWaveforms Modern Styles */
+
+/* Responsive grid for mobile */
+@media (max-width: 768px) {
+  .waveformsGrid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Waveform analyzer specific styles */
+.syncedWaveformAnalyzer {
+  width: 100%;
+  height: 100%;
+}
+
+/* Custom slider styles for cross-browser support */
+.waveformsGrid input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.waveformsGrid input[type="range"]::-webkit-slider-track {
+  background: transparent;
+  height: 6px;
+}
+
+.waveformsGrid input[type="range"]::-moz-range-track {
+  background: transparent;
+  height: 6px;
+}
+
+.waveformsGrid input[type="range"]:focus {
+  outline: none;
+}
+
+.waveformsGrid input[type="range"]:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Hover states for interactive elements */
+.waveformsGrid button:not(:disabled) {
+  cursor: pointer;
+}
+
+/* Accessibility improvements */
+.waveformsGrid [role="region"] {
+  position: relative;
+}
+
+.waveformsGrid [aria-live="polite"] {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}

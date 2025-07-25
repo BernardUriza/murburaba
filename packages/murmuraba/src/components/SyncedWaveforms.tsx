@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { WaveformAnalyzer } from './WaveformAnalyzer';
-import './SyncedWaveforms.css';
+import styles from './SyncedWaveforms.module.css';
 
 interface SyncedWaveformsProps {
   originalAudioUrl?: string;
@@ -152,7 +152,7 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
     >
       {/* Waveforms Grid */}
       <div 
-        className="waveforms-grid"
+        className={styles.waveformsGrid}
         style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
@@ -198,7 +198,7 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
                 onPlayStateChange={handlePlayingChange}
                 disabled={disabled}
                 disablePlayback={index === 0 ? currentAudioType !== 'original' : currentAudioType !== 'processed'}
-                className="synced-waveform-analyzer"
+                className={styles.syncedWaveformAnalyzer}
                 aria-label={`${column.label} waveform`}
                 width={300}
                 height={120}

@@ -6,7 +6,7 @@ import { FileInfo } from './chunk-results/FileInfo';
 import { VadTimeline } from './chunk-results/VadTimeline';
 import { AudioControls } from './chunk-results/AudioControls';
 import { formatTime, formatPercentage, formatFileSize, calculateChunkStats } from './chunk-results/formatters';
-import './ChunkProcessingResults.css';
+import styles from './ChunkProcessingResults.module.css';
 
 export interface ChunkProcessingResultsProps {
   /** Array of processed audio chunks */
@@ -93,11 +93,11 @@ export function ChunkProcessingResults({
   // Render empty state
   if (chunks.length === 0) {
     return (
-      <section className={`chunk-results chunk-results--empty ${className}`.trim()}>
-        <div className="chunk-results__empty-state">
-          <div className="empty-state__icon" aria-hidden="true">🎵</div>
-          <h2 className="empty-state__title">No recordings yet</h2>
-          <p className="empty-state__subtitle">
+      <section className={`${styles.chunkResults} ${styles.chunkResultsEmpty} ${className}`.trim()}>
+        <div className={styles.emptyState}>
+          <div className={styles.emptyIcon} aria-hidden="true">🎵</div>
+          <h2 className={styles.emptyTitle}>No recordings yet</h2>
+          <p className={styles.emptySubtitle}>
             Start recording to see processed chunks here. Each chunk will show detailed metrics
             and allow you to play, compare, and export the audio.
           </p>
@@ -107,19 +107,19 @@ export function ChunkProcessingResults({
   }
 
   return (
-    <section className={`chunk-results ${className}`.trim()} role="region" aria-label="Processing Results">
+    <section className={`${styles.chunkResults} ${className}`.trim()} role="region" aria-label="Processing Results">
       {/* Header with stats */}
-      <div className="chunk-results__header">
-        <div className="header__info">
-          <h2 className="header__title">🎯 Processing Results</h2>
-          <div className="header__stats">
-            <span className="stat-badge">
+      <div className={styles.header}>
+        <div className={styles.headerInfo}>
+          <h2 className={styles.headerTitle}>🎯 Processing Results</h2>
+          <div className={styles.headerStats}>
+            <span className={styles.statBadge}>
               <strong>{chunks.length}</strong> chunks
             </span>
-            <span className="stat-badge">
+            <span className={styles.statBadge}>
               <strong>{formatTime(chunkStats?.totalDuration || 0)}</strong> total
             </span>
-            <span className="stat-badge stat-badge--highlight">
+            <span className={`${styles.statBadge} ${styles.statBadgeHighlight}`}>
               <strong>{formatPercentage(averageNoiseReduction)}</strong> avg noise reduction
             </span>
           </div>
@@ -127,20 +127,20 @@ export function ChunkProcessingResults({
         
         {chunks.length > 0 && (
           <button
-            className="btn btn-ghost btn--destructive"
+            className={`${styles.btn} ${styles.btnGhost} ${styles.btnDestructive}`}
             onClick={handleClearAll}
             onKeyDown={(e) => handleKeyDown(e, handleClearAll)}
             aria-label={`Clear all ${chunks.length} chunks`}
             type="button"
           >
-            <span className="btn__icon" aria-hidden="true">🗑️</span>
+            <span className={styles.btnIcon} aria-hidden="true">🗑️</span>
             <span>Clear All</span>
           </button>
         )}
       </div>
 
       {/* Chunks list */}
-      <div className="chunk-results__list" role="list">
+      <div className={styles.list} role="list">
         {chunks.map((chunk, index) => {
           const isSelected = selectedChunk === chunk.id;
           const hasProcessedAudio = Boolean(chunk.processedAudioUrl);
@@ -152,7 +152,7 @@ export function ChunkProcessingResults({
               key={chunk.id}
               data-chunk-id={chunk.id}
               data-testid={`chunk-${chunk.id}`}
-              className={`chunk ${isSelected ? 'chunk--selected' : ''} ${!isValid ? 'chunk--invalid' : ''}`.trim()}
+              className={`${styles.chunk} ${isSelected ? styles.chunkSelected : ''} ${!isValid ? styles.chunkInvalid : ''}`.trim()}
               role="listitem"
             >
               <ChunkHeader
@@ -175,15 +175,15 @@ export function ChunkProcessingResults({
 
               {/* Error message for invalid chunks */}
               {!isValid && chunk.errorMessage && (
-                <div className="chunk__error" role="alert">
-                  <span className="error__icon" aria-hidden="true">⚠️</span>
-                  <span className="error__message">{chunk.errorMessage}</span>
+                <div className={styles.chunkError} role="alert">
+                  <span className={styles.errorIcon} aria-hidden="true">⚠️</span>
+                  <span className={styles.errorMessage}>{chunk.errorMessage}</span>
                 </div>
               )}
 
               {/* Expanded content - keep mounted but toggle visibility */}
               <div 
-                className="chunk__details" 
+                className={styles.chunkDetails} 
                 aria-label="Chunk details"
                 style={{ display: chunk.isExpanded ? 'block' : 'none' }}
               >
@@ -207,8 +207,8 @@ export function ChunkProcessingResults({
                     chunkId={chunk.id} 
                   />
                 ) : (
-                  <div className="details__section">
-                    <h4 className="section__title">📈 Voice Activity Detection (VAD) Timeline</h4>
+                  <div className={styles.detailsSection}>
+                    <h4 className={styles.sectionTitle}>📈 Voice Activity Detection (VAD) Timeline</h4>
                     <div style={{ padding: '2rem', textAlign: 'center', color: '#a0a0a0' }}>
                       <span style={{ fontSize: '2rem' }}>⚠️</span>
                       <p>No VAD data available for this chunk</p>

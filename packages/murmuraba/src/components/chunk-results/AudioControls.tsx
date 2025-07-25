@@ -1,6 +1,6 @@
 import React from 'react';
 import { SyncedWaveforms } from '../SyncedWaveforms';
-import './AudioControls.modern.css';
+import styles from './AudioControls.module.css';
 
 interface AudioControlsProps {
   chunkId: string;
@@ -30,12 +30,12 @@ export function AudioControls({
   currentlyPlayingType
 }: AudioControlsProps) {
   return (
-    <div className="details__section">
-      <h4 className="section__title">🎵 Audio Controls</h4>
+    <div className={styles.detailsSection}>
+      <h4 className={styles.sectionTitle}>🎵 Audio Controls</h4>
       
-      <div className="audio-controls-container">
+      <div className={styles.audioControlsContainer}>
         {processedAudioUrl && originalAudioUrl && (
-          <div className="synced-waveforms-container">
+          <div className={styles.syncedWaveformsContainer}>
             <SyncedWaveforms
               processedAudioUrl={processedAudioUrl}
               originalAudioUrl={originalAudioUrl}
@@ -59,12 +59,12 @@ export function AudioControls({
           </div>
         )}
         
-        <div className="audio-controls-grid">
+        <div className={styles.audioControlsGrid}>
           {/* Original Audio First */}
           {hasOriginalAudio && (
-            <div className="audio-group">
-              <h5 className="audio-group__title">Original Audio</h5>
-              <div className="audio-controls__row">
+            <div className={styles.audioGroup}>
+              <h5 className={styles.audioGroupTitle}>Original Audio</h5>
+              <div className={styles.audioControlsRow}>
                 <button
                   className={`btn btn-secondary ${isPlaying && currentlyPlayingType === 'original' ? 'btn--playing' : ''}`}
                   onClick={() => onTogglePlayback('original')}
@@ -72,14 +72,14 @@ export function AudioControls({
                   aria-label={`${isPlaying && currentlyPlayingType === 'original' ? 'Pause' : 'Play'} original audio`}
                   type="button"
                 >
-                  <span className="btn__icon" aria-hidden="true">
+                  <span className={styles.btnIcon} aria-hidden="true">
                     {isPlaying && currentlyPlayingType === 'original' ? '⏸️' : '▶️'}
                   </span>
                   <span>{isPlaying && currentlyPlayingType === 'original' ? 'Pause' : 'Play'} Original</span>
                 </button>
 
                 <button
-                  className="btn btn-ghost btn--small"
+                  className={`${styles.btn} ${styles.btnGhost} ${styles.btnSmall}`}
                   onClick={() => onDownload('wav', 'original')}
                   disabled={!hasOriginalAudio || !isValid}
                   aria-label="Download original audio as WAV"
@@ -89,7 +89,7 @@ export function AudioControls({
                 </button>
 
                 <button
-                  className="btn btn-ghost btn--small"
+                  className={`${styles.btn} ${styles.btnGhost} ${styles.btnSmall}`}
                   onClick={() => onDownload('mp3', 'original')}
                   disabled={!hasOriginalAudio || !isValid}
                   aria-label="Download original audio as MP3"
@@ -103,7 +103,7 @@ export function AudioControls({
 
           {/* Processed Audio Second */}
           <div className="audio-group">
-            <h5 className="audio-group__title">Processed Audio</h5>
+            <h5 className={styles.audioGroupTitle}>Processed Audio</h5>
             <div className="audio-controls__row">
               <button
                 className={`btn btn-secondary ${isPlaying && currentlyPlayingType === 'processed' ? 'btn--playing' : ''}`}

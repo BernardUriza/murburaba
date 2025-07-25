@@ -94,8 +94,10 @@ export default function App() {
     toggleChunkExpansion,
     
     // Export Actions
-    exportChunkAsWav,
-    exportChunkAsMp3,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    exportChunkAsWav: _exportChunkAsWav,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    exportChunkAsMp3: _exportChunkAsMp3,
     downloadChunk,
     
     // Utility

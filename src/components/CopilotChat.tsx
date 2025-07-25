@@ -44,11 +44,11 @@ function formatMessageContent(content: string): string {
 export function CopilotChat({ 
   isOpen, 
   onClose, 
-  engineConfig, 
-  setEngineConfig, 
+  engineConfig: _engineConfig, 
+  setEngineConfig: _setEngineConfig, 
   isRecording,
   isInitialized,
-  onApplyChanges 
+  onApplyChanges: _onApplyChanges 
 }: CopilotChatProps) {
   const [messages, setMessages] = useState<Message[]>([
     {

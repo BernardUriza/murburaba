@@ -215,7 +215,8 @@ describe('AudioDemo Component', () => {
   })
 
   it('exports logs when export button is clicked', async () => {
-    const mockClick = jest.fn()
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _mockClick = jest.fn()
     jest.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-log-url')
     
     render(<AudioDemo {...defaultProps} />)
@@ -255,7 +256,8 @@ describe('AudioDemo Component', () => {
   })
 
   it('updates engine status periodically', async () => {
-    const { rerender } = render(<AudioDemo {...defaultProps} />)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { rerender: _rerender } = render(<AudioDemo {...defaultProps} />)
     
     // Change engine status
     mockGetEngineStatus.mockReturnValue('processing')

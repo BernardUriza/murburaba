@@ -424,12 +424,6 @@ export class MurmubaraEngine extends EventEmitter {
             // If using chunk processing, add samples to chunk processor
             if (chunkProcessor && !isPaused && !isStopped) {
                 chunkProcessor.addSamples(input);
-                // TDD Integration: Also process frame for real-time metrics accumulation
-                // This feeds data to our TDD integration system
-                const timestamp = Date.now();
-                chunkProcessor.processFrame(input, timestamp, output).catch(err => {
-                    this.logger.debug('TDD frame processing error:', err);
-                });
             }
             // Process frames
             let totalInputRMS = 0;

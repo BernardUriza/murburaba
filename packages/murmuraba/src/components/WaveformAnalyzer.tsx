@@ -598,23 +598,13 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     };
   }, [analyser, stream, disabled, audioUrl, draw]);
 
-  // Cleanup effect - called when component unmounts or stream changes
+  // Cleanup effect - called when component unmounts
   useEffect(() => {
     return () => {
       console.log('🧹 WaveformAnalyzer: Component unmounting, cleaning up...');
       cleanup();
     };
   }, [cleanup]);
-
-  // Cleanup when stream changes
-  useEffect(() => {
-    return () => {
-      if (stream) {
-        console.log('🧹 WaveformAnalyzer: Stream changed, cleaning up previous stream...');
-        cleanup();
-      }
-    };
-  }, [stream, cleanup]);
 
   // Handle keyboard navigation
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
