@@ -186,7 +186,7 @@ describe('ChunkProcessor', () => {
       
       chunkProcessor = new ChunkProcessor(sampleRate, config, mockLogger, mockMetricsManager);
       
-      let emittedChunks: any[] = [];
+      const emittedChunks: any[] = [];
       chunkProcessor.on('chunk-ready', (chunk) => {
         emittedChunks.push(chunk);
       });

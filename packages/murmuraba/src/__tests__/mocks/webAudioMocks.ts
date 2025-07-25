@@ -188,7 +188,7 @@ export class MockMediaStream implements MediaStream {
 // 🎚️ Mock MediaStreamTrack
 function createMockAudioTrack(): MediaStreamTrack {
   return {
-    kind: 'audio' as 'audio',
+    kind: 'audio' as const,
     id: `track-${crypto.randomUUID()}`,
     label: 'Mock Audio Track',
     enabled: true,
