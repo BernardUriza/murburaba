@@ -41,3 +41,4 @@ next-env.d.ts
 
 # netlify
 .netlify
+packages/murmuraba/html/html.meta.json.gz
