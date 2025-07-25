@@ -14,8 +14,8 @@ export default defineConfig({
       }
     },
     globals: true,
-    setupFiles: ['./src/__tests__/vitest.setup.ts'],
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    setupFiles: ['./src/tests/setup.ts'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}', 'src/tests/**/*.{test,spec}.{ts,tsx}'],
     coverage: {
       provider: 'v8',
       enabled: true,
@@ -31,6 +31,7 @@ export default defineConfig({
       exclude: [
         'node_modules/',
         'src/__tests__/',
+        'src/tests/**',
         '**/*.d.ts',
         '**/*.test.{ts,tsx}',
         '**/*.spec.{ts,tsx}',

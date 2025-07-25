@@ -1,14 +1,14 @@
 # dependencies
 /node_modules
-packages/*/node_modules/
+/packages/*/node_modules/
 /.pnp
 .pnp.js
 
 # testing
 /coverage
-packages/*/coverage/
-packages/*/html/
-packages/*/dist/
+/packages/*/coverage/
+/packages/*/html/
+/packages/*/dist/
 
 # build output
 /dist
@@ -41,4 +41,5 @@ next-env.d.ts
 
 # netlify
 .netlify
-packages/murmuraba/html/html.meta.json.gz
+/packages/murmuraba/html/html.meta.json.gz
+/packages/murmuraba/html/html.meta.json.gz
