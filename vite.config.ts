@@ -25,10 +25,15 @@ export default defineConfig({
     global: 'globalThis',
   },
   optimizeDeps: {
-    include: ['audio-resampler']
+    include: ['audio-resampler'],
+    exclude: ['@jitsi/rnnoise-wasm']
   },
   server: {
     port: 3000,
-    open: true
+    open: true,
+    fs: {
+      // Allow serving files from node_modules for WASM
+      allow: ['..']
+    }
   }
 })

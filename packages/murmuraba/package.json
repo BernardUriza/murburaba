@@ -41,8 +41,9 @@
     "url": "https://github.com/BernardUriza/murmuraba"
   },
   "scripts": {
-    "build": "npm run clean && npm run build:ts && npm run build:rollup",
-    "build:unsafe": "npm run clean && npm run build:ts && npm run build:rollup",
+    "build": "npm run clean && npm run build:ts && npm run build:rollup && npm run copy:wasm",
+    "build:unsafe": "npm run clean && npm run build:ts && npm run build:rollup && npm run copy:wasm",
+    "copy:wasm": "cp node_modules/@jitsi/rnnoise-wasm/dist/rnnoise.wasm dist/ || true",
     "build:ts": "tsc",
     "build:rollup": "rollup -c",
     "clean": "rimraf dist",
