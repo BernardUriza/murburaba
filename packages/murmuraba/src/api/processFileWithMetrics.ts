@@ -199,26 +199,25 @@ export async function processFileWithMetrics(
           offset += frameData.length;
         }
 
-        // Convert chunk to desired format
-        convertChunkToFormat(chunkAudioData, sampleRate, chunkOptions.outputFormat)
-          .then(blob => {
-            const chunk: ProcessedChunk = {
-              blob,
-              startTime: currentChunkStartTime,
-              endTime: currentTime,
-              duration: currentChunkDuration,
-              vadScore: currentChunkVadSum / currentChunkFrameCount,
-              metrics: {
-                noiseRemoved: 1 - (currentChunkRmsSum / currentChunkFrameCount), // Approximation
-                averageLevel: currentChunkRmsSum / currentChunkFrameCount,
-                vad: currentChunkVadSum / currentChunkFrameCount
-              }
-            };
-            chunks.push(chunk);
-          })
-          .catch(error => {
-            console.error('Error converting chunk:', error);
-          });
+        // Convert chunk to desired format (sync for now to avoid test issues)
+        try {
+          const blob = await convertChunkToFormat(chunkAudioData, sampleRate, chunkOptions.outputFormat);
+          const chunk: ProcessedChunk = {
+            blob,
+            startTime: currentChunkStartTime,
+            endTime: currentTime,
+            duration: currentChunkDuration,
+            vadScore: currentChunkVadSum / currentChunkFrameCount,
+            metrics: {
+              noiseRemoved: 1 - (currentChunkRmsSum / currentChunkFrameCount), // Approximation
+              averageLevel: currentChunkRmsSum / currentChunkFrameCount,
+              vad: currentChunkVadSum / currentChunkFrameCount
+            }
+          };
+          chunks.push(chunk);
+        } catch (error) {
+          console.error('Error converting chunk:', error);
+        }
 
         // Reset for next chunk
         currentChunkData = [];

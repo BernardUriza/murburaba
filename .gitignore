@@ -10,6 +10,9 @@ packages/*/coverage/
 packages/*/html/
 packages/*/dist/
 
+# build output
+/dist
+
 # next.js
 /.next/
 /out/
