@@ -2,7 +2,6 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import typescript from '@rollup/plugin-typescript';
 import terser from '@rollup/plugin-terser';
-import copy from 'rollup-plugin-copy';
 import postcss from 'rollup-plugin-postcss';
 
 // Suppress circular dependency warnings for known external libraries
@@ -61,19 +60,7 @@ export default [
       typescript({
         tsconfig: './tsconfig.json',
       }),
-      copy({
-        targets: [
-          { 
-            src: 'node_modules/@jitsi/rnnoise-wasm/dist/*.wasm', 
-            dest: 'dist/wasm' 
-          },
-          { 
-            src: 'node_modules/@jitsi/rnnoise-wasm/dist/*.js', 
-            dest: 'dist/wasm' 
-          }
-        ],
-        hook: 'writeBundle'
-      })
+      // No need to copy files - @jitsi/rnnoise-wasm will be bundled
     ],
   },
   // CJS build

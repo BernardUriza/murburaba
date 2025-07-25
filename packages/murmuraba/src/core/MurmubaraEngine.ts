@@ -258,34 +258,11 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     }
     
     try {
-      // Load the RNNoise script
-      const script = document.createElement('script');
-      script.src = '/rnnoise-fixed.js';
-      
-      await new Promise<void>((resolve, reject) => {
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error('Failed to load RNNoise script from /rnnoise-fixed.js'));
-        document.head.appendChild(script);
-      });
-      
-      // Create WASM module
-      const createRNNWasmModule = (window as any).createRNNWasmModule;
-      if (!createRNNWasmModule) {
-        throw new Error('RNNoise WASM module creator not found on window object');
-      }
+      // Dynamic import the RNNoise loader
+      const { loadRNNoiseModule } = await import('../utils/rnnoise-loader');
       
       try {
-        this.wasmModule = await createRNNWasmModule({
-          locateFile: (filename: string) => {
-            // If it's the WASM file, ensure correct path
-            if (filename.endsWith('.wasm')) {
-              const path = `/dist/${filename}`;
-              this.logger.debug(`WASM file requested: ${filename}, returning path: ${path}`);
-              return path;
-            }
-            return filename;
-          }
-        });
+        this.wasmModule = await loadRNNoiseModule();
       } catch (wasmError: any) {
         const errorMsg = wasmError?.message || String(wasmError);
         
