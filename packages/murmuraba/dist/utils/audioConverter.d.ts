@@ -7,6 +7,29 @@ export declare class AudioConverter {
     private createdUrls;
     constructor();
     /**
+     * Convert Float32Array audio to Int16Array
+     */
+    float32ToInt16(input: Float32Array): Int16Array;
+    /**
+     * Convert Int16Array audio to Float32Array
+     */
+    int16ToFloat32(input: Int16Array): Float32Array;
+    /**
+     * Interleave two mono channels into stereo
+     */
+    interleaveChannels(left: Float32Array, right: Float32Array): Float32Array;
+    /**
+     * Deinterleave stereo into two mono channels
+     */
+    deinterleaveChannels(input: Float32Array): {
+        left: Float32Array;
+        right: Float32Array;
+    };
+    /**
+     * Mix multi-channel audio to mono
+     */
+    mixToMono(input: Float32Array, channels?: number): Float32Array;
+    /**
      * Convert a Blob from WebM/Opus to WAV format
      */
     convertToWav(blob: Blob): Promise<Blob>;

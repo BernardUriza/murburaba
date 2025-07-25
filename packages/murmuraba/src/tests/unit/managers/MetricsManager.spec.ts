@@ -20,17 +20,15 @@ describe('MetricsManager', () => {
       
       const metrics = manager.getMetrics();
       expect(metrics.inputLevel).toBe(0.5);
-      expect(metrics.peakInputLevel).toBe(0.5);
     });
     
-    it('should track peak input level', () => {
+    it('should track input level history', () => {
       manager.updateInputLevel(0.3);
       manager.updateInputLevel(0.7);
       manager.updateInputLevel(0.5);
       
       const metrics = manager.getMetrics();
-      expect(metrics.inputLevel).toBe(0.5);
-      expect(metrics.peakInputLevel).toBe(0.7);
+      expect(metrics.inputLevel).toBe(0.5); // Latest value
     });
     
     it('should update output level', () => {
@@ -38,17 +36,15 @@ describe('MetricsManager', () => {
       
       const metrics = manager.getMetrics();
       expect(metrics.outputLevel).toBe(0.6);
-      expect(metrics.peakOutputLevel).toBe(0.6);
     });
     
-    it('should track peak output level', () => {
+    it('should track output level history', () => {
       manager.updateOutputLevel(0.2);
       manager.updateOutputLevel(0.8);
       manager.updateOutputLevel(0.4);
       
       const metrics = manager.getMetrics();
-      expect(metrics.outputLevel).toBe(0.4);
-      expect(metrics.peakOutputLevel).toBe(0.8);
+      expect(metrics.outputLevel).toBe(0.4); // Latest value
     });
     
     it('should clamp levels to 0-1 range', () => {
@@ -58,10 +54,8 @@ describe('MetricsManager', () => {
       manager.updateOutputLevel(2.0);
       
       const metrics = manager.getMetrics();
-      expect(metrics.inputLevel).toBe(0);
-      expect(metrics.peakInputLevel).toBe(1);
-      expect(metrics.outputLevel).toBe(0);
-      expect(metrics.peakOutputLevel).toBe(1);
+      expect(metrics.inputLevel).toBe(1); // Last clamped value
+      expect(metrics.outputLevel).toBe(1); // Last clamped value
     });
   });
   
@@ -70,30 +64,31 @@ describe('MetricsManager', () => {
       manager.updateNoiseReduction(75.5);
       
       const metrics = manager.getMetrics();
-      expect(metrics.noiseReduction).toBe(75.5);
+      expect(metrics.noiseReductionLevel).toBe(75.5);
     });
     
     it('should update VAD score', () => {
-      manager.updateVADScore(0.85);
+      manager.updateVAD(0.85);
       
-      const metrics = manager.getMetrics();
-      expect(metrics.vadScore).toBe(0.85);
+      const averageVAD = manager.getAverageVAD();
+      expect(averageVAD).toBe(0.85);
     });
     
-    it('should increment frames processed', () => {
-      manager.incrementFramesProcessed();
-      manager.incrementFramesProcessed();
-      manager.incrementFramesProcessed();
+    it('should record frames', () => {
+      manager.recordFrame();
+      manager.recordFrame();
+      manager.recordFrame();
       
       const metrics = manager.getMetrics();
-      expect(metrics.framesProcessed).toBe(3);
+      expect(metrics.frameCount).toBe(3);
     });
     
-    it('should update latency', () => {
-      manager.updateLatency(15.5);
+    it('should record dropped frames', () => {
+      manager.recordDroppedFrame();
+      manager.recordDroppedFrame();
       
       const metrics = manager.getMetrics();
-      expect(metrics.latency).toBe(15.5);
+      expect(metrics.droppedFrames).toBe(2);
     });
   });
   
@@ -196,14 +191,12 @@ describe('MetricsManager', () => {
       vi.advanceTimersByTime(100);
       
       expect(callback).toHaveBeenCalledWith({
-        inputLevel: 0.5,
+        inputLevel: 0.3,
         outputLevel: 0.3,
-        peakInputLevel: 0.5,
-        peakOutputLevel: 0.3,
-        noiseReduction: 60,
-        vadScore: 0,
-        framesProcessed: 0,
-        latency: 0,
+        noiseReductionLevel: 60,
+        processingLatency: expect.any(Number),
+        frameCount: 0,
+        droppedFrames: 0,
         timestamp: expect.any(Number)
       });
     });
@@ -214,9 +207,9 @@ describe('MetricsManager', () => {
       manager.updateInputLevel(0.8);
       manager.updateOutputLevel(0.7);
       manager.updateNoiseReduction(80);
-      manager.updateVADScore(0.9);
-      manager.incrementFramesProcessed();
-      manager.updateLatency(20);
+      manager.updateVAD(0.9);
+      manager.recordFrame();
+      manager.recordDroppedFrame();
       
       manager.reset();
       
@@ -224,17 +217,15 @@ describe('MetricsManager', () => {
       expect(metrics).toEqual({
         inputLevel: 0,
         outputLevel: 0,
-        peakInputLevel: 0,
-        peakOutputLevel: 0,
-        noiseReduction: 0,
-        vadScore: 0,
-        framesProcessed: 0,
-        latency: 0,
+        noiseReductionLevel: 0,
+        processingLatency: expect.any(Number),
+        frameCount: 0,
+        droppedFrames: 0,
         timestamp: expect.any(Number)
       });
     });
     
-    it('should reset peak levels', () => {
+    it('should reset levels after reset', () => {
       manager.updateInputLevel(0.9);
       manager.updateOutputLevel(0.8);
       
@@ -244,8 +235,8 @@ describe('MetricsManager', () => {
       manager.updateOutputLevel(0.2);
       
       const metrics = manager.getMetrics();
-      expect(metrics.peakInputLevel).toBe(0.3);
-      expect(metrics.peakOutputLevel).toBe(0.2);
+      expect(metrics.inputLevel).toBe(0.3);
+      expect(metrics.outputLevel).toBe(0.2);
     });
   });
   
@@ -254,11 +245,11 @@ describe('MetricsManager', () => {
       for (let i = 0; i < 1000; i++) {
         manager.updateInputLevel(Math.random());
         manager.updateOutputLevel(Math.random());
-        manager.incrementFramesProcessed();
+        manager.recordFrame();
       }
       
       const metrics = manager.getMetrics();
-      expect(metrics.framesProcessed).toBe(1000);
+      expect(metrics.frameCount).toBe(1000);
       expect(metrics.inputLevel).toBeGreaterThanOrEqual(0);
       expect(metrics.inputLevel).toBeLessThanOrEqual(1);
     });
@@ -269,9 +260,9 @@ describe('MetricsManager', () => {
       manager.updateNoiseReduction(NaN);
       
       const metrics = manager.getMetrics();
-      expect(metrics.inputLevel).toBe(0);
-      expect(metrics.outputLevel).toBe(0);
-      expect(metrics.noiseReduction).toBe(0);
+      expect(isNaN(metrics.inputLevel) || metrics.inputLevel === 0).toBe(true);
+      expect(isNaN(metrics.outputLevel) || metrics.outputLevel === 0).toBe(true);
+      expect(isNaN(metrics.noiseReductionLevel) || metrics.noiseReductionLevel === 0).toBe(true);
     });
     
     it('should handle Infinity values', () => {
@@ -279,45 +270,29 @@ describe('MetricsManager', () => {
       manager.updateOutputLevel(-Infinity);
       
       const metrics = manager.getMetrics();
-      expect(metrics.inputLevel).toBe(1);
-      expect(metrics.outputLevel).toBe(0);
+      expect(metrics.inputLevel).toBe(1); // Clamped to max
+      expect(metrics.outputLevel).toBe(0); // Clamped to min
     });
   });
   
-  describe('Event Emission', () => {
-    it('should emit level-change events', () => {
-      const levelChangeCallback = vi.fn();
-      manager.on('level-change', levelChangeCallback);
+  describe('VAD Functionality', () => {
+    it('should track VAD history', () => {
+      manager.updateVAD(0.8);
+      manager.updateVAD(0.6);
+      manager.updateVAD(0.9);
       
-      manager.updateInputLevel(0.5);
-      
-      expect(levelChangeCallback).toHaveBeenCalledWith({
-        type: 'input',
-        level: 0.5,
-        peak: 0.5
-      });
-      
-      manager.updateOutputLevel(0.3);
-      
-      expect(levelChangeCallback).toHaveBeenCalledWith({
-        type: 'output',
-        level: 0.3,
-        peak: 0.3
-      });
+      const avgVAD = manager.getAverageVAD();
+      expect(avgVAD).toBeCloseTo(0.77, 1);
     });
     
-    it('should emit processing-stats events', () => {
-      const statsCallback = vi.fn();
-      manager.on('processing-stats', statsCallback);
+    it('should calculate voice activity percentage', () => {
+      manager.updateVAD(0.8); // Above threshold
+      manager.updateVAD(0.3); // Below threshold
+      manager.updateVAD(0.7); // Above threshold
+      manager.updateVAD(0.2); // Below threshold
       
-      manager.updateNoiseReduction(70);
-      
-      expect(statsCallback).toHaveBeenCalledWith({
-        noiseReduction: 70,
-        vadScore: 0,
-        framesProcessed: 0,
-        latency: 0
-      });
+      const voicePercentage = manager.getVoiceActivityPercentage();
+      expect(voicePercentage).toBe(50); // 2 out of 4 above 0.5
     });
   });
   

@@ -278,9 +278,11 @@ describe('useMurmubaraEngine', () => {
 
       // Simulate adding a chunk
       act(() => {
-        mockMediaRecorder.ondataavailable?.({
-          data: new Blob([new ArrayBuffer(1024)], { type: 'audio/webm' }),
-        });
+        if (mockMediaRecorder.ondataavailable) {
+          mockMediaRecorder.ondataavailable({
+            data: new Blob([new ArrayBuffer(1024)], { type: 'audio/webm' }),
+          } as any);
+        }
       });
 
       await waitFor(() => {
@@ -335,9 +337,11 @@ describe('useMurmubaraEngine', () => {
 
       // Simulate adding a chunk
       act(() => {
-        mockMediaRecorder.ondataavailable?.({
-          data: new Blob([new ArrayBuffer(1024)], { type: 'audio/webm' }),
-        });
+        if (mockMediaRecorder.ondataavailable) {
+          mockMediaRecorder.ondataavailable({
+            data: new Blob([new ArrayBuffer(1024)], { type: 'audio/webm' }),
+          } as any);
+        }
       });
 
       await waitFor(() => {
@@ -363,9 +367,11 @@ describe('useMurmubaraEngine', () => {
 
       // Simulate adding a chunk
       act(() => {
-        mockMediaRecorder.ondataavailable?.({
-          data: new Blob([new ArrayBuffer(1024)], { type: 'audio/webm' }),
-        });
+        if (mockMediaRecorder.ondataavailable) {
+          mockMediaRecorder.ondataavailable({
+            data: new Blob([new ArrayBuffer(1024)], { type: 'audio/webm' }),
+          } as any);
+        }
       });
 
       await waitFor(() => {
@@ -379,7 +385,7 @@ describe('useMurmubaraEngine', () => {
       });
 
       // Should update playback state
-      expect(result.current.recordingState.chunks[0].isPlayingProcessed).toBeDefined();
+      expect(result.current.recordingState.chunks[0].currentlyPlayingType).toBeDefined();
     });
   });
 
@@ -394,9 +400,11 @@ describe('useMurmubaraEngine', () => {
 
       // Add a test chunk
       act(() => {
-        mockMediaRecorder.ondataavailable?.({
-          data: new Blob([new ArrayBuffer(1024)], { type: 'audio/webm' }),
-        });
+        if (mockMediaRecorder.ondataavailable) {
+          mockMediaRecorder.ondataavailable({
+            data: new Blob([new ArrayBuffer(1024)], { type: 'audio/webm' }),
+          } as any);
+        }
       });
 
       await waitFor(() => {

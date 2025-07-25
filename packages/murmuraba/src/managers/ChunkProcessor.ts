@@ -61,6 +61,15 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
     metricsManager: MetricsManager
   ) {
     super();
+    
+    // Validate inputs
+    if (!sampleRate || sampleRate <= 0) {
+      throw new Error('Invalid sample rate: must be positive');
+    }
+    if (!config.chunkDuration || config.chunkDuration <= 0) {
+      throw new Error('Invalid chunk duration: must be positive');
+    }
+    
     this.logger = logger;
     this.sampleRate = sampleRate;
     this.metricsManager = metricsManager;

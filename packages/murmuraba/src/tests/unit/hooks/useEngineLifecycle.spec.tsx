@@ -59,7 +59,7 @@ describe('useEngineLifecycle', () => {
 
     it('should handle initialization with config', async () => {
       const config = { enableAGC: true };
-      const { result } = renderHook(() => useEngineLifecycle(config));
+      const { result } = renderHook(() => useEngineLifecycle({ config }));
 
       await act(async () => {
         await result.current.initialize();
@@ -74,7 +74,7 @@ describe('useEngineLifecycle', () => {
 
       const onInitError = vi.fn();
       const { result } = renderHook(() => 
-        useEngineLifecycle({}, { onInitError })
+        useEngineLifecycle({ onInitError })
       );
 
       await act(async () => {
@@ -89,7 +89,7 @@ describe('useEngineLifecycle', () => {
 
     it('should auto-initialize when configured', async () => {
       const { result } = renderHook(() => 
-        useEngineLifecycle({}, { autoInitialize: true })
+        useEngineLifecycle({ autoInitialize: true })
       );
 
       await waitFor(() => {
@@ -231,9 +231,15 @@ describe('useEngineLifecycle', () => {
 
       // Change mock return value
       vi.mocked(api.getDiagnostics).mockReturnValue({
+        version: '1.0.0',
+        engineVersion: '1.0.0',
+        reactVersion: '18.0.0',
         engineState: 'processing',
         wasmLoaded: true,
         audioContextState: 'running',
+        activeProcessors: 1,
+        memoryUsage: 1000000,
+        processingTime: 10,
         activeStreams: 2,
         errorCount: 0,
       });
@@ -318,33 +324,30 @@ describe('useEngineLifecycle', () => {
     });
   });
 
-  describe('Lifecycle Events', () => {
-    it('should emit lifecycle events', async () => {
-      const onInit = vi.fn();
-      const onDestroy = vi.fn();
-      
-      const { result } = renderHook(() => 
-        useEngineLifecycle({}, { onInit, onDestroy })
-      );
+  describe('Lifecycle Management', () => {
+    it('should handle lifecycle transitions correctly', async () => {
+      const { result } = renderHook(() => useEngineLifecycle());
+
+      expect(result.current.engineState).toBe('uninitialized');
 
       await act(async () => {
         await result.current.initialize();
       });
 
-      expect(onInit).toHaveBeenCalled();
+      expect(result.current.engineState).toBe('ready');
 
       await act(async () => {
         await result.current.destroy();
       });
 
-      expect(onDestroy).toHaveBeenCalled();
+      expect(result.current.engineState).toBe('destroyed');
     });
   });
 
   describe('Memory Management', () => {
     it('should unsubscribe from metrics on destroy', async () => {
       const unsubscribe = vi.fn();
-      vi.mocked(api.onMetricsUpdate).mockReturnValue(unsubscribe);
+      vi.mocked(api.onMetricsUpdate).mockReturnValue(unsubscribe as any);
 
       const { result } = renderHook(() => useEngineLifecycle());
 

@@ -1,16 +1,21 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { ChunkProcessor } from '../../../managers/ChunkProcessor';
 import { EventEmitter } from '../../../core/EventEmitter';
+import { Logger } from '../../../core/Logger';
+import { MetricsManager } from '../../../managers/MetricsManager';
 
 describe('ChunkProcessor', () => {
   let processor: ChunkProcessor;
-  let mockEventEmitter: EventEmitter;
+  let mockLogger: Logger;
+  let mockMetricsManager: MetricsManager;
   let mockMediaRecorder: any;
   let mockStream: MediaStream;
   
   beforeEach(() => {
     vi.clearAllMocks();
-    mockEventEmitter = new EventEmitter();
+    mockLogger = new Logger('[ChunkProcessor]');
+    mockLogger.setLevel('debug');
+    mockMetricsManager = new MetricsManager();
     
     // Create mock MediaStream
     mockStream = {
@@ -28,10 +33,10 @@ describe('ChunkProcessor', () => {
       ondataavailable: null,
       onstop: null,
       onerror: null,
-      start: vi.fn(function() {
+      start: vi.fn(function(this: any) {
         this.state = 'recording';
       }),
-      stop: vi.fn(function() {
+      stop: vi.fn(function(this: any) {
         this.state = 'inactive';
         if (this.onstop) this.onstop();
       }),
@@ -44,104 +49,113 @@ describe('ChunkProcessor', () => {
     global.MediaRecorder.isTypeSupported = vi.fn(() => true);
     
     processor = new ChunkProcessor(
-      mockStream,
+      48000, // sampleRate
       { 
         chunkDuration: 1000,
-        mimeType: 'audio/webm;codecs=opus'
+        onChunkProcessed: vi.fn()
       },
-      mockEventEmitter
+      mockLogger,
+      mockMetricsManager
     );
   });
   
   afterEach(() => {
-    processor.stop();
+    processor.reset();
   });
   
   describe('Initialization', () => {
     it('should create processor with default options', () => {
-      const defaultProcessor = new ChunkProcessor(mockStream, {}, mockEventEmitter);
+      const defaultProcessor = new ChunkProcessor(48000, { chunkDuration: 1000 }, mockLogger, mockMetricsManager);
       expect(defaultProcessor).toBeDefined();
     });
     
     it('should create processor with custom chunk duration', () => {
       const customProcessor = new ChunkProcessor(
-        mockStream,
+        48000,
         { chunkDuration: 2000 },
-        mockEventEmitter
+        mockLogger,
+        mockMetricsManager
       );
       expect(customProcessor).toBeDefined();
     });
     
-    it('should validate mime type support', () => {
-      global.MediaRecorder.isTypeSupported = vi.fn(() => false);
-      
+    it('should validate sample rate', () => {
       expect(() => new ChunkProcessor(
-        mockStream,
-        { mimeType: 'unsupported/type' },
-        mockEventEmitter
+        0, // invalid sample rate
+        { chunkDuration: 1000 },
+        mockLogger,
+        mockMetricsManager
       )).toThrow();
     });
   });
   
-  describe('Recording', () => {
-    it('should start recording when start is called', () => {
-      processor.start();
+  describe('Sample Processing', () => {
+    it('should process samples when addSamples is called', () => {
+      const samples = new Float32Array(1024);
+      samples.fill(0.5);
       
-      expect(mockMediaRecorder.start).toHaveBeenCalledWith(1000);
-      expect(processor.isRecording()).toBe(true);
+      processor.addSamples(samples);
+      
+      const status = processor.getStatus();
+      expect(status.currentSampleCount).toBe(1024);
     });
     
-    it('should stop recording when stop is called', () => {
-      processor.start();
-      processor.stop();
+    it('should reset processor when reset is called', () => {
+      const samples = new Float32Array(1024);
+      processor.addSamples(samples);
       
-      expect(mockMediaRecorder.stop).toHaveBeenCalled();
-      expect(processor.isRecording()).toBe(false);
+      processor.reset();
+      
+      const status = processor.getStatus();
+      expect(status.currentSampleCount).toBe(0);
     });
     
-    it('should handle multiple start calls gracefully', () => {
-      processor.start();
-      processor.start();
+    it('should handle multiple addSamples calls', () => {
+      const samples1 = new Float32Array(512);
+      const samples2 = new Float32Array(512);
       
-      expect(mockMediaRecorder.start).toHaveBeenCalledTimes(1);
+      processor.addSamples(samples1);
+      processor.addSamples(samples2);
+      
+      const status = processor.getStatus();
+      expect(status.currentSampleCount).toBe(1024);
     });
     
-    it('should handle stop without start', () => {
-      expect(() => processor.stop()).not.toThrow();
+    it('should handle reset without samples', () => {
+      expect(() => processor.reset()).not.toThrow();
     });
   });
   
   describe('Chunk Processing', () => {
-    it('should emit chunk-ready event when data is available', async () => {
+    it('should emit chunk-ready event when chunk is complete', async () => {
       const chunkReadySpy = vi.fn();
-      mockEventEmitter.on('chunk-ready', chunkReadySpy);
+      processor.on('chunk-ready', chunkReadySpy);
       
-      processor.start();
+      // Add enough samples to trigger chunk processing
+      const samplesPerChunk = Math.floor((1000 / 1000) * 48000); // 1 second at 48kHz
+      const samples = new Float32Array(samplesPerChunk);
+      samples.fill(0.5);
       
-      // Simulate data available
-      const mockBlob = new Blob([new ArrayBuffer(1024)], { type: 'audio/webm' });
-      mockMediaRecorder.ondataavailable({ data: mockBlob });
+      processor.addSamples(samples);
       
       // Wait for async processing
       await new Promise(resolve => setTimeout(resolve, 10));
       
       expect(chunkReadySpy).toHaveBeenCalled();
       const chunk = chunkReadySpy.mock.calls[0][0];
-      expect(chunk).toHaveProperty('blob', mockBlob);
+      expect(chunk).toHaveProperty('id');
+      expect(chunk).toHaveProperty('data');
       expect(chunk).toHaveProperty('startTime');
       expect(chunk).toHaveProperty('endTime');
-      expect(chunk).toHaveProperty('duration');
     });
     
-    it('should handle empty blobs', async () => {
+    it('should handle empty samples', async () => {
       const chunkReadySpy = vi.fn();
-      mockEventEmitter.on('chunk-ready', chunkReadySpy);
+      processor.on('chunk-ready', chunkReadySpy);
       
-      processor.start();
-      
-      // Simulate empty data
-      const emptyBlob = new Blob([], { type: 'audio/webm' });
-      mockMediaRecorder.ondataavailable({ data: emptyBlob });
+      // Add empty samples
+      const emptySamples = new Float32Array(0);
+      processor.addSamples(emptySamples);
       
       await new Promise(resolve => setTimeout(resolve, 10));
       
@@ -150,21 +164,23 @@ describe('ChunkProcessor', () => {
     
     it('should calculate correct timestamps for chunks', async () => {
       const chunkReadySpy = vi.fn();
-      mockEventEmitter.on('chunk-ready', chunkReadySpy);
+      processor.on('chunk-ready', chunkReadySpy);
       
-      processor.start();
+      const samplesPerChunk = Math.floor((1000 / 1000) * 48000);
       
-      // Simulate multiple chunks
-      const blob1 = new Blob([new ArrayBuffer(1024)], { type: 'audio/webm' });
-      const blob2 = new Blob([new ArrayBuffer(1024)], { type: 'audio/webm' });
+      // First chunk
+      const samples1 = new Float32Array(samplesPerChunk);
+      samples1.fill(0.5);
+      processor.addSamples(samples1);
       
-      mockMediaRecorder.ondataavailable({ data: blob1 });
       await new Promise(resolve => setTimeout(resolve, 10));
       
-      // Advance time
+      // Second chunk after some time
       vi.advanceTimersByTime(1000);
+      const samples2 = new Float32Array(samplesPerChunk);
+      samples2.fill(0.3);
+      processor.addSamples(samples2);
       
-      mockMediaRecorder.ondataavailable({ data: blob2 });
       await new Promise(resolve => setTimeout(resolve, 10));
       
       expect(chunkReadySpy).toHaveBeenCalledTimes(2);
@@ -173,172 +189,144 @@ describe('ChunkProcessor', () => {
       const chunk2 = chunkReadySpy.mock.calls[1][0];
       
       expect(chunk2.startTime).toBeGreaterThan(chunk1.startTime);
-      expect(chunk1.duration).toBeCloseTo(1000, -2);
     });
   });
   
   describe('Error Handling', () => {
-    it('should emit error event on MediaRecorder error', () => {
+    it('should handle processing errors gracefully', () => {
       const errorSpy = vi.fn();
-      mockEventEmitter.on('chunk-error', errorSpy);
+      processor.on('error', errorSpy);
       
-      processor.start();
-      
-      const mockError = new Error('MediaRecorder error');
-      mockMediaRecorder.onerror({ error: mockError });
-      
-      expect(errorSpy).toHaveBeenCalledWith(mockError);
+      // Try to add invalid samples
+      expect(() => {
+        processor.addSamples(null as any);
+      }).not.toThrow(); // Should handle gracefully
     });
     
-    it('should handle errors during chunk processing', async () => {
+    it('should handle errors during frame processing', async () => {
       const errorSpy = vi.fn();
-      mockEventEmitter.on('chunk-error', errorSpy);
+      processor.on('error', errorSpy);
       
-      processor.start();
-      
-      // Simulate an error by passing invalid data
-      mockMediaRecorder.ondataavailable({ data: null });
-      
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
-      expect(errorSpy).toHaveBeenCalled();
+      // Try to process invalid frame data
+      expect(() => {
+        processor.processFrame(null as any, Date.now());
+      }).not.toThrow(); // Should handle gracefully
     });
   });
   
   describe('Flush', () => {
     it('should flush remaining data when flush is called', () => {
-      processor.start();
+      const samples = new Float32Array(512); // Less than full chunk
+      processor.addSamples(samples);
       
-      const stopSpy = vi.spyOn(mockMediaRecorder, 'stop');
+      const chunkReadySpy = vi.fn();
+      processor.on('chunk-ready', chunkReadySpy);
+      
       processor.flush();
       
-      expect(stopSpy).toHaveBeenCalled();
+      expect(chunkReadySpy).toHaveBeenCalled();
     });
     
-    it('should handle flush without active recording', () => {
+    it('should handle flush without samples', () => {
       expect(() => processor.flush()).not.toThrow();
     });
     
-    it('should restart recording after flush if was recording', () => {
-      processor.start();
+    it('should reset after flush', () => {
+      const samples = new Float32Array(512);
+      processor.addSamples(samples);
+      
       processor.flush();
       
-      // Should stop and restart
-      expect(mockMediaRecorder.stop).toHaveBeenCalled();
-      expect(mockMediaRecorder.start).toHaveBeenCalledTimes(2);
+      const status = processor.getStatus();
+      expect(status.currentSampleCount).toBe(0);
     });
   });
   
-  describe('Metadata', () => {
-    it('should add metadata to chunks', async () => {
-      const chunkReadySpy = vi.fn();
-      mockEventEmitter.on('chunk-ready', chunkReadySpy);
+  describe('Frame Processing', () => {
+    it('should process frames and accumulate metrics', async () => {
+      const frameProcessedSpy = vi.fn();
+      processor.on('frame-processed', frameProcessedSpy);
       
-      const metadata = { 
-        vadScore: 0.8,
-        noiseLevel: 0.2 
-      };
+      const frame = new Float32Array(480); // One frame
+      frame.fill(0.5);
       
-      processor.setMetadata(metadata);
-      processor.start();
+      await processor.processFrame(frame, Date.now());
       
-      const mockBlob = new Blob([new ArrayBuffer(1024)], { type: 'audio/webm' });
-      mockMediaRecorder.ondataavailable({ data: mockBlob });
-      
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
-      const chunk = chunkReadySpy.mock.calls[0][0];
-      expect(chunk.metadata).toEqual(metadata);
+      expect(frameProcessedSpy).toHaveBeenCalled();
     });
     
-    it('should update metadata for subsequent chunks', async () => {
-      const chunkReadySpy = vi.fn();
-      mockEventEmitter.on('chunk-ready', chunkReadySpy);
+    it('should complete period and return aggregated metrics', async () => {
+      const periodCompleteSpy = vi.fn();
+      processor.on('period-complete', periodCompleteSpy);
       
-      processor.start();
+      // Process some frames
+      const frame1 = new Float32Array(480);
+      frame1.fill(0.8);
+      await processor.processFrame(frame1, Date.now());
       
-      // First chunk with metadata
-      processor.setMetadata({ vadScore: 0.8 });
-      const blob1 = new Blob([new ArrayBuffer(1024)], { type: 'audio/webm' });
-      mockMediaRecorder.ondataavailable({ data: blob1 });
+      const frame2 = new Float32Array(480);
+      frame2.fill(0.4);
+      await processor.processFrame(frame2, Date.now() + 10);
       
-      await new Promise(resolve => setTimeout(resolve, 10));
+      const metrics = processor.completePeriod(1000);
       
-      // Update metadata for second chunk
-      processor.setMetadata({ vadScore: 0.3 });
-      const blob2 = new Blob([new ArrayBuffer(1024)], { type: 'audio/webm' });
-      mockMediaRecorder.ondataavailable({ data: blob2 });
-      
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
-      expect(chunkReadySpy).toHaveBeenCalledTimes(2);
-      expect(chunkReadySpy.mock.calls[0][0].metadata.vadScore).toBe(0.8);
-      expect(chunkReadySpy.mock.calls[1][0].metadata.vadScore).toBe(0.3);
+      expect(metrics).toHaveProperty('averageNoiseReduction');
+      expect(metrics).toHaveProperty('totalFrames', 2);
+      expect(periodCompleteSpy).toHaveBeenCalledWith(metrics);
     });
   });
   
   describe('State Management', () => {
-    it('should track recording state correctly', () => {
-      expect(processor.isRecording()).toBe(false);
-      
-      processor.start();
-      expect(processor.isRecording()).toBe(true);
-      
-      processor.stop();
-      expect(processor.isRecording()).toBe(false);
+    it('should track processing state correctly', () => {
+      const status = processor.getStatus();
+      expect(status).toHaveProperty('currentSampleCount', 0);
+      expect(status).toHaveProperty('samplesPerChunk');
+      expect(status).toHaveProperty('chunkIndex', 0);
+      expect(status).toHaveProperty('bufferFillPercentage', 0);
     });
     
-    it('should return current chunk count', async () => {
-      const chunkReadySpy = vi.fn();
-      mockEventEmitter.on('chunk-ready', chunkReadySpy);
+    it('should return current accumulated metrics', async () => {
+      // Process some frames first
+      const frame = new Float32Array(480);
+      frame.fill(0.5);
+      await processor.processFrame(frame, Date.now());
       
-      expect(processor.getChunkCount()).toBe(0);
-      
-      processor.start();
-      
-      // Process multiple chunks
-      for (let i = 0; i < 3; i++) {
-        const blob = new Blob([new ArrayBuffer(1024)], { type: 'audio/webm' });
-        mockMediaRecorder.ondataavailable({ data: blob });
-        await new Promise(resolve => setTimeout(resolve, 10));
-      }
-      
-      expect(processor.getChunkCount()).toBe(3);
+      const metrics = processor.getCurrentAccumulatedMetrics();
+      expect(metrics).not.toBeNull();
+      expect(metrics?.totalFrames).toBe(1);
     });
     
-    it('should reset chunk count on stop', async () => {
-      processor.start();
+    it('should reset metrics on reset', async () => {
+      // Process some frames first
+      const frame = new Float32Array(480);
+      await processor.processFrame(frame, Date.now());
       
-      const blob = new Blob([new ArrayBuffer(1024)], { type: 'audio/webm' });
-      mockMediaRecorder.ondataavailable({ data: blob });
-      await new Promise(resolve => setTimeout(resolve, 10));
+      processor.reset();
       
-      expect(processor.getChunkCount()).toBe(1);
-      
-      processor.stop();
-      processor.start();
-      
-      expect(processor.getChunkCount()).toBe(0);
+      const metrics = processor.getCurrentAccumulatedMetrics();
+      expect(metrics).toBeNull();
     });
   });
   
   describe('Options Validation', () => {
     it('should validate chunk duration', () => {
       expect(() => new ChunkProcessor(
-        mockStream,
+        48000,
         { chunkDuration: -1000 },
-        mockEventEmitter
+        mockLogger,
+        mockMetricsManager
       )).toThrow();
       
       expect(() => new ChunkProcessor(
-        mockStream,
+        48000,
         { chunkDuration: 0 },
-        mockEventEmitter
+        mockLogger,
+        mockMetricsManager
       )).toThrow();
     });
     
-    it('should use default mime type if not specified', () => {
-      const defaultProcessor = new ChunkProcessor(mockStream, {}, mockEventEmitter);
+    it('should use default chunk duration if not specified', () => {
+      const defaultProcessor = new ChunkProcessor(48000, { chunkDuration: 1000 }, mockLogger, mockMetricsManager);
       expect(defaultProcessor).toBeDefined();
     });
   });

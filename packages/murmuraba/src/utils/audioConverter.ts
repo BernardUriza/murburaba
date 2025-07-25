@@ -13,6 +13,81 @@ export class AudioConverter {
   }
   
   /**
+   * Convert Float32Array audio to Int16Array
+   */
+  float32ToInt16(input: Float32Array): Int16Array {
+    const output = new Int16Array(input.length);
+    for (let i = 0; i < input.length; i++) {
+      let s = input[i];
+      if (isNaN(s)) s = 0;
+      if (s > 1) s = 1;
+      if (s < -1) s = -1;
+      output[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+    return output;
+  }
+
+  /**
+   * Convert Int16Array audio to Float32Array
+   */
+  int16ToFloat32(input: Int16Array): Float32Array {
+    const output = new Float32Array(input.length);
+    for (let i = 0; i < input.length; i++) {
+      output[i] = input[i] / (input[i] < 0 ? 0x8000 : 0x7FFF);
+    }
+    return output;
+  }
+
+  /**
+   * Interleave two mono channels into stereo
+   */
+  interleaveChannels(left: Float32Array, right: Float32Array): Float32Array {
+    const length = Math.min(left.length, right.length);
+    const output = new Float32Array(length * 2);
+    for (let i = 0; i < length; i++) {
+      output[i * 2] = left[i];
+      output[i * 2 + 1] = right[i];
+    }
+    return output;
+  }
+
+  /**
+   * Deinterleave stereo into two mono channels
+   */
+  deinterleaveChannels(input: Float32Array): { left: Float32Array; right: Float32Array } {
+    const length = Math.floor(input.length / 2);
+    const left = new Float32Array(length);
+    const right = new Float32Array(length);
+    for (let i = 0; i < length; i++) {
+      left[i] = input[i * 2];
+      right[i] = input[i * 2 + 1];
+    }
+    return { left, right };
+  }
+
+  /**
+   * Mix multi-channel audio to mono
+   */
+  mixToMono(input: Float32Array, channels: number = 2): Float32Array {
+    if (channels === 1) {
+      return new Float32Array(input);
+    }
+    
+    const length = Math.floor(input.length / channels);
+    const output = new Float32Array(length);
+    
+    for (let i = 0; i < length; i++) {
+      let sum = 0;
+      for (let c = 0; c < channels; c++) {
+        sum += input[i * channels + c];
+      }
+      output[i] = Math.max(-1, Math.min(1, sum / channels));
+    }
+    
+    return output;
+  }
+
+  /**
    * Convert a Blob from WebM/Opus to WAV format
    */
   async convertToWav(blob: Blob): Promise<Blob> {

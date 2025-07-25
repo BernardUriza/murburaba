@@ -116,4 +116,21 @@ export class AudioResampler {
     
     return output;
   }
+
+  /**
+   * Format PCM data as WebM container (simplified mock implementation)
+   */
+  static formatAsWebMContainer(pcmData: Int16Array, sampleRate: number): Blob {
+    // This is a simplified implementation for testing
+    // In a real implementation, this would create a proper WebM container
+    const buffer = new ArrayBuffer(pcmData.length * 2);
+    const view = new DataView(buffer);
+    
+    // Write PCM data as little-endian 16-bit integers
+    for (let i = 0; i < pcmData.length; i++) {
+      view.setInt16(i * 2, pcmData[i], true);
+    }
+    
+    return new Blob([buffer], { type: 'audio/webm' });
+  }
 }

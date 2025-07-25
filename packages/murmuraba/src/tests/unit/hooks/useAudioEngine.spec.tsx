@@ -185,7 +185,9 @@ describe('useAudioEngine', () => {
       };
       
       act(() => {
-        processor.onaudioprocess?.(event);
+        if (processor.onaudioprocess) {
+          processor.onaudioprocess(event as any);
+        }
       });
       
       // Engine process should be called for chunks
@@ -246,7 +248,9 @@ describe('useAudioEngine', () => {
       };
       
       act(() => {
-        processor.onaudioprocess?.(event);
+        if (processor.onaudioprocess) {
+          processor.onaudioprocess(event as any);
+        }
       });
       
       const metrics = result.current.getMetrics();
@@ -349,7 +353,9 @@ describe('useAudioEngine', () => {
       };
       
       act(() => {
-        processor.onaudioprocess?.(event);
+        if (processor.onaudioprocess) {
+          processor.onaudioprocess(event as any);
+        }
       });
       
       const metrics = result.current.getMetrics();
@@ -381,7 +387,9 @@ describe('useAudioEngine', () => {
       };
       
       act(() => {
-        processor.onaudioprocess?.(event);
+        if (processor.onaudioprocess) {
+          processor.onaudioprocess(event as any);
+        }
       });
       
       const metrics = result.current.getMetrics();
