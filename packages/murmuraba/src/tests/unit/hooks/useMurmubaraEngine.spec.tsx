@@ -219,7 +219,7 @@ describe('useMurmubaraEngine', () => {
       });
 
       await act(async () => {
-        await result.current.startRecording();
+        await result.current._internal_startRecording();
       });
 
       expect(result.current.recordingState.isRecording).toBe(true);
@@ -232,11 +232,11 @@ describe('useMurmubaraEngine', () => {
 
       await act(async () => {
         await result.current.initialize();
-        await result.current.startRecording();
+        await result.current._internal_startRecording();
       });
 
       await act(async () => {
-        await result.current.stopRecording();
+        await result.current._internal_stopRecording();
       });
 
       expect(result.current.recordingState.isRecording).toBe(false);
@@ -248,12 +248,12 @@ describe('useMurmubaraEngine', () => {
 
       await act(async () => {
         await result.current.initialize();
-        await result.current.startRecording();
+        await result.current._internal_startRecording();
       });
 
       // Pause
       act(() => {
-        result.current.pauseRecording();
+        result.current._internal_pauseRecording();
       });
 
       expect(result.current.recordingState.isPaused).toBe(true);
@@ -261,7 +261,7 @@ describe('useMurmubaraEngine', () => {
 
       // Resume
       act(() => {
-        result.current.resumeRecording();
+        result.current._internal_resumeRecording();
       });
 
       expect(result.current.recordingState.isPaused).toBe(false);
@@ -273,7 +273,7 @@ describe('useMurmubaraEngine', () => {
 
       await act(async () => {
         await result.current.initialize();
-        await result.current.startRecording();
+        await result.current._internal_startRecording();
       });
 
       // Simulate adding a chunk
@@ -290,7 +290,7 @@ describe('useMurmubaraEngine', () => {
       });
 
       act(() => {
-        result.current.clearRecordings();
+        result.current._internal_clearRecordings();
       });
 
       expect(result.current.recordingState.chunks).toHaveLength(0);
@@ -302,7 +302,7 @@ describe('useMurmubaraEngine', () => {
       expect(result.current.isInitialized).toBe(false);
 
       await act(async () => {
-        await result.current.startRecording();
+        await result.current._internal_startRecording();
       });
 
       expect(result.current.isInitialized).toBe(true);
@@ -314,7 +314,7 @@ describe('useMurmubaraEngine', () => {
 
       await act(async () => {
         await result.current.initialize();
-        await result.current.startRecording();
+        await result.current._internal_startRecording();
       });
 
       // Wait a bit for timer to update
@@ -332,7 +332,7 @@ describe('useMurmubaraEngine', () => {
 
       await act(async () => {
         await result.current.initialize();
-        await result.current.startRecording();
+        await result.current._internal_startRecording();
       });
 
       // Simulate adding a chunk
@@ -362,7 +362,7 @@ describe('useMurmubaraEngine', () => {
 
       await act(async () => {
         await result.current.initialize();
-        await result.current.startRecording();
+        await result.current._internal_startRecording();
       });
 
       // Simulate adding a chunk
@@ -395,7 +395,7 @@ describe('useMurmubaraEngine', () => {
 
       await act(async () => {
         await result.current.initialize();
-        await result.current.startRecording();
+        await result.current._internal_startRecording();
       });
 
       // Add a test chunk

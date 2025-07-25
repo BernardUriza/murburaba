@@ -1,13 +1,38 @@
-// Main hook export
-export { useMurmubaraEngine } from './useMurmubaraEngine';
+import { useMurmubaraEngine as useMurmubaraEngineInternal } from './useMurmubaraEngine';
+import type { UseMurmubaraEngineOptions, UseMurmubaraEngineReturn } from './types';
 
-// Type exports
+/**
+ * Public version of useMurmubaraEngine that omits internal recording functions
+ * External users should use processFileWithMetrics('Use.Mic') for recording
+ */
+export function useMurmubaraEngine(
+  options: UseMurmubaraEngineOptions = {}
+): UseMurmubaraEngineReturn {
+  const internalHook = useMurmubaraEngineInternal(options);
+  
+  // Return hook without internal recording functions
+  const {
+    _internal_startRecording,
+    _internal_stopRecording,
+    _internal_pauseRecording,
+    _internal_resumeRecording,
+    _internal_clearRecordings,
+    ...publicAPI
+  } = internalHook;
+  
+  return publicAPI;
+}
+
+// Type exports (only public interface)
 export type {
   ProcessedChunk,
   RecordingState,
   UseMurmubaraEngineOptions,
   UseMurmubaraEngineReturn
 } from './types';
+
+// Internal export for processFileWithMetrics to use
+export { useMurmubaraEngine as useMurmubaraEngineInternal } from './useMurmubaraEngine';
 
 // Constant exports for external use
 export {

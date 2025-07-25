@@ -14,7 +14,7 @@ import { getAudioConverter, AudioConverter, destroyAudioConverter } from '../../
 // Import types
 import {
   UseMurmubaraEngineOptions,
-  UseMurmubaraEngineReturn
+  UseMurmubaraEngineReturnInternal
 } from './types';
 import {
   EngineState,
@@ -43,7 +43,7 @@ import { RECORDING_UPDATE_INTERVAL, LOG_PREFIX } from './constants';
  */
 export function useMurmubaraEngine(
   options: UseMurmubaraEngineOptions = {}
-): UseMurmubaraEngineReturn {
+): UseMurmubaraEngineReturnInternal {
   const { 
     autoInitialize = false, 
     onInitError,
@@ -380,12 +380,14 @@ export function useMurmubaraEngine(
     processStreamChunked,
     processFile,
     
-    // Recording Actions
-    startRecording: recordingFunctions.startRecording,
-    stopRecording: recordingFunctions.stopRecording,
-    pauseRecording: recordingFunctions.pauseRecording,
-    resumeRecording: recordingFunctions.resumeRecording,
-    clearRecordings: recordingFunctions.clearRecordings,
+    // Recording Actions - INTERNAL USE ONLY
+    // These functions are not exported in the public API
+    // Use processFileWithMetrics('Use.Mic') for external recording
+    _internal_startRecording: recordingFunctions.startRecording,
+    _internal_stopRecording: recordingFunctions.stopRecording,
+    _internal_pauseRecording: recordingFunctions.pauseRecording,
+    _internal_resumeRecording: recordingFunctions.resumeRecording,
+    _internal_clearRecordings: recordingFunctions.clearRecordings,
     
     // Audio Playback Actions
     toggleChunkPlayback,

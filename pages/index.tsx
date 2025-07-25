@@ -2,20 +2,11 @@
 
 import React, { useState } from 'react'
 import { 
-  useMurmubaraEngine,
   BuildInfo,
-  AdvancedMetricsPanel,
-  ChunkProcessingResults,
-  getEngineStatus,
-  processFile,
-  processFileWithMetrics,
-  SimpleWaveformAnalyzer
+  processFileWithMetrics
 } from 'murmuraba'
 import Swal from 'sweetalert2'
-import { WASMErrorDisplay } from '../src/components/WASMErrorDisplay'
-import AudioDemo from '../src/components/AudioDemo'
-import { CopilotChat } from '../src/components/CopilotChat'
-import { Settings } from '../src/components/Settings'
+// Removed unused components - only processFileWithMetrics needed
 
 export default function App() {
   // Engine configuration state with localStorage persistence
@@ -84,12 +75,6 @@ export default function App() {
     initialize,
     destroy,
     
-    // Recording Actions
-    startRecording,
-    stopRecording,
-    pauseRecording,
-    resumeRecording,
-    clearRecordings,
     
     // Audio Playback Actions
     toggleChunkPlayback,
@@ -112,6 +97,10 @@ export default function App() {
 
   // Extract values from recordingState
   const { isRecording, isPaused, recordingTime, chunks: processedChunks } = recordingState
+  
+  // New recording state for processFileWithMetrics API
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [processingResults, setProcessingResults] = useState<any>(null)
   
   // UI-only state
   const [chunkDuration, setChunkDuration] = useState(8)
@@ -173,61 +162,75 @@ export default function App() {
     setSelectedChunk(chunkId)
   }
   
-  // Simple wrapper for start recording with chunk duration
+  // New microphone recording using processFileWithMetrics API
   const handleStartRecording = async () => {
+    if (!isInitialized) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Engine Not Ready',
+        text: 'Please initialize the engine first',
+        confirmButtonText: 'OK'
+      })
+      return
+    }
+
     try {
-      // Show initiating message
+      setIsProcessing(true)
+      
       Swal.fire({
         toast: true,
         position: 'top-end',
         icon: 'info',
-        title: 'Iniciando grabación...',
+        title: 'Starting microphone recording...',
         showConfirmButton: false,
         timer: 2000,
         timerProgressBar: true
       })
       
-      await startRecording(chunkDuration)
-      
-      // Show success message when degraded mode is active
-      if (engineState === 'degraded') {
-        Swal.fire({
-          toast: true,
-          position: 'top-end',
-          icon: 'warning',
-          title: 'Grabación iniciada en modo degradado',
-          text: 'La reducción de ruido no está disponible',
-          showConfirmButton: false,
-          timer: 3000,
-          timerProgressBar: true
-        })
-      }
-    } catch (error) {
-      console.error('Failed to start recording:', error)
-      
-      let errorMessage = 'No se pudo acceder al micrófono';
-      let errorTitle = 'Error al iniciar grabación';
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-        
-        // Specific handling for WASM errors
-        if (error.message.includes('WASM') || error.message.includes('initialize')) {
-          errorTitle = 'Error de inicialización';
-          errorMessage = 'El motor de audio no pudo inicializarse. Por favor, recarga la página.';
-        } else if (error.message.includes('Permission')) {
-          errorTitle = 'Permiso denegado';
-          errorMessage = 'Por favor, permite el acceso al micrófono para grabar.';
+      // Use the new processFileWithMetrics API with microphone
+      const result = await processFileWithMetrics('Use.Mic', {
+        recordingDuration: chunkDuration * 1000, // Convert to milliseconds
+        chunkOptions: {
+          chunkDuration: chunkDuration * 1000,
+          outputFormat: 'wav' as const
         }
+      })
+      
+      setProcessingResults(result)
+      
+      // Save to history
+      const newRecord = {
+        id: `rec-${Date.now()}`,
+        date: new Date(),
+        duration: chunkDuration,
+        chunks: result.chunks?.length || 0,
+        avgNoiseReduction: result.averageVad || 0,
+        config: engineConfig
       }
+      const newHistory = [newRecord, ...recordingHistory].slice(0, 10)
+      setRecordingHistory(newHistory)
+      localStorage.setItem('murmuraba-history', JSON.stringify(newHistory))
       
       Swal.fire({
-        icon: 'error',
-        title: errorTitle,
-        text: errorMessage,
-        confirmButtonText: 'Entendido',
-        confirmButtonColor: '#d33'
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'Recording completed successfully!',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
       })
+      
+    } catch (error) {
+      console.error('Recording failed:', error)
+      Swal.fire({
+        icon: 'error',
+        title: 'Recording Failed',
+        text: error instanceof Error ? error.message : 'Unknown error occurred',
+        confirmButtonText: 'OK'
+      })
+    } finally {
+      setIsProcessing(false)
     }
   }
 
@@ -356,20 +359,18 @@ export default function App() {
           </div>
         </div>
 
-        {/* Recording Status Bar */}
-        {isRecording && (
+        {/* Processing Status Bar */}
+        {isProcessing && (
           <div className="recording-status-bar">
             <div className="recording-indicator pulse">
               <span className="recording-dot"></span>
-              <span className="badge badge-recording">Recording</span>
-              <span className="recording-time">{formatTime(recordingTime)}</span>
+              <span className="badge badge-recording">Processing Audio</span>
             </div>
-            {isPaused && <span className="badge badge-warning">PAUSED</span>}
           </div>
         )}
 
         {/* Real-time Metrics Dashboard */}
-        {metrics && isRecording && (
+        {metrics && (isRecording || isProcessing) && (
           <section className="stats-section">
             <div className="glass-card">
               <h2 className="panel-title">Real-time Processing Metrics</h2>
@@ -460,7 +461,7 @@ export default function App() {
         )}
 
         {/* Control Panel */}
-        {!isRecording && (
+        {!isRecording && !isProcessing && (
           <section className="recording-panel glass-card">
             <div className="panel-header">
               <h2 className="panel-title">Audio Controls</h2>
@@ -484,87 +485,42 @@ export default function App() {
                 </div>
               )}
 
-              {isInitialized && !isRecording && (
+              {isInitialized && (
                 <>
                   <button 
                     className="btn btn-primary"
                     onClick={handleStartRecording}
+                    disabled={isProcessing}
                   >
                     <span className="btn-icon">🎙️</span>
-                    <span>Start Recording</span>
+                    <span>{isProcessing ? 'Processing...' : 'Record Audio'}</span>
                   </button>
                   
                   <div className="control-group" style={{ marginTop: '1rem' }}>
-                    <label className="control-label">⏱️ Chunk Duration</label>
+                    <label className="control-label">⏱️ Recording Duration</label>
                     <div className="nav-pills" style={{ justifyContent: 'center' }}>
                       {[5, 8, 10, 15].map(duration => (
                         <button
                           key={duration}
                           className={`nav-pill ${chunkDuration === duration ? 'active' : ''}`}
                           onClick={() => setChunkDuration(duration)}
+                          disabled={isProcessing}
                         >
                           {duration}s
                         </button>
                       ))}
                     </div>
                   </div>
-                </>
-              )}
-
-              {isRecording && (
-                <div className="recording-controls">
-                  <button 
-                    className="btn btn-secondary"
-                    onClick={() => {
-                      stopRecording();
-                      // Save to history
-                      if (processedChunks.length > 0) {
-                        const newRecord = {
-                          id: `rec-${Date.now()}`,
-                          date: new Date(),
-                          duration: recordingTime,
-                          chunks: processedChunks.length,
-                          avgNoiseReduction: averageNoiseReduction,
-                          config: engineConfig
-                        };
-                        const newHistory = [newRecord, ...recordingHistory].slice(0, 10); // Keep last 10
-                        setRecordingHistory(newHistory);
-                        localStorage.setItem('murmuraba-history', JSON.stringify(newHistory));
-                      }
-                    }}
-                  >
-                    <span className="btn-icon">⏹️</span>
-                    <span>Stop</span>
-                  </button>
                   
-                  {!isPaused ? (
-                    <button 
-                      className="btn btn-ghost"
-                      onClick={pauseRecording}
-                    >
-                      <span className="btn-icon">⏸️</span>
-                      <span>Pause</span>
-                    </button>
-                  ) : (
-                    <button 
-                      className="btn btn-primary"
-                      onClick={resumeRecording}
-                    >
-                      <span className="btn-icon">▶️</span>
-                      <span>Resume</span>
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {isInitialized && !isRecording && (
-                <button 
-                  className="btn btn-ghost"
-                  onClick={() => destroy(true)}
-                >
-                  <span className="btn-icon">🗑️</span>
-                  <span>Destroy Engine</span>
-                </button>
+                  <button 
+                    className="btn btn-ghost"
+                    onClick={() => destroy(true)}
+                    disabled={isProcessing}
+                  >
+                    <span className="btn-icon">🗑️</span>
+                    <span>Destroy Engine</span>
+                  </button>
+                </>
               )}
             </div>
 
@@ -596,64 +552,39 @@ export default function App() {
 
         {/* Chunk Processing Results */}
         <ChunkProcessingResults
-          chunks={processedChunks}
-          averageNoiseReduction={averageNoiseReduction}
+          chunks={processingResults?.chunks || processedChunks}
+          averageNoiseReduction={processingResults?.averageVad || averageNoiseReduction}
           selectedChunk={selectedChunk}
           onTogglePlayback={toggleChunkPlayback}
           onToggleExpansion={handleToggleChunkExpansion}
-          onClearAll={clearRecordings}
+          onClearAll={() => {
+            setProcessingResults(null)
+            // clearRecordings() - function not available in public API
+          }}
           onDownloadChunk={downloadChunk}
         />
 
         {/* Floating Action Buttons */}
         <div className="fab-container">
           {/* Audio Control Buttons */}
-          {isInitialized && !isRecording && (
+          {isInitialized && !isRecording && !isProcessing && (
             <button 
               className="fab"
               onClick={handleStartRecording}
-              title="Start Recording"
+              title="Record Audio"
             >
               🎙️
             </button>
           )}
           
-          {isRecording && !isPaused && (
-            <>
-              <button 
-                className="fab fab-secondary"
-                onClick={pauseRecording}
-                title="Pause Recording"
-              >
-                ⏸️
-              </button>
-              <button 
-                className="fab fab-secondary"
-                onClick={stopRecording}
-                title="Stop Recording"
-              >
-                ⏹️
-              </button>
-            </>
-          )}
-          
-          {isRecording && isPaused && (
-            <>
-              <button 
-                className="fab"
-                onClick={resumeRecording}
-                title="Resume Recording"
-              >
-                ▶️
-              </button>
-              <button 
-                className="fab fab-secondary"
-                onClick={stopRecording}
-                title="Stop Recording"
-              >
-                ⏹️
-              </button>
-            </>
+          {isProcessing && (
+            <button 
+              className="fab fab-secondary"
+              disabled
+              title="Processing Audio..."
+            >
+              ⏳
+            </button>
           )}
           
           {/* Divider */}

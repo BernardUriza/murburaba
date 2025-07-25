@@ -33,7 +33,8 @@ export interface UseMurmubaraEngineOptions extends MurmubaraConfig {
   react19Mode?: boolean;
 }
 
-export interface UseMurmubaraEngineReturn {
+// Internal interface with all functions (for internal use)
+export interface UseMurmubaraEngineReturnInternal {
   // State
   isInitialized: boolean;
   isLoading: boolean;
@@ -60,12 +61,14 @@ export interface UseMurmubaraEngineReturn {
   ) => Promise<StreamController>;
   processFile: (arrayBuffer: ArrayBuffer) => Promise<ArrayBuffer>;
   
-  // Recording Actions
-  startRecording: (chunkDuration?: number) => Promise<void>;
-  stopRecording: () => void;
-  pauseRecording: () => void;
-  resumeRecording: () => void;
-  clearRecordings: () => void;
+  // Recording Actions - INTERNAL USE ONLY
+  // These functions are not exposed in the public API
+  // External consumers should use processFileWithMetrics('Use.Mic')
+  _internal_startRecording: (chunkDuration?: number) => Promise<void>;
+  _internal_stopRecording: () => void;
+  _internal_pauseRecording: () => void;
+  _internal_resumeRecording: () => void;
+  _internal_clearRecordings: () => void;
   
   // Audio Playback Actions
   toggleChunkPlayback: (chunkId: string, audioType: 'processed' | 'original') => Promise<void>;
@@ -81,4 +84,11 @@ export interface UseMurmubaraEngineReturn {
   resetError: () => void;
   formatTime: (seconds: number) => string;
   getAverageNoiseReduction: () => number;
+}
+
+// Public interface that omits internal recording functions
+export interface UseMurmubaraEngineReturn extends Omit<UseMurmubaraEngineReturnInternal, 
+  '_internal_startRecording' | '_internal_stopRecording' | '_internal_pauseRecording' | 
+  '_internal_resumeRecording' | '_internal_clearRecordings'> {
+  // Public API - users should use processFileWithMetrics('Use.Mic') for recording
 }

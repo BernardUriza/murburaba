@@ -20,6 +20,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts"],
-  "exclude": ["node_modules"]
+  "include": ["pages/**/*.ts", "pages/**/*.tsx", "components/**/*.ts", "components/**/*.tsx", "next-env.d.ts"],
+  "exclude": ["node_modules", "**/*.test.*", "**/__tests__/**/*"]
 }

@@ -22,7 +22,7 @@ export interface UseMurmubaraEngineOptions extends MurmubaraConfig {
     onInitError?: (error: Error) => void;
     react19Mode?: boolean;
 }
-export interface UseMurmubaraEngineReturn {
+export interface UseMurmubaraEngineReturnInternal {
     isInitialized: boolean;
     isLoading: boolean;
     error: string | null;
@@ -40,11 +40,11 @@ export interface UseMurmubaraEngineReturn {
         onChunkProcessed?: (chunk: ChunkMetrics) => void;
     }) => Promise<StreamController>;
     processFile: (arrayBuffer: ArrayBuffer) => Promise<ArrayBuffer>;
-    startRecording: (chunkDuration?: number) => Promise<void>;
-    stopRecording: () => void;
-    pauseRecording: () => void;
-    resumeRecording: () => void;
-    clearRecordings: () => void;
+    _internal_startRecording: (chunkDuration?: number) => Promise<void>;
+    _internal_stopRecording: () => void;
+    _internal_pauseRecording: () => void;
+    _internal_resumeRecording: () => void;
+    _internal_clearRecordings: () => void;
     toggleChunkPlayback: (chunkId: string, audioType: 'processed' | 'original') => Promise<void>;
     toggleChunkExpansion: (chunkId: string) => void;
     exportChunkAsWav: (chunkId: string, audioType: 'processed' | 'original') => Promise<Blob>;
@@ -54,5 +54,7 @@ export interface UseMurmubaraEngineReturn {
     resetError: () => void;
     formatTime: (seconds: number) => string;
     getAverageNoiseReduction: () => number;
+}
+export interface UseMurmubaraEngineReturn extends Omit<UseMurmubaraEngineReturnInternal, '_internal_startRecording' | '_internal_stopRecording' | '_internal_pauseRecording' | '_internal_resumeRecording' | '_internal_clearRecordings'> {
 }
 //# sourceMappingURL=types.d.ts.map
