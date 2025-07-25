@@ -3,7 +3,6 @@
 import React, { useState } from 'react'
 import { 
   useMurmubaraEngine,
-  WaveformAnalyzer,
   BuildInfo,
   AdvancedMetricsPanel,
   ChunkProcessingResults,
@@ -97,8 +96,6 @@ export default function App() {
     toggleChunkExpansion,
     
     // Export Actions
-    exportChunkAsWav,
-    exportChunkAsMp3,
     downloadChunk,
     
     // Utility
@@ -131,7 +128,6 @@ export default function App() {
     showVadValues: true,
     showVadTimeline: true
   })
-  const [_noiseReductionLevel, _setNoiseReductionLevel] = useState(75)
   const [selectedChunk, setSelectedChunk] = useState<string | null>(null)
   const [recordingHistory, setRecordingHistory] = useState<Array<{
     id: string;
@@ -606,8 +602,6 @@ export default function App() {
           onTogglePlayback={toggleChunkPlayback}
           onToggleExpansion={handleToggleChunkExpansion}
           onClearAll={clearRecordings}
-          onExportWav={exportChunkAsWav}
-          onExportMp3={exportChunkAsMp3}
           onDownloadChunk={downloadChunk}
         />
 

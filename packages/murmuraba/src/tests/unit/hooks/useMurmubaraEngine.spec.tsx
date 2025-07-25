@@ -40,8 +40,8 @@ const mockMediaRecorder = {
   stop: vi.fn(),
   pause: vi.fn(),
   resume: vi.fn(),
-  ondataavailable: null,
-  onstop: null,
+  ondataavailable: null as ((event: BlobEvent) => void) | null,
+  onstop: null as ((event: Event) => void) | null,
   state: 'inactive',
 };
 

@@ -25,7 +25,7 @@
   "dependencies": {
     "audio-resampler": "^1.0.1",
     "murmuraba": "workspace:*",
-    "next": "^14.2.13",
+    "next": "^15.4.0",
     "react": "^18",
     "react-dom": "^18",
     "recharts": "^3.1.0",
@@ -39,7 +39,7 @@
     "@vitest/ui": "^3.2.4",
     "concurrently": "^9.2.0",
     "eslint": "^8",
-    "eslint-config-next": "^14.2.13",
+    "eslint-config-next": "^15.4.0",
     "happy-dom": "^18.0.1",
     "puppeteer": "^24.15.0",
     "typescript": "^5",

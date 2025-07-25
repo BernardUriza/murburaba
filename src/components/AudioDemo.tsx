@@ -177,7 +177,7 @@ export default function AudioDemo({
           }
         } else {
           // Use legacy API
-          const result = await processFileWithMetrics(arrayBuffer, (metrics) => {
+          const result = await processFileWithMetrics(arrayBuffer, (metrics: any) => {
             frameCount++
             // Only log every 10th frame to avoid overwhelming the UI
             if (frameCount % 10 === 0 || metrics.vad > 0.5) {

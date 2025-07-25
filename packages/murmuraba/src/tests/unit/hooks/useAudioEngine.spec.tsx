@@ -23,7 +23,7 @@ const mockAudioContext = {
   createScriptProcessor: vi.fn(() => ({
     connect: vi.fn(),
     disconnect: vi.fn(),
-    onaudioprocess: null,
+    onaudioprocess: null as ((event: AudioProcessingEvent) => void) | null,
   })),
   createMediaStreamSource: vi.fn(() => ({
     connect: vi.fn(),
