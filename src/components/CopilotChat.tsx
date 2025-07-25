@@ -210,7 +210,7 @@ export function CopilotChat({
                       __html: formatMessageContent(message.content) 
                     }} />
                     <span className="message-time">
-                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {message.timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' })}
                     </span>
                   </div>
                 </>

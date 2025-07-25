@@ -1,0 +1,81 @@
+/* ProcessingMetrics Component Styles */
+
+/* Details Section */
+.detailsSection {
+  margin-bottom: 1.5rem;
+}
+
+.detailsSection:last-child {
+  margin-bottom: 0;
+}
+
+.sectionTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+  color: var(--color-text-primary, #e0e0e0);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Metrics Grid */
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.metricItem {
+  background: var(--color-background, #1a1b26);
+  padding: 1rem;
+  border-radius: 6px;
+}
+
+.metricLabel {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #a0a0a0);
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metricValue {
+  display: block;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #e0e0e0);
+  margin-bottom: 0.5rem;
+}
+
+.metricValueWarning {
+  color: var(--color-warning, #f59e0b);
+}
+
+.metricBar {
+  height: 4px;
+  background: var(--color-surface, #24253a);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.metricFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.metricFillInput {
+  background: var(--color-primary, #6366f1);
+}
+
+.metricFillOutput {
+  background: var(--color-success, #10b981);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .metricsGrid {
+    grid-template-columns: 1fr;
+  }
+}

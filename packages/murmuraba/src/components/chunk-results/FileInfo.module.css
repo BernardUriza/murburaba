@@ -1,0 +1,59 @@
+/* FileInfo Component Styles */
+
+/* Details Section */
+.detailsSection {
+  margin-bottom: 1.5rem;
+}
+
+.detailsSection:last-child {
+  margin-bottom: 0;
+}
+
+.sectionTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+  color: var(--color-text-primary, #e0e0e0);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* File Info Grid */
+.fileInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.fileInfoItem {
+  background: var(--color-background, #1a1b26);
+  padding: 1rem;
+  border-radius: 6px;
+}
+
+.infoLabel {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #a0a0a0);
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.infoValue {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #e0e0e0);
+}
+
+.infoValueSuccess {
+  color: var(--color-success, #10b981);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .fileInfoGrid {
+    grid-template-columns: 1fr;
+  }
+}

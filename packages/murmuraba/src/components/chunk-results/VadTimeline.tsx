@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import styles from './VadTimeline.module.css';
 
 interface VadTimelineProps {
   vadData: Array<{ time: number; vad: number }>;
@@ -11,15 +12,15 @@ export const VadTimeline = React.memo(function VadTimeline({ vadData, chunkId }:
   // Show loading state while data is being processed
   if (!vadData || vadData.length === 0) {
     return (
-      <div className="details__section">
-        <h4 className="section__title">📈 Voice Activity Detection (VAD) Timeline</h4>
-        <div className="vad-loading-container">
-          <div className="vad-loading-spinner">
-            <div className="spinner-dot"></div>
-            <div className="spinner-dot"></div>
-            <div className="spinner-dot"></div>
+      <div className={styles.detailsSection}>
+        <h4 className={styles.sectionTitle}>📈 Voice Activity Detection (VAD) Timeline</h4>
+        <div className={styles.vadLoadingContainer}>
+          <div className={styles.vadLoadingSpinner}>
+            <div className={styles.spinnerDot}></div>
+            <div className={styles.spinnerDot}></div>
+            <div className={styles.spinnerDot}></div>
           </div>
-          <p className="vad-loading-text">Analizando actividad de voz, por favor espera...</p>
+          <p className={styles.vadLoadingText}>⚠️ No VAD data available for this chunk</p>
         </div>
       </div>
     );
@@ -33,9 +34,9 @@ export const VadTimeline = React.memo(function VadTimeline({ vadData, chunkId }:
   }, [vadData]);
 
   return (
-    <div className="details__section">
-      <h4 className="section__title">📈 Voice Activity Detection (VAD) Timeline</h4>
-      <div className="vad-chart-container vad-chart-fade-in">
+    <div className={styles.detailsSection}>
+      <h4 className={styles.sectionTitle}>📈 Voice Activity Detection (VAD) Timeline</h4>
+      <div className={`${styles.vadChartContainer} ${styles.vadChartFadeIn}`}>
         {vadData && vadData.length > 0 ? (
           <div style={{ 
             height: '200px', 
@@ -94,14 +95,14 @@ export const VadTimeline = React.memo(function VadTimeline({ vadData, chunkId }:
         
         {/* Stats section */}
         {vadData && vadData.length > 0 && (
-          <div className="vad-stats">
-          <span className="vad-stat">
+          <div className={styles.vadStats}>
+          <span className={styles.vadStat}>
             <strong>Voice Detected:</strong> {stats.voiceDetectedPercentage.toFixed(1)}%
           </span>
-          <span className="vad-stat">
+          <span className={styles.vadStat}>
             <strong>Peak VAD:</strong> {stats.peakVad.toFixed(3)}
           </span>
-          <span className="vad-stat">
+          <span className={styles.vadStat}>
             <strong>Min VAD:</strong> {stats.minVad.toFixed(3)}
           </span>
         </div>

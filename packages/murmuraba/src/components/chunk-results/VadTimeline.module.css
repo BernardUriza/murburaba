@@ -1,0 +1,129 @@
+/* VadTimeline Component Styles */
+
+/* Details Section */
+.detailsSection {
+  margin-bottom: 1.5rem;
+}
+
+.detailsSection:last-child {
+  margin-bottom: 0;
+}
+
+.sectionTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+  color: var(--color-text-primary, #e0e0e0);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* VAD Chart Styles */
+.vadChartContainer {
+  background: var(--color-surface, #24253a);
+  border: 1px solid var(--color-border, #3b3c5a);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+/* VAD Chart Fade-in Animation */
+.vadChartFadeIn {
+  animation: vadChartFadeIn 0.3s ease-out forwards;
+}
+
+@keyframes vadChartFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vadStats {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border, #3b3c5a);
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.vadStat {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #a0a0a0);
+}
+
+.vadStat strong {
+  font-weight: 600;
+  color: var(--color-text-primary, #e0e0e0);
+  margin-right: 0.25rem;
+}
+
+/* VAD Loading State */
+.vadLoadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  background: var(--color-surface, #24253a);
+  border: 1px solid var(--color-border, #3b3c5a);
+  border-radius: 8px;
+  margin-top: 1rem;
+  min-height: 200px;
+}
+
+.vadLoadingSpinner {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.spinnerDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #7ED321;
+  animation: vadLoadingPulse 1.4s ease-in-out infinite;
+}
+
+.spinnerDot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.spinnerDot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes vadLoadingPulse {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+.vadLoadingText {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #a0a0a0);
+  text-align: center;
+  margin: 0;
+  animation: fadeInOut 2s ease-in-out infinite;
+}
+
+@keyframes fadeInOut {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}

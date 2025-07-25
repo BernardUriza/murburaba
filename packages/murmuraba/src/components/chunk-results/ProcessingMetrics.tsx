@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatPercentage } from './formatters';
+import styles from './ProcessingMetrics.module.css';
 
 interface ProcessingMetricsProps {
   inputLevel: number;
@@ -15,47 +16,47 @@ export function ProcessingMetrics({
   droppedFrames 
 }: ProcessingMetricsProps) {
   return (
-    <div className="details__section">
-      <h4 className="section__title">📊 Processing Metrics</h4>
-      <div className="metrics-grid">
-        <div className="metric-item">
-          <span className="metric__label">Input Level</span>
-          <span className="metric__value">
+    <div className={styles.detailsSection}>
+      <h4 className={styles.sectionTitle}>📊 Processing Metrics</h4>
+      <div className={styles.metricsGrid}>
+        <div className={styles.metricItem}>
+          <span className={styles.metricLabel}>Input Level</span>
+          <span className={styles.metricValue}>
             {formatPercentage(inputLevel * 100)}
           </span>
-          <div className="metric__bar">
+          <div className={styles.metricBar}>
             <div 
-              className="metric__fill metric__fill--input"
+              className={`${styles.metricFill} ${styles.metricFillInput}`}
               style={{ width: `${inputLevel * 100}%` }}
               aria-hidden="true"
             />
           </div>
         </div>
 
-        <div className="metric-item">
-          <span className="metric__label">Output Level</span>
-          <span className="metric__value">
+        <div className={styles.metricItem}>
+          <span className={styles.metricLabel}>Output Level</span>
+          <span className={styles.metricValue}>
             {formatPercentage(outputLevel * 100)}
           </span>
-          <div className="metric__bar">
+          <div className={styles.metricBar}>
             <div 
-              className="metric__fill metric__fill--output"
+              className={`${styles.metricFill} ${styles.metricFillOutput}`}
               style={{ width: `${outputLevel * 100}%` }}
               aria-hidden="true"
             />
           </div>
         </div>
 
-        <div className="metric-item">
-          <span className="metric__label">Frames Processed</span>
-          <span className="metric__value">
+        <div className={styles.metricItem}>
+          <span className={styles.metricLabel}>Frames Processed</span>
+          <span className={styles.metricValue}>
             {frameCount.toLocaleString()}
           </span>
         </div>
 
-        <div className="metric-item">
-          <span className="metric__label">Dropped Frames</span>
-          <span className="metric__value metric__value--warning">
+        <div className={styles.metricItem}>
+          <span className={styles.metricLabel}>Dropped Frames</span>
+          <span className={`${styles.metricValue} ${styles.metricValueWarning}`}>
             {droppedFrames}
           </span>
         </div>

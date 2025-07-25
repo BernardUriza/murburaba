@@ -1,4 +1,5 @@
 import React from 'react';
+import styles from './VadDisplay.module.css';
 
 interface VadDisplayProps {
   averageVad?: number;
@@ -18,21 +19,21 @@ export function VadDisplay({ averageVad, vadData, chunkIndex }: VadDisplayProps)
     : vadPercentage;
 
   return (
-    <div className="vad-display" data-vad-level={vadLevel}>
-      <div className="vad-display__header">
-        <span className="vad-display__icon" aria-hidden="true">🎤</span>
-        <h4 className="vad-display__title">Voice Activity Detection</h4>
+    <div className={styles['vad-display']} data-vad-level={vadLevel}>
+      <div className={styles.vadDisplayHeader}>
+        <span className={styles.vadDisplayIcon} aria-hidden="true">🎤</span>
+        <h4 className={styles.vadDisplayTitle}>Voice Activity Detection</h4>
       </div>
       
-      <div className="vad-display__primary">
-        <div className="vad-display__metric vad-display__metric--featured">
-          <span className="vad-metric__label">Average VAD</span>
-          <span className="vad-metric__value vad-metric__value--large">
+      <div className={styles.vadDisplayPrimary}>
+        <div className={`${styles.vadDisplayMetric} ${styles.vadDisplayMetricFeatured}`}>
+          <span className={styles.vadMetricLabel}>Average VAD</span>
+          <span className={`${styles['vad-metric__value']} ${styles['vad-metric__value--large']}`}>
             {averageVad.toFixed(3)}
           </span>
-          <div className="vad-metric__bar">
+          <div className={styles['vad-metric__bar']}>
             <div 
-              className={`vad-metric__fill vad-metric__fill--${vadLevel}`}
+              className={`${styles['vad-metric__fill']} ${styles[`vad-metric__fill--${vadLevel}`]}`}
               style={{ width: `${vadPercentage}%` }}
               role="progressbar"
               aria-valuenow={vadPercentage}
@@ -45,20 +46,20 @@ export function VadDisplay({ averageVad, vadData, chunkIndex }: VadDisplayProps)
       </div>
 
       {vadData && vadData.length > 0 && (
-        <div className="vad-display__secondary">
-          <div className="vad-display__metric">
-            <span className="vad-metric__label">Voice Detected</span>
-            <span className="vad-metric__value">{voiceDetectedPercentage.toFixed(1)}%</span>
+        <div className={styles['vad-display__secondary']}>
+          <div className={styles.vadDisplayMetric}>
+            <span className={styles.vadMetricLabel}>Voice Detected</span>
+            <span className={styles['vad-metric__value']}>{voiceDetectedPercentage.toFixed(1)}%</span>
           </div>
-          <div className="vad-display__metric">
-            <span className="vad-metric__label">Peak VAD</span>
-            <span className="vad-metric__value">{peakVad.toFixed(3)}</span>
+          <div className={styles.vadDisplayMetric}>
+            <span className={styles.vadMetricLabel}>Peak VAD</span>
+            <span className={styles['vad-metric__value']}>{peakVad.toFixed(3)}</span>
           </div>
         </div>
       )}
 
-      <div className="vad-display__status">
-        <span className={`vad-status vad-status--${vadLevel}`}>
+      <div className={styles['vad-display__status']}>
+        <span className={`${styles['vad-status']} ${styles[`vad-status--${vadLevel}`]}`}>
           {vadLevel === 'high' ? '🟢 Strong Voice Activity' : 
            vadLevel === 'medium' ? '🟡 Moderate Voice Activity' : 
            '🔴 Low Voice Activity'}

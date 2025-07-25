@@ -1,5 +1,6 @@
 import React from 'react';
 import { VadDisplay } from './VadDisplay';
+import styles from './ChunkHeader.module.css';
 
 interface ChunkHeaderProps {
   index: number;
@@ -37,12 +38,12 @@ export function ChunkHeader({
   formatPercentage
 }: ChunkHeaderProps) {
   return (
-    <div className="chunk__header">
-      <div className="chunk__info">
-        <h3 className="chunk__title">
+    <div className={styles.chunkHeader}>
+      <div className={styles.chunkInfo}>
+        <h3 className={styles.chunkTitle}>
           Chunk {index + 1}
           {!isValid && (
-            <span className="chunk__error-badge" aria-label="Error">❌</span>
+            <span className={styles.chunkErrorBadge} aria-label="Error">❌</span>
           )}
         </h3>
         
@@ -54,43 +55,43 @@ export function ChunkHeader({
           />
         )}
         
-        <div className="chunk__meta">
-          <span className="meta-item">
-            <span className="meta-label">Duration:</span>
-            <span className="meta-value">{formatTime(duration)}</span>
+        <div className={styles.chunkMeta}>
+          <span className={styles.metaItem}>
+            <span className={styles.metaLabel}>Duration:</span>
+            <span className={styles.metaValue}>{formatTime(duration)}</span>
           </span>
-          <span className="meta-item">
-            <span className="meta-label">Noise Reduced:</span>
-            <span className="meta-value meta-value--highlight">
+          <span className={styles.metaItem}>
+            <span className={styles.metaLabel}>Noise Reduced:</span>
+            <span className={`${styles.metaValue} ${styles.metaValueHighlight}`}>
               {formatPercentage(noiseReduction)}
             </span>
           </span>
-          <span className="meta-item">
-            <span className="meta-label">Latency:</span>
-            <span className="meta-value">{processingLatency.toFixed(1)}ms</span>
+          <span className={styles.metaItem}>
+            <span className={styles.metaLabel}>Latency:</span>
+            <span className={styles.metaValue}>{processingLatency.toFixed(1)}ms</span>
           </span>
         </div>
       </div>
 
-      <div className="chunk__controls">
+      <div className={styles.chunkControls}>
         <button
-          className={`btn btn-primary ${isPlaying ? 'btn--playing' : ''}`}
+          className={`${styles.btn} ${styles.btnPrimary} ${isPlaying ? styles.btnPlaying : ''}`}
           onClick={onTogglePlayback}
           onKeyDown={(e) => onKeyDown(e, onTogglePlayback)}
           disabled={!hasProcessedAudio || !isValid}
           aria-label={`${isPlaying ? 'Pause' : 'Play'} processed chunk ${index + 1}`}
           type="button"
         >
-          <span className="btn__icon" aria-hidden="true">
+          <span className={styles.btnIcon} aria-hidden="true">
             {isPlaying ? '⏸️' : '▶️'}
           </span>
-          <span className="btn__text">
+          <span className={styles.btnText}>
             {isPlaying ? 'Pause' : 'Play'}
           </span>
         </button>
 
         <button
-          className={`btn btn-ghost ${isExpanded ? 'btn--active' : ''}`}
+          className={`${styles.btn} ${styles.btnGhost} ${isExpanded ? styles.btnActive : ''}`}
           onClick={(e) => {
             console.log('🔧 Details button clicked');
             console.log('🔧 onToggleExpansion exists:', !!onToggleExpansion);
@@ -102,10 +103,10 @@ export function ChunkHeader({
           aria-expanded={isExpanded}
           type="button"
         >
-          <span className="btn__icon" aria-hidden="true">
+          <span className={styles.btnIcon} aria-hidden="true">
             {isExpanded ? '▲' : '▼'}
           </span>
-          <span className="btn__text">Details</span>
+          <span className={styles.btnText}>Details</span>
         </button>
       </div>
     </div>
