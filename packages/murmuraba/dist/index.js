@@ -6,6 +6,7 @@ var jsxRuntime = require('react/jsx-runtime');
 var React = require('react');
 var reactDom = require('react-dom');
 
+var _documentCurrentScript = typeof document !== 'undefined' ? document.currentScript : null;
 function _interopNamespaceDefault(e) {
     var n = Object.create(null);
     if (e) {
@@ -29425,26 +29426,26 @@ async function loadRNNoiseModule() {
             const module = await createRNNWasmModule({
                 locateFile: (filename) => {
                     if (filename.endsWith('.wasm')) {
-                        // In production, the WASM file should be in the same directory as the bundle
-                        // In development, it might be served from node_modules
-                        if (typeof window !== 'undefined' && window.location) {
-                            // Try multiple possible locations
-                            const paths = [
-                                `/node_modules/@jitsi/rnnoise-wasm/dist/${filename}`,
-                                `/node_modules/.vite/deps/${filename}`,
-                                `/${filename}`,
-                                `/dist/${filename}`,
-                                filename
-                            ];
-                            // In development with Vite, the WASM should be in public
-                            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                                const devPath = `/${filename}`;
-                                console.log('[RNNoise Loader] Development mode, trying:', devPath);
-                                return devPath;
+                        // Try to load WASM from the murmuraba package export
+                        try {
+                            // This will be resolved by bundlers (webpack, vite, etc)
+                            // to the correct URL with proper MIME type
+                            return new URL('murmuraba/rnnoise.wasm', (typeof document === 'undefined' ? require('u' + 'rl').pathToFileURL(__filename).href : (_documentCurrentScript && _documentCurrentScript.tagName.toUpperCase() === 'SCRIPT' && _documentCurrentScript.src || new URL('index.js', document.baseURI).href))).href;
+                        }
+                        catch (e) {
+                            // Fallback for environments that don't support import.meta.url
+                            if (typeof window !== 'undefined' && window.location) {
+                                // In development with Vite, the WASM should be in public
+                                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                                    const devPath = `/rnnoise.wasm`;
+                                    console.log('[RNNoise Loader] Development mode, trying:', devPath);
+                                    return devPath;
+                                }
+                                // In production, try common locations
+                                const prodPath = `/dist/rnnoise.wasm`;
+                                console.log('[RNNoise Loader] Production mode, trying:', prodPath);
+                                return prodPath;
                             }
-                            // In production, assume the file is in the root or dist
-                            console.log('[RNNoise Loader] Production mode, trying:', paths[3]);
-                            return paths[3];
                         }
                     }
                     return filename;
