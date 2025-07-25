@@ -13,7 +13,20 @@ export class MockAudioContext {
   destination = {} as AudioDestinationNode;
   
   createGain = vi.fn(() => ({
-    gain: { value: 1, setValueAtTime: vi.fn() },
+    gain: { value: 1, setValueAtTime: vi.fn(), setTargetAtTime: vi.fn() },
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+  }));
+  
+  createAnalyser = vi.fn(() => ({
+    fftSize: 2048,
+    frequencyBinCount: 1024,
+    getByteTimeDomainData: vi.fn((array: Uint8Array) => {
+      // Fill with mock data (centered at 128)
+      for (let i = 0; i < array.length; i++) {
+        array[i] = 128;
+      }
+    }),
     connect: vi.fn(),
     disconnect: vi.fn(),
   }));
