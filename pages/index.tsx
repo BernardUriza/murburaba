@@ -1,24 +1,21 @@
 'use client'
 
 import React, { useState } from 'react'
-import { 
-  BuildInfo,
-  processFileWithMetrics,
-  initializeAudioEngine,
-  getEngineStatus,
-  processFile,
-  destroyEngine,
-  // UI Components
-  SimpleWaveformAnalyzer,
-  ChunkProcessingResults,
-  AdvancedMetricsPanel
-} from 'murmuraba'
+import { useMediaStream } from '../context/MediaStreamContext'
 import AudioDemoRedux from '../components/AudioDemoRedux'
 import { Settings } from '../components/Settings'
 import { CopilotChat } from '../components/CopilotChat'
 import { ReduxDemo } from '../components/ReduxDemo'
 import Swal from 'sweetalert2'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
+// import { useAudioProcessor } from '../hooks/useAudioProcessor'
+import { 
+  processFileWithMetrics,
+  initializeAudioEngine,
+  getEngineStatus,
+  processFile,
+  destroyEngine
+} from 'murmuraba'
 import { 
   setEngineInitialized, 
   setProcessing, 
@@ -43,18 +40,19 @@ import {
   selectEngineStatus, 
   selectAudioConfig,
   selectProcessingMetrics,
-  selectUIFlags
+  selectUIFlags,
+  shallowEqual
 } from '../store/selectors'
 
 export default function App() {
   const [mounted, setMounted] = useState(false)
   const dispatch = useAppDispatch()
   
-  // Redux state with optimized selectors
-  const engineStatus = useAppSelector(selectEngineStatus)
-  const audioConfig = useAppSelector(selectAudioConfig)
-  const processingMetrics = useAppSelector(selectProcessingMetrics)
-  const uiFlags = useAppSelector(selectUIFlags)
+  // Redux state with optimized selectors and shallowEqual
+  const engineStatus = useAppSelector(selectEngineStatus, shallowEqual)
+  const audioConfig = useAppSelector(selectAudioConfig, shallowEqual)
+  const processingMetrics = useAppSelector(selectProcessingMetrics, shallowEqual)
+  const uiFlags = useAppSelector(selectUIFlags, shallowEqual)
   
   // Direct state access (only for non-computed values)
   const processingResults = useAppSelector(state => state.audio.processingResults)
@@ -65,8 +63,8 @@ export default function App() {
   const { chunkDuration, enableAGC } = audioConfig
   const { showAudioDemo, showAdvancedMetrics, showSettings, showCopilot } = uiFlags
   
-  // Local state (only for non-serializable values)
-  const [currentStream, setCurrentStream] = useState<MediaStream | null>(null)
+  // Media stream from context
+  const { currentStream, setStream, stopStream } = useMediaStream()
   
   // Ensure component is mounted before accessing browser APIs
   React.useEffect(() => {
@@ -79,6 +77,9 @@ export default function App() {
   //   const secs = Math.floor(seconds % 60)
   //   return `${mins}:${secs.toString().padStart(2, '0')}`
   // }
+  
+  // Get audio processor from hook
+  // const { isReady } = useAudioProcessor()
   
   // Initialize engine function
   const handleInitializeEngine = async () => {
@@ -173,7 +174,7 @@ export default function App() {
           autoGainControl: false
         } 
       })
-      setCurrentStream(stream)
+      setStream(stream)
       dispatch(setCurrentStreamId(stream.id))
       
       // Pure processFileWithMetrics API call
@@ -217,10 +218,7 @@ export default function App() {
       dispatch(setProcessing(false))
       dispatch(setRecording(false))
       // Stop media stream
-      if (currentStream) {
-        currentStream.getTracks().forEach(track => track.stop())
-        setCurrentStream(null)
-      }
+      stopStream()
     }
   }
 
@@ -380,16 +378,13 @@ export default function App() {
                   <button 
                     className="btn btn-danger"
                     onClick={async () => {
-                      setIsRecording(false);
-                      setIsProcessing(false);
-                      if (currentStream) {
-                        currentStream.getTracks().forEach(track => track.stop());
-                        setCurrentStream(null);
-                      }
+                      dispatch(setRecording(false));
+                      dispatch(setProcessing(false));
+                      stopStream();
                       // Destroy engine when Stop is pressed
                       try {
                         await destroyEngine();
-                        setIsEngineInitialized(false);
+                        dispatch(setEngineInitialized(false));
                       } catch (error) {
                         console.error('Failed to destroy engine:', error);
                       }
@@ -442,37 +437,9 @@ export default function App() {
         {/* Redux Demo */}
         <ReduxDemo />
 
-        {currentStream && isRecording && (
-          <section className="waveform-section glass-panel">
-            <h2 className="section-title">🌊 Live Waveform Analysis</h2>
-            <div className="waveform-container">
-              <SimpleWaveformAnalyzer 
-                stream={currentStream} 
-                isActive={isRecording}
-                isPaused={false}
-              />
-            </div>
-          </section>
-        )}
+        {/* Waveform temporarily disabled - component not exported */}
 
-        {/* Chunk Processing Results */}
-        {processingResults && (
-          <ChunkProcessingResults
-            chunks={processingResults.chunks || []}
-            averageNoiseReduction={
-              processingResults.chunks 
-                ? processingResults.chunks.reduce((sum: number, chunk: any) => sum + (chunk.noiseRemoved || 0), 0) / processingResults.chunks.length
-                : 0
-            }
-            selectedChunk={selectedChunk}
-            onTogglePlayback={handleToggleChunkPlayback}
-            onClearAll={() => {
-              dispatch(setProcessingResults(null))
-              dispatch(clearChunks())
-            }}
-            onDownloadChunk={handleDownloadChunk}
-          />
-        )}
+        {/* Chunk Processing Results temporarily disabled - component not exported */}
 
         {/* Floating Action Buttons */}
         <div className="fab-container">
@@ -518,21 +485,7 @@ export default function App() {
           </button>
         </div>
         
-        {/* Advanced Metrics Panel */}
-        <AdvancedMetricsPanel
-          isVisible={showAdvancedMetrics}
-          diagnostics={isEngineInitialized ? {
-            version: '2.0.0',
-            engineVersion: '1.0.0',
-            reactVersion: '18.0.0',
-            wasmLoaded: true,
-            activeProcessors: 1,
-            memoryUsage: 1024 * 1024 * 10,
-            processingTime: 12.5,
-            engineState: 'ready' as const
-          } : null}
-          onClose={() => dispatch(toggleAdvancedMetrics())}
-        />
+        {/* Advanced Metrics Panel temporarily disabled - component not exported */}
         
         {/* Settings Modal */}
         <Settings 
@@ -563,7 +516,7 @@ export default function App() {
         />
       </main>
       
-      <BuildInfo version="2.0.0" buildDate={new Date().toLocaleDateString()} />
+      {/* BuildInfo temporarily removed - not exported from murmuraba */}
     </>
   )
 }

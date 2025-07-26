@@ -27,3 +27,7 @@ export { AudioConverter, getAudioConverter } from './utils/audioConverter';
 // Version
 export const VERSION = '1.5.0';
 export const MURMURABA_VERSION = VERSION;
+// React/DI exports for easier imports
+export { MurmurabaSuite, useMurmurabaSuite, useAudioProcessor as useMurmurabaAudioProcessor, useAudioProcessing } from './react/MurmurabaSuite';
+export { DIContainer, TOKENS } from './core/DIContainer';
+export { AudioProcessorService } from './services/AudioProcessorService';

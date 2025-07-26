@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit'
 import audioReducer from './slices/audioSlice'
 import uiReducer from './slices/uiSlice'
+import { murmurabaSuiteMiddleware } from './middleware/murmurabaSuiteMiddleware'
 
 export const store = configureStore({
   reducer: {
@@ -12,17 +13,18 @@ export const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: {
         // Only ignore specific non-serializable fields
-        ignoredActions: [],
+        ignoredActions: [
+          'murmuraba/SET_CONTAINER' // DI Container only
+        ],
         ignoredActionPaths: [
-          'payload.processedBuffer', // ArrayBuffer
-          'payload.blob' // Blob
+          'payload.container' // DI Container
         ],
         ignoredPaths: [
           'audio.processingResults.processedBuffer', // ArrayBuffer in state
           'audio.chunks.*.blob' // Blobs in chunks
         ]
       }
-    })
+    }).concat(murmurabaSuiteMiddleware)
 })
 
 export type RootState = ReturnType<typeof store.getState>

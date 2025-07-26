@@ -1,6 +1,9 @@
 import { createSelector } from '@reduxjs/toolkit'
 import type { RootState } from './index'
 
+// Re-export shallowEqual for component usage
+export { shallowEqual } from 'react-redux'
+
 // Base selectors
 const selectAudioState = (state: RootState) => state.audio
 const selectUIState = (state: RootState) => state.ui

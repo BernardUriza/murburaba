@@ -33,3 +33,6 @@ export type { ChunkProcessingResultsProps } from './ChunkProcessingResults';
 export type { AdvancedMetricsPanelProps } from './AdvancedMetricsPanel';
 export type { AudioPlayerProps } from './AudioPlayer';
 export type { BuildInfoProps } from './BuildInfo';
+
+// Re-export React integration components
+export * from '../react';

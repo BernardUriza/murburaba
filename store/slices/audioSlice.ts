@@ -20,12 +20,8 @@ interface AudioState extends ErrorState {
   // Stream management
   currentStreamId: string | null
   
-  // Metrics (computed via selectors, not stored)
-  averageNoiseReduction: number
-  totalDuration: number
+  // Metrics are computed via selectors, not stored
   
-  // Audio URLs for cleanup
-  audioUrls: string[]
 }
 
 const initialState: AudioState = {
@@ -38,9 +34,6 @@ const initialState: AudioState = {
   chunks: [],
   selectedChunkId: null,
   currentStreamId: null,
-  averageNoiseReduction: 0,
-  totalDuration: 0,
-  audioUrls: [],
   hasError: false,
   errorMessage: null
 }
@@ -77,23 +70,9 @@ const audioSlice = createSlice({
     addChunk: (state, action: PayloadAction<ProcessedChunk>) => {
       state.chunks.push(action.payload)
     },
-    updateChunk: (state, action: PayloadAction<{ id: string; updates: Partial<ProcessedChunk> }>) => {
-      const index = state.chunks.findIndex(c => c.id === action.payload.id)
-      if (index !== -1) {
-        state.chunks[index] = { ...state.chunks[index], ...action.payload.updates }
-      }
-    },
-    removeChunk: (state, action: PayloadAction<string>) => {
-      state.chunks = state.chunks.filter(c => c.id !== action.payload)
-    },
     clearChunks: (state) => {
       state.chunks = []
       state.processingResults = null
-      state.averageNoiseReduction = 0
-      state.totalDuration = 0
-    },
-    setSelectedChunk: (state, action: PayloadAction<string | null>) => {
-      state.selectedChunkId = action.payload
     },
     setCurrentStreamId: (state, action: PayloadAction<string | null>) => {
       state.currentStreamId = action.payload
@@ -111,20 +90,6 @@ const audioSlice = createSlice({
       state.errorCode = undefined
       state.errorTimestamp = undefined
     },
-    // Audio URL management
-    addAudioUrl: (state, action: PayloadAction<string>) => {
-      state.audioUrls.push(action.payload)
-    },
-    removeAudioUrl: (state, action: PayloadAction<string>) => {
-      state.audioUrls = state.audioUrls.filter(url => url !== action.payload)
-      // Revoke the URL to free memory
-      URL.revokeObjectURL(action.payload)
-    },
-    clearAudioUrls: (state) => {
-      // Revoke all URLs before clearing
-      state.audioUrls.forEach(url => URL.revokeObjectURL(url))
-      state.audioUrls = []
-    }
   }
 })
 
@@ -136,16 +101,10 @@ export const {
   setEnableAGC,
   setProcessingResults,
   addChunk,
-  updateChunk,
-  removeChunk,
   clearChunks,
-  setSelectedChunk,
   setCurrentStreamId,
   setError,
-  clearError,
-  addAudioUrl,
-  removeAudioUrl,
-  clearAudioUrls
+  clearError
 } = audioSlice.actions
 
 export default audioSlice.reducer

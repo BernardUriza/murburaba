@@ -1,6 +1,13 @@
 // Redux store types
 import type { ProcessedChunk } from 'murmuraba'
 
+// Strict mode for Redux
+export const REDUX_CONFIG = {
+  strictActionTypeChecking: true,
+  strictActionImmutabilityChecking: true,
+  strictStateImmutabilityChecking: true
+} as const
+
 // Processing results with proper typing
 export interface ProcessingResults {
   chunks: ProcessedChunk[]

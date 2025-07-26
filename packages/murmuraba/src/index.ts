@@ -58,3 +58,34 @@ export { AudioConverter, getAudioConverter } from './utils/audioConverter';
 // Version
 export const VERSION = '1.5.0';
 export const MURMURABA_VERSION = VERSION;
+
+// React/DI exports for easier imports
+export { MurmurabaSuite, useMurmurabaSuite, useAudioProcessor as useMurmurabaAudioProcessor, useAudioProcessing } from './react/MurmurabaSuite';
+export { DIContainer, TOKENS } from './core/DIContainer';
+export { AudioProcessorService } from './services/AudioProcessorService';
+export type { IAudioProcessor, AudioProcessingOptions, AudioProcessingResult } from './core/interfaces/IAudioProcessor';
+
+// UI Components - Export from components directory
+export { 
+  SimpleWaveformAnalyzer,
+  WaveformAnalyzer,
+  SyncedWaveforms,
+  ChunkProcessingResults,
+  AudioPlayer,
+  AdvancedMetricsPanel,
+  ErrorBoundary,
+  withErrorBoundary,
+  BuildInfo,
+  BuildInfoBadge,
+  BuildInfoBlock,
+  BuildInfoInline
+} from './components';
+
+// Component types
+export type {
+  SimpleWaveformAnalyzerProps,
+  ChunkProcessingResultsProps,
+  AdvancedMetricsPanelProps,
+  AudioPlayerProps,
+  BuildInfoProps
+} from './components';
