@@ -1,4 +1,5 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, PayloadAction, nanoid } from '@reduxjs/toolkit'
+import type { Notification } from '../types'
 
 interface UIState {
   // Modals and panels
@@ -12,12 +13,11 @@ interface UIState {
   sidebarCollapsed: boolean
   
   // Notifications
-  notifications: Array<{
-    id: string
-    type: 'info' | 'success' | 'warning' | 'error'
-    message: string
-    timestamp: number
-  }>
+  notifications: Notification[]
+  
+  // UI error state
+  lastError: string | null
+  errorTimestamp: number | null
 }
 
 const initialState: UIState = {
@@ -27,7 +27,9 @@ const initialState: UIState = {
   showCopilot: false,
   theme: 'light',
   sidebarCollapsed: false,
-  notifications: []
+  notifications: [],
+  lastError: null,
+  errorTimestamp: null
 }
 
 const uiSlice = createSlice({
@@ -56,17 +58,39 @@ const uiSlice = createSlice({
       type: 'info' | 'success' | 'warning' | 'error'
       message: string
     }>) => {
-      state.notifications.push({
-        id: `notif-${Date.now()}-${Math.random()}`,
+      const notification: Notification = {
+        id: nanoid(),
         timestamp: Date.now(),
         ...action.payload
-      })
+      }
+      state.notifications.push(notification)
+      
+      // Auto-remove old notifications (keep last 10)
+      if (state.notifications.length > 10) {
+        state.notifications = state.notifications.slice(-10)
+      }
     },
     removeNotification: (state, action: PayloadAction<string>) => {
       state.notifications = state.notifications.filter(n => n.id !== action.payload)
     },
     clearNotifications: (state) => {
       state.notifications = []
+    },
+    setUIError: (state, action: PayloadAction<string>) => {
+      state.lastError = action.payload
+      state.errorTimestamp = Date.now()
+      
+      // Also add as error notification
+      state.notifications.push({
+        id: nanoid(),
+        type: 'error',
+        message: action.payload,
+        timestamp: Date.now()
+      })
+    },
+    clearUIError: (state) => {
+      state.lastError = null
+      state.errorTimestamp = null
     }
   }
 })
@@ -80,7 +104,9 @@ export const {
   toggleSidebar,
   addNotification,
   removeNotification,
-  clearNotifications
+  clearNotifications,
+  setUIError,
+  clearUIError
 } = uiSlice.actions
 
 export default uiSlice.reducer

@@ -27,37 +27,43 @@ import {
   setChunkDuration,
   setEnableAGC,
   clearChunks,
-  setCurrentStreamId
+  setCurrentStreamId,
+  setError as setAudioError,
+  clearError as clearAudioError
 } from '../store/slices/audioSlice'
 import {
   toggleAudioDemo,
   toggleAdvancedMetrics,
   toggleSettings,
   toggleCopilot,
-  addNotification
+  addNotification,
+  setUIError
 } from '../store/slices/uiSlice'
+import { 
+  selectEngineStatus, 
+  selectAudioConfig,
+  selectProcessingMetrics,
+  selectUIFlags
+} from '../store/selectors'
 
 export default function App() {
   const [mounted, setMounted] = useState(false)
   const dispatch = useAppDispatch()
   
-  // Redux state
-  const {
-    isEngineInitialized,
-    isProcessing,
-    isRecording,
-    processingResults,
-    chunkDuration,
-    enableAGC,
-    selectedChunkId: selectedChunk
-  } = useAppSelector(state => state.audio)
+  // Redux state with optimized selectors
+  const engineStatus = useAppSelector(selectEngineStatus)
+  const audioConfig = useAppSelector(selectAudioConfig)
+  const processingMetrics = useAppSelector(selectProcessingMetrics)
+  const uiFlags = useAppSelector(selectUIFlags)
   
-  const {
-    showAudioDemo,
-    showAdvancedMetrics,
-    showSettings,
-    showCopilot
-  } = useAppSelector(state => state.ui)
+  // Direct state access (only for non-computed values)
+  const processingResults = useAppSelector(state => state.audio.processingResults)
+  const selectedChunk = useAppSelector(state => state.audio.selectedChunkId)
+  
+  // Destructure for convenience
+  const { isInitialized: isEngineInitialized, isProcessing, isRecording } = engineStatus
+  const { chunkDuration, enableAGC } = audioConfig
+  const { showAudioDemo, showAdvancedMetrics, showSettings, showCopilot } = uiFlags
   
   // Local state (only for non-serializable values)
   const [currentStream, setCurrentStream] = useState<MediaStream | null>(null)
@@ -113,14 +119,18 @@ export default function App() {
       
     } catch (error) {
       console.error('Engine initialization failed:', error)
-      dispatch(addNotification({
-        type: 'error',
-        message: error instanceof Error ? error.message : 'Engine initialization failed'
+      const errorMessage = error instanceof Error ? error.message : 'Engine initialization failed'
+      
+      dispatch(setAudioError({ 
+        message: errorMessage,
+        code: 'ENGINE_INIT_FAILED'
       }))
+      dispatch(setUIError(errorMessage))
+      
       Swal.fire({
         icon: 'error',
         title: 'Engine Initialization Failed',
-        text: error instanceof Error ? error.message : 'Unknown error occurred',
+        text: errorMessage,
         confirmButtonText: 'OK'
       })
     } finally {

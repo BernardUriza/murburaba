@@ -1,9 +1,12 @@
 import { MurmubaraEngine } from './MurmubaraEngine';
+import { MurmubaraEngineFactory } from './MurmubaraEngineFactory';
 import { MurmubaraConfig } from '../types';
+import { DIContainer } from './DIContainer';
 
 interface EngineInstance {
   id: string;
   engine: MurmubaraEngine;
+  container: DIContainer;
   createdAt: number;
 }
 
@@ -18,10 +21,13 @@ class EngineRegistry {
       throw new Error(`Engine with id "${id}" already exists`);
     }
 
-    const engine = new MurmubaraEngine(config);
+    const engine = MurmubaraEngineFactory.create(config);
+    const container = (engine as any).getContainer?.() || new DIContainer();
+    
     this.instances.set(id, {
       id,
       engine,
+      container,
       createdAt: Date.now()
     });
 

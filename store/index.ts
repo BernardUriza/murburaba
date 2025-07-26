@@ -7,16 +7,20 @@ export const store = configureStore({
     audio: audioReducer,
     ui: uiReducer
   },
-  // Middleware configuration for non-serializable values (like MediaStream)
+  // Middleware configuration for non-serializable values
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        // Ignore these action types
-        ignoredActions: ['audio/setProcessingResults', 'audio/addChunk'],
-        // Ignore these field paths in all actions
-        ignoredActionPaths: ['payload.blob', 'payload.stream'],
-        // Ignore these paths in the state
-        ignoredPaths: ['audio.processingResults', 'audio.chunks']
+        // Only ignore specific non-serializable fields
+        ignoredActions: [],
+        ignoredActionPaths: [
+          'payload.processedBuffer', // ArrayBuffer
+          'payload.blob' // Blob
+        ],
+        ignoredPaths: [
+          'audio.processingResults.processedBuffer', // ArrayBuffer in state
+          'audio.chunks.*.blob' // Blobs in chunks
+        ]
       }
     })
 })

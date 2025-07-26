@@ -1,7 +1,8 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import type { ProcessedChunk } from 'murmuraba'
+import type { ProcessingResults, ErrorState } from '../types'
 
-interface AudioState {
+interface AudioState extends ErrorState {
   // Engine state
   isEngineInitialized: boolean
   isProcessing: boolean
@@ -12,16 +13,19 @@ interface AudioState {
   enableAGC: boolean
   
   // Processing results
-  processingResults: any | null
+  processingResults: ProcessingResults | null
   chunks: ProcessedChunk[]
   selectedChunkId: string | null
   
   // Stream management
   currentStreamId: string | null
   
-  // Metrics
+  // Metrics (computed via selectors, not stored)
   averageNoiseReduction: number
   totalDuration: number
+  
+  // Audio URLs for cleanup
+  audioUrls: string[]
 }
 
 const initialState: AudioState = {
@@ -35,7 +39,10 @@ const initialState: AudioState = {
   selectedChunkId: null,
   currentStreamId: null,
   averageNoiseReduction: 0,
-  totalDuration: 0
+  totalDuration: 0,
+  audioUrls: [],
+  hasError: false,
+  errorMessage: null
 }
 
 const audioSlice = createSlice({
@@ -57,19 +64,14 @@ const audioSlice = createSlice({
     setEnableAGC: (state, action: PayloadAction<boolean>) => {
       state.enableAGC = action.payload
     },
-    setProcessingResults: (state, action: PayloadAction<any>) => {
+    setProcessingResults: (state, action: PayloadAction<ProcessingResults | null>) => {
       state.processingResults = action.payload
+      state.hasError = false
+      state.errorMessage = null
       
-      // Calculate metrics from chunks
-      if (action.payload?.chunks) {
-        const chunks = action.payload.chunks
-        const totalReduction = chunks.reduce((sum: number, chunk: ProcessedChunk) => 
-          sum + (chunk.noiseRemoved || 0), 0
-        )
-        state.averageNoiseReduction = chunks.length > 0 ? totalReduction / chunks.length : 0
-        state.totalDuration = chunks.reduce((sum: number, chunk: ProcessedChunk) => 
-          sum + chunk.duration, 0
-        )
+      // Don't calculate metrics here - use selectors instead
+      if (action.payload) {
+        state.chunks = action.payload.chunks || []
       }
     },
     addChunk: (state, action: PayloadAction<ProcessedChunk>) => {
@@ -95,6 +97,33 @@ const audioSlice = createSlice({
     },
     setCurrentStreamId: (state, action: PayloadAction<string | null>) => {
       state.currentStreamId = action.payload
+    },
+    // Error handling
+    setError: (state, action: PayloadAction<{ message: string; code?: string }>) => {
+      state.hasError = true
+      state.errorMessage = action.payload.message
+      state.errorCode = action.payload.code
+      state.errorTimestamp = Date.now()
+    },
+    clearError: (state) => {
+      state.hasError = false
+      state.errorMessage = null
+      state.errorCode = undefined
+      state.errorTimestamp = undefined
+    },
+    // Audio URL management
+    addAudioUrl: (state, action: PayloadAction<string>) => {
+      state.audioUrls.push(action.payload)
+    },
+    removeAudioUrl: (state, action: PayloadAction<string>) => {
+      state.audioUrls = state.audioUrls.filter(url => url !== action.payload)
+      // Revoke the URL to free memory
+      URL.revokeObjectURL(action.payload)
+    },
+    clearAudioUrls: (state) => {
+      // Revoke all URLs before clearing
+      state.audioUrls.forEach(url => URL.revokeObjectURL(url))
+      state.audioUrls = []
     }
   }
 })
@@ -111,7 +140,12 @@ export const {
   removeChunk,
   clearChunks,
   setSelectedChunk,
-  setCurrentStreamId
+  setCurrentStreamId,
+  setError,
+  clearError,
+  addAudioUrl,
+  removeAudioUrl,
+  clearAudioUrls
 } = audioSlice.actions
 
 export default audioSlice.reducer
