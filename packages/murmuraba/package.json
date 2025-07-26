@@ -13,6 +13,12 @@
       "require": "./dist/index.js",
       "default": "./dist/index.esm.js"
     },
+    "./components": {
+      "types": "./dist/components/index.d.ts",
+      "import": "./dist/components/index.esm.js",
+      "require": "./dist/components/index.js",
+      "default": "./dist/components/index.esm.js"
+    },
     "./rnnoise.wasm": "./dist/rnnoise.wasm",
     "./package.json": "./package.json"
   },

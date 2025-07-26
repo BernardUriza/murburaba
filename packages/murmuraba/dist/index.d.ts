@@ -1,61 +1,23 @@
 /**
  * Murmuraba v1.5.0
- * Real-time audio noise reduction with comprehensive UI component library
+ * Real-time audio noise reduction
  */
 export { MurmubaraEngine } from './core/MurmubaraEngine';
 export { EventEmitter } from './core/EventEmitter';
 export { StateManager } from './core/StateManager';
 export { Logger } from './core/Logger';
+export { engineRegistry } from './core/EngineRegistry';
 export { WorkerManager } from './managers/WorkerManager';
 export { MetricsManager } from './managers/MetricsManager';
 export { RNNoiseEngine } from './engines/RNNoiseEngine';
 export type { AudioEngine } from './engines/types';
 export * from './types';
 export { initializeAudioEngine, getEngine, processStream, processStreamChunked, destroyEngine, getEngineStatus, getDiagnostics, onMetricsUpdate, processFile } from './api';
-export { processFileWithMetrics, type ProcessingMetrics, type ProcessFileWithMetricsResult, type ChunkOptions, type ProcessedChunk, type ProcessFileResult, type ProcessFileOptions } from './api/processFileWithMetrics';
-export declare const VERSION = "1.5.0";
-export declare const MURMURABA_VERSION = "1.5.0";
-export { ErrorCodes } from './types';
-export { AudioPlayer } from './components/AudioPlayer';
-export { AdvancedMetricsPanel } from './components/AdvancedMetricsPanel';
-export { ChunkProcessingResults } from './components/ChunkProcessingResults';
-export { SimpleWaveformAnalyzer } from './components/SimpleWaveformAnalyzer';
-export { WaveformAnalyzer } from './components/WaveformAnalyzer';
-export { SyncedWaveforms } from './components/SyncedWaveforms';
-export { ErrorBoundary, withErrorBoundary } from './components/ErrorBoundary';
-export { BuildInfo, BuildInfoBadge, BuildInfoBlock, BuildInfoInline, getPackageVersion, formatBuildDate } from './components/BuildInfo';
+export { processFileWithMetrics, type ProcessFileWithMetricsResult, type ChunkOptions, type ProcessFileResult, type ProcessFileOptions } from './api/processFileWithMetrics';
 export { useMurmubaraEngine } from './hooks/murmuraba-engine';
 export { useAudioEngine } from './hooks/useAudioEngine';
-export { AudioConverter, getAudioConverter } from './utils/audioConverter';
 export type { RecordingState, UseMurmubaraEngineOptions, UseMurmubaraEngineReturn } from './hooks/murmuraba-engine';
-import { useMurmubaraEngine } from './hooks/murmuraba-engine';
-import { MurmubaraEngine } from './core/MurmubaraEngine';
-declare const murmurabaExports: {
-    useMurmubaraEngine: typeof useMurmubaraEngine;
-    useAudioEngine: (config?: import("./engines/types").AudioEngineConfig) => {
-        isInitialized: boolean;
-        isLoading: boolean;
-        error: string | null;
-        processStream: (stream: MediaStream) => Promise<MediaStream>;
-        cleanup: () => void;
-        initializeAudioEngine: () => Promise<void>;
-        getMetrics: () => {
-            inputSamples: number;
-            outputSamples: number;
-            noiseReductionLevel: number;
-            silenceFrames: number;
-            activeFrames: number;
-            averageInputEnergy: number;
-            averageOutputEnergy: number;
-            peakInputLevel: number;
-            peakOutputLevel: number;
-            processingTimeMs: number;
-            chunkOffset: number;
-            totalFramesProcessed: number;
-        };
-        resetMetrics: () => void;
-    };
-    MurmubaraEngine: typeof MurmubaraEngine;
-};
-export default murmurabaExports;
+export { AudioConverter, getAudioConverter } from './utils/audioConverter';
+export declare const VERSION = "1.5.0";
+export declare const MURMURABA_VERSION = "1.5.0";
 //# sourceMappingURL=index.d.ts.map

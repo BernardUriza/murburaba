@@ -13,45 +13,71 @@ import {
   ChunkProcessingResults,
   AdvancedMetricsPanel
 } from 'murmuraba'
-import AudioDemo from '../components/AudioDemo'
+import AudioDemoRedux from '../components/AudioDemoRedux'
 import { Settings } from '../components/Settings'
 import { CopilotChat } from '../components/CopilotChat'
+import { ReduxDemo } from '../components/ReduxDemo'
 import Swal from 'sweetalert2'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
+import { 
+  setEngineInitialized, 
+  setProcessing, 
+  setRecording,
+  setProcessingResults,
+  setChunkDuration,
+  setEnableAGC,
+  clearChunks,
+  setCurrentStreamId
+} from '../store/slices/audioSlice'
+import {
+  toggleAudioDemo,
+  toggleAdvancedMetrics,
+  toggleSettings,
+  toggleCopilot,
+  addNotification
+} from '../store/slices/uiSlice'
 
 export default function App() {
   const [mounted, setMounted] = useState(false)
+  const dispatch = useAppDispatch()
+  
+  // Redux state
+  const {
+    isEngineInitialized,
+    isProcessing,
+    isRecording,
+    processingResults,
+    chunkDuration,
+    enableAGC,
+    selectedChunkId: selectedChunk
+  } = useAppSelector(state => state.audio)
+  
+  const {
+    showAudioDemo,
+    showAdvancedMetrics,
+    showSettings,
+    showCopilot
+  } = useAppSelector(state => state.ui)
+  
+  // Local state (only for non-serializable values)
+  const [currentStream, setCurrentStream] = useState<MediaStream | null>(null)
   
   // Ensure component is mounted before accessing browser APIs
   React.useEffect(() => {
     setMounted(true)
   }, [])
-  // Engine & Processing State
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [processingResults, setProcessingResults] = useState<any>(null)
-  const [chunkDuration, setChunkDuration] = useState(8)
-  const [isEngineInitialized, setIsEngineInitialized] = useState(false)
-  const [enableAGC, setEnableAGC] = useState(false)
-  
-  // UI State
-  const [showAudioDemo, setShowAudioDemo] = useState(false)
-  const [showAdvancedMetrics, setShowAdvancedMetrics] = useState(false)
-  const [selectedChunk, setSelectedChunk] = useState<string | null>(null)
-  const [currentStream, setCurrentStream] = useState<MediaStream | null>(null)
-  const [isRecording, setIsRecording] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
-  const [showCopilot, setShowCopilot] = useState(false)
 
   // Utility functions
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = Math.floor(seconds % 60)
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
+  // const formatTime = (seconds: number) => {
+  //   const mins = Math.floor(seconds / 60)
+  //   const secs = Math.floor(seconds % 60)
+  //   return `${mins}:${secs.toString().padStart(2, '0')}`
+  // }
   
   // Initialize engine function
   const handleInitializeEngine = async () => {
     try {
-      setIsProcessing(true)
+      dispatch(setProcessing(true))
       
       Swal.fire({
         toast: true,
@@ -66,11 +92,14 @@ export default function App() {
       await initializeAudioEngine({
         algorithm: 'spectral',
         logLevel: 'info',
-        allowDegraded: true,
-        agcEnabled: enableAGC
+        allowDegraded: true
       })
       
-      setIsEngineInitialized(true)
+      dispatch(setEngineInitialized(true))
+      dispatch(addNotification({
+        type: 'success',
+        message: 'Audio engine initialized!'
+      }))
       
       Swal.fire({
         toast: true,
@@ -84,6 +113,10 @@ export default function App() {
       
     } catch (error) {
       console.error('Engine initialization failed:', error)
+      dispatch(addNotification({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Engine initialization failed'
+      }))
       Swal.fire({
         icon: 'error',
         title: 'Engine Initialization Failed',
@@ -91,7 +124,7 @@ export default function App() {
         confirmButtonText: 'OK'
       })
     } finally {
-      setIsProcessing(false)
+      dispatch(setProcessing(false))
     }
   }
 
@@ -108,8 +141,9 @@ export default function App() {
     }
 
     try {
-      setIsProcessing(true)
-      setIsRecording(true)
+      dispatch(setProcessing(true))
+      dispatch(setRecording(true))
+      dispatch(clearChunks()) // Clear previous chunks
       
       Swal.fire({
         toast: true,
@@ -130,6 +164,7 @@ export default function App() {
         } 
       })
       setCurrentStream(stream)
+      dispatch(setCurrentStreamId(stream.id))
       
       // Pure processFileWithMetrics API call
       const result = await processFileWithMetrics('Use.Mic', {
@@ -140,7 +175,11 @@ export default function App() {
         }
       })
       
-      setProcessingResults(result)
+      dispatch(setProcessingResults(result))
+      dispatch(addNotification({
+        type: 'success',
+        message: 'Recording completed successfully!'
+      }))
       
       Swal.fire({
         toast: true,
@@ -154,6 +193,10 @@ export default function App() {
       
     } catch (error) {
       console.error('Recording failed:', error)
+      dispatch(addNotification({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Recording failed'
+      }))
       Swal.fire({
         icon: 'error',
         title: 'Recording Failed',
@@ -161,8 +204,8 @@ export default function App() {
         confirmButtonText: 'OK'
       })
     } finally {
-      setIsProcessing(false)
-      setIsRecording(false)
+      dispatch(setProcessing(false))
+      dispatch(setRecording(false))
       // Stop media stream
       if (currentStream) {
         currentStream.getTracks().forEach(track => track.stop())
@@ -212,15 +255,15 @@ export default function App() {
     <>
       <main className="main-container">
         {/* Audio Demo Panel */}
-        <div className={`slide-panel-overlay ${showAudioDemo ? 'active' : ''}`} onClick={() => setShowAudioDemo(false)} />
+        <div className={`slide-panel-overlay ${showAudioDemo ? 'active' : ''}`} onClick={() => dispatch(toggleAudioDemo())} />
         <div className={`slide-panel audio-demo-panel ${showAudioDemo ? 'active' : ''}`}>
           <div className="panel-header">
             <h3>🎵 Audio Demo</h3>
-            <button className="close-btn" onClick={() => setShowAudioDemo(false)}>×</button>
+            <button className="close-btn" onClick={() => dispatch(toggleAudioDemo())}>×</button>
           </div>
           <div className="panel-content">
             {showAudioDemo && (
-              <AudioDemo 
+              <AudioDemoRedux 
                 getEngineStatus={getEngineStatus}
                 processFile={processFile}
                 processFileWithMetrics={processFileWithMetrics}
@@ -356,7 +399,7 @@ export default function App() {
                   <button
                     key={duration}
                     className={`nav-pill ${chunkDuration === duration ? 'active' : ''}`}
-                    onClick={() => setChunkDuration(duration)}
+                    onClick={() => dispatch(setChunkDuration(duration))}
                     disabled={isProcessing}
                   >
                     {duration}s
@@ -370,7 +413,7 @@ export default function App() {
                 <input
                   type="checkbox"
                   checked={enableAGC}
-                  onChange={(e) => setEnableAGC(e.target.checked)}
+                  onChange={(e) => dispatch(setEnableAGC(e.target.checked))}
                   disabled={isEngineInitialized}
                   style={{ width: '18px', height: '18px', cursor: isEngineInitialized ? 'not-allowed' : 'pointer' }}
                 />
@@ -386,6 +429,9 @@ export default function App() {
         </section>
 
         {/* Waveform Visualizer */}
+        {/* Redux Demo */}
+        <ReduxDemo />
+
         {currentStream && isRecording && (
           <section className="waveform-section glass-panel">
             <h2 className="section-title">🌊 Live Waveform Analysis</h2>
@@ -410,7 +456,10 @@ export default function App() {
             }
             selectedChunk={selectedChunk}
             onTogglePlayback={handleToggleChunkPlayback}
-            onClearAll={() => setProcessingResults(null)}
+            onClearAll={() => {
+              dispatch(setProcessingResults(null))
+              dispatch(clearChunks())
+            }}
             onDownloadChunk={handleDownloadChunk}
           />
         )}
@@ -420,7 +469,7 @@ export default function App() {
           {/* Audio Demo Button */}
           <button 
             className="fab fab-primary"
-            onClick={() => setShowAudioDemo(!showAudioDemo)}
+            onClick={() => dispatch(toggleAudioDemo())}
             title="Audio Demo"
           >
             🎵
@@ -429,7 +478,7 @@ export default function App() {
           {/* Advanced Metrics Button */}
           <button 
             className="fab"
-            onClick={() => setShowAdvancedMetrics(!showAdvancedMetrics)}
+            onClick={() => dispatch(toggleAdvancedMetrics())}
             title={showAdvancedMetrics ? 'Hide Advanced Metrics' : 'Show Advanced Metrics'}
             disabled={!isEngineInitialized}
             style={{ opacity: (!isEngineInitialized) ? 0.5 : 1 }}
@@ -443,7 +492,7 @@ export default function App() {
           {/* Settings Button */}
           <button 
             className="fab"
-            onClick={() => setShowSettings(true)}
+            onClick={() => dispatch(toggleSettings())}
             title="Settings"
           >
             ⚙️
@@ -452,7 +501,7 @@ export default function App() {
           {/* Copilot Chat Button */}
           <button 
             className="fab fab-copilot"
-            onClick={() => setShowCopilot(true)}
+            onClick={() => dispatch(toggleCopilot())}
             title="Copilot Chat"
           >
             🤖
@@ -472,13 +521,13 @@ export default function App() {
             processingTime: 12.5,
             engineState: 'ready' as const
           } : null}
-          onClose={() => setShowAdvancedMetrics(false)}
+          onClose={() => dispatch(toggleAdvancedMetrics())}
         />
         
         {/* Settings Modal */}
         <Settings 
           isOpen={showSettings} 
-          onClose={() => setShowSettings(false)}
+          onClose={() => dispatch(toggleSettings())}
           vadThresholds={{
             silence: 0.3,
             voice: 0.5,
@@ -495,7 +544,7 @@ export default function App() {
         {/* Copilot Chat Modal */}
         <CopilotChat 
           isOpen={showCopilot} 
-          onClose={() => setShowCopilot(false)}
+          onClose={() => dispatch(toggleCopilot())}
           engineConfig={{}}
           setEngineConfig={() => {}}
           isRecording={isRecording}

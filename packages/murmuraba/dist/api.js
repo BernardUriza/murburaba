@@ -1,17 +1,10 @@
-import { MurmubaraEngine } from './core/MurmubaraEngine';
-let globalEngine = null;
+import { engineRegistry } from './core/EngineRegistry';
 export async function initializeAudioEngine(config) {
-    if (globalEngine) {
-        throw new Error('Audio engine is already initialized. Call destroyEngine() first.');
-    }
-    globalEngine = new MurmubaraEngine(config);
-    await globalEngine.initialize();
+    const engine = engineRegistry.createEngine(config);
+    await engine.initialize();
 }
-export function getEngine() {
-    if (!globalEngine) {
-        throw new Error('Audio engine not initialized. Call initializeAudioEngine() first.');
-    }
-    return globalEngine;
+export function getEngine(id) {
+    return engineRegistry.getEngine(id);
 }
 export async function processStream(stream) {
     const engine = getEngine();
@@ -21,18 +14,18 @@ export async function processStreamChunked(stream, config) {
     const engine = getEngine();
     return engine.processStream(stream, config);
 }
-export async function destroyEngine(options) {
-    if (!globalEngine) {
-        return;
-    }
-    await globalEngine.destroy(options?.force || false);
-    globalEngine = null;
+export async function destroyEngine(idOrOptions) {
+    const id = typeof idOrOptions === 'string' ? idOrOptions : idOrOptions?.id;
+    await engineRegistry.destroyEngine(id);
 }
-export function getEngineStatus() {
-    if (!globalEngine) {
+export function getEngineStatus(id) {
+    try {
+        const engine = engineRegistry.getEngine(id);
+        return engine.getDiagnostics().engineState;
+    }
+    catch {
         return 'uninitialized';
     }
-    return globalEngine.getDiagnostics().engineState;
 }
 export function getDiagnostics() {
     const engine = getEngine();

@@ -273,6 +273,81 @@ LECCIONES INCORPORADAS:
 
 ---
 
+## 🔥 REDUX TOOLKIT - GESTIÓN DE ESTADO BRUTAL
+
+IMPLEMENTADO: 26-01-2025
+
+### ARQUITECTURA REDUX
+
+```
+/store
+  /slices
+    audioSlice.ts    # Estado del engine, chunks, procesamiento
+    uiSlice.ts       # Modales, notificaciones, UI
+  index.ts           # Store configuration
+  hooks.ts           # useAppDispatch, useAppSelector tipados
+```
+
+### ESTADO GLOBAL DEFINIDO
+
+**audioSlice:**
+- `isEngineInitialized`, `isProcessing`, `isRecording`
+- `chunkDuration`, `enableAGC`
+- `processingResults`, `chunks[]`
+- `selectedChunkId`, `currentStreamId`
+- `averageNoiseReduction`, `totalDuration`
+
+**uiSlice:**
+- `showAudioDemo`, `showAdvancedMetrics`, `showSettings`, `showCopilot`
+- `theme: 'light' | 'dark'`
+- `notifications[]` con tipo y timestamp
+
+### USO CORRECTO
+
+```typescript
+// MALO - Estado local duplicado
+const [isProcessing, setIsProcessing] = useState(false)
+
+// BUENO - Redux centralizado
+const dispatch = useAppDispatch()
+const { isProcessing } = useAppSelector(state => state.audio)
+dispatch(setProcessing(true))
+```
+
+### HOOKS CUSTOM CREADOS
+
+```typescript
+// useAudioProcessor.ts - Wrapper sobre Redux
+const { 
+  isProcessing, 
+  handleFileUpload,
+  toggleAGC 
+} = useAudioProcessor()
+```
+
+### MIDDLEWARE CONFIGURADO
+
+```typescript
+// Ignora Blob y MediaStream en serialización
+serializableCheck: {
+  ignoredActions: ['audio/setProcessingResults'],
+  ignoredPaths: ['audio.chunks']
+}
+```
+
+### DEMO FUNCIONAL
+
+`/components/ReduxDemo.tsx` - Ejemplo interactivo de Redux funcionando
+
+### MIGRACIÓN PENDIENTE
+
+Estados en `pages/index.tsx` que DEBEN migrar a Redux:
+- ❌ `showAudioDemo` → ✅ `ui.showAudioDemo`
+- ❌ `isRecording` → ✅ `audio.isRecording`
+- ❌ `processingResults` → ✅ `audio.processingResults`
+
+---
+
 **FIN DEL MÓDULO 1.**
 
 Si aún estás procesando, no estás listo.

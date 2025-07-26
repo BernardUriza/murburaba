@@ -1,22 +1,13 @@
-import { MurmubaraEngine } from './core/MurmubaraEngine';
+import { engineRegistry } from './core/EngineRegistry';
 import { MurmubaraConfig } from './types';
 
-let globalEngine: MurmubaraEngine | null = null;
-
-export async function initializeAudioEngine(config?: MurmubaraConfig): Promise<void> {
-  if (globalEngine) {
-    throw new Error('Audio engine is already initialized. Call destroyEngine() first.');
-  }
-  
-  globalEngine = new MurmubaraEngine(config);
-  await globalEngine.initialize();
+export async function initializeAudioEngine(config?: MurmubaraConfig & { id?: string }): Promise<void> {
+  const engine = engineRegistry.createEngine(config);
+  await engine.initialize();
 }
 
-export function getEngine(): MurmubaraEngine {
-  if (!globalEngine) {
-    throw new Error('Audio engine not initialized. Call initializeAudioEngine() first.');
-  }
-  return globalEngine;
+export function getEngine(id?: string): ReturnType<typeof engineRegistry.getEngine> {
+  return engineRegistry.getEngine(id);
 }
 
 export async function processStream(stream: MediaStream) {
@@ -28,27 +19,25 @@ export async function processStreamChunked(
   stream: MediaStream,
   config: {
     chunkDuration: number;
-    onChunkProcessed?: (chunk: any) => void;
+    onChunkProcessed?: (chunk: import('./types').ProcessedChunk) => void;
   }
 ) {
   const engine = getEngine();
   return engine.processStream(stream, config);
 }
 
-export async function destroyEngine(options?: { force?: boolean }): Promise<void> {
-  if (!globalEngine) {
-    return;
-  }
-  
-  await globalEngine.destroy(options?.force || false);
-  globalEngine = null;
+export async function destroyEngine(idOrOptions?: string | { force?: boolean; id?: string }): Promise<void> {
+  const id = typeof idOrOptions === 'string' ? idOrOptions : idOrOptions?.id;
+  await engineRegistry.destroyEngine(id);
 }
 
-export function getEngineStatus() {
-  if (!globalEngine) {
+export function getEngineStatus(id?: string) {
+  try {
+    const engine = engineRegistry.getEngine(id);
+    return engine.getDiagnostics().engineState;
+  } catch {
     return 'uninitialized';
   }
-  return globalEngine.getDiagnostics().engineState;
 }
 
 export function getDiagnostics() {
@@ -56,7 +45,7 @@ export function getDiagnostics() {
   return engine.getDiagnostics();
 }
 
-export function onMetricsUpdate(callback: (metrics: any) => void) {
+export function onMetricsUpdate(callback: (metrics: import('./types').ProcessingMetrics) => void) {
   const engine = getEngine();
   engine.onMetricsUpdate(callback);
 }
