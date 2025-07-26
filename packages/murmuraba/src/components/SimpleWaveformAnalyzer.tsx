@@ -8,13 +8,13 @@ export interface SimpleWaveformAnalyzerProps {
   height?: number;
 }
 
-export const SimpleWaveformAnalyzer: React.FC<SimpleWaveformAnalyzerProps> = ({
+export const SimpleWaveformAnalyzer = ({
   stream,
   isActive = true,
   isPaused = false,
   width = 800,
   height = 200
-}) => {
+}: SimpleWaveformAnalyzerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);

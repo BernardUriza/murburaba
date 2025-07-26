@@ -109,8 +109,6 @@ async function convertChunkToFormat(
 async function processLiveMicrophone(
   options: ProcessFileOptions & { recordingDuration?: number } = {}
 ): Promise<ProcessFileResult> {
-  // Import internal hook dynamically to avoid circular dependencies
-  const { useMurmubaraEngineInternal } = await import('../hooks/murmuraba-engine');
   
   const recordingDuration = options.recordingDuration || 10000; // Default 10 seconds
   const chunkOptions = options.chunkOptions || { chunkDuration: 8000, outputFormat: 'wav' };
@@ -118,8 +116,9 @@ async function processLiveMicrophone(
   // This is a simplified implementation that leverages the existing recording infrastructure
   // In a real React app, this would be used differently, but for the standalone API we simulate it
   
-  return new Promise<ProcessFileResult>(async (resolve, reject) => {
-    try {
+  return new Promise<ProcessFileResult>((resolve, reject) => {
+    (async () => {
+      try {
       // Initialize engine if needed
       const engine = getEngine();
       if (!engine) {
@@ -235,9 +234,10 @@ async function processLiveMicrophone(
         }
       }, recordingDuration);
       
-    } catch (error) {
-      reject(error);
-    }
+      } catch (error) {
+        reject(error);
+      }
+    })();
   });
 }
 

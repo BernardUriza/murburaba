@@ -209,7 +209,7 @@ export default function App() {
   }
 
   // Handle chunk playback
-  const handleToggleChunkPlayback = async (chunkId: string, audioType: 'processed' | 'original') => {
+  const handleToggleChunkPlayback = async (chunkId: string, _audioType: 'processed' | 'original') => {
     const chunk = processingResults?.chunks?.find((c: any) => c.id === chunkId)
     if (chunk && chunk.blob) {
       const audioUrl = URL.createObjectURL(chunk.blob)
@@ -220,7 +220,7 @@ export default function App() {
   }
 
   // Download chunk
-  const handleDownloadChunk = async (chunkId: string, format: 'wav' | 'webm' | 'mp3', audioType: 'processed' | 'original') => {
+  const handleDownloadChunk = async (chunkId: string, format: 'wav' | 'webm' | 'mp3', _audioType: 'processed' | 'original') => {
     const chunk = processingResults?.chunks?.find((c: any) => c.id === chunkId)
     if (chunk && chunk.blob) {
       const url = URL.createObjectURL(chunk.blob)

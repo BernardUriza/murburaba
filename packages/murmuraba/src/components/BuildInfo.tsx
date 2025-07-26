@@ -11,7 +11,7 @@ export interface BuildInfoProps {
   size?: 'small' | 'medium' | 'large';
 }
 
-export const BuildInfo: React.FC<BuildInfoProps> = ({
+export const BuildInfo = ({
   version = '1.0.0',
   buildDate = new Date().toLocaleDateString(),
   className = '',
@@ -20,7 +20,7 @@ export const BuildInfo: React.FC<BuildInfoProps> = ({
   separator = '•',
   format = 'inline',
   size = 'medium'
-}) => {
+}: BuildInfoProps) => {
   const formattedBuildDate = useMemo(() => {
     try {
       // Try to parse as ISO date first
