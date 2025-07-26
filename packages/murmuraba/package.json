@@ -48,7 +48,9 @@
     "url": "https://github.com/BernardUriza/murmuraba"
   },
   "scripts": {
-    "build": "npm run clean && npm run build:ts && npm run build:rollup && npm run copy:wasm",
+    "build": "npm run clean && npm run generate:wasm && npm run build:ts && npm run build:simple",
+    "build:simple": "node scripts/build-simple.mjs",
+    "generate:wasm": "node scripts/encode-wasm.mjs",
     "build:unsafe": "npm run clean && npm run build:ts && npm run build:rollup && npm run copy:wasm",
     "copy:wasm": "cp node_modules/@jitsi/rnnoise-wasm/dist/rnnoise.wasm dist/ || true",
     "build:ts": "tsc",
@@ -75,11 +77,10 @@
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^11.1.5",
+    "@rollup/plugin-wasm": "6.2.2",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@types/glob": "^7.2.0",
-    "@types/jest": "30.0.0",
-    "@types/puppeteer": "7.0.4",
     "@types/react": "^18.2.0 || ^19.0.0",
     "@typescript-eslint/eslint-plugin": "^6.13.0",
     "@typescript-eslint/parser": "^6.13.0",

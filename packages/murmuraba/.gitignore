@@ -36,3 +36,6 @@ Thumbs.db
 *.test.js
 *.test.d.ts
 *.test.js.map
+
+# Generated files
+src/utils/wasm-data.ts

@@ -20,7 +20,8 @@
   "include": [
     "src/**/*",
     "src/types/**/*.d.ts",
-    "global.d.ts"
+    "global.d.ts",
+    "wasm.d.ts"
   ],
   "exclude": [
     "node_modules",

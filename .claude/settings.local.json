@@ -121,7 +121,8 @@
       "Bash(test:*)",
       "Bash(npm:*)",
       "Bash(./scripts/release-flexible.sh:*)",
-      "Bash(./tests/run-integration-test.sh:*)"
+      "Bash(./tests/run-integration-test.sh:*)",
+      "Bash(npx rollup:*)"
     ],
     "deny": []
   }

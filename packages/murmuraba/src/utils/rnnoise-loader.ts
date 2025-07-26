@@ -12,25 +12,36 @@ let modulePromise: Promise<RNNoiseModule> | null = null;
 
 export async function loadRNNoiseModule(): Promise<RNNoiseModule> {
   if (!modulePromise) {
-    // Dynamic import to avoid TypeScript issues
-    modulePromise = import('@jitsi/rnnoise-wasm').then(async (rnnoiseModule) => {
-      const { createRNNWasmModule } = rnnoiseModule as any;
-      
-      // Configure the module to load WASM from the correct path
-      const module = await createRNNWasmModule({
-        locateFile: (filename: string) => {
-          if (filename.endsWith('.wasm')) {
-            // Use the public path where the WASM file will be copied
-            const wasmPath = '/rnnoise.wasm';
-            console.log('[RNNoise Loader] Loading WASM from:', wasmPath);
-            return wasmPath;
+    modulePromise = (async () => {
+      try {
+        // Import the base64 encoded WASM
+        const { decodeWasmBase64 } = await import('./wasm-data');
+        const wasmBuffer = await decodeWasmBase64();
+        
+        console.log('[RNNoise Loader] Loading WASM from base64 bundle');
+        
+        // Import the RNNoise module
+        const rnnoiseModule = await import('@jitsi/rnnoise-wasm');
+        const { createRNNWasmModule } = rnnoiseModule as any;
+        
+        // Create the module with the decoded WASM buffer
+        const module = await createRNNWasmModule({
+          wasmBinary: new Uint8Array(wasmBuffer),
+          locateFile: (filename: string) => {
+            if (filename.endsWith('.wasm')) {
+              // Return empty string to prevent additional fetch
+              return '';
+            }
+            return filename;
           }
-          return filename;
-        }
-      });
-      
-      return module as unknown as RNNoiseModule;
-    });
+        });
+        
+        return module as unknown as RNNoiseModule;
+      } catch (error) {
+        console.error('[RNNoise Loader] Failed to load WASM from base64:', error);
+        throw error;
+      }
+    })();
   }
   return modulePromise;
 }
