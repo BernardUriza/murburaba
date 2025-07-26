@@ -2,20 +2,14 @@
 
 import React, { useState } from 'react'
 import { useMediaStream } from '../context/MediaStreamContext'
-import AudioDemoRedux from '../components/AudioDemoRedux'
+import AudioDemo from '../components/AudioDemo'
 import { Settings } from '../components/Settings'
 import { CopilotChat } from '../components/CopilotChat'
 import { ReduxDemo } from '../components/ReduxDemo'
+import { MurmurabaSuiteStatus } from '../components/MurmurabaSuiteStatus'
 import Swal from 'sweetalert2'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
-// import { useAudioProcessor } from '../hooks/useAudioProcessor'
-import { 
-  processFileWithMetrics,
-  initializeAudioEngine,
-  getEngineStatus,
-  processFile,
-  destroyEngine
-} from 'murmuraba'
+import { useAudioProcessor } from '../hooks/useAudioProcessor'
 import { 
   setEngineInitialized, 
   setProcessing, 
@@ -78,84 +72,50 @@ export default function App() {
   //   return `${mins}:${secs.toString().padStart(2, '0')}`
   // }
   
-  // Get audio processor from hook
-  // const { isReady } = useAudioProcessor()
+  // Get audio processor from MurmurabaSuite hook
+  const { isReady, processRecording: processRecordingWithSuite, cancelProcessing } = useAudioProcessor()
   
-  // Initialize engine function
+  // Initialize engine function (MurmurabaSuite handles initialization)
   const handleInitializeEngine = async () => {
-    try {
-      dispatch(setProcessing(true))
-      
+    if (isReady) {
+      // Engine already initialized by MurmurabaSuite
       Swal.fire({
         toast: true,
         position: 'top-end',
         icon: 'info',
-        title: 'Initializing audio engine...',
+        title: 'Audio engine already initialized!',
         showConfirmButton: false,
         timer: 2000,
         timerProgressBar: true
       })
-      
-      await initializeAudioEngine({
-        algorithm: 'spectral',
-        logLevel: 'info',
-        allowDegraded: true
-      })
-      
-      dispatch(setEngineInitialized(true))
-      dispatch(addNotification({
-        type: 'success',
-        message: 'Audio engine initialized!'
-      }))
-      
-      Swal.fire({
-        toast: true,
-        position: 'top-end',
-        icon: 'success',
-        title: 'Audio engine initialized!',
-        showConfirmButton: false,
-        timer: 2000,
-        timerProgressBar: true
-      })
-      
-    } catch (error) {
-      console.error('Engine initialization failed:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Engine initialization failed'
-      
-      dispatch(setAudioError({ 
-        message: errorMessage,
-        code: 'ENGINE_INIT_FAILED'
-      }))
-      dispatch(setUIError(errorMessage))
-      
-      Swal.fire({
-        icon: 'error',
-        title: 'Engine Initialization Failed',
-        text: errorMessage,
-        confirmButtonText: 'OK'
-      })
-    } finally {
-      dispatch(setProcessing(false))
+      return
     }
+
+    // Wait for MurmurabaSuite to initialize
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'info',
+      title: 'Waiting for MurmurabaSuite...',
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true
+    })
   }
 
-  // Pure processFileWithMetrics recording
+  // Recording with MurmurabaSuite
   const handleStartRecording = async () => {
-    if (!isEngineInitialized) {
+    if (!isReady) {
       Swal.fire({
         icon: 'warning',
-        title: 'Engine Not Initialized',
-        text: 'Please initialize the audio engine first',
+        title: 'MurmurabaSuite Not Ready',
+        text: 'Please wait for the audio engine to initialize',
         confirmButtonText: 'OK'
       })
       return
     }
 
     try {
-      dispatch(setProcessing(true))
-      dispatch(setRecording(true))
-      dispatch(clearChunks()) // Clear previous chunks
-      
       Swal.fire({
         toast: true,
         position: 'top-end',
@@ -171,43 +131,29 @@ export default function App() {
         audio: { 
           echoCancellation: false,
           noiseSuppression: false,
-          autoGainControl: false
+          autoGainControl: enableAGC
         } 
       })
       setStream(stream)
       dispatch(setCurrentStreamId(stream.id))
       
-      // Pure processFileWithMetrics API call
-      const result = await processFileWithMetrics('Use.Mic', {
-        recordingDuration: chunkDuration * 1000,
-        chunkOptions: {
-          chunkDuration: chunkDuration * 1000,
-          outputFormat: 'wav' as const
-        }
-      })
+      // Use MurmurabaSuite's audio processor
+      const result = await processRecordingWithSuite(chunkDuration * 1000, {})
       
-      dispatch(setProcessingResults(result))
-      dispatch(addNotification({
-        type: 'success',
-        message: 'Recording completed successfully!'
-      }))
-      
-      Swal.fire({
-        toast: true,
-        position: 'top-end',
-        icon: 'success',
-        title: 'Recording completed successfully!',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true
-      })
+      if (result) {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'Recording completed successfully!',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true
+        })
+      }
       
     } catch (error) {
       console.error('Recording failed:', error)
-      dispatch(addNotification({
-        type: 'error',
-        message: error instanceof Error ? error.message : 'Recording failed'
-      }))
       Swal.fire({
         icon: 'error',
         title: 'Recording Failed',
@@ -215,8 +161,6 @@ export default function App() {
         confirmButtonText: 'OK'
       })
     } finally {
-      dispatch(setProcessing(false))
-      dispatch(setRecording(false))
       // Stop media stream
       stopStream()
     }
@@ -271,10 +215,7 @@ export default function App() {
           </div>
           <div className="panel-content">
             {showAudioDemo && (
-              <AudioDemoRedux 
-                getEngineStatus={getEngineStatus}
-                processFile={processFile}
-                processFileWithMetrics={processFileWithMetrics}
+              <AudioDemo 
                 autoProcess={true}
                 onProcessComplete={(buffer) => {
                   console.log('Audio processing completed', buffer)
@@ -354,14 +295,14 @@ export default function App() {
           </div>
 
           <div className="controls-grid">
-            {!isEngineInitialized ? (
+            {!isReady ? (
               <button 
                 className="btn btn-primary"
                 onClick={handleInitializeEngine}
                 disabled={isProcessing}
               >
                 <span className="btn-icon">⚡</span>
-                <span>{isProcessing ? 'Initializing...' : 'Initialize Engine'}</span>
+                <span>{'Waiting for MurmurabaSuite...'}</span>
               </button>
             ) : (
               <>
@@ -377,17 +318,9 @@ export default function App() {
                 {isRecording && (
                   <button 
                     className="btn btn-danger"
-                    onClick={async () => {
-                      dispatch(setRecording(false));
-                      dispatch(setProcessing(false));
+                    onClick={() => {
+                      cancelProcessing();
                       stopStream();
-                      // Destroy engine when Stop is pressed
-                      try {
-                        await destroyEngine();
-                        dispatch(setEngineInitialized(false));
-                      } catch (error) {
-                        console.error('Failed to destroy engine:', error);
-                      }
                     }}
                   >
                     <span className="btn-icon">⏹️</span>
@@ -515,6 +448,9 @@ export default function App() {
           onApplyChanges={async () => console.log('Apply changes')}
         />
       </main>
+      
+      {/* MurmurabaSuite Status (Development Only) */}
+      <MurmurabaSuiteStatus />
       
       {/* BuildInfo temporarily removed - not exported from murmuraba */}
     </>

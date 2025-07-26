@@ -38,7 +38,22 @@ export const murmurabaSuiteMiddleware: Middleware = (store: MiddlewareAPI) => (n
     return next(action);
   }
 
-  const processor = suiteContainer.get<IAudioProcessor>(TOKENS.AudioProcessor);
+  // Log middleware activity in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[MurmurabaSuite Middleware]', action.type);
+  }
+
+  let processor: IAudioProcessor;
+  try {
+    processor = suiteContainer.get<IAudioProcessor>(TOKENS.AudioProcessor);
+  } catch (error) {
+    console.error('Failed to get AudioProcessor from container:', error);
+    store.dispatch(setError({
+      message: 'Audio processor not available',
+      code: 'PROCESSOR_NOT_AVAILABLE'
+    }));
+    return next(action);
+  }
   
   switch (action.type) {
     case MURMURABA_ACTIONS.PROCESS_FILE: {

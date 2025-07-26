@@ -4,7 +4,7 @@ import { store } from '../store';
 import { MurmurabaSuite, useMurmurabaSuite } from 'murmuraba';
 import { setSuiteContainer, MURMURABA_ACTIONS } from '../store/middleware/murmurabaSuiteMiddleware';
 import { setEngineInitialized } from '../store/slices/audioSlice';
-import { container as diContainer } from '../packages/murmuraba/src/core/DIContainer';
+import { TOKENS } from '../packages/murmuraba/src/core/DIContainer';
 
 // Inner component that has access to MurmurabaSuite context
 function MurmurabaReduxBridge({ children }: { children: ReactNode }) {
@@ -13,14 +13,24 @@ function MurmurabaReduxBridge({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isReady && container) {
       // Connect DI container to Redux middleware
-      setSuiteContainer(diContainer);
-      store.dispatch({ type: MURMURABA_ACTIONS.SET_CONTAINER, payload: diContainer });
+      setSuiteContainer(container as any);
+      store.dispatch({ type: MURMURABA_ACTIONS.SET_CONTAINER, payload: container as any });
       store.dispatch(setEngineInitialized(true));
+      
+      // Log successful connection
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ MurmurabaSuite connected to Redux');
+        console.log('Available services:', {
+          audioProcessor: container.has(TOKENS.AudioProcessor),
+          logger: container.has(TOKENS.Logger),
+          metricsManager: container.has(TOKENS.MetricsManager)
+        });
+      }
     }
     
     if (error) {
       store.dispatch(setEngineInitialized(false));
-      console.error('MurmurabaSuite initialization error:', error);
+      console.error('❌ MurmurabaSuite initialization error:', error);
     }
   }, [isReady, container, error]);
   
