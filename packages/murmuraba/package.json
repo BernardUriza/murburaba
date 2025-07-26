@@ -1,7 +1,6 @@
 {
   "name": "murmuraba",
   "version": "2.3.5",
-  "type": "module",
   "description": "Real-time audio noise reduction with advanced chunked processing for web applications",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
@@ -71,6 +70,14 @@
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": false
+    },
+    "react-dom": {
+      "optional": false
+    }
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.7",

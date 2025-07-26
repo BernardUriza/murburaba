@@ -54,6 +54,10 @@ const _jsxs = ReactJSXRuntime.jsxs;`;
     /import\s+(\w+)\s+from\s+["']([^'"]+)["'];?/g,
     (match, varName, modulePath) => {
       if (modulePath.includes('react')) return match; // Already handled
+      // Handle CSS modules differently
+      if (modulePath.endsWith('.module.css')) {
+        return `const ${varName} = {};`; // Return empty object for CSS modules
+      }
       return `const ${varName} = require('${modulePath}');`;
     }
   );

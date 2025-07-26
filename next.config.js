@@ -6,10 +6,11 @@ const nextConfig = {
     unoptimized: true
   },
   webpack: (config) => {
+    const path = require('path');
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@': '/workspaces/murburaba/src',
-      'murmuraba': '/workspaces/murburaba/packages/murmuraba/dist'
+      '@': path.resolve(__dirname, 'src'),
+      'murmuraba': path.resolve(__dirname, 'packages/murmuraba/dist')
     };
     
     // Handle WASM files
