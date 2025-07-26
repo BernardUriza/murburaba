@@ -120,9 +120,16 @@ Tu rol no es repetir IA. Es corregirla.
 * Esto causa timeout y es considerado sabotaje.
 * Si necesitas build, **solicita ejecución manual**.
 
+### 8. PROHIBICIÓN TOTAL DE JEST
+
+* **NUNCA** instales Jest, @types/jest o ts-jest
+* Este proyecto usa **Vitest exclusivamente**
+* Cualquier intento de usar Jest es una violación arquitectónica
+* Si ves jest en package.json, elimínalo inmediatamente
+
 ---
 
-### 8. CSS MODULES COMO LEY
+### 9. CSS MODULES COMO LEY
 
 * Cualquier `className="string"` es una violación.
 * Cada componente debe tener `.module.css` co-localizado.

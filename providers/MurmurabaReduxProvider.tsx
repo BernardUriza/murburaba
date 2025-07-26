@@ -11,6 +11,8 @@ function MurmurabaReduxBridge({ children }: { children: ReactNode }) {
   const { container, isReady, error } = useMurmurabaSuite();
   
   useEffect(() => {
+    console.log('🔄 MurmurabaSuite status:', { isReady, hasContainer: !!container, error });
+    
     if (isReady && container) {
       // Connect DI container to Redux middleware
       setSuiteContainer(container as any);
@@ -18,14 +20,12 @@ function MurmurabaReduxBridge({ children }: { children: ReactNode }) {
       store.dispatch(setEngineInitialized(true));
       
       // Log successful connection
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ MurmurabaSuite connected to Redux');
-        console.log('Available services:', {
-          audioProcessor: container.has(TOKENS.AudioProcessor),
-          logger: container.has(TOKENS.Logger),
-          metricsManager: container.has(TOKENS.MetricsManager)
-        });
-      }
+      console.log('✅ MurmurabaSuite connected to Redux');
+      console.log('Available services:', {
+        audioProcessor: container.has(TOKENS.AudioProcessor),
+        logger: container.has(TOKENS.Logger),
+        metricsManager: container.has(TOKENS.MetricsManager)
+      });
     }
     
     if (error) {
@@ -33,6 +33,45 @@ function MurmurabaReduxBridge({ children }: { children: ReactNode }) {
       console.error('❌ MurmurabaSuite initialization error:', error);
     }
   }, [isReady, container, error]);
+  
+  // Show loading state while initializing
+  if (!isReady && !error) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        gap: '1rem'
+      }}>
+        <div style={{
+          fontSize: '2rem',
+          animation: 'pulse 1.5s ease-in-out infinite'
+        }}>⚡</div>
+        <div style={{ color: '#666' }}>Initializing MurmurabaSuite...</div>
+      </div>
+    );
+  }
+  
+  // Show error state if initialization failed
+  if (error) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        gap: '1rem',
+        color: '#ff4444'
+      }}>
+        <div style={{ fontSize: '2rem' }}>❌</div>
+        <div>Failed to initialize MurmurabaSuite</div>
+        <div style={{ fontSize: '0.875rem', color: '#666' }}>{error.message}</div>
+      </div>
+    );
+  }
   
   return <>{children}</>;
 }

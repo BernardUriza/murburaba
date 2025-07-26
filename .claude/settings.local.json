@@ -120,7 +120,8 @@
       "Bash(npx vitest run:*)",
       "Bash(test:*)",
       "Bash(npm:*)",
-      "Bash(./scripts/release-flexible.sh:*)"
+      "Bash(./scripts/release-flexible.sh:*)",
+      "Bash(./tests/run-integration-test.sh:*)"
     ],
     "deny": []
   }

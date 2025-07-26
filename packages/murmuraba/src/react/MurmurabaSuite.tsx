@@ -49,13 +49,16 @@ export function MurmurabaSuite({
 
   useEffect(() => {
     const initializeSuite = async () => {
+      console.log('🚀 MurmurabaSuite: Starting initialization...');
       try {
         // Create and bind engine
         const engine = MurmubaraEngineFactory.create(engineConfig);
+        console.log('🔧 MurmurabaSuite: Engine created, initializing...');
         await engine.initialize();
         
         // Get container from engine
         const engineContainer = (engine as any).getContainer();
+        console.log('📦 MurmurabaSuite: Engine container obtained:', !!engineContainer);
         
         // Copy bindings from engine container to suite container
         if (engineContainer) {
@@ -63,6 +66,7 @@ export function MurmurabaSuite({
           container.bindValue(TOKENS.Logger, engineContainer.get(TOKENS.Logger));
           container.bindValue(TOKENS.StateManager, engineContainer.get(TOKENS.StateManager));
           container.bindValue(TOKENS.EventEmitter, engineContainer.get(TOKENS.EventEmitter));
+          console.log('🔗 MurmurabaSuite: Core services bound');
         }
         
         // Bind service loader
@@ -98,10 +102,11 @@ export function MurmurabaSuite({
           await Promise.all(servicesToLoad.map(name => serviceLoader.loadModule(name)));
         }
         
+        console.log('✅ MurmurabaSuite: Initialization complete!');
         setIsReady(true);
       } catch (err) {
         setError(err as Error);
-        console.error('MurmurabaSuite initialization failed:', err);
+        console.error('❌ MurmurabaSuite initialization failed:', err);
       }
     };
 

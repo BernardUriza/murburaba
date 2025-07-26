@@ -146,6 +146,14 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       this.emit('initialized');
       this.logger.info('Murmuraba engine initialized successfully');
       
+      // Log initialization details for debugging
+      this.logger.debug('Initialization details:', {
+        audioContextState: this.audioContext?.state,
+        wasmLoaded: !!this.wasmModule,
+        rnnoiseState: !!this.rnnoiseState,
+        workersEnabled: this.config.useWorker
+      });
+      
     } catch (error) {
       this.stateManager.transitionTo('error');
       this.recordError(error);
@@ -192,7 +200,15 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       
       // Resume if suspended (for Chrome autoplay policy)
       if (this.audioContext.state === 'suspended') {
-        await this.audioContext.resume();
+        this.logger.warn('AudioContext is suspended, attempting to resume...');
+        try {
+          await this.audioContext.resume();
+          this.logger.info('AudioContext resumed successfully');
+        } catch (resumeError) {
+          this.logger.warn('AudioContext resume failed, will retry on user interaction:', resumeError);
+          // Don't throw, let initialization continue
+          // The engine will work once user interacts with the page
+        }
       }
     } catch (error) {
       throw new Error(`Failed to create AudioContext: ${error instanceof Error ? error.message : String(error)}`);

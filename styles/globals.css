@@ -25,3 +25,12 @@ a {
   padding: 1rem;
   background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
 }
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
