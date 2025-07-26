@@ -43,7 +43,7 @@ export default function AudioDemo({
       if (!chunk?.blob) throw new Error('No processed audio')
       setUrls(u => ({
         ...u,
-        processed: URL.createObjectURL(chunk.blob)
+        processed: URL.createObjectURL(chunk.blob!)
       }))
       onProcessComplete?.(await chunk.blob.arrayBuffer())
       dispatch(addNotification({ type: 'success', message: 'Demo processed!' }))

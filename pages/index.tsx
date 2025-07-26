@@ -11,29 +11,19 @@ import Swal from 'sweetalert2'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { useAudioProcessor } from '../hooks/useAudioProcessor'
 import { 
-  setEngineInitialized, 
-  setProcessing, 
-  setRecording,
-  setProcessingResults,
   setChunkDuration,
   setEnableAGC,
-  clearChunks,
-  setCurrentStreamId,
-  setError as setAudioError,
-  clearError as clearAudioError
+  setCurrentStreamId
 } from '../store/slices/audioSlice'
 import {
   toggleAudioDemo,
   toggleAdvancedMetrics,
   toggleSettings,
-  toggleCopilot,
-  addNotification,
-  setUIError
+  toggleCopilot
 } from '../store/slices/uiSlice'
 import { 
   selectEngineStatus, 
   selectAudioConfig,
-  selectProcessingMetrics,
   selectUIFlags,
   shallowEqual
 } from '../store/selectors'
@@ -45,12 +35,8 @@ export default function App() {
   // Redux state with optimized selectors and shallowEqual
   const engineStatus = useAppSelector(selectEngineStatus, shallowEqual)
   const audioConfig = useAppSelector(selectAudioConfig, shallowEqual)
-  const processingMetrics = useAppSelector(selectProcessingMetrics, shallowEqual)
   const uiFlags = useAppSelector(selectUIFlags, shallowEqual)
   
-  // Direct state access (only for non-computed values)
-  const processingResults = useAppSelector(state => state.audio.processingResults)
-  const selectedChunk = useAppSelector(state => state.audio.selectedChunkId)
   
   // Destructure for convenience
   const { isInitialized: isEngineInitialized, isProcessing, isRecording } = engineStatus
@@ -58,7 +44,7 @@ export default function App() {
   const { showAudioDemo, showAdvancedMetrics, showSettings, showCopilot } = uiFlags
   
   // Media stream from context
-  const { currentStream, setStream, stopStream } = useMediaStream()
+  const { setStream, stopStream } = useMediaStream()
   
   // Ensure component is mounted before accessing browser APIs
   React.useEffect(() => {
@@ -167,29 +153,6 @@ export default function App() {
   }
 
 
-  // Handle chunk playback
-  const handleToggleChunkPlayback = async (chunkId: string, _audioType: 'processed' | 'original') => {
-    const chunk = processingResults?.chunks?.find((c: any) => c.id === chunkId)
-    if (chunk && chunk.blob) {
-      const audioUrl = URL.createObjectURL(chunk.blob)
-      const audio = new Audio(audioUrl)
-      audio.play()
-      audio.onended = () => URL.revokeObjectURL(audioUrl)
-    }
-  }
-
-  // Download chunk
-  const handleDownloadChunk = async (chunkId: string, format: 'wav' | 'webm' | 'mp3', _audioType: 'processed' | 'original') => {
-    const chunk = processingResults?.chunks?.find((c: any) => c.id === chunkId)
-    if (chunk && chunk.blob) {
-      const url = URL.createObjectURL(chunk.blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `chunk-${chunkId}.${format}`
-      a.click()
-      URL.revokeObjectURL(url)
-    }
-  }
 
   // Prevent hydration errors by rendering after mount
   if (!mounted) {
