@@ -287,25 +287,89 @@ function createErrorChunk(
 
 
 async function processLiveMicrophone(
-  _options: ProcessFileOptions & { recordingDuration?: number } = {}
+  options: ProcessFileOptions & { recordingDuration?: number } = {}
 ): Promise<ProcessFileResult> {
-  // NOTA: Esta función existe por compatibilidad con la API pública
-  // pero internamente el hook useMurmubaraEngine ya maneja todo el flujo
-  // de grabación con startRecording/stopRecording y gestión de chunks
+  // Importar dinámicamente las clases necesarias
+  const { URLManager } = await import('../hooks/murmuraba-engine/urlManager');
+  const { RecordingManager } = await import('../hooks/murmuraba-engine/recordingManager');
+  const { initializeAudioEngine, processStream } = await import('../api');
   
-  // Para una implementación standalone (sin React), habría que:
-  // 1. Importar las funciones de recordingFunctions
-  // 2. Crear las instancias necesarias (recordingManager, chunkManager, etc)
-  // 3. Llamar a startRecording con la duración del chunk
-  // 4. Esperar el tiempo especificado
-  // 5. Llamar a stopRecording
-  // 6. Retornar los chunks acumulados
+  // Crear instancias
+  const urlManager = new URLManager();
+  const recordingManager = new RecordingManager(urlManager);
   
-  // Por ahora, retornamos un error indicando que se debe usar el hook
-  throw new Error(
-    'processFileWithMetrics("Use.Mic") requiere usar el hook useMurmubaraEngine. ' +
-    'Usa las funciones startRecording/stopRecording del hook para grabar desde micrófono.'
+  // Inicializar engine si es necesario
+  try {
+    getEngine();
+  } catch {
+    await initializeAudioEngine({
+      algorithm: 'spectral',
+      logLevel: 'info',
+      allowDegraded: true
+    });
+  }
+  
+  // Configuración
+  const chunkDuration = options.chunkOptions?.chunkDuration || 8000;
+  const recordingDuration = options.recordingDuration || chunkDuration;
+  
+  // Obtener stream del micrófono
+  const stream = await navigator.mediaDevices.getUserMedia({ 
+    audio: {
+      echoCancellation: false,
+      noiseSuppression: false,
+      autoGainControl: false
+    } 
+  });
+  
+  const controller = await processStream(stream);
+  const chunks: ProcessedChunk[] = [];
+  
+  // Callback para chunks procesados
+  const onChunkProcessed = (chunk: any) => {
+    // Convertir chunk del formato interno al formato de la API
+    const apiChunk: ProcessedChunk = {
+      ...chunk,
+      vadScore: chunk.averageVad || 0,
+      vadData: chunk.vadData || [],
+      blob: chunk.blob || undefined,
+      isValid: chunk.isValid !== false,
+      currentlyPlayingType: chunk.currentlyPlayingType || null
+    };
+    chunks.push(apiChunk);
+  };
+  
+  // Iniciar grabación
+  await recordingManager.startCycle(
+    controller.stream,
+    stream,
+    chunkDuration,
+    onChunkProcessed
   );
+  
+  // Esperar duración de grabación
+  await new Promise(resolve => setTimeout(resolve, recordingDuration));
+  
+  // Detener grabación
+  recordingManager.stopRecording();
+  stream.getTracks().forEach(track => track.stop());
+  controller.stop();
+  
+  // Calcular métricas
+  const totalVad = chunks.reduce((sum, chunk) => sum + chunk.averageVad, 0);
+  const totalDuration = chunks.reduce((sum, chunk) => sum + chunk.duration, 0);
+  
+  return {
+    chunks,
+    processedBuffer: new ArrayBuffer(0), // placeholder
+    averageVad: chunks.length > 0 ? totalVad / chunks.length : 0,
+    totalDuration,
+    metadata: {
+      sampleRate: 48000,
+      channels: 1,
+      originalDuration: totalDuration
+    }
+  };
 }
 
 async function processFileWithChunking(

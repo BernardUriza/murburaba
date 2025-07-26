@@ -204,13 +204,10 @@ export class RecordingManager {
         currentOriginalRecorder.stop();
       }
       
-      // Start new cycle after a delay to ensure processing completes
+      // Start new cycle immediately for continuous recording
       if (!this.stopCycleFlag) {
-        this.cycleTimeout = setTimeout(() => {
-          if (!this.stopCycleFlag) {
-            startNewRecordingCycle();
-          }
-        }, 1000); // Increased delay to ensure chunk processing
+        // Start new cycle immediately
+        startNewRecordingCycle();
       }
     };
 
