@@ -163,14 +163,68 @@ export class AudioProcessorService implements IAudioProcessor {
     arrayBuffer: ArrayBuffer,
     options: AudioProcessingOptions
   ): Promise<{ chunks: ProcessedChunk[]; processedBuffer: ArrayBuffer }> {
-    // Modern implementation using MurmurabaSuite architecture
     const chunks: ProcessedChunk[] = [];
     const engine = engineRegistry.getEngine();
     
-    // Process and collect chunks
-    // ... (simplified implementation)
+    // Convert ArrayBuffer to AudioBuffer for processing
+    const audioContext = new AudioContext({ sampleRate: 48000 });
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
     
+    // Calculate chunk parameters
+    const sampleRate = audioBuffer.sampleRate;
+    const chunkDurationSeconds = (options.chunkDuration || 8000) / 1000;
+    const samplesPerChunk = Math.floor(sampleRate * chunkDurationSeconds);
+    const totalSamples = audioBuffer.length;
+    const channelData = audioBuffer.getChannelData(0);
+    
+    // Process chunks
+    for (let start = 0; start < totalSamples; start += samplesPerChunk) {
+      const end = Math.min(start + samplesPerChunk, totalSamples);
+      const chunkData = channelData.slice(start, end);
+      
+      // Create chunk audio buffer
+      const chunkBuffer = audioContext.createBuffer(1, chunkData.length, sampleRate);
+      chunkBuffer.getChannelData(0).set(chunkData);
+      
+      // Convert to ArrayBuffer for processing
+      const chunkArrayBuffer = await AudioConverter.audioBufferToArrayBuffer(chunkBuffer);
+      
+      // Process chunk through engine
+      const processedChunkBuffer = await engine.processFile(chunkArrayBuffer);
+      
+      // Create blob from processed buffer
+      const blob = new Blob([processedChunkBuffer], { type: 'audio/wav' });
+      
+      // Create ProcessedChunk
+      const chunk: ProcessedChunk = {
+        id: `chunk-${chunks.length}`,
+        blob,
+        startTime: start / sampleRate,
+        endTime: end / sampleRate,
+        duration: (end - start) / sampleRate,
+        vadScore: 0.8, // Placeholder - should be calculated
+        averageVad: 0.8,
+        processedAudioUrl: URL.createObjectURL(blob),
+        originalAudioUrl: '',
+        vadData: [],
+        metrics: this.createDefaultMetrics(),
+        originalSize: chunkArrayBuffer.byteLength,
+        processedSize: processedChunkBuffer.byteLength,
+        noiseRemoved: 0.15, // Placeholder
+        isPlaying: false,
+        isValid: true,
+        currentlyPlayingType: null
+      };
+      
+      chunks.push(chunk);
+      this.notifyChunk(chunk);
+      this.notifyProgress((end / totalSamples) * 100);
+    }
+    
+    // Process entire file for final result
     const processedBuffer = await engine.processFile(arrayBuffer);
+    
+    audioContext.close();
     
     return { chunks, processedBuffer };
   }

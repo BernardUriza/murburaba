@@ -33,18 +33,29 @@ export function useAudioProcessor() {
     }
 
     try {
+      console.log('[useAudioProcessor] Starting processFile for:', file.name)
       dispatch(setProcessing(true))
       dispatch(clearError())
       dispatch(clearChunks())
 
       const processor = container.get<IAudioProcessor>(TOKENS.AudioProcessor)
+      console.log('[useAudioProcessor] Got processor:', !!processor)
+      
+      if (!processor) {
+        throw new Error('AudioProcessor not found in container')
+      }
       
       // Set up chunk tracking
       const unsubscribeChunk = processor.onChunk((chunk) => {
+        console.log('[useAudioProcessor] Chunk received:', chunk)
         dispatch(addChunk(chunk))
       })
 
+      console.log('[useAudioProcessor] Calling processor.processFile...')
       const result = await processor.processFile(file, options)
+      console.log('[useAudioProcessor] Process result:', result)
+      console.log('[useAudioProcessor] Result chunks:', result?.chunks?.length)
+      console.log('[useAudioProcessor] Result buffer:', !!result?.processedBuffer)
       
       dispatch(setProcessingResults(result))
       dispatch(addNotification({

@@ -11,6 +11,7 @@ import { StudioHeader } from '../components/ui/StudioHeader'
 import { ProcessingBar } from '../components/ui/ProcessingBar'
 import { ControlPanel } from '../components/ui/ControlPanel'
 import { FabButtons } from '../components/ui/FabButtons'
+import { BannerHero } from '../components/ui/BannerHero'
 import { useNotifications } from '../hooks/useNotifications'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { useAudioProcessor } from '../hooks/useAudioProcessor'
@@ -111,6 +112,9 @@ export default function App() {
             onError={err => notify('error', 'Error al procesar audio', err.message)}
           />
         </OverlayPanel>
+
+        {/* Banner Hero Section */}
+        <BannerHero />
 
         {/* Studio Header */}
         <StudioHeader isProcessing={isProcessing} isInitialized={isInitialized} />

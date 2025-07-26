@@ -1,0 +1,89 @@
+.heroContainer {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  margin-bottom: 2rem;
+  overflow: hidden;
+  background: radial-gradient(ellipse at center, #0a2f1f 0%, #041a0f 100%);
+}
+
+.bannerWrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.bannerImage {
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 0 40px rgba(190, 178, 127, 0.3));
+  animation: glow 3s ease-in-out infinite alternate;
+}
+
+.blurTop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to bottom, 
+    rgba(10, 47, 31, 1) 0%, 
+    rgba(10, 47, 31, 0.8) 30%,
+    rgba(10, 47, 31, 0) 100%
+  );
+  pointer-events: none;
+}
+
+.blurBottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to top, 
+    rgba(4, 26, 15, 1) 0%, 
+    rgba(4, 26, 15, 0.8) 30%,
+    rgba(4, 26, 15, 0) 100%
+  );
+  pointer-events: none;
+}
+
+.radialGlow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, 
+    rgba(190, 178, 127, 0.1) 0%, 
+    rgba(190, 178, 127, 0.05) 30%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+@keyframes glow {
+  from {
+    filter: drop-shadow(0 0 30px rgba(190, 178, 127, 0.2));
+  }
+  to {
+    filter: drop-shadow(0 0 50px rgba(190, 178, 127, 0.4));
+  }
+}
+
+@media (max-width: 768px) {
+  .heroContainer {
+    height: 240px;
+  }
+  
+  .bannerWrapper {
+    max-width: 400px;
+  }
+}

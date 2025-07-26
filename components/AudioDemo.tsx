@@ -29,21 +29,42 @@ export default function AudioDemo({
     setError(null)
     try {
       // Load demo audio
-      const resp = await fetch('/demo.wav')
+      console.log('[AudioDemo] Loading demo audio...')
+      const resp = await fetch('/jfk_speech.wav')
       if (!resp.ok) throw new Error('Failed to load demo audio')
       const arrBuf = await resp.arrayBuffer()
+      console.log('[AudioDemo] Audio loaded, size:', arrBuf.byteLength)
+      
       setUrls(u => ({
         ...u,
         original: URL.createObjectURL(new Blob([arrBuf], { type: 'audio/wav' }))
       }))
+      
       // Process audio
-      const file = new File([arrBuf], 'demo.wav', { type: 'audio/wav' })
-      const result = await processFile(file)
+      const file = new File([arrBuf], 'jfk_speech.wav', { type: 'audio/wav' })
+      console.log('[AudioDemo] Processing file:', file.name, 'size:', file.size)
+      
+      const result = await processFile(file, {
+        chunkDuration,
+        enableAGC
+      })
+      console.log('[AudioDemo] Process result:', result)
+      
+      if (!result) {
+        throw new Error('Processing failed - processFile returned null')
+      }
+      
+      console.log('[AudioDemo] Chunks in result:', result.chunks?.length || 0)
       const chunk = result?.chunks?.[0]
-      if (!chunk?.blob) throw new Error('No processed audio')
+      if (!chunk?.blob) {
+        console.error('[AudioDemo] No chunk blob found in result:', result)
+        throw new Error('Processing completed but no audio chunks were generated')
+      }
+      
+      console.log('[AudioDemo] Chunk blob size:', chunk.blob.size)
       setUrls(u => ({
         ...u,
-        processed: URL.createObjectURL(chunk.blob!)
+        processed: URL.createObjectURL(chunk.blob)
       }))
       onProcessComplete?.(await chunk.blob.arrayBuffer())
       dispatch(addNotification({ type: 'success', message: 'Demo processed!' }))
@@ -98,9 +119,17 @@ export default function AudioDemo({
 // Legibilidad: bloque para player
 function AudioBlock({ label, src }: { label: string; src: string | null }) {
   return (
-    <div>
-      <h4>{label}</h4>
-      <audio src={src ?? undefined} controls style={{ width: 240 }} />
+    <div className={styles.audioCard}>
+      <h4 className={styles.audioCardTitle}>{label}</h4>
+      {src ? (
+        <audio src={src} controls className={styles.audioPlayer} />
+      ) : (
+        <div className={styles.audioPlaceholder}>
+          <span className={styles.placeholderText}>
+            {label === 'Processed' ? 'Click "Process Demo" to generate audio' : 'Loading...'}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

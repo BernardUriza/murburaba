@@ -180,6 +180,14 @@ export class AudioConverter {
         throw new Error(`Unsupported format: ${format}`);
     }
     /**
+     * Convert AudioBuffer to ArrayBuffer in WAV format
+     */
+    static async audioBufferToArrayBuffer(audioBuffer) {
+        const converter = new AudioConverter();
+        const wavBlob = converter.audioBufferToWav(audioBuffer);
+        return await wavBlob.arrayBuffer();
+    }
+    /**
      * Convert AudioBuffer to WAV format (MONO only for RNNoise compatibility)
      */
     audioBufferToWav(audioBuffer) {

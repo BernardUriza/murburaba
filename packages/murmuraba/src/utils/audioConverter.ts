@@ -212,6 +212,15 @@ export class AudioConverter {
   }
 
   /**
+   * Convert AudioBuffer to ArrayBuffer in WAV format
+   */
+  static async audioBufferToArrayBuffer(audioBuffer: AudioBuffer): Promise<ArrayBuffer> {
+    const converter = new AudioConverter();
+    const wavBlob = converter.audioBufferToWav(audioBuffer);
+    return await wavBlob.arrayBuffer();
+  }
+
+  /**
    * Convert AudioBuffer to WAV format (MONO only for RNNoise compatibility)
    */
   audioBufferToWav(audioBuffer: AudioBuffer): Blob {

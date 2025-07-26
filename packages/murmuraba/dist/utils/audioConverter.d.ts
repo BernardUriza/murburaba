@@ -46,6 +46,10 @@ export declare class AudioConverter {
      */
     float32ArrayToBlob(audioData: Float32Array, sampleRate: number, format: 'wav' | 'webm' | 'raw'): Promise<Blob>;
     /**
+     * Convert AudioBuffer to ArrayBuffer in WAV format
+     */
+    static audioBufferToArrayBuffer(audioBuffer: AudioBuffer): Promise<ArrayBuffer>;
+    /**
      * Convert AudioBuffer to WAV format (MONO only for RNNoise compatibility)
      */
     audioBufferToWav(audioBuffer: AudioBuffer): Blob;

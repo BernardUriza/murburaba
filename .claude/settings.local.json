@@ -122,7 +122,9 @@
       "Bash(npm:*)",
       "Bash(./scripts/release-flexible.sh:*)",
       "Bash(./tests/run-integration-test.sh:*)",
-      "Bash(npx rollup:*)"
+      "Bash(npx rollup:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(npx tsx:*)"
     ],
     "deny": []
   }
