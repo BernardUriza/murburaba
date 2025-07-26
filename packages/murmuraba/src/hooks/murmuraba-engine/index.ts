@@ -3,7 +3,7 @@ import type { UseMurmubaraEngineOptions, UseMurmubaraEngineReturn } from './type
 
 /**
  * Public version of useMurmubaraEngine that omits internal recording functions
- * External users should use processFileWithMetrics('Use.Mic') for recording
+ * External users should use MurmurabaSuite for recording
  */
 export function useMurmubaraEngine(
   options: UseMurmubaraEngineOptions = {}
@@ -31,7 +31,7 @@ export type {
   UseMurmubaraEngineReturn
 } from './types';
 
-// Internal export for processFileWithMetrics to use
+// Internal export for compatibility
 export { useMurmubaraEngine as useMurmubaraEngineInternal } from './useMurmubaraEngine';
 
 // Constant exports for external use

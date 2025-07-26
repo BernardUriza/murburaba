@@ -380,7 +380,7 @@ export function useMurmubaraEngine(
     
     // Recording Actions - INTERNAL USE ONLY
     // These functions are not exported in the public API
-    // Use processFileWithMetrics('Use.Mic') for external recording
+    // Use MurmurabaSuite for external recording
     _internal_startRecording: recordingFunctions.startRecording,
     _internal_stopRecording: recordingFunctions.stopRecording,
     _internal_pauseRecording: recordingFunctions.pauseRecording,

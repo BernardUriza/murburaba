@@ -53,7 +53,7 @@ export interface UseMurmubaraEngineReturnInternal {
   
   // Recording Actions - INTERNAL USE ONLY
   // These functions are not exposed in the public API
-  // External consumers should use processFileWithMetrics('Use.Mic')
+  // External consumers should use MurmurabaSuite
   _internal_startRecording: (chunkDuration?: number) => Promise<void>;
   _internal_stopRecording: () => void;
   _internal_pauseRecording: () => void;
@@ -79,5 +79,5 @@ export interface UseMurmubaraEngineReturnInternal {
 export interface UseMurmubaraEngineReturn extends Omit<UseMurmubaraEngineReturnInternal, 
   '_internal_startRecording' | '_internal_stopRecording' | '_internal_pauseRecording' | 
   '_internal_resumeRecording' | '_internal_clearRecordings'> {
-  // Public API - users should use processFileWithMetrics('Use.Mic') for recording
+  // Public API - users should use MurmurabaSuite for recording
 }

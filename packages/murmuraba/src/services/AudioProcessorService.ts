@@ -168,7 +168,7 @@ export class AudioProcessorService implements IAudioProcessor {
     arrayBuffer: ArrayBuffer,
     options: AudioProcessingOptions
   ): Promise<{ chunks: ProcessedChunk[]; processedBuffer: ArrayBuffer }> {
-    // Implementation similar to processFileWithMetrics but cleaner
+    // Modern implementation using MurmurabaSuite architecture
     const chunks: ProcessedChunk[] = [];
     const engine = engineRegistry.getEngine();
     

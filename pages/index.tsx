@@ -132,8 +132,6 @@ export default function App() {
           onSetDuration={d => dispatch(setChunkDuration(d))}
         />
 
-        {/* Redux Demo */}
-        <ReduxDemo />
 
         {/* Floating Action Buttons */}
         <FabButtons

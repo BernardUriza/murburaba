@@ -34,14 +34,6 @@ export {
   processFile
 } from './api';
 
-// Enhanced processing functions
-export { 
-  processFileWithMetrics,
-  type ProcessFileWithMetricsResult,
-  type ChunkOptions,
-  type ProcessFileResult,
-  type ProcessFileOptions
-} from './api/processFileWithMetrics';
 
 // Hook exports
 export { useMurmubaraEngine } from './hooks/murmuraba-engine';
