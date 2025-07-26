@@ -13,10 +13,7 @@ interface FabButtonsProps {
 }
 
 export function FabButtons({
-  showAudioDemo,
   showAdvancedMetrics,
-  showSettings,
-  showCopilot,
   isEngineInitialized,
   onAudioDemo,
   onAdvancedMetrics,

@@ -12,7 +12,7 @@ import {
   clearError
 } from '../store/slices/audioSlice'
 import { addNotification } from '../store/slices/uiSlice'
-import type { IAudioProcessor, ProcessFileOptions } from 'murmuraba'
+import type { IAudioProcessor, AudioProcessingOptions } from 'murmuraba'
 
 export function useAudioProcessor() {
   const dispatch = useAppDispatch()
@@ -22,7 +22,7 @@ export function useAudioProcessor() {
 
   const processFile = useCallback(async (
     file: File,
-    options?: ProcessFileOptions
+    options?: AudioProcessingOptions
   ) => {
     if (!isReady || !container) {
       dispatch(setError({
@@ -73,7 +73,7 @@ export function useAudioProcessor() {
 
   const processRecording = useCallback(async (
     duration: number,
-    options?: ProcessFileOptions
+    options?: AudioProcessingOptions
   ) => {
     if (!isReady || !container) {
       dispatch(setError({
