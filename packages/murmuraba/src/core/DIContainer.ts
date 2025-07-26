@@ -161,7 +161,8 @@ export const TOKENS = {
   MetricsManager: Symbol('MetricsManager'),
   WorkerManager: Symbol('WorkerManager'),
   AudioContext: Symbol('AudioContext'),
-  Config: Symbol('Config')
+  Config: Symbol('Config'),
+  AudioProcessor: Symbol('AudioProcessor')
 } as const;
 
 // Global container instance
