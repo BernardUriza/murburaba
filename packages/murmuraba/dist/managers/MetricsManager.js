@@ -1,6 +1,5 @@
-/* React externalized */
-const {  EventEmitter  } = require('../core/EventEmitter');
-class MetricsManager extends EventEmitter {
+import { EventEmitter } from '../core/EventEmitter';
+export class MetricsManager extends EventEmitter {
     constructor() {
         super(...arguments);
         this.metrics = {
@@ -113,6 +112,3 @@ class MetricsManager extends EventEmitter {
         return (voiceFrames / this.vadHistory.length) * 100;
     }
 }
-
-
-module.exports = { MetricsManager };

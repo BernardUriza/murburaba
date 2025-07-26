@@ -1,4 +1,3 @@
-/* React externalized */
 /**
  * Performance utilities for murmuraba
  * Because your original code was causing re-renders like a maniac
@@ -6,7 +5,7 @@
 /**
  * Debounce function that actually works
  */
-function debounce(func, delay) {
+export function debounce(func, delay) {
     let timeoutId = null;
     return (...args) => {
         if (timeoutId)
@@ -20,7 +19,7 @@ function debounce(func, delay) {
 /**
  * Throttle function for rate limiting
  */
-function throttle(func, limit) {
+export function throttle(func, limit) {
     let inThrottle = false;
     return (...args) => {
         if (!inThrottle) {
@@ -33,7 +32,7 @@ function throttle(func, limit) {
 /**
  * Memory-efficient audio blob cache
  */
-class AudioCache {
+export class AudioCache {
     constructor(maxSize = 50, ttlMinutes = 15) {
         this.cache = new Map();
         this.cleanupInterval = null;
@@ -101,7 +100,7 @@ export async function getBlobHash(blob) {
 /**
  * Batch state updates for React 18
  */
-function batchUpdates(callback) {
+export function batchUpdates(callback) {
     if ('startTransition' in window.React) {
         let result;
         window.React.startTransition(() => {
@@ -114,7 +113,7 @@ function batchUpdates(callback) {
 /**
  * Request idle callback polyfill
  */
-const requestIdleCallback = window.requestIdleCallback ||
+export const requestIdleCallback = window.requestIdleCallback ||
     ((cb) => setTimeout(() => cb({
         didTimeout: false,
         timeRemaining: () => 50
@@ -122,7 +121,7 @@ const requestIdleCallback = window.requestIdleCallback ||
 /**
  * Memory usage monitor
  */
-function getMemoryUsage() {
+export function getMemoryUsage() {
     if (!('memory' in performance))
         return null;
     const memory = performance.memory;
@@ -134,7 +133,7 @@ function getMemoryUsage() {
 /**
  * Performance mark wrapper
  */
-class PerformanceMarker {
+export class PerformanceMarker {
     constructor() {
         this.marks = new Map();
     }
@@ -164,7 +163,7 @@ class PerformanceMarker {
 /**
  * Performance monitor for detailed tracking
  */
-class PerformanceMonitor {
+export class PerformanceMonitor {
     constructor() {
         this.marks = new Map();
         this.measurements = new Map();
@@ -237,7 +236,7 @@ export async function measureExecutionTime(fn) {
 /**
  * Calculate average time from array of durations
  */
-function calculateAverageTime(times) {
+export function calculateAverageTime(times) {
     if (times.length === 0)
         return 0;
     return times.reduce((sum, time) => sum + time, 0) / times.length;
@@ -245,7 +244,7 @@ function calculateAverageTime(times) {
 /**
  * Format bytes to human readable format
  */
-function formatBytes(bytes, decimals = 1) {
+export function formatBytes(bytes, decimals = 1) {
     if (bytes === 0)
         return '0 Bytes';
     const k = 1024;
@@ -259,7 +258,7 @@ function formatBytes(bytes, decimals = 1) {
 /**
  * Format duration from milliseconds to human readable format
  */
-function formatDuration(ms) {
+export function formatDuration(ms) {
     if (ms === 0)
         return '0ms';
     const isNegative = ms < 0;
@@ -285,6 +284,3 @@ function formatDuration(ms) {
     }
     return (isNegative ? '-' : '') + parts.join(' ');
 }
-
-
-module.exports = { debounce, throttle, batchUpdates, requestIdleCallback, getMemoryUsage, calculateAverageTime, formatBytes, formatDuration, AudioCache, PerformanceMarker, PerformanceMonitor };

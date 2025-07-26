@@ -1,9 +1,8 @@
-/* React externalized */
 /**
  * Audio Format Converter Utility
  * Converts WebM/Opus audio to WAV format for universal browser playback
  */
-class AudioConverter {
+export class AudioConverter {
     constructor() {
         // CRITICAL FOR MEDICAL APP: Track created URLs for cleanup
         this.createdUrls = new Set();
@@ -318,7 +317,7 @@ class AudioConverter {
 }
 // Singleton instance
 let converterInstance = null;
-function getAudioConverter() {
+export function getAudioConverter() {
     if (!converterInstance) {
         converterInstance = new AudioConverter();
     }
@@ -328,12 +327,9 @@ function getAudioConverter() {
  * CRITICAL FOR MEDICAL APP: Destroy the singleton and clean up all resources
  * Must be called when the application is shutting down or during cleanup
  */
-function destroyAudioConverter() {
+export function destroyAudioConverter() {
     if (converterInstance) {
         converterInstance.destroy();
         converterInstance = null;
     }
 }
-
-
-module.exports = { getAudioConverter, destroyAudioConverter, AudioConverter };

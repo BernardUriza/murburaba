@@ -1,6 +1,5 @@
-/* React externalized */
-const {  EventEmitter  } = require('../core/EventEmitter');
-class ChunkProcessor extends EventEmitter {
+import { EventEmitter } from '../core/EventEmitter';
+export class ChunkProcessor extends EventEmitter {
     constructor(sampleRate, config, logger, metricsManager) {
         super();
         this.currentChunk = [];
@@ -311,6 +310,3 @@ class ChunkProcessor extends EventEmitter {
         };
     }
 }
-
-
-module.exports = { ChunkProcessor };

@@ -1,14 +1,13 @@
-/* React externalized */
-const {  AudioResampler  } = require('../utils/AudioResampler');
-const {  EventEmitter  } = require('./EventEmitter');
-const {  StateManager  } = require('./StateManager');
-const {  Logger  } = require('./Logger');
-const {  WorkerManager  } = require('../managers/WorkerManager');
-const {  MetricsManager  } = require('../managers/MetricsManager');
-const {  ChunkProcessor  } = require('../managers/ChunkProcessor');
-const {  SimpleAGC  } = require('../utils/SimpleAGC');
-const {  MurmubaraError, ErrorCodes,  } = require('../types');
-class MurmubaraEngine extends EventEmitter {
+import { AudioResampler } from '../utils/AudioResampler';
+import { EventEmitter } from './EventEmitter';
+import { StateManager } from './StateManager';
+import { Logger } from './Logger';
+import { WorkerManager } from '../managers/WorkerManager';
+import { MetricsManager } from '../managers/MetricsManager';
+import { ChunkProcessor } from '../managers/ChunkProcessor';
+import { SimpleAGC } from '../utils/SimpleAGC';
+import { MurmubaraError, ErrorCodes, } from '../types';
+export class MurmubaraEngine extends EventEmitter {
     constructor(config = {}) {
         super();
         this.activeStreams = new Map();
@@ -1052,6 +1051,3 @@ class MurmubaraEngine extends EventEmitter {
         return outputBuffer;
     }
 }
-
-
-module.exports = { MurmubaraEngine };

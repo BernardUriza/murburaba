@@ -1,6 +1,5 @@
-/* React externalized */
-const {  RNNoiseEngine  } = require('./RNNoiseEngine');
-function createAudioEngine(config) {
+import { RNNoiseEngine } from './RNNoiseEngine';
+export function createAudioEngine(config) {
     switch (config.engineType) {
         case 'rnnoise':
             return new RNNoiseEngine(config.rnnoiseConfig);
@@ -12,6 +11,3 @@ function createAudioEngine(config) {
             throw new Error(`Unknown engine type: ${config.engineType}`);
     }
 }
-
-
-module.exports = { createAudioEngine };

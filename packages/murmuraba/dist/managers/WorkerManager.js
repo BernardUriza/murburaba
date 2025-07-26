@@ -1,6 +1,5 @@
-/* React externalized */
-const {  MurmubaraError, ErrorCodes  } = require('../types');
-class WorkerManager {
+import { MurmubaraError, ErrorCodes } from '../types';
+export class WorkerManager {
     constructor(logger) {
         this.workers = new Map();
         this.logger = logger;
@@ -60,6 +59,3 @@ class WorkerManager {
         return Array.from(this.workers.keys());
     }
 }
-
-
-module.exports = { WorkerManager };

@@ -1,6 +1,5 @@
-/* React externalized */
-const {  EventEmitter  } = require('./EventEmitter');
-class StateManager extends EventEmitter {
+import { EventEmitter } from './EventEmitter';
+export class StateManager extends EventEmitter {
     constructor() {
         super();
         this.currentState = 'uninitialized';
@@ -52,6 +51,3 @@ class StateManager extends EventEmitter {
         }
     }
 }
-
-
-module.exports = { StateManager };

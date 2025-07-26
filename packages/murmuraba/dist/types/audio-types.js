@@ -1,5 +1,4 @@
-/* React externalized */
-class MurmubaraError extends Error {
+export class MurmubaraError extends Error {
     constructor(code, message, details) {
         super(message);
         this.name = 'MurmubaraError';
@@ -7,7 +6,7 @@ class MurmubaraError extends Error {
         this.details = details;
     }
 }
-const ErrorCodes = {
+export const ErrorCodes = {
     WASM_NOT_LOADED: 'WASM_NOT_LOADED',
     INVALID_STREAM: 'INVALID_STREAM',
     ENGINE_BUSY: 'ENGINE_BUSY',
@@ -19,6 +18,3 @@ const ErrorCodes = {
     NOT_INITIALIZED: 'NOT_INITIALIZED',
     ALREADY_INITIALIZED: 'ALREADY_INITIALIZED',
 };
-
-
-module.exports = { ErrorCodes, MurmubaraError };
