@@ -222,19 +222,19 @@ async function processLiveMicrophone(
               averageVad: vadScore,
               vadData: [{time: (start / sampleRate) * 1000, value: vadScore}],
               metrics: {
-                noiseRemoved: 0.3, // Approximation since we processed through RNNoise
+                noiseRemoved: vadScore > 0.5 ? Math.max(0.1, 1 - vadScore) : 0.7, // Better noise reduction when no voice
                 averageLevel: rms,
                 vad: vadScore,
-                noiseReductionLevel: 0.3,
+                noiseReductionLevel: vadScore > 0.5 ? Math.max(0.1, 1 - vadScore) : 0.7,
                 processingLatency: 0,
                 inputLevel: rms,
-                outputLevel: rms * 0.7, // Approximation after noise reduction
+                outputLevel: rms * (vadScore > 0.5 ? 0.9 : 0.3), // Preserve voice, reduce noise
                 frameCount: end - start,
                 droppedFrames: 0
               },
               originalSize: chunkData.length * 4, // Float32 to bytes
               processedSize: chunkBlob.size,
-              noiseRemoved: 0.3,
+              noiseRemoved: vadScore > 0.5 ? Math.max(0.1, 1 - vadScore) : 0.7,
               isPlaying: false,
               isExpanded: false,
               isLoading: false,

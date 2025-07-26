@@ -185,10 +185,13 @@ export function ChunkProcessingResults({
                 averageVad={chunk.averageVad}
                 vadData={chunk.vadData}
                 isValid={isValid}
-                isPlaying={chunk.isPlaying}
+                isPlayingOriginal={chunk.isPlayingOriginal || false}
+                isPlayingProcessed={chunk.isPlayingProcessed || false}
                 isExpanded={chunk.isExpanded}
+                hasOriginalAudio={hasOriginalAudio}
                 hasProcessedAudio={hasProcessedAudio}
-                onTogglePlayback={() => handlePlaybackToggle(chunk.id, 'processed')}
+                onToggleOriginalPlayback={() => handlePlaybackToggle(chunk.id, 'original')}
+                onToggleProcessedPlayback={() => handlePlaybackToggle(chunk.id, 'processed')}
                 onToggleExpansion={() => onToggleExpansion(chunk.id)}
                 onKeyDown={handleKeyDown}
                 formatTime={formatTime}

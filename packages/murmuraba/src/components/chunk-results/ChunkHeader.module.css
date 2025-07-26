@@ -119,6 +119,15 @@
   background: var(--color-primary-hover, #5558e3);
 }
 
+.btnSecondary {
+  background: var(--color-secondary, #475569);
+  color: white;
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background: var(--color-secondary-hover, #334155);
+}
+
 .btnPlaying {
   background: var(--color-success, #10b981);
 }

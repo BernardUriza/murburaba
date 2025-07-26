@@ -10,10 +10,13 @@ interface ChunkHeaderProps {
   averageVad?: number;
   vadData?: Array<{ time: number; vad: number }>;
   isValid: boolean;
-  isPlaying: boolean;
+  isPlayingOriginal: boolean;
+  isPlayingProcessed: boolean;
   isExpanded: boolean;
+  hasOriginalAudio: boolean;
   hasProcessedAudio: boolean;
-  onTogglePlayback: () => void;
+  onToggleOriginalPlayback: () => void;
+  onToggleProcessedPlayback: () => void;
   onToggleExpansion: () => void;
   onKeyDown: (event: React.KeyboardEvent, action: () => void) => void;
   formatTime: (seconds: number) => string;
@@ -28,10 +31,13 @@ export function ChunkHeader({
   averageVad,
   vadData,
   isValid,
-  isPlaying,
+  isPlayingOriginal,
+  isPlayingProcessed,
   isExpanded,
+  hasOriginalAudio,
   hasProcessedAudio,
-  onTogglePlayback,
+  onToggleOriginalPlayback,
+  onToggleProcessedPlayback,
   onToggleExpansion,
   onKeyDown,
   formatTime,
@@ -80,29 +86,40 @@ export function ChunkHeader({
 
       <div className={styles.chunkControls}>
         <button
-          className={`${styles.btn} ${styles.btnPrimary} ${isPlaying ? styles.btnPlaying : ''}`}
-          onClick={onTogglePlayback}
-          onKeyDown={(e) => onKeyDown(e, onTogglePlayback)}
-          disabled={!hasProcessedAudio || !isValid}
-          aria-label={`${isPlaying ? 'Pause' : 'Play'} processed chunk ${index + 1}`}
+          className={`${styles.btn} ${styles.btnSecondary} ${isPlayingOriginal ? styles.btnPlaying : ''}`}
+          onClick={onToggleOriginalPlayback}
+          onKeyDown={(e) => onKeyDown(e, onToggleOriginalPlayback)}
+          disabled={!hasOriginalAudio || !isValid}
+          aria-label={`${isPlayingOriginal ? 'Pause' : 'Play'} original chunk ${index + 1}`}
           type="button"
         >
           <span className={styles.btnIcon} aria-hidden="true">
-            {isPlaying ? '⏸️' : '▶️'}
+            {isPlayingOriginal ? '⏸️' : '▶️'}
           </span>
           <span className={styles.btnText}>
-            {isPlaying ? 'Pause' : 'Play'}
+            Original
+          </span>
+        </button>
+
+        <button
+          className={`${styles.btn} ${styles.btnPrimary} ${isPlayingProcessed ? styles.btnPlaying : ''}`}
+          onClick={onToggleProcessedPlayback}
+          onKeyDown={(e) => onKeyDown(e, onToggleProcessedPlayback)}
+          disabled={!hasProcessedAudio || !isValid}
+          aria-label={`${isPlayingProcessed ? 'Pause' : 'Play'} processed chunk ${index + 1}`}
+          type="button"
+        >
+          <span className={styles.btnIcon} aria-hidden="true">
+            {isPlayingProcessed ? '⏸️' : '▶️'}
+          </span>
+          <span className={styles.btnText}>
+            Processed
           </span>
         </button>
 
         <button
           className={`${styles.btn} ${styles.btnGhost} ${isExpanded ? styles.btnActive : ''}`}
-          onClick={(e) => {
-            console.log('🔧 Details button clicked');
-            console.log('🔧 onToggleExpansion exists:', !!onToggleExpansion);
-            e.stopPropagation();
-            onToggleExpansion();
-          }}
+          onClick={onToggleExpansion}
           onKeyDown={(e) => onKeyDown(e, onToggleExpansion)}
           aria-label={`${isExpanded ? 'Collapse' : 'Expand'} details for chunk ${index + 1}`}
           aria-expanded={isExpanded}

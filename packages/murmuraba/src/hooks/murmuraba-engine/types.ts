@@ -12,6 +12,8 @@ export interface ProcessedChunk extends ChunkMetrics {
   processedAudioUrl?: string;
   originalAudioUrl?: string;
   isPlaying: boolean;
+  isPlayingOriginal?: boolean;
+  isPlayingProcessed?: boolean;
   isExpanded: boolean;
   isValid?: boolean;
   errorMessage?: string;

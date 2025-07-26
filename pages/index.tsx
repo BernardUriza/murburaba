@@ -7,6 +7,7 @@ import {
   initializeAudioEngine,
   getEngineStatus,
   processFile,
+  destroyEngine,
   // UI Components
   SimpleWaveformAnalyzer,
   ChunkProcessingResults,
@@ -29,6 +30,7 @@ export default function App() {
   const [processingResults, setProcessingResults] = useState<any>(null)
   const [chunkDuration, setChunkDuration] = useState(8)
   const [isEngineInitialized, setIsEngineInitialized] = useState(false)
+  const [enableAGC, setEnableAGC] = useState(false)
   
   // UI State
   const [showAudioDemo, setShowAudioDemo] = useState(false)
@@ -64,7 +66,8 @@ export default function App() {
       await initializeAudioEngine({
         algorithm: 'spectral',
         logLevel: 'info',
-        allowDegraded: true
+        allowDegraded: true,
+        agcEnabled: enableAGC
       })
       
       setIsEngineInitialized(true)
@@ -121,9 +124,9 @@ export default function App() {
       // Get media stream for waveform visualization
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: { 
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false
         } 
       })
       setCurrentStream(stream)
@@ -327,12 +330,19 @@ export default function App() {
                 {isRecording && (
                   <button 
                     className="btn btn-danger"
-                    onClick={() => {
+                    onClick={async () => {
                       setIsRecording(false);
                       setIsProcessing(false);
                       if (currentStream) {
                         currentStream.getTracks().forEach(track => track.stop());
                         setCurrentStream(null);
+                      }
+                      // Destroy engine when Stop is pressed
+                      try {
+                        await destroyEngine();
+                        setIsEngineInitialized(false);
+                      } catch (error) {
+                        console.error('Failed to destroy engine:', error);
                       }
                     }}
                   >
@@ -357,6 +367,24 @@ export default function App() {
                   </button>
                 ))}
               </div>
+            </div>
+            
+            <div className="control-group" style={{ marginTop: '1rem' }}>
+              <label className="control-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <input
+                  type="checkbox"
+                  checked={enableAGC}
+                  onChange={(e) => setEnableAGC(e.target.checked)}
+                  disabled={isEngineInitialized}
+                  style={{ width: '18px', height: '18px', cursor: isEngineInitialized ? 'not-allowed' : 'pointer' }}
+                />
+                🎚️ Enable AGC (Auto Gain Control)
+              </label>
+              {isEngineInitialized && (
+                <small style={{ color: '#999', marginTop: '0.25rem', display: 'block' }}>
+                  Reinitialize engine to change AGC setting
+                </small>
+              )}
             </div>
           </div>
         </section>

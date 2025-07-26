@@ -331,28 +331,13 @@ export class MurmubaraEngine extends EventEmitter {
         const source = this.audioContext.createMediaStreamSource(stream);
         const destination = this.audioContext.createMediaStreamDestination();
         const processor = this.audioContext.createScriptProcessor(this.config.bufferSize, 1, 1);
-        // Create pre-filters for medical equipment noise
-        const notchFilter1 = this.audioContext.createBiquadFilter();
-        notchFilter1.type = 'notch';
-        notchFilter1.frequency.value = 1000; // Common medical equipment beep frequency
-        notchFilter1.Q.value = 30; // Narrow notch
-        const notchFilter2 = this.audioContext.createBiquadFilter();
-        notchFilter2.type = 'notch';
-        notchFilter2.frequency.value = 2000; // Harmonics of beeps
-        notchFilter2.Q.value = 30;
-        const highPassFilter = this.audioContext.createBiquadFilter();
-        highPassFilter.type = 'highpass';
-        highPassFilter.frequency.value = 80; // Remove low-frequency rumble from machines
-        highPassFilter.Q.value = 0.7;
-        const lowShelfFilter = this.audioContext.createBiquadFilter();
-        lowShelfFilter.type = 'lowshelf';
-        lowShelfFilter.frequency.value = 200; // Reduce echo/room resonance
-        lowShelfFilter.gain.value = -3; // Gentle reduction
+        // RNNoise handles all noise reduction - no pre-filters needed
         // Create AGC if enabled
         let agc;
         if (this.agcEnabled) {
             agc = new SimpleAGC(this.audioContext, 0.3);
             this.agc = agc;
+            console.log('🔧 AGC ENABLED');
         }
         let isPaused = false;
         let isStopped = false;
@@ -399,12 +384,17 @@ export class MurmubaraEngine extends EventEmitter {
             const input = event.inputBuffer.getChannelData(0);
             const output = event.outputBuffer.getChannelData(0);
             // Debug: Log primeros frames para verificar audio
-            if (debugLogCount < 5) {
+            if (debugLogCount < 10) {
                 const maxInput = Math.max(...input.map(Math.abs));
-                console.log(`MurmubaraEngine: Audio frame ${debugLogCount}:`, {
+                const avgInput = input.reduce((sum, val) => sum + Math.abs(val), 0) / input.length;
+                const rmsInput = Math.sqrt(input.reduce((sum, val) => sum + val * val, 0) / input.length);
+                console.log(`🎤 MurmubaraEngine: Mic frame ${debugLogCount}:`, {
                     inputLength: input.length,
-                    maxInputLevel: maxInput.toFixed(6),
+                    maxLevel: maxInput.toFixed(6),
+                    avgLevel: avgInput.toFixed(6),
+                    rmsLevel: rmsInput.toFixed(6),
                     hasAudio: maxInput > 0.0001,
+                    isSilent: maxInput < 0.0001,
                     streamId: streamId
                 });
                 debugLogCount++;
@@ -434,6 +424,15 @@ export class MurmubaraEngine extends EventEmitter {
                 const frameInputRMS = this.metricsManager.calculateRMS(frame);
                 const { output: processed, vad } = this.processFrame(frame);
                 const frameOutputRMS = this.metricsManager.calculateRMS(processed);
+                // Debug: Log VAD values for microphone
+                if (vad > 0.01 || debugLogCount < 20) {
+                    console.log(`🎤 VAD detected:`, {
+                        vad: vad.toFixed(3),
+                        inputRMS: frameInputRMS.toFixed(6),
+                        outputRMS: frameOutputRMS.toFixed(6),
+                        reduction: ((1 - frameOutputRMS / frameInputRMS) * 100).toFixed(1) + '%'
+                    });
+                }
                 // Update VAD metrics
                 this.metricsManager.updateVAD(vad);
                 // Apply noise reduction level adjustment
@@ -480,26 +479,25 @@ export class MurmubaraEngine extends EventEmitter {
                 // This gain info will be used for diagnostics
                 this.logger.debug(`AGC gain: ${currentGain.toFixed(2)}x`);
             }
-            // Calculate noise reduction based on actual processed frames
+            // Calculate noise reduction based on VAD and spectral analysis
             if (framesProcessed > 0) {
-                const avgInputRMS = totalInputRMS / framesProcessed;
-                const avgOutputRMS = totalOutputRMS / framesProcessed;
-                const reduction = avgInputRMS > 0 ? Math.max(0, (1 - avgOutputRMS / avgInputRMS) * 100) : 0;
+                // When VAD is high (voice detected), less noise reduction is applied
+                // When VAD is low (no voice), more noise reduction is applied
+                const avgVAD = this.metricsManager.getMetrics().vad;
+                const reduction = avgVAD > 0.5
+                    ? Math.max(10, (1 - avgVAD) * 100) // Voice: 10-50% reduction
+                    : Math.min(90, (1 - avgVAD) * 100); // No voice: 50-90% reduction
                 this.metricsManager.updateNoiseReduction(reduction);
             }
         };
-        // Connect filters in chain: source -> filters -> (AGC) -> processor -> destination
-        source.connect(highPassFilter);
-        highPassFilter.connect(notchFilter1);
-        notchFilter1.connect(notchFilter2);
-        notchFilter2.connect(lowShelfFilter);
+        // Direct connection: source -> (AGC) -> processor -> destination
         if (agc) {
-            // With AGC: lowShelfFilter -> AGC -> processor
-            agc.connect(lowShelfFilter, processor);
+            // With AGC: source -> AGC -> processor
+            agc.connect(source, processor);
         }
         else {
-            // Without AGC: lowShelfFilter -> processor
-            lowShelfFilter.connect(processor);
+            // Without AGC: source -> processor
+            source.connect(processor);
         }
         processor.connect(destination);
         // Debug: Verificar el stream de destino
@@ -567,6 +565,12 @@ export class MurmubaraEngine extends EventEmitter {
     // Public method to get reduction factor for testing
     getReductionFactor(level) {
         const targetLevel = level || this.config.noiseReductionLevel;
+        // TESTING: Set all reduction factors to 1.0 to preserve full volume
+        const DISABLE_VOLUME_REDUCTION = true;
+        if (DISABLE_VOLUME_REDUCTION) {
+            console.log('🔧 Volume reduction DISABLED (factor = 1.0)');
+            return 1.0;
+        }
         // Adjusted factors to preserve volume when using AGC
         switch (targetLevel) {
             case 'low': return 1.0;
