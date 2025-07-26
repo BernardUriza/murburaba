@@ -218,7 +218,7 @@ export class RecordingManager {
                 actualDuration = (totalSamples / sampleRate) * 1000; // Duración en milisegundos
                 console.log(`📏 ${LOG_PREFIX.CONCAT_STREAM} Chunk ${chunkId} - Duración real: ${(actualDuration / 1000).toFixed(2)}s (SR: ${sampleRate}Hz, ${numChannels}ch)`);
                 // Process with metrics like AudioDemo (using legacy API)
-                const result = await processFileWithMetrics(arrayBuffer, (metric) => {
+                const result = await processFileWithMetrics(arrayBuffer, (_metric) => {
                     // Optionally handle frame metrics
                 });
                 // Create processed blob from result
@@ -264,7 +264,6 @@ export class RecordingManager {
             processedAudioUrl: processedUrl,
             originalAudioUrl: originalUrl,
             isPlaying: false,
-            isExpanded: false,
             isValid,
             errorMessage,
             noiseRemoved: noiseReduction,

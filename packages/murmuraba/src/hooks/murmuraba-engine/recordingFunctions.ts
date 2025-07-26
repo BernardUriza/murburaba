@@ -42,8 +42,7 @@ export function createRecordingFunctions({
     pauseRecording: pauseRecordingState,
     resumeRecording: resumeRecordingState,
     addChunk,
-    clearRecordings: clearRecordingsState,
-    updateRecordingTime
+    clearRecordings: clearRecordingsState
   } = recordingStateHook;
   
   /**

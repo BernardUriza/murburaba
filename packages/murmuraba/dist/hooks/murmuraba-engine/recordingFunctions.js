@@ -2,7 +2,7 @@ import { processStream } from '../../api';
 import { logger } from './logger';
 import { DEFAULT_CHUNK_DURATION } from './constants';
 export function createRecordingFunctions({ isInitialized, recordingState, recordingStateHook, currentStream, originalStream, setCurrentStream, setOriginalStream, setStreamController, setError, chunkManager, recordingManager, initialize }) {
-    const { startRecording: startRecordingState, stopRecording: stopRecordingState, pauseRecording: pauseRecordingState, resumeRecording: resumeRecordingState, addChunk, clearRecordings: clearRecordingsState, updateRecordingTime } = recordingStateHook;
+    const { startRecording: startRecordingState, stopRecording: stopRecordingState, pauseRecording: pauseRecordingState, resumeRecording: resumeRecordingState, addChunk, clearRecordings: clearRecordingsState } = recordingStateHook;
     /**
      * Start recording with concatenated streaming
      */

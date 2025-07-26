@@ -152,12 +152,11 @@ class FrameProcessor {
   ): { vad: number; outputPower: number; inputPower: number; rms: number } {
     const inputPower = frame.reduce((sum, s) => sum + s * s, 0) / frame.length;
     const result = engine.processFrame(frame);
-    const outputPower = result.output.reduce((sum, s) => sum + s * s, 0) / result.output.length;
+    const outputPower = result.output.reduce((sum: number, s: number) => sum + s * s, 0) / result.output.length;
     
     // Calculate RMS
     const rms = Math.sqrt(inputPower);
     
-    const currentTime = this.frameCount * frameDuration;
     const metric: ProcessingMetrics = {
       vad: result.vad,
       frame: this.frameCount++,
@@ -307,133 +306,165 @@ function createErrorChunk(
 async function processLiveMicrophone(
   options: ProcessFileOptions & { recordingDuration?: number } = {}
 ): Promise<ProcessFileResult> {
-  
   const recordingDuration = options.recordingDuration || 10000;
   const chunkOptions = options.chunkOptions || { chunkDuration: 8000, outputFormat: 'wav' };
+  
+  // Reutilizar el procesamiento existente de archivos
+  // simulando un stream en tiempo real con chunks
+  const chunks: ProcessedChunk[] = [];
+  let processedBuffer: ArrayBuffer | null = null;
   
   return new Promise<ProcessFileResult>((resolve, reject) => {
     (async () => {
       try {
-        const engine = getEngine();
-        if (!engine) {
-          throw new Error('Engine not initialized. Call initializeAudioEngine() first.');
+      const engine = getEngine();
+      if (!engine) {
+        throw new Error('Engine not initialized. Call initializeAudioEngine() first.');
+      }
+
+      // Obtener stream del micrófono
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false
+        }
+      });
+
+      // Procesar stream con el engine existente
+      const controller = await processStream(stream);
+      
+      // Crear un buffer temporal para acumular audio procesado
+      const processedChunks: Float32Array[] = [];
+      const sampleRate = 48000; // RNNoise usa 48kHz
+      
+      // Usar el mismo procesamiento que usamos para archivos
+      const frameProcessor = new FrameProcessor();
+      const chunkAccumulator = new ChunkAccumulator();
+      
+      // Simular el procesamiento frame por frame
+      const originalProcessFrame = engine['processFrame'].bind(engine);
+      let isRecording = true;
+      
+      // Hook para capturar frames procesados
+      engine['processFrame'] = function(frame: Float32Array) {
+        if (!isRecording) return originalProcessFrame(frame);
+        
+        const result = frameProcessor.processFrame(
+          frame,
+          10, // frameDuration approximation
+          { processFrame: originalProcessFrame },
+          options.onFrameProcessed
+        );
+
+        // Acumular para chunks
+        const noiseReduction = result.inputPower > 0.000001 
+          ? Math.max(0, 1 - (result.outputPower / result.inputPower))
+          : 0;
+
+        chunkAccumulator.addFrame(
+          frame,
+          result.vad,
+          result.rms,
+          noiseReduction,
+          chunks.length * chunkOptions.chunkDuration + chunkAccumulator.getDuration(0)
+        );
+
+        // Guardar frame procesado
+        processedChunks.push(new Float32Array(frame));
+
+        // Crear chunk cuando se alcanza la duración
+        if (chunkAccumulator.getDuration(0) >= chunkOptions.chunkDuration) {
+          const audioData = chunkAccumulator.getAudioData();
+          const metrics = chunkAccumulator.getMetrics();
+          const startTime = chunks.length * chunkOptions.chunkDuration;
+          const endTime = startTime + chunkOptions.chunkDuration;
+
+          // Convertir chunk asíncronamente
+          convertChunkToFormat(audioData, sampleRate, chunkOptions.outputFormat)
+            .then(blob => {
+              const chunk = createProcessedChunk(
+                `chunk-${chunks.length}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                blob,
+                startTime,
+                endTime,
+                metrics
+              );
+              chunks.push(chunk);
+            })
+            .catch(error => {
+              chunks.push(createErrorChunk(error, startTime, endTime));
+            });
+
+          chunkAccumulator.reset(0);
         }
 
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: false,
-            noiseSuppression: false,
-            autoGainControl: false
+        return originalProcessFrame(frame);
+      };
+
+      // Detener después del tiempo especificado
+      setTimeout(async () => {
+        isRecording = false;
+        
+        // Procesar último chunk si hay datos pendientes
+        if (chunkAccumulator['frameCount'] > 0) {
+          const audioData = chunkAccumulator.getAudioData();
+          const metrics = chunkAccumulator.getMetrics();
+          const startTime = chunks.length * chunkOptions.chunkDuration;
+          const endTime = startTime + chunkAccumulator.getDuration(0);
+
+          try {
+            const blob = await convertChunkToFormat(audioData, sampleRate, chunkOptions.outputFormat);
+            const chunk = createProcessedChunk(
+              `chunk-${chunks.length}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              blob,
+              startTime,
+              endTime,
+              metrics
+            );
+            chunks.push(chunk);
+          } catch (error) {
+            chunks.push(createErrorChunk(error as Error, startTime, endTime));
+          }
+        }
+
+        // Limpiar
+        engine['processFrame'] = originalProcessFrame;
+        controller.stop();
+        stream.getTracks().forEach(track => track.stop());
+
+        // Crear buffer procesado completo
+        const totalSamples = processedChunks.reduce((acc, chunk) => acc + chunk.length, 0);
+        const fullAudio = new Float32Array(totalSamples);
+        let offset = 0;
+        for (const chunk of processedChunks) {
+          fullAudio.set(chunk, offset);
+          offset += chunk.length;
+        }
+
+        // Convertir a ArrayBuffer
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const audioBuffer = audioContext.createBuffer(1, fullAudio.length, sampleRate);
+        audioBuffer.copyToChannel(fullAudio, 0);
+        const wavBlob = await convertChunkToFormat(fullAudio, sampleRate, 'wav');
+        processedBuffer = await wavBlob.arrayBuffer();
+        await audioContext.close();
+
+        const { averageVad } = frameProcessor.getMetrics();
+
+        resolve({
+          chunks,
+          processedBuffer,
+          averageVad,
+          totalDuration: recordingDuration,
+          metadata: {
+            sampleRate,
+            channels: 1,
+            originalDuration: recordingDuration
           }
         });
+      }, recordingDuration);
 
-        const controller = await processStream(stream);
-        const mediaRecorder = new MediaRecorder(controller.stream);
-        const audioChunks: Blob[] = [];
-        
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            audioChunks.push(event.data);
-          }
-        };
-
-        mediaRecorder.onstop = async () => {
-          try {
-            controller.stop();
-            stream.getTracks().forEach(track => track.stop());
-
-            const fullBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            const arrayBuffer = await fullBlob.arrayBuffer();
-            
-            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-            
-            const sampleRate = audioBuffer.sampleRate;
-            const duration = audioBuffer.duration * 1000;
-            const chunkDurationMs = chunkOptions.chunkDuration;
-            const samplesPerChunk = (chunkDurationMs / 1000) * sampleRate;
-            
-            const audioData = audioBuffer.getChannelData(0);
-            const numChunks = Math.ceil(audioData.length / samplesPerChunk);
-            const chunks: ProcessedChunk[] = [];
-            let totalVad = 0;
-            
-            for (let i = 0; i < numChunks; i++) {
-              const start = i * samplesPerChunk;
-              const end = Math.min(start + samplesPerChunk, audioData.length);
-              const chunkData = audioData.slice(start, end);
-              
-              let rmsSum = 0;
-              for (let j = 0; j < chunkData.length; j++) {
-                rmsSum += chunkData[j] * chunkData[j];
-              }
-              const rms = Math.sqrt(rmsSum / chunkData.length);
-              const vadScore = rms > 0.01 ? Math.min(rms * 10, 1) : 0;
-              
-              const chunkBlob = await convertChunkToFormat(chunkData, sampleRate, chunkOptions.outputFormat);
-              const chunkUrl = URL.createObjectURL(chunkBlob);
-              
-              const chunk: ProcessedChunk = {
-                id: `chunk-${chunks.length}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                blob: chunkBlob,
-                processedAudioUrl: chunkUrl,
-                originalAudioUrl: chunkUrl,
-                startTime: (start / sampleRate) * 1000,
-                endTime: (end / sampleRate) * 1000,
-                duration: ((end - start) / sampleRate) * 1000,
-                vadScore,
-                averageVad: vadScore,
-                vadData: [{time: (start / sampleRate) * 1000, value: vadScore}],
-                metrics: {
-                  noiseRemoved: vadScore > 0.5 ? Math.max(0.1, 1 - vadScore) : 0.7,
-                  averageLevel: rms,
-                  vad: vadScore,
-                  noiseReductionLevel: vadScore > 0.5 ? Math.max(0.1, 1 - vadScore) : 0.7,
-                  processingLatency: 0,
-                  inputLevel: rms,
-                  outputLevel: rms * (vadScore > 0.5 ? 0.9 : 0.3),
-                  frameCount: end - start,
-                  droppedFrames: 0
-                },
-                originalSize: chunkData.length * 4,
-                processedSize: chunkBlob.size,
-                noiseRemoved: vadScore > 0.5 ? Math.max(0.1, 1 - vadScore) : 0.7,
-                isPlaying: false,
-                isValid: true,
-                currentlyPlayingType: null
-              };
-              
-              chunks.push(chunk);
-              totalVad += vadScore;
-            }
-            
-            await audioContext.close();
-            
-            resolve({
-              chunks,
-              processedBuffer: arrayBuffer,
-              averageVad: chunks.length > 0 ? totalVad / chunks.length : 0,
-              totalDuration: duration,
-              metadata: {
-                sampleRate,
-                channels: audioBuffer.numberOfChannels,
-                originalDuration: duration
-              }
-            });
-            
-          } catch (error) {
-            reject(error);
-          }
-        };
-
-        mediaRecorder.start(chunkOptions.chunkDuration);
-        
-        setTimeout(() => {
-          if (mediaRecorder.state === 'recording') {
-            mediaRecorder.stop();
-          }
-        }, recordingDuration);
-        
       } catch (error) {
         reject(error);
       }
@@ -459,7 +490,6 @@ async function processFileWithChunking(
   const frameProcessor = new FrameProcessor();
   
   const chunkOptions = options.chunkOptions!;
-  let processedWithChunks = false;
 
   // Create a custom frame processor that handles chunking
   const originalProcessFrame = engine['processFrame'].bind(engine);
@@ -487,7 +517,6 @@ async function processFileWithChunking(
       const currentDuration = chunkAccumulator.getDuration(frameProcessor['frameCount'] * frameDuration);
       
       if (currentDuration >= chunkOptions.chunkDuration) {
-        processedWithChunks = true;
         const audioData = chunkAccumulator.getAudioData();
         const metrics = chunkAccumulator.getMetrics();
         const startTime = chunkAccumulator.getStartTime();
