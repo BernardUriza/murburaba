@@ -1,15 +1,4 @@
-import { MurmubaraConfig, ChunkMetrics, EngineState, ProcessingMetrics, DiagnosticInfo, StreamController } from '../../types';
-export interface ProcessedChunk extends ChunkMetrics {
-    id: string;
-    processedAudioUrl?: string;
-    originalAudioUrl?: string;
-    isPlaying: boolean;
-    isPlayingOriginal?: boolean;
-    isPlayingProcessed?: boolean;
-    isValid?: boolean;
-    errorMessage?: string;
-    currentlyPlayingType?: 'processed' | 'original' | null;
-}
+import { MurmubaraConfig, ChunkMetrics, EngineState, ProcessingMetrics, DiagnosticInfo, StreamController, ProcessedChunk } from '../../types';
 export interface RecordingState {
     isRecording: boolean;
     isPaused: boolean;

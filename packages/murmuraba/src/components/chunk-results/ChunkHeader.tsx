@@ -1,6 +1,6 @@
 import React from 'react';
 import { VadDisplay } from './VadDisplay';
-import { AudioPlayer } from './AudioPlayer';
+import { AudioPlayButton } from './AudioPlayButton';
 import styles from './ChunkHeader.module.css';
 
 interface ChunkHeaderProps {
@@ -80,14 +80,14 @@ export function ChunkHeader({
       </div>
 
       <div className={styles.chunkControls}>
-        <AudioPlayer
+        <AudioPlayButton
           label="Original"
           isPlaying={isPlayingOriginal}
           isEnabled={hasOriginalAudio && isValid}
           onTogglePlayback={onToggleOriginalPlayback}
         />
         
-        <AudioPlayer
+        <AudioPlayButton
           label="Processed"
           isPlaying={isPlayingProcessed}
           isEnabled={hasProcessedAudio && isValid}

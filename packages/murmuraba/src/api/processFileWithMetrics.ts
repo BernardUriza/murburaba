@@ -1,5 +1,6 @@
 import { getEngine } from '../api';
 import { AudioConverter } from '../utils/audioConverter';
+import { ProcessedChunk } from '../types';
 
 export interface ProcessingMetrics {
   vad: number;
@@ -11,37 +12,6 @@ export interface ProcessingMetrics {
 export interface ChunkOptions {
   chunkDuration: number; // ms
   outputFormat: 'wav' | 'webm' | 'raw';
-}
-
-export interface ProcessedChunk {
-  id: string;
-  blob?: Blob;
-  startTime: number;
-  endTime: number;
-  duration: number;
-  vadScore: number;
-  averageVad: number;
-  processedAudioUrl?: string;
-  originalAudioUrl?: string;
-  vadData: Array<{ time: number; value: number }>;
-  metrics: {
-    noiseRemoved: number;
-    averageLevel: number;
-    vad: number;
-    noiseReductionLevel: number;
-    processingLatency: number;
-    inputLevel: number;
-    outputLevel: number;
-    frameCount: number;
-    droppedFrames: number;
-  };
-  originalSize: number;
-  processedSize: number;
-  noiseRemoved: number;
-  isPlaying: boolean;
-  isValid?: boolean;
-  errorMessage?: string;
-  currentlyPlayingType?: 'processed' | 'original' | null;
 }
 
 export interface ProcessFileResult {

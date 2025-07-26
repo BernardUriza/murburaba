@@ -54,6 +54,41 @@ export interface ChunkMetrics {
     }>;
     averageVad?: number;
 }
+export interface ProcessedChunk {
+    id: string;
+    blob?: Blob;
+    startTime: number;
+    endTime: number;
+    duration: number;
+    vadScore: number;
+    averageVad: number;
+    processedAudioUrl?: string;
+    originalAudioUrl?: string;
+    vadData: Array<{
+        time: number;
+        value: number;
+    }>;
+    metrics: {
+        noiseRemoved: number;
+        averageLevel: number;
+        vad: number;
+        noiseReductionLevel: number;
+        processingLatency: number;
+        inputLevel: number;
+        outputLevel: number;
+        frameCount: number;
+        droppedFrames: number;
+    };
+    originalSize: number;
+    processedSize: number;
+    noiseRemoved: number;
+    isPlaying: boolean;
+    isValid?: boolean;
+    errorMessage?: string;
+    currentlyPlayingType?: 'processed' | 'original' | null;
+    isPlayingOriginal?: boolean;
+    isPlayingProcessed?: boolean;
+}
 export interface ChunkConfig {
     chunkDuration: number;
     onChunkProcessed?: (chunk: ChunkMetrics) => void;

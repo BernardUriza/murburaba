@@ -1,7 +1,7 @@
 import React from 'react';
-import styles from './AudioPlayer.module.css';
+import styles from './AudioPlayButton.module.css';
 
-export interface AudioPlayerProps {
+export interface AudioPlayButtonProps {
   /** Label for the audio type (e.g., "Original", "Processed") */
   label: string;
   /** Whether audio is currently playing */
@@ -17,16 +17,16 @@ export interface AudioPlayerProps {
 }
 
 /**
- * Compact audio player component with play/pause functionality
+ * Compact audio play button component with play/pause functionality
  */
-export function AudioPlayer({
+export function AudioPlayButton({
   label,
   isPlaying,
   isEnabled,
   isPrimary = false,
   onTogglePlayback,
   className = ''
-}: AudioPlayerProps) {
+}: AudioPlayButtonProps) {
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();

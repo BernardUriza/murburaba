@@ -4,20 +4,9 @@ import {
   EngineState,
   ProcessingMetrics,
   DiagnosticInfo,
-  StreamController
+  StreamController,
+  ProcessedChunk
 } from '../../types';
-
-export interface ProcessedChunk extends ChunkMetrics {
-  id: string;
-  processedAudioUrl?: string;
-  originalAudioUrl?: string;
-  isPlaying: boolean;
-  isPlayingOriginal?: boolean;
-  isPlayingProcessed?: boolean;
-  isValid?: boolean;
-  errorMessage?: string;
-  currentlyPlayingType?: 'processed' | 'original' | null;
-}
 
 export interface RecordingState {
   isRecording: boolean;

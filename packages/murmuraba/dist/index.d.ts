@@ -24,11 +24,11 @@ export { WaveformAnalyzer } from './components/WaveformAnalyzer';
 export { SyncedWaveforms } from './components/SyncedWaveforms';
 export { ErrorBoundary, withErrorBoundary } from './components/ErrorBoundary';
 export { BuildInfo, BuildInfoBadge, BuildInfoBlock, BuildInfoInline, getPackageVersion, formatBuildDate } from './components/BuildInfo';
-export { useMurmubaraEngine } from './hooks/useMurmubaraEngine';
+export { useMurmubaraEngine } from './hooks/murmuraba-engine';
 export { useAudioEngine } from './hooks/useAudioEngine';
 export { AudioConverter, getAudioConverter } from './utils/audioConverter';
-export type { RecordingState, UseMurmubaraEngineOptions, UseMurmubaraEngineReturn } from './hooks/useMurmubaraEngine';
-import { useMurmubaraEngine } from './hooks/useMurmubaraEngine';
+export type { RecordingState, UseMurmubaraEngineOptions, UseMurmubaraEngineReturn } from './hooks/murmuraba-engine';
+import { useMurmubaraEngine } from './hooks/murmuraba-engine';
 import { MurmubaraEngine } from './core/MurmubaraEngine';
 declare const murmurabaExports: {
     useMurmubaraEngine: typeof useMurmubaraEngine;

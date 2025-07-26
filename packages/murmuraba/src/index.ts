@@ -73,7 +73,7 @@ export {
 } from './components/BuildInfo';
 
 // Hook exports at the end to avoid circular dependency
-export { useMurmubaraEngine } from './hooks/useMurmubaraEngine';
+export { useMurmubaraEngine } from './hooks/murmuraba-engine';
 export { useAudioEngine } from './hooks/useAudioEngine';
 
 // Audio converter utility export
@@ -84,10 +84,10 @@ export type {
   RecordingState, 
   UseMurmubaraEngineOptions, 
   UseMurmubaraEngineReturn 
-} from './hooks/useMurmubaraEngine';
+} from './hooks/murmuraba-engine';
 
 // Import for default export
-import { useMurmubaraEngine } from './hooks/useMurmubaraEngine';
+import { useMurmubaraEngine } from './hooks/murmuraba-engine';
 import { useAudioEngine } from './hooks/useAudioEngine';
 import { MurmubaraEngine } from './core/MurmubaraEngine';
 

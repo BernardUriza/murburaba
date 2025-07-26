@@ -35,12 +35,12 @@ export { SyncedWaveforms } from './components/SyncedWaveforms';
 export { ErrorBoundary, withErrorBoundary } from './components/ErrorBoundary';
 export { BuildInfo, BuildInfoBadge, BuildInfoBlock, BuildInfoInline, getPackageVersion, formatBuildDate } from './components/BuildInfo';
 // Hook exports at the end to avoid circular dependency
-export { useMurmubaraEngine } from './hooks/useMurmubaraEngine';
+export { useMurmubaraEngine } from './hooks/murmuraba-engine';
 export { useAudioEngine } from './hooks/useAudioEngine';
 // Audio converter utility export
 export { AudioConverter, getAudioConverter } from './utils/audioConverter';
 // Import for default export
-import { useMurmubaraEngine } from './hooks/useMurmubaraEngine';
+import { useMurmubaraEngine } from './hooks/murmuraba-engine';
 import { useAudioEngine } from './hooks/useAudioEngine';
 import { MurmubaraEngine } from './core/MurmubaraEngine';
 // Default export for easier usage
