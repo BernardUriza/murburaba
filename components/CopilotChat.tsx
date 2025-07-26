@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import styles from './CopilotChat.module.css'
 
 interface Message {
   id: string
@@ -180,36 +181,36 @@ export function CopilotChat({
 
   return (
     <>
-      <div className={`slide-panel-overlay ${isOpen ? 'active' : ''}`} onClick={onClose} />
-      <div className={`slide-panel copilot-chat ${isOpen ? 'active' : ''}`}>
-        <div className="copilot-header">
-          <div className="copilot-title">
-            <span className="copilot-icon">🤖</span>
+      <div className={`${styles.copilotOverlay} ${isOpen ? styles.active : ''}`} onClick={onClose} />
+      <div className={`${styles.copilotPanel} ${isOpen ? styles.active : ''}`}>
+        <div className={styles.copilotHeader}>
+          <div className={styles.copilotTitle}>
+            <span className={styles.copilotIcon}>🤖</span>
             <h3>Copiloto de Audio</h3>
-            <span className="copilot-status">● Online</span>
+            <span className={styles.copilotStatus}>● Online</span>
           </div>
-          <button className="close-btn" onClick={onClose}>×</button>
+          <button className={styles.closeBtn} onClick={onClose}>×</button>
         </div>
         
-        <div className="copilot-messages">
+        <div className={styles.copilotMessages}>
           {messages.map((message) => (
-            <div key={message.id} className={`message ${message.type}`}>
+            <div key={message.id} className={`${styles.messageGroup} ${message.type === 'user' ? styles.messageGroupUser : ''}`}>
               {message.isTyping ? (
-                <div className="typing-indicator">
+                <div className={styles.typingIndicator}>
                   <span></span>
                   <span></span>
                   <span></span>
                 </div>
               ) : (
                 <>
-                  <div className="message-avatar">
+                  <div className={styles.messageAvatar}>
                     {message.type === 'copilot' ? '🤖' : '👤'}
                   </div>
-                  <div className="message-content">
-                    <div className="message-text" dangerouslySetInnerHTML={{ 
+                  <div className={styles.messageContent}>
+                    <div className={styles.messageText} dangerouslySetInnerHTML={{ 
                       __html: formatMessageContent(message.content) 
                     }} />
-                    <span className="message-time">
+                    <span className={styles.messageTime}>
                       {message.timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' })}
                     </span>
                   </div>
@@ -220,19 +221,19 @@ export function CopilotChat({
           <div ref={messagesEndRef} />
         </div>
         
-        <form onSubmit={handleSubmit} className="copilot-input-form">
+        <form onSubmit={handleSubmit} className={styles.copilotInputForm}>
           <input
             ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Escribe un comando..."
-            className="copilot-input"
+            className={styles.copilotInput}
             disabled={isTyping}
           />
           <button 
             type="submit" 
-            className="copilot-send"
+            className={styles.copilotSend}
             disabled={!input.trim() || isTyping}
           >
             <span>↵</span>

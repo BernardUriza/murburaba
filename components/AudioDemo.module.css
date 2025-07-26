@@ -1,0 +1,267 @@
+/* AudioDemo Component Styles */
+
+.audioDemoContainer {
+  padding: 1.5rem;
+}
+
+.demoHeader {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.demoTitle {
+  font-size: 1.75rem;
+  margin-bottom: 1rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn:hover:not(:disabled) {
+  background: #4338ca;
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnPrimary {
+  background: #4f46e5;
+}
+
+.btnIcon {
+  font-size: 1.125rem;
+}
+
+.statusCard {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.statusRow:last-child {
+  margin-bottom: 0;
+}
+
+.statusLabel {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.statusValue {
+  color: #fff;
+}
+
+.statusValue.ready {
+  color: #10b981;
+}
+
+.statusValue.processing {
+  color: #fbbf24;
+}
+
+.statusValue.error {
+  color: #ef4444;
+}
+
+.errorBanner {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.errorIcon {
+  font-size: 1.25rem;
+}
+
+.errorText {
+  margin: 0;
+  color: #ef4444;
+}
+
+.audioGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.audioCard {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.audioCardTitle {
+  font-size: 1.125rem;
+  margin: 0 0 1rem 0;
+}
+
+.audioCardContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.audioPlayer {
+  width: 100%;
+  border-radius: 4px;
+}
+
+.audioPlaceholder {
+  height: 40px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+.btnSecondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.btnSmall {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.btnDanger {
+  background: #dc2626;
+  color: white;
+}
+
+.btnDanger:hover:not(:disabled) {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.logsCard {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.logsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.logsTitle {
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.logsContainer {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  padding: 1rem;
+  max-height: 300px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 0.875rem;
+}
+
+.logEntry {
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.logTime {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.logFrame {
+  color: #fbbf24;
+}
+
+.logVad {
+  color: #10b981;
+}
+
+.logRms {
+  color: #60a5fa;
+}
+
+.logMessage {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.logsEmpty {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 2rem;
+}
+
+.statsCard {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.statsTitle {
+  font-size: 1.125rem;
+  margin: 0 0 1rem 0;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.statItem {
+  text-align: center;
+}
+
+.statLabel {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 0.25rem 0;
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.statValue.vad {
+  color: #10b981;
+}

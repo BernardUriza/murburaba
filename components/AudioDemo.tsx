@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import styles from './AudioDemo.module.css'
 
 export interface AudioLog {
   timestamp: number
@@ -255,30 +256,30 @@ export default function AudioDemo({
   }
 
   return (
-    <div className="audio-demo-container" data-testid="audio-demo">
-      <div className="demo-header">
-        <h2 className="demo-title">🎵 Audio Demo Automático</h2>
+    <div className={styles.audioDemoContainer} data-testid="audio-demo">
+      <div className={styles.demoHeader}>
+        <h2 className={styles.demoTitle}>🎵 Audio Demo Automático</h2>
         <button
           onClick={processAudioDemo}
           disabled={isProcessing || engineStatus !== 'ready'}
-          className="btn btn-primary"
+          className={`${styles.btn} ${styles.btnPrimary}`}
           title={engineStatus !== 'ready' ? `Engine status: ${engineStatus}. Debe estar 'ready' para procesar.` : ''}
         >
-          <span className="btn-icon">{isProcessing ? '⏳' : '🔄'}</span>
+          <span className={styles.btnIcon}>{isProcessing ? '⏳' : '🔄'}</span>
           <span>{isProcessing ? 'Procesando...' : 'Probar Audio Demo'}</span>
         </button>
       </div>
-      <div className="status-card">
-        <div className="status-row">
-          <span className="status-label">Engine State:</span>
-          <span className={`status-value ${engineStatus}`} data-testid="engine-status">
+      <div className={styles.statusCard}>
+        <div className={styles.statusRow}>
+          <span className={styles.statusLabel}>Engine State:</span>
+          <span className={`${styles.statusValue} ${styles[engineStatus] || ''}`} data-testid="engine-status">
             {engineStatus}
           </span>
         </div>
         {engineStatus !== 'ready' && engineStatus !== 'uninitialized' && (
-          <div className="status-row">
-            <span className="status-label">Info:</span>
-            <span className="status-value">
+          <div className={styles.statusRow}>
+            <span className={styles.statusLabel}>Info:</span>
+            <span className={styles.statusValue}>
               {engineStatus === 'initializing' ? '⏳ Inicializando motor de audio...' :
                engineStatus === 'error' ? '❌ Error en el motor' :
                engineStatus === 'processing' ? '🔄 Procesando audio...' :
@@ -289,55 +290,55 @@ export default function AudioDemo({
         )}
       </div>
       {error && (
-        <div className="error-banner">
-          <span className="error-icon">⚠️</span>
-          <p className="error-text">{error}</p>
+        <div className={styles.errorBanner}>
+          <span className={styles.errorIcon}>⚠️</span>
+          <p className={styles.errorText}>{error}</p>
         </div>
       )}
-      <div className="audio-grid">
-        <div className="audio-card">
-          <h3 className="audio-card-title">🎙️ Audio Original</h3>
+      <div className={styles.audioGrid}>
+        <div className={styles.audioCard}>
+          <h3 className={styles.audioCardTitle}>🎙️ Audio Original</h3>
           {originalAudioUrl ? (
-            <audio ref={originalAudioRef} controls src={originalAudioUrl} className="audio-player" />
-          ) : (<div className="audio-placeholder" />)}
+            <audio ref={originalAudioRef} controls src={originalAudioUrl} className={styles.audioPlayer} />
+          ) : (<div className={styles.audioPlaceholder} />)}
         </div>
-        <div className="audio-card">
-          <h3 className="audio-card-title">🔊 Audio Procesado</h3>
+        <div className={styles.audioCard}>
+          <h3 className={styles.audioCardTitle}>🔊 Audio Procesado</h3>
           {processedAudioUrl ? (
-            <div className="audio-card-content">
-              <audio ref={processedAudioRef} controls src={processedAudioUrl} className="audio-player" />
-              <button onClick={downloadProcessedAudio} className="btn btn-secondary btn-small">
-                <span className="btn-icon">💾</span>
+            <div className={styles.audioCardContent}>
+              <audio ref={processedAudioRef} controls src={processedAudioUrl} className={styles.audioPlayer} />
+              <button onClick={downloadProcessedAudio} className={`${styles.btn} ${styles.btnSecondary} ${styles.btnSmall}`}>
+                <span className={styles.btnIcon}>💾</span>
                 <span>Descargar Audio Limpio</span>
               </button>
             </div>
-          ) : (<div className="audio-placeholder" />)}
+          ) : (<div className={styles.audioPlaceholder} />)}
         </div>
       </div>
-      <div className="logs-card">
-        <div className="logs-header">
-          <h3 className="logs-title">📊 Logs en Tiempo Real</h3>
-          <button onClick={exportLogs} disabled={logs.length === 0} className="btn btn-ghost btn-small">
-            <span className="btn-icon">📥</span>
+      <div className={styles.logsCard}>
+        <div className={styles.logsHeader}>
+          <h3 className={styles.logsTitle}>📊 Logs en Tiempo Real</h3>
+          <button onClick={exportLogs} disabled={logs.length === 0} className={`${styles.btn} ${styles.btnSecondary} ${styles.btnSmall}`}>
+            <span className={styles.btnIcon}>📥</span>
             <span>Exportar</span>
           </button>
         </div>
-        <div ref={logContainerRef} className="logs-container" data-testid="audio-logs">
+        <div ref={logContainerRef} className={styles.logsContainer} data-testid="audio-logs">
           {logs.map((log, index) => (
-            <div key={index} className="log-entry">
-              <span className="log-time">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
+            <div key={index} className={styles.logEntry}>
+              <span className={styles.logTime}>[{new Date(log.timestamp).toLocaleTimeString()}]</span>
               {log.vad > 0 && (
                 <>
-                  <span className="log-frame"> Frame {log.frame}:</span>
-                  <span className="log-vad"> VAD={log.vad.toFixed(3)}</span>
-                  <span className="log-rms"> RMS={log.rms.toFixed(3)}</span>
+                  <span className={styles.logFrame}> Frame {log.frame}:</span>
+                  <span className={styles.logVad}> VAD={log.vad.toFixed(3)}</span>
+                  <span className={styles.logRms}> RMS={log.rms.toFixed(3)}</span>
                 </>
               )}
-              <span className="log-message"> {log.message}</span>
+              <span className={styles.logMessage}> {log.message}</span>
             </div>
           ))}
           {logs.length === 0 && (
-            <div className="logs-empty">
+            <div className={styles.logsEmpty}>
               {engineStatus === 'ready' ? 'Esperando procesamiento...' : 
                engineStatus === 'initializing' ? '⏳ Inicializando motor...' :
                engineStatus === 'uninitialized' ? '❌ Motor no inicializado' :
@@ -347,19 +348,19 @@ export default function AudioDemo({
         </div>
       </div>
       {logs.length > 0 && (
-        <div className="stats-card">
-          <h3 className="stats-title">📈 Resumen de Estadísticas</h3>
-          <div className="stats-grid">
-            <div className="stat-item">
-              <p className="stat-label">Frames Procesados</p>
-              <p className="stat-value">{logs.filter(l => l.frame > 0).length}</p>
+        <div className={styles.statsCard}>
+          <h3 className={styles.statsTitle}>📈 Resumen de Estadísticas</h3>
+          <div className={styles.statsGrid}>
+            <div className={styles.statItem}>
+              <p className={styles.statLabel}>Frames Procesados</p>
+              <p className={styles.statValue}>{logs.filter(l => l.frame > 0).length}</p>
             </div>
-            <div className="stat-item">
-              <p className="stat-label">VAD Promedio</p>
-              <p className="stat-value vad">{(logs.filter(l => l.vad > 0).reduce((sum, l) => sum + l.vad, 0) / Math.max(1, logs.filter(l => l.vad > 0).length)).toFixed(3)}</p>
+            <div className={styles.statItem}>
+              <p className={styles.statLabel}>VAD Promedio</p>
+              <p className={`${styles.statValue} ${styles.vad}`}>{(logs.filter(l => l.vad > 0).reduce((sum, l) => sum + l.vad, 0) / Math.max(1, logs.filter(l => l.vad > 0).length)).toFixed(3)}</p>
             </div>
-            <div className="stat-item">
-              <p className="stat-label">RMS Promedio</p>
+            <div className={styles.statItem}>
+              <p className={styles.statLabel}>RMS Promedio</p>
               <p className="stat-value rms">{(logs.filter(l => l.rms > 0).reduce((sum, l) => sum + l.rms, 0) / Math.max(1, logs.filter(l => l.rms > 0).length)).toFixed(3)}</p>
             </div>
           </div>

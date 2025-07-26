@@ -13,8 +13,8 @@ import {
   AdvancedMetricsPanel
 } from 'murmuraba'
 import AudioDemo from '../components/AudioDemo'
-import Settings from '../components/Settings'
-import CopilotChat from '../components/CopilotChat'
+import { Settings } from '../components/Settings'
+import { CopilotChat } from '../components/CopilotChat'
 import Swal from 'sweetalert2'
 
 export default function App() {
@@ -449,10 +449,32 @@ export default function App() {
         />
         
         {/* Settings Modal */}
-        <Settings isOpen={showSettings} onClose={() => setShowSettings(false)} />
+        <Settings 
+          isOpen={showSettings} 
+          onClose={() => setShowSettings(false)}
+          vadThresholds={{
+            silence: 0.3,
+            voice: 0.5,
+            clearVoice: 0.7
+          }}
+          displaySettings={{
+            showVadValues: true,
+            showVadTimeline: true
+          }}
+          onThresholdChange={(thresholds) => console.log('Thresholds changed:', thresholds)}
+          onDisplayChange={(settings) => console.log('Display settings changed:', settings)}
+        />
         
         {/* Copilot Chat Modal */}
-        <CopilotChat isOpen={showCopilot} onClose={() => setShowCopilot(false)} />
+        <CopilotChat 
+          isOpen={showCopilot} 
+          onClose={() => setShowCopilot(false)}
+          engineConfig={{}}
+          setEngineConfig={() => {}}
+          isRecording={isRecording}
+          isInitialized={isEngineInitialized}
+          onApplyChanges={async () => console.log('Apply changes')}
+        />
       </main>
       
       <BuildInfo version="2.0.0" buildDate={new Date().toLocaleDateString()} />

@@ -207,17 +207,39 @@ async function processLiveMicrophone(
             // Convert chunk to desired format
             const chunkBlob = await convertChunkToFormat(chunkData, sampleRate, chunkOptions.outputFormat);
             
+            // Create URLs for the chunk blob
+            const chunkUrl = URL.createObjectURL(chunkBlob);
+            
             const chunk: ProcessedChunk = {
+              id: `chunk-${chunks.length}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
               blob: chunkBlob,
+              processedAudioUrl: chunkUrl,
+              originalAudioUrl: chunkUrl, // For now, same as processed
               startTime: (start / sampleRate) * 1000,
               endTime: (end / sampleRate) * 1000,
               duration: ((end - start) / sampleRate) * 1000,
               vadScore,
+              averageVad: vadScore,
+              vadData: [{time: (start / sampleRate) * 1000, value: vadScore}],
               metrics: {
                 noiseRemoved: 0.3, // Approximation since we processed through RNNoise
                 averageLevel: rms,
-                vad: vadScore
-              }
+                vad: vadScore,
+                noiseReductionLevel: 0.3,
+                processingLatency: 0,
+                inputLevel: rms,
+                outputLevel: rms * 0.7, // Approximation after noise reduction
+                frameCount: end - start,
+                droppedFrames: 0
+              },
+              originalSize: chunkData.length * 4, // Float32 to bytes
+              processedSize: chunkBlob.size,
+              noiseRemoved: 0.3,
+              isPlaying: false,
+              isExpanded: false,
+              isLoading: false,
+              isValid: true,
+              currentlyPlayingType: null
             };
             
             chunks.push(chunk);
@@ -422,9 +444,13 @@ export async function processFileWithMetrics(
               duration: currentChunkDuration,
               startTime: currentChunkStartTime,
               endTime: currentTime,
+              vadScore: 0,
               averageVad: 0,
               vadData: [],
               metrics: {
+                noiseRemoved: 0,
+                averageLevel: 0,
+                vad: 0,
                 noiseReductionLevel: 0,
                 processingLatency: 0,
                 inputLevel: 0,
