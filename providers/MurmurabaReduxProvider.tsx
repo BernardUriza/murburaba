@@ -5,6 +5,7 @@ import { MurmurabaSuite, useMurmurabaSuite } from 'murmuraba';
 import { setSuiteContainer, MURMURABA_ACTIONS } from '../store/middleware/murmurabaSuiteMiddleware';
 import { setEngineInitialized } from '../store/slices/audioSlice';
 import { TOKENS } from '../packages/murmuraba/src/core/DIContainer';
+import { DebugError } from '../components/DebugError';
 
 // Inner component that has access to MurmurabaSuite context
 function MurmurabaReduxBridge({ children }: { children: ReactNode }) {
@@ -56,21 +57,7 @@ function MurmurabaReduxBridge({ children }: { children: ReactNode }) {
   
   // Show error state if initialization failed
   if (error) {
-    return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        gap: '1rem',
-        color: '#ff4444'
-      }}>
-        <div style={{ fontSize: '2rem' }}>❌</div>
-        <div>Failed to initialize MurmurabaSuite</div>
-        <div style={{ fontSize: '0.875rem', color: '#666' }}>{error.message}</div>
-      </div>
-    );
+    return <DebugError error={error} />;
   }
   
   return <>{children}</>;

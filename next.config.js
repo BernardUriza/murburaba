@@ -5,6 +5,7 @@ const nextConfig = {
   images: {
     unoptimized: true
   },
+  allowedDevOrigins: ['127.0.0.1', 'localhost'],
   webpack: (config) => {
     const path = require('path');
     config.resolve.alias = {
