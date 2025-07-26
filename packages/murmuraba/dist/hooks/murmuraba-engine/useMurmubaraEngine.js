@@ -26,7 +26,7 @@ export function useMurmubaraEngine(options = {}) {
     const [metrics, setMetrics] = useState(null);
     const [diagnostics, setDiagnostics] = useState(null);
     // Use dedicated recording state hook
-    const { recordingState, startRecording: recordingStateStart, stopRecording: recordingStateStop, pauseRecording: recordingStatePause, resumeRecording: recordingStateResume, addChunk, toggleChunkPlayback: recordingStateTogglePlayback, toggleChunkExpansion, clearRecordings: recordingStateClear, updateRecordingTime } = useRecordingState();
+    const { recordingState, startRecording: recordingStateStart, stopRecording: recordingStateStop, pauseRecording: recordingStatePause, resumeRecording: recordingStateResume, addChunk, toggleChunkPlayback: recordingStateTogglePlayback, clearRecordings: recordingStateClear, updateRecordingTime } = useRecordingState();
     const [currentStream, setCurrentStream] = useState(null);
     const [originalStream, setOriginalStream] = useState(null);
     const [streamController, setStreamController] = useState(null);
@@ -185,7 +185,6 @@ export function useMurmubaraEngine(options = {}) {
             resumeRecording: recordingStateResume,
             addChunk,
             toggleChunkPlayback: recordingStateTogglePlayback,
-            toggleChunkExpansion,
             clearRecordings: recordingStateClear,
             updateRecordingTime
         },
@@ -285,7 +284,6 @@ export function useMurmubaraEngine(options = {}) {
         _internal_clearRecordings: recordingFunctions.clearRecordings,
         // Audio Playback Actions
         toggleChunkPlayback,
-        toggleChunkExpansion,
         // Export Actions
         exportChunkAsWav,
         exportChunkAsMp3,

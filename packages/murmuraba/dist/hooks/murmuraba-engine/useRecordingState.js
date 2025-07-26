@@ -57,12 +57,6 @@ export function useRecordingState() {
                 })
         }));
     }, []);
-    const toggleChunkExpansion = useCallback((chunkId) => {
-        setRecordingState(prev => ({
-            ...prev,
-            chunks: prev.chunks.map(chunk => chunk.id === chunkId ? { ...chunk, isExpanded: !chunk.isExpanded } : chunk)
-        }));
-    }, []);
     const clearRecordings = useCallback(() => {
         setRecordingState(prev => ({
             ...prev,
@@ -83,7 +77,6 @@ export function useRecordingState() {
         resumeRecording,
         addChunk,
         toggleChunkPlayback,
-        toggleChunkExpansion,
         clearRecordings,
         updateRecordingTime
     };

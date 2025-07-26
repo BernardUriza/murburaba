@@ -68,7 +68,6 @@ export function useMurmubaraEngine(
     resumeRecording: recordingStateResume,
     addChunk,
     toggleChunkPlayback: recordingStateTogglePlayback,
-    toggleChunkExpansion,
     clearRecordings: recordingStateClear,
     updateRecordingTime
   } = useRecordingState();
@@ -267,7 +266,6 @@ export function useMurmubaraEngine(
       resumeRecording: recordingStateResume,
       addChunk,
       toggleChunkPlayback: recordingStateTogglePlayback,
-      toggleChunkExpansion,
       clearRecordings: recordingStateClear,
       updateRecordingTime
     },
@@ -391,7 +389,6 @@ export function useMurmubaraEngine(
     
     // Audio Playback Actions
     toggleChunkPlayback,
-    toggleChunkExpansion,
     
     // Export Actions
     exportChunkAsWav,

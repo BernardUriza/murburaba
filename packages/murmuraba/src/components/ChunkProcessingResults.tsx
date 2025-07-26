@@ -17,8 +17,6 @@ export interface ChunkProcessingResultsProps {
   selectedChunk: string | null;
   /** Callback to toggle audio playback for a chunk */
   onTogglePlayback: (chunkId: string, audioType: 'processed' | 'original') => Promise<void>;
-  /** Callback to toggle chunk expansion/details view */
-  onToggleExpansion: (chunkId: string) => void;
   /** Callback to clear all recordings */
   onClearAll: () => void;
   /** Callback to download chunk */
@@ -36,7 +34,6 @@ export function ChunkProcessingResults({
   averageNoiseReduction,
   selectedChunk,
   onTogglePlayback,
-  onToggleExpansion,
   onClearAll,
   onDownloadChunk,
   className = '',
@@ -187,13 +184,10 @@ export function ChunkProcessingResults({
                 isValid={isValid}
                 isPlayingOriginal={chunk.isPlayingOriginal || false}
                 isPlayingProcessed={chunk.isPlayingProcessed || false}
-                isExpanded={chunk.isExpanded}
                 hasOriginalAudio={hasOriginalAudio}
                 hasProcessedAudio={hasProcessedAudio}
                 onToggleOriginalPlayback={() => handlePlaybackToggle(chunk.id, 'original')}
                 onToggleProcessedPlayback={() => handlePlaybackToggle(chunk.id, 'processed')}
-                onToggleExpansion={() => onToggleExpansion(chunk.id)}
-                onKeyDown={handleKeyDown}
                 formatTime={formatTime}
                 formatPercentage={formatPercentage}
               />
@@ -210,7 +204,6 @@ export function ChunkProcessingResults({
               <div 
                 className={styles.chunkDetails} 
                 aria-label="Chunk details"
-                style={{ display: chunk.isExpanded ? 'block' : 'none' }}
               >
                 <ProcessingMetrics
                   inputLevel={chunk.metrics.inputLevel}

@@ -171,10 +171,6 @@ export default function App() {
     }
   }
 
-  // Handle chunk expansion with selection
-  const handleToggleChunkExpansion = (chunkId: string) => {
-    setSelectedChunk(prev => prev === chunkId ? null : chunkId)
-  }
 
   // Handle chunk playback
   const handleToggleChunkPlayback = async (chunkId: string, _audioType: 'processed' | 'original') => {
@@ -407,10 +403,13 @@ export default function App() {
         {processingResults && (
           <ChunkProcessingResults
             chunks={processingResults.chunks || []}
-            averageNoiseReduction={processingResults.averageVad || 0}
+            averageNoiseReduction={
+              processingResults.chunks 
+                ? processingResults.chunks.reduce((sum: number, chunk: any) => sum + (chunk.noiseRemoved || 0), 0) / processingResults.chunks.length
+                : 0
+            }
             selectedChunk={selectedChunk}
             onTogglePlayback={handleToggleChunkPlayback}
-            onToggleExpansion={handleToggleChunkExpansion}
             onClearAll={() => setProcessingResults(null)}
             onDownloadChunk={handleDownloadChunk}
           />

@@ -6,7 +6,6 @@ export interface ProcessedChunk extends ChunkMetrics {
     isPlaying: boolean;
     isPlayingOriginal?: boolean;
     isPlayingProcessed?: boolean;
-    isExpanded: boolean;
     isValid?: boolean;
     errorMessage?: string;
     currentlyPlayingType?: 'processed' | 'original' | null;
@@ -48,7 +47,6 @@ export interface UseMurmubaraEngineReturnInternal {
     _internal_resumeRecording: () => void;
     _internal_clearRecordings: () => void;
     toggleChunkPlayback: (chunkId: string, audioType: 'processed' | 'original') => Promise<void>;
-    toggleChunkExpansion: (chunkId: string) => void;
     exportChunkAsWav: (chunkId: string, audioType: 'processed' | 'original') => Promise<Blob>;
     exportChunkAsMp3: (chunkId: string, audioType: 'processed' | 'original', bitrate?: number) => Promise<Blob>;
     downloadChunk: (chunkId: string, format: 'webm' | 'wav' | 'mp3', audioType: 'processed' | 'original') => Promise<void>;
