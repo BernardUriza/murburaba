@@ -66,7 +66,7 @@ export function AudioControls({
               <h5 className={styles.audioGroupTitle}>Original Audio</h5>
               <div className={styles.audioControlsRow}>
                 <button
-                  className={`btn btn-secondary ${isPlaying && currentlyPlayingType === 'original' ? 'btn--playing' : ''}`}
+                  className={`${styles.btn} ${styles.btnSecondary} ${isPlaying && currentlyPlayingType === 'original' ? styles.btnPlaying : ''}`}
                   onClick={() => onTogglePlayback('original')}
                   disabled={!hasOriginalAudio || !isValid}
                   aria-label={`${isPlaying && currentlyPlayingType === 'original' ? 'Pause' : 'Play'} original audio`}
@@ -102,24 +102,24 @@ export function AudioControls({
           )}
 
           {/* Processed Audio Second */}
-          <div className="audio-group">
+          <div className={styles.audioGroup}>
             <h5 className={styles.audioGroupTitle}>Processed Audio</h5>
-            <div className="audio-controls__row">
+            <div className={styles.audioControlsRow}>
               <button
-                className={`btn btn-secondary ${isPlaying && currentlyPlayingType === 'processed' ? 'btn--playing' : ''}`}
+                className={`${styles.btn} ${styles.btnSecondary} ${isPlaying && currentlyPlayingType === 'processed' ? styles.btnPlaying : ''}`}
                 onClick={() => onTogglePlayback('processed')}
                 disabled={!hasProcessedAudio || !isValid}
                 aria-label={`${isPlaying && currentlyPlayingType === 'processed' ? 'Pause' : 'Play'} processed audio`}
                 type="button"
               >
-                <span className="btn__icon" aria-hidden="true">
+                <span className={styles.btnIcon} aria-hidden="true">
                   {isPlaying && currentlyPlayingType === 'processed' ? '⏸️' : '▶️'}
                 </span>
                 <span>{isPlaying && currentlyPlayingType === 'processed' ? 'Pause' : 'Play'} Processed</span>
               </button>
 
               <button
-                className="btn btn-ghost btn--small"
+                className={`${styles.btn} ${styles.btnGhost} ${styles.btnSmall}`}
                 onClick={() => onDownload('wav', 'processed')}
                 disabled={!hasProcessedAudio || !isValid}
                 aria-label="Download processed audio as WAV"
@@ -129,7 +129,7 @@ export function AudioControls({
               </button>
 
               <button
-                className="btn btn-ghost btn--small"
+                className={`${styles.btn} ${styles.btnGhost} ${styles.btnSmall}`}
                 onClick={() => onDownload('mp3', 'processed')}
                 disabled={!hasProcessedAudio || !isValid}
                 aria-label="Download processed audio as MP3"
