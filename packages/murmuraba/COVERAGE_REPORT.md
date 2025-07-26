@@ -27,7 +27,7 @@ Se migró exitosamente el proyecto de Jest a Vitest y se crearon mocks modernos 
 - **logger.ts** (murmuraba-engine): 97.77% ✅
 
 ### Engines
-- **AudioWorkletEngine.ts**: 86.22% ✅
+- **RNNoiseEngine.ts**: 61.05% 🟡
 
 ### Utils
 - **audioConverter.ts**: 67.06% 🟡
@@ -41,7 +41,6 @@ Se migró exitosamente el proyecto de Jest a Vitest y se crearon mocks modernos 
 - **MurmubaraEngine.ts**: Tests complejos con problemas de mocks
 - **recordingFunctions.ts**: 3.73% coverage
 - **recordingManager.ts**: 9.62% coverage
-- **RNNoiseEngine.ts**: 61.05% coverage
 
 ## 🚀 Logros Principales
 

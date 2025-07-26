@@ -8,7 +8,6 @@ export { StateManager } from './core/StateManager';
 export { Logger } from './core/Logger';
 export { WorkerManager } from './managers/WorkerManager';
 export { MetricsManager } from './managers/MetricsManager';
-export { AudioWorkletEngine } from './engines/AudioWorkletEngine';
 export { RNNoiseEngine } from './engines/RNNoiseEngine';
 export type { AudioEngine } from './engines/types';
 export * from './types';

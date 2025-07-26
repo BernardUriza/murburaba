@@ -19,7 +19,6 @@ export default defineConfig({
         // Temporarily exclude files that are causing issues
         'src/components/**/*',
         'src/__tests__/**/*',
-        'src/engines/AudioWorkletEngine.ts',
         'src/engines/RNNoiseEngine.ts',
         'src/utils/rnnoise-loader.ts',
         'src/utils/simd-universal-loader.ts',

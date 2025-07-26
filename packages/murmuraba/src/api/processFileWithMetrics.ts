@@ -306,170 +306,23 @@ function createErrorChunk(
 async function processLiveMicrophone(
   options: ProcessFileOptions & { recordingDuration?: number } = {}
 ): Promise<ProcessFileResult> {
-  const recordingDuration = options.recordingDuration || 10000;
-  const chunkOptions = options.chunkOptions || { chunkDuration: 8000, outputFormat: 'wav' };
+  // NOTA: Esta función existe por compatibilidad con la API pública
+  // pero internamente el hook useMurmubaraEngine ya maneja todo el flujo
+  // de grabación con startRecording/stopRecording y gestión de chunks
   
-  // Reutilizar el procesamiento existente de archivos
-  // simulando un stream en tiempo real con chunks
-  const chunks: ProcessedChunk[] = [];
-  let processedBuffer: ArrayBuffer | null = null;
+  // Para una implementación standalone (sin React), habría que:
+  // 1. Importar las funciones de recordingFunctions
+  // 2. Crear las instancias necesarias (recordingManager, chunkManager, etc)
+  // 3. Llamar a startRecording con la duración del chunk
+  // 4. Esperar el tiempo especificado
+  // 5. Llamar a stopRecording
+  // 6. Retornar los chunks acumulados
   
-  return new Promise<ProcessFileResult>((resolve, reject) => {
-    (async () => {
-      try {
-      const engine = getEngine();
-      if (!engine) {
-        throw new Error('Engine not initialized. Call initializeAudioEngine() first.');
-      }
-
-      // Obtener stream del micrófono
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false
-        }
-      });
-
-      // Procesar stream con el engine existente
-      const controller = await processStream(stream);
-      
-      // Crear un buffer temporal para acumular audio procesado
-      const processedChunks: Float32Array[] = [];
-      const sampleRate = 48000; // RNNoise usa 48kHz
-      
-      // Usar el mismo procesamiento que usamos para archivos
-      const frameProcessor = new FrameProcessor();
-      const chunkAccumulator = new ChunkAccumulator();
-      
-      // Simular el procesamiento frame por frame
-      const originalProcessFrame = engine['processFrame'].bind(engine);
-      let isRecording = true;
-      
-      // Hook para capturar frames procesados
-      engine['processFrame'] = function(frame: Float32Array) {
-        if (!isRecording) return originalProcessFrame(frame);
-        
-        const result = frameProcessor.processFrame(
-          frame,
-          10, // frameDuration approximation
-          { processFrame: originalProcessFrame },
-          options.onFrameProcessed
-        );
-
-        // Acumular para chunks
-        const noiseReduction = result.inputPower > 0.000001 
-          ? Math.max(0, 1 - (result.outputPower / result.inputPower))
-          : 0;
-
-        chunkAccumulator.addFrame(
-          frame,
-          result.vad,
-          result.rms,
-          noiseReduction,
-          chunks.length * chunkOptions.chunkDuration + chunkAccumulator.getDuration(0)
-        );
-
-        // Guardar frame procesado
-        processedChunks.push(new Float32Array(frame));
-
-        // Crear chunk cuando se alcanza la duración
-        if (chunkAccumulator.getDuration(0) >= chunkOptions.chunkDuration) {
-          const audioData = chunkAccumulator.getAudioData();
-          const metrics = chunkAccumulator.getMetrics();
-          const startTime = chunks.length * chunkOptions.chunkDuration;
-          const endTime = startTime + chunkOptions.chunkDuration;
-
-          // Convertir chunk asíncronamente
-          convertChunkToFormat(audioData, sampleRate, chunkOptions.outputFormat)
-            .then(blob => {
-              const chunk = createProcessedChunk(
-                `chunk-${chunks.length}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                blob,
-                startTime,
-                endTime,
-                metrics
-              );
-              chunks.push(chunk);
-            })
-            .catch(error => {
-              chunks.push(createErrorChunk(error, startTime, endTime));
-            });
-
-          chunkAccumulator.reset(0);
-        }
-
-        return originalProcessFrame(frame);
-      };
-
-      // Detener después del tiempo especificado
-      setTimeout(async () => {
-        isRecording = false;
-        
-        // Procesar último chunk si hay datos pendientes
-        if (chunkAccumulator['frameCount'] > 0) {
-          const audioData = chunkAccumulator.getAudioData();
-          const metrics = chunkAccumulator.getMetrics();
-          const startTime = chunks.length * chunkOptions.chunkDuration;
-          const endTime = startTime + chunkAccumulator.getDuration(0);
-
-          try {
-            const blob = await convertChunkToFormat(audioData, sampleRate, chunkOptions.outputFormat);
-            const chunk = createProcessedChunk(
-              `chunk-${chunks.length}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-              blob,
-              startTime,
-              endTime,
-              metrics
-            );
-            chunks.push(chunk);
-          } catch (error) {
-            chunks.push(createErrorChunk(error as Error, startTime, endTime));
-          }
-        }
-
-        // Limpiar
-        engine['processFrame'] = originalProcessFrame;
-        controller.stop();
-        stream.getTracks().forEach(track => track.stop());
-
-        // Crear buffer procesado completo
-        const totalSamples = processedChunks.reduce((acc, chunk) => acc + chunk.length, 0);
-        const fullAudio = new Float32Array(totalSamples);
-        let offset = 0;
-        for (const chunk of processedChunks) {
-          fullAudio.set(chunk, offset);
-          offset += chunk.length;
-        }
-
-        // Convertir a ArrayBuffer
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const audioBuffer = audioContext.createBuffer(1, fullAudio.length, sampleRate);
-        audioBuffer.copyToChannel(fullAudio, 0);
-        const wavBlob = await convertChunkToFormat(fullAudio, sampleRate, 'wav');
-        processedBuffer = await wavBlob.arrayBuffer();
-        await audioContext.close();
-
-        const { averageVad } = frameProcessor.getMetrics();
-
-        resolve({
-          chunks,
-          processedBuffer,
-          averageVad,
-          totalDuration: recordingDuration,
-          metadata: {
-            sampleRate,
-            channels: 1,
-            originalDuration: recordingDuration
-          }
-        });
-      }, recordingDuration);
-
-      } catch (error) {
-        reject(error);
-      }
-    })();
-  });
+  // Por ahora, retornamos un error indicando que se debe usar el hook
+  throw new Error(
+    'processFileWithMetrics("Use.Mic") requiere usar el hook useMurmubaraEngine. ' +
+    'Usa las funciones startRecording/stopRecording del hook para grabar desde micrófono.'
+  );
 }
 
 async function processFileWithChunking(

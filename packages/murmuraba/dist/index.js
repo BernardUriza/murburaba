@@ -11,7 +11,6 @@ export { Logger } from './core/Logger';
 export { WorkerManager } from './managers/WorkerManager';
 export { MetricsManager } from './managers/MetricsManager';
 // Engine exports
-export { AudioWorkletEngine } from './engines/AudioWorkletEngine';
 export { RNNoiseEngine } from './engines/RNNoiseEngine';
 // Type exports
 export * from './types';
