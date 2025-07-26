@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 
-interface SimpleWaveformAnalyzerProps {
+export interface SimpleWaveformAnalyzerProps {
   stream?: MediaStream;
   isActive?: boolean;
   isPaused?: boolean;
@@ -19,7 +19,7 @@ export const SimpleWaveformAnalyzer: React.FC<SimpleWaveformAnalyzerProps> = ({
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {

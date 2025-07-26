@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-interface BuildInfoProps {
+export interface BuildInfoProps {
   version?: string;
   buildDate?: string;
   className?: string;

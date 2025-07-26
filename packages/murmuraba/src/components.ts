@@ -29,10 +29,8 @@ export {
 } from './components/BuildInfo';
 
 // Re-export component types
-export type { 
-  SimpleWaveformAnalyzerProps,
-  ChunkProcessingResultsProps,
-  AdvancedMetricsPanelProps,
-  AudioPlayerProps,
-  BuildInfoProps
-} from './components';
+export type { SimpleWaveformAnalyzerProps } from './components/SimpleWaveformAnalyzer';
+export type { ChunkProcessingResultsProps } from './components/ChunkProcessingResults';
+export type { AdvancedMetricsPanelProps } from './components/AdvancedMetricsPanel';
+export type { AudioPlayerProps } from './components/AudioPlayer';
+export type { BuildInfoProps } from './components/BuildInfo';
