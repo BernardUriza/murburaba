@@ -42,9 +42,13 @@ export declare class AudioConverter {
      */
     static webmToMp3(webmBlob: Blob, bitrate?: number): Promise<Blob>;
     /**
+     * Convert Float32Array to Blob in specified format
+     */
+    float32ArrayToBlob(audioData: Float32Array, sampleRate: number, format: 'wav' | 'webm' | 'raw'): Promise<Blob>;
+    /**
      * Convert AudioBuffer to WAV format (MONO only for RNNoise compatibility)
      */
-    private audioBufferToWav;
+    audioBufferToWav(audioBuffer: AudioBuffer): Blob;
     /**
      * Check if a MIME type is supported for playback
      */

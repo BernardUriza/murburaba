@@ -161,6 +161,25 @@ export class AudioConverter {
         }
     }
     /**
+     * Convert Float32Array to Blob in specified format
+     */
+    async float32ArrayToBlob(audioData, sampleRate, format) {
+        if (format === 'raw') {
+            return new Blob([audioData.buffer], { type: 'application/octet-stream' });
+        }
+        // Create temporary audio buffer
+        const audioBuffer = this.audioContext.createBuffer(1, audioData.length, sampleRate);
+        audioBuffer.copyToChannel(audioData, 0);
+        if (format === 'wav') {
+            return this.audioBufferToWav(audioBuffer);
+        }
+        if (format === 'webm') {
+            console.warn('WebM format conversion not yet implemented, returning WAV instead');
+            return this.audioBufferToWav(audioBuffer);
+        }
+        throw new Error(`Unsupported format: ${format}`);
+    }
+    /**
      * Convert AudioBuffer to WAV format (MONO only for RNNoise compatibility)
      */
     audioBufferToWav(audioBuffer) {
