@@ -419,6 +419,16 @@
   box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
 }
 
+.fab-copilot {
+  background: linear-gradient(135deg, #7c3aed, #3b82f6);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+}
+
+.fab-copilot:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.6);
+}
+
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }

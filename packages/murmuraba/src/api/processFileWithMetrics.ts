@@ -14,16 +14,35 @@ export interface ChunkOptions {
 }
 
 export interface ProcessedChunk {
-  blob: Blob; // chunk en formato especificado, listo para usar
+  id: string;
+  blob?: Blob; // chunk en formato especificado, listo para usar
   startTime: number;
   endTime: number;
   duration: number;
   vadScore: number;
+  averageVad: number;
+  processedAudioUrl?: string;
+  originalAudioUrl?: string;
+  vadData: Array<{ time: number; value: number }>;
   metrics: {
     noiseRemoved: number;
     averageLevel: number;
     vad: number;
+    noiseReductionLevel: number;
+    processingLatency: number;
+    inputLevel: number;
+    outputLevel: number;
+    frameCount: number;
+    droppedFrames: number;
   };
+  originalSize: number;
+  processedSize: number;
+  noiseRemoved: number;
+  isPlaying: boolean;
+  isExpanded: boolean;
+  isValid?: boolean;
+  errorMessage?: string;
+  currentlyPlayingType?: 'processed' | 'original' | null;
 }
 
 export interface ProcessFileResult {
@@ -306,6 +325,7 @@ export async function processFileWithMetrics(
   let currentChunkVadSum = 0;
   let currentChunkFrameCount = 0;
   let currentChunkRmsSum = 0;
+  let currentChunkVadData: Array<{ time: number; value: number }> = [];
 
   // Hook into the engine's frame processing
   const originalProcessFrame = engine['processFrame'].bind(engine);
@@ -340,6 +360,11 @@ export async function processFileWithMetrics(
       currentChunkVadSum += result.vad;
       currentChunkFrameCount++;
       currentChunkRmsSum += rms;
+      // Collect VAD data
+      currentChunkVadData.push({
+        time: currentTime - currentChunkStartTime,
+        value: result.vad
+      });
 
       // Check if we should create a new chunk
       const currentChunkDuration = currentTime - currentChunkStartTime;
@@ -356,27 +381,73 @@ export async function processFileWithMetrics(
         // Convert chunk to desired format asynchronously
         convertChunkToFormat(chunkAudioData, sampleRate, chunkOptions.outputFormat)
           .then(blob => {
+            const processedUrl = blob ? URL.createObjectURL(blob) : undefined;
             const chunk: ProcessedChunk = {
+              id: `chunk-${chunks.length}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
               blob,
               startTime: currentChunkStartTime,
               endTime: currentTime,
               duration: currentChunkDuration,
               vadScore: currentChunkVadSum / currentChunkFrameCount,
+              averageVad: currentChunkVadSum / currentChunkFrameCount,
+              processedAudioUrl: processedUrl,
+              originalAudioUrl: processedUrl, // Same as processed since we only have one
+              vadData: [...currentChunkVadData],
               metrics: {
-                noiseRemoved: 1 - (currentChunkRmsSum / currentChunkFrameCount), // Approximation
+                noiseReductionLevel: 1 - (currentChunkRmsSum / currentChunkFrameCount), // Approximation
+                processingLatency: 0, // TODO: Measure actual latency
+                inputLevel: currentChunkRmsSum / currentChunkFrameCount,
+                outputLevel: currentChunkRmsSum / currentChunkFrameCount * 0.8, // Simulated reduction
+                frameCount: currentChunkFrameCount,
+                droppedFrames: 0,
+                noiseRemoved: 1 - (currentChunkRmsSum / currentChunkFrameCount),
                 averageLevel: currentChunkRmsSum / currentChunkFrameCount,
                 vad: currentChunkVadSum / currentChunkFrameCount
-              }
+              },
+              originalSize: blob.size,
+              processedSize: blob.size,
+              noiseRemoved: 1 - (currentChunkRmsSum / currentChunkFrameCount),
+              isPlaying: false,
+              isExpanded: false,
+              isValid: true,
+              currentlyPlayingType: null
             };
             chunks.push(chunk);
           })
           .catch(error => {
             console.error('Error converting chunk:', error);
+            // Add error chunk
+            const errorChunk: ProcessedChunk = {
+              id: `chunk-error-${chunks.length}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              duration: currentChunkDuration,
+              startTime: currentChunkStartTime,
+              endTime: currentTime,
+              averageVad: 0,
+              vadData: [],
+              metrics: {
+                noiseReductionLevel: 0,
+                processingLatency: 0,
+                inputLevel: 0,
+                outputLevel: 0,
+                frameCount: 0,
+                droppedFrames: 0
+              },
+              originalSize: 0,
+              processedSize: 0,
+              noiseRemoved: 0,
+              isPlaying: false,
+              isExpanded: false,
+              isValid: false,
+              errorMessage: `Failed to convert chunk: ${error.message}`,
+              currentlyPlayingType: null
+            };
+            chunks.push(errorChunk);
           });
 
         // Reset for next chunk
         currentChunkData = [];
         currentChunkStartTime = currentTime;
+        currentChunkVadData = [];
         currentChunkVadSum = 0;
         currentChunkFrameCount = 0;
         currentChunkRmsSum = 0;
@@ -405,17 +476,36 @@ export async function processFileWithMetrics(
 
       const blob = await convertChunkToFormat(chunkAudioData, sampleRate, chunkOptions.outputFormat);
       const finalTime = frameCount * frameDuration;
+      const processedUrl = blob ? URL.createObjectURL(blob) : undefined;
       const chunk: ProcessedChunk = {
+        id: `chunk-${chunks.length}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         blob,
         startTime: currentChunkStartTime,
         endTime: finalTime,
         duration: finalTime - currentChunkStartTime,
         vadScore: currentChunkVadSum / currentChunkFrameCount,
+        averageVad: currentChunkVadSum / currentChunkFrameCount,
+        processedAudioUrl: processedUrl,
+        originalAudioUrl: processedUrl,
+        vadData: [...currentChunkVadData],
         metrics: {
+          noiseReductionLevel: 1 - (currentChunkRmsSum / currentChunkFrameCount),
+          processingLatency: 0,
+          inputLevel: currentChunkRmsSum / currentChunkFrameCount,
+          outputLevel: currentChunkRmsSum / currentChunkFrameCount * 0.8,
+          frameCount: currentChunkFrameCount,
+          droppedFrames: 0,
           noiseRemoved: 1 - (currentChunkRmsSum / currentChunkFrameCount),
           averageLevel: currentChunkRmsSum / currentChunkFrameCount,
           vad: currentChunkVadSum / currentChunkFrameCount
-        }
+        },
+        originalSize: blob.size,
+        processedSize: blob.size,
+        noiseRemoved: 1 - (currentChunkRmsSum / currentChunkFrameCount),
+        isPlaying: false,
+        isExpanded: false,
+        isValid: true,
+        currentlyPlayingType: null
       };
       chunks.push(chunk);
     }

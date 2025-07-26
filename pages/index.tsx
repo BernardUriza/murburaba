@@ -13,6 +13,8 @@ import {
   AdvancedMetricsPanel
 } from 'murmuraba'
 import AudioDemo from '../components/AudioDemo'
+import Settings from '../components/Settings'
+import CopilotChat from '../components/CopilotChat'
 import Swal from 'sweetalert2'
 
 export default function App() {
@@ -34,33 +36,8 @@ export default function App() {
   const [selectedChunk, setSelectedChunk] = useState<string | null>(null)
   const [currentStream, setCurrentStream] = useState<MediaStream | null>(null)
   const [isRecording, setIsRecording] = useState(false)
-
-  // Recording history with localStorage persistence
-  const [recordingHistory, setRecordingHistory] = useState<Array<{
-    id: string;
-    date: Date;
-    duration: number;
-    chunks: number;
-    avgNoiseReduction: number;
-  }>>([]);
-
-  // Load history from localStorage after mount
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('murmuraba-history');
-      if (saved) {
-        try {
-          const history = JSON.parse(saved);
-          setRecordingHistory(history.map((item: any) => ({
-            ...item,
-            date: new Date(item.date)
-          })));
-        } catch (e) {
-          console.error('Failed to parse history:', e);
-        }
-      }
-    }
-  }, []);
+  const [showSettings, setShowSettings] = useState(false)
+  const [showCopilot, setShowCopilot] = useState(false)
 
   // Utility functions
   const formatTime = (seconds: number) => {
@@ -161,18 +138,6 @@ export default function App() {
       })
       
       setProcessingResults(result)
-      
-      // Save to history
-      const newRecord = {
-        id: `rec-${Date.now()}`,
-        date: new Date(),
-        duration: chunkDuration,
-        chunks: result.chunks?.length || 0,
-        avgNoiseReduction: result.averageVad || 0
-      }
-      const newHistory = [newRecord, ...recordingHistory].slice(0, 10)
-      setRecordingHistory(newHistory)
-      localStorage.setItem('murmuraba-history', JSON.stringify(newHistory))
       
       Swal.fire({
         toast: true,
@@ -423,30 +388,6 @@ export default function App() {
           />
         )}
 
-        {/* Recording History */}
-        {recordingHistory.length > 0 && (
-          <section className="history-section glass-card">
-            <div className="panel-header">
-              <h2 className="panel-title">Recording History</h2>
-            </div>
-            
-            <div className="history-list">
-              {recordingHistory.map((record) => (
-                <div key={record.id} className="history-item">
-                  <div className="history-info">
-                    <div className="history-date">
-                      {record.date.toLocaleDateString()} {record.date.toLocaleTimeString()}
-                    </div>
-                    <div className="history-stats">
-                      {record.chunks} chunks • {formatTime(record.duration)} • VAD: {(record.avgNoiseReduction * 100).toFixed(1)}%
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* Floating Action Buttons */}
         <div className="fab-container">
           {/* Audio Demo Button */}
@@ -468,6 +409,27 @@ export default function App() {
           >
             {showAdvancedMetrics ? '📉' : '📈'}
           </button>
+          
+          {/* Divider */}
+          <div style={{ height: '0.5rem' }} />
+          
+          {/* Settings Button */}
+          <button 
+            className="fab"
+            onClick={() => setShowSettings(true)}
+            title="Settings"
+          >
+            ⚙️
+          </button>
+          
+          {/* Copilot Chat Button */}
+          <button 
+            className="fab fab-copilot"
+            onClick={() => setShowCopilot(true)}
+            title="Copilot Chat"
+          >
+            🤖
+          </button>
         </div>
         
         {/* Advanced Metrics Panel */}
@@ -485,6 +447,12 @@ export default function App() {
           } : null}
           onClose={() => setShowAdvancedMetrics(false)}
         />
+        
+        {/* Settings Modal */}
+        <Settings isOpen={showSettings} onClose={() => setShowSettings(false)} />
+        
+        {/* Copilot Chat Modal */}
+        <CopilotChat isOpen={showCopilot} onClose={() => setShowCopilot(false)} />
       </main>
       
       <BuildInfo version="2.0.0" buildDate={new Date().toLocaleDateString()} />

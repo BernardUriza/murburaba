@@ -40,37 +40,42 @@ export function ChunkHeader({
   return (
     <div className={styles.chunkHeader}>
       <div className={styles.chunkInfo}>
-        <h3 className={styles.chunkTitle}>
-          Chunk {index + 1}
-          {!isValid && (
-            <span className={styles.chunkErrorBadge} aria-label="Error">❌</span>
-          )}
-        </h3>
+        <div className={styles.chunkBasicInfo}>
+          <h3 className={styles.chunkTitle}>
+            Chunk {index + 1}
+            {!isValid && (
+              <span className={styles.chunkErrorBadge} aria-label="Error">❌</span>
+            )}
+          </h3>
+          
+          <div className={styles.chunkMeta}>
+            <span className={styles.metaItem}>
+              <span className={styles.metaLabel}>Duration:</span>
+              <span className={styles.metaValue}>{formatTime(duration)}</span>
+            </span>
+            <span className={styles.metaItem}>
+              <span className={styles.metaLabel}>Noise Reduced:</span>
+              <span className={`${styles.metaValue} ${styles.metaValueHighlight}`}>
+                {formatPercentage(noiseReduction)}
+              </span>
+            </span>
+            <span className={styles.metaItem}>
+              <span className={styles.metaLabel}>Latency:</span>
+              <span className={styles.metaValue}>{processingLatency?.toFixed(1) || '0.0'}ms</span>
+            </span>
+          </div>
+        </div>
         
         {averageVad !== undefined && (
-          <VadDisplay 
-            averageVad={averageVad}
-            vadData={vadData}
-            chunkIndex={index}
-          />
+          <div className={styles.chunkVadContainer}>
+            <VadDisplay 
+              averageVad={averageVad}
+              vadData={vadData}
+              chunkIndex={index}
+              compact={true}
+            />
+          </div>
         )}
-        
-        <div className={styles.chunkMeta}>
-          <span className={styles.metaItem}>
-            <span className={styles.metaLabel}>Duration:</span>
-            <span className={styles.metaValue}>{formatTime(duration)}</span>
-          </span>
-          <span className={styles.metaItem}>
-            <span className={styles.metaLabel}>Noise Reduced:</span>
-            <span className={`${styles.metaValue} ${styles.metaValueHighlight}`}>
-              {formatPercentage(noiseReduction)}
-            </span>
-          </span>
-          <span className={styles.metaItem}>
-            <span className={styles.metaLabel}>Latency:</span>
-            <span className={styles.metaValue}>{processingLatency?.toFixed(1) || '0.0'}ms</span>
-          </span>
-        </div>
       </div>
 
       <div className={styles.chunkControls}>

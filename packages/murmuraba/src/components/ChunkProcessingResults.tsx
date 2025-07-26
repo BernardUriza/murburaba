@@ -110,18 +110,40 @@ export function ChunkProcessingResults({
     <section className={`${styles.chunkResults} ${className}`.trim()} role="region" aria-label="Processing Results">
       {/* Header with stats */}
       <div className={styles.header}>
-        <div className={styles.headerInfo}>
-          <h2 className={styles.headerTitle}>🎯 Processing Results</h2>
-          <div className={styles.headerStats}>
-            <span className={styles.statBadge}>
-              <strong>{chunks.length}</strong> chunks
-            </span>
-            <span className={styles.statBadge}>
-              <strong>{formatTime(chunkStats?.totalDuration || 0)}</strong> total
-            </span>
-            <span className={`${styles.statBadge} ${styles.statBadgeHighlight}`}>
-              <strong>{formatPercentage(averageNoiseReduction)}</strong> avg noise reduction
-            </span>
+        <div className={styles.headerContent}>
+          <div className={styles.headerLeft}>
+            <h2 className={styles.headerTitle}>🎯 Processing Results</h2>
+            <div className={styles.headerStats}>
+              <span className={styles.statBadge}>
+                <strong>{chunks.length}</strong> chunks
+              </span>
+              <span className={styles.statBadge}>
+                <strong>{formatTime(chunkStats?.totalDuration || 0)}</strong> total
+              </span>
+              <span className={`${styles.statBadge} ${styles.statBadgeHighlight}`}>
+                <strong>{formatPercentage(averageNoiseReduction)}</strong> avg noise reduction
+              </span>
+            </div>
+          </div>
+          
+          {/* VAD Summary en paralelo */}
+          <div className={styles.vadSummary}>
+            <div className={styles.vadSummaryTitle}>🎤 Voice Activity</div>
+            <div className={styles.vadSummaryValue}>
+              <span className={styles.vadBigNumber}>
+                {(chunks.reduce((sum, chunk) => sum + (chunk.averageVad || 0), 0) / chunks.length * 100).toFixed(1)}%
+              </span>
+              <div className={styles.vadBar}>
+                <div 
+                  className={styles.vadBarFill}
+                  style={{ 
+                    width: `${(chunks.reduce((sum, chunk) => sum + (chunk.averageVad || 0), 0) / chunks.length * 100)}%`,
+                    backgroundColor: chunks.reduce((sum, chunk) => sum + (chunk.averageVad || 0), 0) / chunks.length > 0.7 ? '#10b981' : 
+                                     chunks.reduce((sum, chunk) => sum + (chunk.averageVad || 0), 0) / chunks.length > 0.3 ? '#f59e0b' : '#ef4444'
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </div>
         
