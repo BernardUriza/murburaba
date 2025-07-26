@@ -1,33 +1,37 @@
+/* React externalized */
 /**
  * Murmuraba v1.5.0
  * Real-time audio noise reduction
  */
 // Core exports
-export { MurmubaraEngine } from './core/MurmubaraEngine';
-export { EventEmitter } from './core/EventEmitter';
-export { StateManager } from './core/StateManager';
-export { Logger } from './core/Logger';
-export { engineRegistry } from './core/EngineRegistry';
+const { MurmubaraEngine  } = require('./core/MurmubaraEngine');
+const { EventEmitter  } = require('./core/EventEmitter');
+const { StateManager  } = require('./core/StateManager');
+const { Logger  } = require('./core/Logger');
+const { engineRegistry  } = require('./core/EngineRegistry');
 // Manager exports
-export { WorkerManager } from './managers/WorkerManager';
-export { MetricsManager } from './managers/MetricsManager';
+const { WorkerManager  } = require('./managers/WorkerManager');
+const { MetricsManager  } = require('./managers/MetricsManager');
 // Engine exports
-export { RNNoiseEngine } from './engines/RNNoiseEngine';
+const { RNNoiseEngine  } = require('./engines/RNNoiseEngine');
 // Type exports
-export * from './types';
+module.exports = { ...module.exports, ...require('./types') };
 // API functions
-export { initializeAudioEngine, getEngine, processStream, processStreamChunked, destroyEngine, getEngineStatus, getDiagnostics, onMetricsUpdate, processFile } from './api';
+const { initializeAudioEngine, getEngine, processStream, processStreamChunked, destroyEngine, getEngineStatus, getDiagnostics, onMetricsUpdate, processFile  } = require('./api');
 // Modern API exports - Use MurmurabaSuite for all functionality
 // Legacy hooks have been removed in favor of the DI-based MurmurabaSuite
 // Utils
-export { AudioConverter, getAudioConverter } from './utils/audioConverter';
+const { AudioConverter, getAudioConverter  } = require('./utils/audioConverter');
 // Version
-export const VERSION = '1.5.0';
-export const MURMURABA_VERSION = VERSION;
+const VERSION = '1.5.0';
+const MURMURABA_VERSION = VERSION;
 // 🧨 MODERN MURMURABA API - MurmurabaSuite Architecture 🧨
 // All functionality now available through MurmurabaSuite
-export { MurmurabaSuite, useMurmurabaSuite, useAudioProcessor, useSuiteLogger, useAudioProcessing, TOKENS, SUITE_TOKENS } from './react/MurmurabaSuite';
-export { DIContainer } from './core/DIContainer';
-export { AudioProcessorService } from './services/AudioProcessorService';
+const { MurmurabaSuite, useMurmurabaSuite, useAudioProcessor, useSuiteLogger, useAudioProcessing, TOKENS, SUITE_TOKENS  } = require('./react/MurmurabaSuite');
+const { DIContainer  } = require('./core/DIContainer');
+const { AudioProcessorService  } = require('./services/AudioProcessorService');
 // UI Components - Export from components directory
-export { SimpleWaveformAnalyzer, WaveformAnalyzer, SyncedWaveforms, ChunkProcessingResults, AudioPlayer, AdvancedMetricsPanel, ErrorBoundary, withErrorBoundary, BuildInfo, BuildInfoBadge, BuildInfoBlock, BuildInfoInline } from './components';
+const { SimpleWaveformAnalyzer, WaveformAnalyzer, SyncedWaveforms, ChunkProcessingResults, AudioPlayer, AdvancedMetricsPanel, ErrorBoundary, withErrorBoundary, BuildInfo, BuildInfoBadge, BuildInfoBlock, BuildInfoInline  } = require('./components');
+
+
+module.exports = { MurmubaraEngine, EventEmitter, StateManager, Logger, engineRegistry, WorkerManager, MetricsManager, RNNoiseEngine, initializeAudioEngine, getEngine, processStream, processStreamChunked, destroyEngine, getEngineStatus, getDiagnostics, onMetricsUpdate, processFile, AudioConverter, getAudioConverter, MurmurabaSuite, useMurmurabaSuite, useAudioProcessor, useSuiteLogger, useAudioProcessing, TOKENS, SUITE_TOKENS, DIContainer, AudioProcessorService, SimpleWaveformAnalyzer, WaveformAnalyzer, SyncedWaveforms, ChunkProcessingResults, AudioPlayer, AdvancedMetricsPanel, ErrorBoundary, withErrorBoundary, BuildInfo, BuildInfoBadge, BuildInfoBlock, BuildInfoInline, VERSION, MURMURABA_VERSION };

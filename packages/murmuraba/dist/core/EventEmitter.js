@@ -1,4 +1,5 @@
-export class EventEmitter {
+/* React externalized */
+class EventEmitter {
     constructor() {
         this.events = {};
         // Initialize as plain object instead of Map
@@ -54,3 +55,6 @@ export class EventEmitter {
         return handlers ? handlers.size : 0;
     }
 }
+
+
+module.exports = { EventEmitter };

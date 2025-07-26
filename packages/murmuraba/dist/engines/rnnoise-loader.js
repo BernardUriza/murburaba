@@ -1,3 +1,4 @@
+/* React externalized */
 /**
  * Smart RNNoise WASM Loader
  * Tries multiple strategies to load WASM without requiring manual file copying

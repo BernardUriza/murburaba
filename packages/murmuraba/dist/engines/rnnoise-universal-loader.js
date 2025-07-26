@@ -1,3 +1,4 @@
+/* React externalized */
 /**
  * Universal RNNoise Loader
  * Works with any bundler without manual file copying

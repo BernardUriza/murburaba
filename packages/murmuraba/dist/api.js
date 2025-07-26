@@ -1,9 +1,10 @@
-import { engineRegistry } from './core/EngineRegistry';
+/* React externalized */
+const {  engineRegistry  } = require('./core/EngineRegistry');
 export async function initializeAudioEngine(config) {
     const engine = engineRegistry.createEngine(config);
     await engine.initialize();
 }
-export function getEngine(id) {
+function getEngine(id) {
     return engineRegistry.getEngine(id);
 }
 export async function processStream(stream) {
@@ -18,7 +19,7 @@ export async function destroyEngine(idOrOptions) {
     const id = typeof idOrOptions === 'string' ? idOrOptions : idOrOptions?.id;
     await engineRegistry.destroyEngine(id);
 }
-export function getEngineStatus(id) {
+function getEngineStatus(id) {
     try {
         const engine = engineRegistry.getEngine(id);
         return engine.getDiagnostics().engineState;
@@ -27,11 +28,11 @@ export function getEngineStatus(id) {
         return 'uninitialized';
     }
 }
-export function getDiagnostics() {
+function getDiagnostics() {
     const engine = getEngine();
     return engine.getDiagnostics();
 }
-export function onMetricsUpdate(callback) {
+function onMetricsUpdate(callback) {
     const engine = getEngine();
     engine.onMetricsUpdate(callback);
 }
@@ -39,3 +40,6 @@ export async function processFile(arrayBuffer) {
     const engine = getEngine();
     return engine.processFile(arrayBuffer);
 }
+
+
+module.exports = { getEngine, getEngineStatus, getDiagnostics, onMetricsUpdate };

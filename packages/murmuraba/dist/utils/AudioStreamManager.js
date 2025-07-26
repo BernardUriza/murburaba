@@ -1,4 +1,5 @@
-export class AudioStreamManager {
+/* React externalized */
+class AudioStreamManager {
     constructor(audioContext) {
         this.audioContext = audioContext;
         this.streams = new Map();
@@ -39,3 +40,6 @@ export class AudioStreamManager {
         return this.streams.size;
     }
 }
+
+
+module.exports = { AudioStreamManager };

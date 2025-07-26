@@ -1,3 +1,4 @@
+/* React externalized */
 /**
  * Performance utilities for murmuraba
  * Because your original code was causing re-renders like a maniac
@@ -5,7 +6,7 @@
 /**
  * Debounce function that actually works
  */
-export function debounce(func, delay) {
+function debounce(func, delay) {
     let timeoutId = null;
     return (...args) => {
         if (timeoutId)
@@ -19,7 +20,7 @@ export function debounce(func, delay) {
 /**
  * Throttle function for rate limiting
  */
-export function throttle(func, limit) {
+function throttle(func, limit) {
     let inThrottle = false;
     return (...args) => {
         if (!inThrottle) {
@@ -32,7 +33,7 @@ export function throttle(func, limit) {
 /**
  * Memory-efficient audio blob cache
  */
-export class AudioCache {
+class AudioCache {
     constructor(maxSize = 50, ttlMinutes = 15) {
         this.cache = new Map();
         this.cleanupInterval = null;
@@ -100,7 +101,7 @@ export async function getBlobHash(blob) {
 /**
  * Batch state updates for React 18
  */
-export function batchUpdates(callback) {
+function batchUpdates(callback) {
     if ('startTransition' in window.React) {
         let result;
         window.React.startTransition(() => {
@@ -113,7 +114,7 @@ export function batchUpdates(callback) {
 /**
  * Request idle callback polyfill
  */
-export const requestIdleCallback = window.requestIdleCallback ||
+const requestIdleCallback = window.requestIdleCallback ||
     ((cb) => setTimeout(() => cb({
         didTimeout: false,
         timeRemaining: () => 50
@@ -121,7 +122,7 @@ export const requestIdleCallback = window.requestIdleCallback ||
 /**
  * Memory usage monitor
  */
-export function getMemoryUsage() {
+function getMemoryUsage() {
     if (!('memory' in performance))
         return null;
     const memory = performance.memory;
@@ -133,7 +134,7 @@ export function getMemoryUsage() {
 /**
  * Performance mark wrapper
  */
-export class PerformanceMarker {
+class PerformanceMarker {
     constructor() {
         this.marks = new Map();
     }
@@ -163,7 +164,7 @@ export class PerformanceMarker {
 /**
  * Performance monitor for detailed tracking
  */
-export class PerformanceMonitor {
+class PerformanceMonitor {
     constructor() {
         this.marks = new Map();
         this.measurements = new Map();
@@ -236,7 +237,7 @@ export async function measureExecutionTime(fn) {
 /**
  * Calculate average time from array of durations
  */
-export function calculateAverageTime(times) {
+function calculateAverageTime(times) {
     if (times.length === 0)
         return 0;
     return times.reduce((sum, time) => sum + time, 0) / times.length;
@@ -244,7 +245,7 @@ export function calculateAverageTime(times) {
 /**
  * Format bytes to human readable format
  */
-export function formatBytes(bytes, decimals = 1) {
+function formatBytes(bytes, decimals = 1) {
     if (bytes === 0)
         return '0 Bytes';
     const k = 1024;
@@ -258,7 +259,7 @@ export function formatBytes(bytes, decimals = 1) {
 /**
  * Format duration from milliseconds to human readable format
  */
-export function formatDuration(ms) {
+function formatDuration(ms) {
     if (ms === 0)
         return '0ms';
     const isNegative = ms < 0;
@@ -284,3 +285,6 @@ export function formatDuration(ms) {
     }
     return (isNegative ? '-' : '') + parts.join(' ');
 }
+
+
+module.exports = { debounce, throttle, batchUpdates, requestIdleCallback, getMemoryUsage, calculateAverageTime, formatBytes, formatDuration, AudioCache, PerformanceMarker, PerformanceMonitor };
