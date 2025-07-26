@@ -10,7 +10,14 @@ describe('MurmurabaSuite Initialization', () => {
   beforeAll(async () => {
     browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: [
+        '--no-sandbox', 
+        '--disable-setuid-sandbox',
+        '--autoplay-policy=no-user-gesture-required',
+        '--disable-web-security',
+        '--disable-features=IsolateOrigins',
+        '--disable-site-isolation-trials'
+      ]
     });
   });
 
@@ -35,6 +42,7 @@ describe('MurmurabaSuite Initialization', () => {
     
     page.on('pageerror', err => {
       console.error('Page error:', err);
+      console.error('Stack trace:', err.stack);
     });
   });
 
@@ -50,11 +58,24 @@ describe('MurmurabaSuite Initialization', () => {
     // Navigate to the app
     await page.goto(APP_URL, { waitUntil: 'networkidle2' });
     
-    // Click on the page to trigger user gesture (required for AudioContext)
-    await page.click('body');
+    // Wait for the page to be ready
+    await page.waitForSelector('body', { visible: true });
+    
+    // Create a user gesture to enable AudioContext
+    await page.evaluate(() => {
+      // Click in the center of the viewport
+      const event = new MouseEvent('click', {
+        view: window,
+        bubbles: true,
+        cancelable: true,
+        clientX: window.innerWidth / 2,
+        clientY: window.innerHeight / 2
+      });
+      document.dispatchEvent(event);
+    });
     
     // Wait a bit for the click to register
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Log what we see on the page for debugging
     const bodyText = await page.evaluate(() => document.body.innerText);

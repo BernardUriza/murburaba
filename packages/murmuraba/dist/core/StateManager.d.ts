@@ -7,6 +7,7 @@ interface StateEvents {
 export declare class StateManager extends EventEmitter<StateEvents> {
     private currentState;
     private allowedTransitions;
+    constructor();
     getState(): EngineState;
     canTransitionTo(newState: EngineState): boolean;
     transitionTo(newState: EngineState): boolean;

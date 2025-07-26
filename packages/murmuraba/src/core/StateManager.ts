@@ -8,26 +8,31 @@ interface StateEvents {
 
 export class StateManager extends EventEmitter<StateEvents> {
   private currentState: EngineState = 'uninitialized';
-  private allowedTransitions: Map<EngineState, EngineState[]> = new Map([
-    ['uninitialized', ['initializing', 'error']],
-    ['initializing', ['creating-context', 'loading-wasm', 'ready', 'degraded', 'error']],
-    ['creating-context', ['loading-wasm', 'ready', 'degraded', 'error']],
-    ['loading-wasm', ['ready', 'degraded', 'error']],
-    ['ready', ['processing', 'destroying', 'error']],
-    ['processing', ['ready', 'paused', 'destroying', 'error']],
-    ['paused', ['processing', 'ready', 'destroying', 'error']],
-    ['degraded', ['processing', 'destroying', 'error']],
-    ['destroying', ['destroyed', 'error']],
-    ['destroyed', []],
-    ['error', ['initializing', 'destroying']],
-  ]);
+  private allowedTransitions: Record<EngineState, EngineState[]>;
+  
+  constructor() {
+    super();
+    this.allowedTransitions = {
+      'uninitialized': ['initializing', 'error'],
+      'initializing': ['creating-context', 'loading-wasm', 'ready', 'degraded', 'error'],
+      'creating-context': ['loading-wasm', 'ready', 'degraded', 'error'],
+      'loading-wasm': ['ready', 'degraded', 'error'],
+      'ready': ['processing', 'destroying', 'error'],
+      'processing': ['ready', 'paused', 'destroying', 'error'],
+      'paused': ['processing', 'ready', 'destroying', 'error'],
+      'degraded': ['processing', 'destroying', 'error'],
+      'destroying': ['destroyed', 'error'],
+      'destroyed': [],
+      'error': ['initializing', 'destroying']
+    };
+  }
   
   getState(): EngineState {
     return this.currentState;
   }
   
   canTransitionTo(newState: EngineState): boolean {
-    const allowed = this.allowedTransitions.get(this.currentState) || [];
+    const allowed = this.allowedTransitions[this.currentState] || [];
     return allowed.includes(newState);
   }
   

@@ -9,7 +9,7 @@ const nextConfig = {
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': '/workspaces/murburaba/src',
-      'murmuraba': '/workspaces/murburaba/packages/murmuraba/src'
+      'murmuraba': '/workspaces/murburaba/packages/murmuraba/dist'
     };
     
     // Handle WASM files

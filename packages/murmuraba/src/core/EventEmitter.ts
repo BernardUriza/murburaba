@@ -1,33 +1,40 @@
 export type EventHandler = (...args: any[]) => void;
 
 export class EventEmitter<T extends Record<string, EventHandler>> {
-  private events: Map<keyof T, Set<EventHandler>> = new Map();
+  private events: Record<string, Set<EventHandler>> = {};
+  
+  constructor() {
+    // Initialize as plain object instead of Map
+  }
   
   on<K extends keyof T>(event: K, handler: T[K]): void {
-    if (!this.events.has(event)) {
-      this.events.set(event, new Set());
+    const eventKey = String(event);
+    if (!this.events[eventKey]) {
+      this.events[eventKey] = new Set();
     }
-    this.events.get(event)!.add(handler);
+    this.events[eventKey].add(handler);
   }
   
   off<K extends keyof T>(event: K, handler: T[K]): void {
-    const handlers = this.events.get(event);
+    const eventKey = String(event);
+    const handlers = this.events[eventKey];
     if (handlers) {
       handlers.delete(handler);
       if (handlers.size === 0) {
-        this.events.delete(event);
+        delete this.events[eventKey];
       }
     }
   }
   
   emit<K extends keyof T>(event: K, ...args: Parameters<T[K]>): void {
-    const handlers = this.events.get(event);
+    const eventKey = String(event);
+    const handlers = this.events[eventKey];
     if (handlers) {
       handlers.forEach(handler => {
         try {
           handler(...args);
         } catch (error) {
-          console.error(`Error in event handler for ${String(event)}:`, error);
+          console.error(`Error in event handler for ${eventKey}:`, error);
         }
       });
     }
@@ -43,14 +50,14 @@ export class EventEmitter<T extends Record<string, EventHandler>> {
   
   removeAllListeners(event?: keyof T): void {
     if (event) {
-      this.events.delete(event);
+      delete this.events[String(event)];
     } else {
-      this.events.clear();
+      this.events = {};
     }
   }
   
   listenerCount(event: keyof T): number {
-    const handlers = this.events.get(event);
+    const handlers = this.events[String(event)];
     return handlers ? handlers.size : 0;
   }
 }

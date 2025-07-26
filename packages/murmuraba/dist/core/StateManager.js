@@ -1,27 +1,27 @@
 import { EventEmitter } from './EventEmitter';
 export class StateManager extends EventEmitter {
     constructor() {
-        super(...arguments);
+        super();
         this.currentState = 'uninitialized';
-        this.allowedTransitions = new Map([
-            ['uninitialized', ['initializing', 'error']],
-            ['initializing', ['creating-context', 'loading-wasm', 'ready', 'degraded', 'error']],
-            ['creating-context', ['loading-wasm', 'ready', 'degraded', 'error']],
-            ['loading-wasm', ['ready', 'degraded', 'error']],
-            ['ready', ['processing', 'destroying', 'error']],
-            ['processing', ['ready', 'paused', 'destroying', 'error']],
-            ['paused', ['processing', 'ready', 'destroying', 'error']],
-            ['degraded', ['processing', 'destroying', 'error']],
-            ['destroying', ['destroyed', 'error']],
-            ['destroyed', []],
-            ['error', ['initializing', 'destroying']],
-        ]);
+        this.allowedTransitions = {
+            'uninitialized': ['initializing', 'error'],
+            'initializing': ['creating-context', 'loading-wasm', 'ready', 'degraded', 'error'],
+            'creating-context': ['loading-wasm', 'ready', 'degraded', 'error'],
+            'loading-wasm': ['ready', 'degraded', 'error'],
+            'ready': ['processing', 'destroying', 'error'],
+            'processing': ['ready', 'paused', 'destroying', 'error'],
+            'paused': ['processing', 'ready', 'destroying', 'error'],
+            'degraded': ['processing', 'destroying', 'error'],
+            'destroying': ['destroyed', 'error'],
+            'destroyed': [],
+            'error': ['initializing', 'destroying']
+        };
     }
     getState() {
         return this.currentState;
     }
     canTransitionTo(newState) {
-        const allowed = this.allowedTransitions.get(this.currentState) || [];
+        const allowed = this.allowedTransitions[this.currentState] || [];
         return allowed.includes(newState);
     }
     transitionTo(newState) {
