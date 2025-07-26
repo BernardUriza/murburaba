@@ -19,7 +19,7 @@ export async function processStreamChunked(
   stream: MediaStream,
   config: {
     chunkDuration: number;
-    onChunkProcessed?: (chunk: import('./types').ProcessedChunk) => void;
+    onChunkProcessed?: (chunk: import('./types').ChunkMetrics) => void;
   }
 ) {
   const engine = getEngine();

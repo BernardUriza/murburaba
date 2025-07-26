@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { MurmurabaSuite, useAudioProcessing, useSuiteLogger } from '../MurmurabaSuite';
+import { MurmurabaSuite, useAudioProcessing, useSuiteLogger, useMurmurabaSuite } from '../MurmurabaSuite';
 import { ProcessedChunk } from '../../types';
+import { TOKENS } from '../../core/DIContainer';
 
 // Example 1: Simple file processor
 function FileProcessor() {

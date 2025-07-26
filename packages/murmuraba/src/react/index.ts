@@ -8,8 +8,8 @@ export {
   useAudioProcessor,
   useSuiteLogger,
   useAudioProcessing,
-  useService,
-  SUITE_TOKENS
+  SUITE_TOKENS,
+  TOKENS
 } from './MurmurabaSuite';
 
 export type { 

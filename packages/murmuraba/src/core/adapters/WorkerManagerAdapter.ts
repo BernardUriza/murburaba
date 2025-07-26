@@ -1,6 +1,7 @@
 import { WorkerManager } from '../../managers/WorkerManager';
 import { IWorkerManager, WorkerTask, WorkerResult } from '../interfaces/IWorkerManager';
 import { ILogger } from '../interfaces/ILogger';
+import { Logger } from '../Logger';
 import { Injectable } from '../decorators';
 import { TOKENS } from '../DIContainer';
 
@@ -9,7 +10,7 @@ export class WorkerManagerAdapter implements IWorkerManager {
   private workerManager: WorkerManager;
 
   constructor(logger: ILogger) {
-    this.workerManager = new WorkerManager(logger);
+    this.workerManager = new WorkerManager(logger as Logger);
   }
 
   async createWorker(name: string, scriptPath: string): Promise<Worker> {

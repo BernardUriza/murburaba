@@ -50,7 +50,7 @@
   "scripts": {
     "build": "npm run clean && npm run build:ts && npm run build:rollup && npm run copy:wasm",
     "build:unsafe": "npm run clean && npm run build:ts && npm run build:rollup && npm run copy:wasm",
-    "copy:wasm": "cp ../../node_modules/@jitsi/rnnoise-wasm/dist/rnnoise.wasm dist/ || true",
+    "copy:wasm": "cp node_modules/@jitsi/rnnoise-wasm/dist/rnnoise.wasm dist/ || true",
     "build:ts": "tsc",
     "build:rollup": "rollup -c",
     "clean": "rimraf dist",

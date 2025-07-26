@@ -7,7 +7,7 @@ export declare function getEngine(id?: string): ReturnType<typeof engineRegistry
 export declare function processStream(stream: MediaStream): Promise<import("./types").StreamController>;
 export declare function processStreamChunked(stream: MediaStream, config: {
     chunkDuration: number;
-    onChunkProcessed?: (chunk: import('./types').ProcessedChunk) => void;
+    onChunkProcessed?: (chunk: import('./types').ChunkMetrics) => void;
 }): Promise<import("./types").StreamController>;
 export declare function destroyEngine(idOrOptions?: string | {
     force?: boolean;

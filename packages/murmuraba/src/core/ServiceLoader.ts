@@ -3,7 +3,7 @@ import { ILogger } from './interfaces';
 
 interface ServiceModule {
   name: string;
-  load: () => Promise<any>;
+  load: (container: DIContainer) => Promise<any>;
   token: symbol | string;
   dependencies?: (symbol | string)[];
 }
@@ -55,7 +55,7 @@ export class ServiceLoader {
 
     logger?.debug(`Loading module: ${module.name}`);
 
-    const service = await module.load();
+    const service = await module.load(this.container);
     this.container.bindSingleton(module.token, service);
 
     logger?.info(`Module loaded: ${module.name}`);
@@ -83,7 +83,7 @@ export const SERVICE_MODULES = {
   audioEngine: {
     name: 'audioEngine',
     token: TOKENS.AudioEngine,
-    load: async () => {
+    load: async (container: DIContainer) => {
       const { RNNoiseEngine } = await import('../engines/RNNoiseEngine');
       return new RNNoiseEngine();
     }
@@ -92,7 +92,7 @@ export const SERVICE_MODULES = {
   metricsManager: {
     name: 'metricsManager',
     token: TOKENS.MetricsManager,
-    load: async () => {
+    load: async (container: DIContainer) => {
       const { MetricsManager } = await import('../managers/MetricsManager');
       return new MetricsManager();
     }
@@ -102,10 +102,11 @@ export const SERVICE_MODULES = {
     name: 'workerManager',
     token: TOKENS.WorkerManager,
     dependencies: [TOKENS.Logger],
-    load: async () => {
+    load: async (container: DIContainer) => {
       const { WorkerManager } = await import('../managers/WorkerManager');
+      const { Logger } = await import('./Logger');
       const logger = container.get<ILogger>(TOKENS.Logger);
-      return new WorkerManager(logger);
+      return new WorkerManager(logger as InstanceType<typeof Logger>);
     }
   }
 };

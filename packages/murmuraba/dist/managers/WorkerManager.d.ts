@@ -13,6 +13,8 @@ export declare class WorkerManager {
     terminateWorker(id: string): void;
     terminateAll(): void;
     getActiveWorkerCount(): number;
+    getWorkerCount(): number;
+    hasWorker(id: string): boolean;
     getWorkerIds(): string[];
 }
 export {};

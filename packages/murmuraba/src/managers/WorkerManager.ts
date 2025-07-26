@@ -75,6 +75,14 @@ export class WorkerManager {
     return this.workers.size;
   }
   
+  getWorkerCount(): number {
+    return this.workers.size;
+  }
+  
+  hasWorker(id: string): boolean {
+    return this.workers.has(id);
+  }
+  
   getWorkerIds(): string[] {
     return Array.from(this.workers.keys());
   }

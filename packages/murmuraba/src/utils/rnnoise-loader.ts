@@ -1,6 +1,3 @@
-// Import WASM file to include it in the bundle
-import wasmUrl from '@jitsi/rnnoise-wasm/dist/rnnoise.wasm';
-
 export interface RNNoiseModule {
   _malloc: (size: number) => number;
   _free: (ptr: number) => void;
@@ -19,12 +16,14 @@ export async function loadRNNoiseModule(): Promise<RNNoiseModule> {
     modulePromise = import('@jitsi/rnnoise-wasm').then(async (rnnoiseModule) => {
       const { createRNNWasmModule } = rnnoiseModule as any;
       
-      // Configure the module to load WASM from the bundle
+      // Configure the module to load WASM from the correct path
       const module = await createRNNWasmModule({
         locateFile: (filename: string) => {
           if (filename.endsWith('.wasm')) {
-            console.log('[RNNoise Loader] Loading WASM from bundle:', wasmUrl);
-            return wasmUrl;
+            // Use the public path where the WASM file will be copied
+            const wasmPath = '/rnnoise.wasm';
+            console.log('[RNNoise Loader] Loading WASM from:', wasmPath);
+            return wasmPath;
           }
           return filename;
         }

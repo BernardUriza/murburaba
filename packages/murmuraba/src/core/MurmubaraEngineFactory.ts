@@ -32,7 +32,7 @@ export class MurmubaraEngineFactory {
     
     container.bindSingleton(TOKENS.WorkerManager, () => {
       const logger = container.get<ILogger>(TOKENS.Logger);
-      return new WorkerManager(logger);
+      return new WorkerManager(logger as Logger);
     });
     
     // Bind audio engine
