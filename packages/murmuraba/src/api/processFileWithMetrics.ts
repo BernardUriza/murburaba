@@ -303,26 +303,71 @@ function createErrorChunk(
 
 // ============= Main Processing Functions =============
 
+// Interfaz para el controlador de grabación
+export interface RecordingController {
+  pause: () => void;
+  resume: () => void;
+  stop: () => Promise<ProcessFileResult>;
+  getChunks: () => ProcessedChunk[];
+  isRecording: boolean;
+  isPaused: boolean;
+}
+
 async function processLiveMicrophone(
   options: ProcessFileOptions & { recordingDuration?: number } = {}
-): Promise<ProcessFileResult> {
-  // NOTA: Esta función existe por compatibilidad con la API pública
-  // pero internamente el hook useMurmubaraEngine ya maneja todo el flujo
-  // de grabación con startRecording/stopRecording y gestión de chunks
+): Promise<RecordingController> {
+  // Importar dinámicamente para evitar dependencias circulares
+  const { createStandaloneRecorder } = await import('../hooks/murmuraba-engine/standaloneRecorder');
   
-  // Para una implementación standalone (sin React), habría que:
-  // 1. Importar las funciones de recordingFunctions
-  // 2. Crear las instancias necesarias (recordingManager, chunkManager, etc)
-  // 3. Llamar a startRecording con la duración del chunk
-  // 4. Esperar el tiempo especificado
-  // 5. Llamar a stopRecording
-  // 6. Retornar los chunks acumulados
+  const recorder = await createStandaloneRecorder();
+  const chunkDuration = options.chunkOptions?.chunkDuration || 8000;
+  const recordingDuration = options.recordingDuration || 10000;
   
-  // Por ahora, retornamos un error indicando que se debe usar el hook
-  throw new Error(
-    'processFileWithMetrics("Use.Mic") requiere usar el hook useMurmubaraEngine. ' +
-    'Usa las funciones startRecording/stopRecording del hook para grabar desde micrófono.'
-  );
+  // Iniciar grabación
+  await recorder.startRecording(chunkDuration);
+  
+  // Auto-stop después del tiempo especificado si se proporciona
+  let autoStopTimeout: NodeJS.Timeout | null = null;
+  if (recordingDuration && recordingDuration > 0) {
+    autoStopTimeout = setTimeout(() => {
+      recorder.stopRecording();
+    }, recordingDuration);
+  }
+  
+  // Retornar controlador
+  return {
+    pause: () => recorder.pauseRecording(),
+    resume: () => recorder.resumeRecording(),
+    stop: async () => {
+      if (autoStopTimeout) {
+        clearTimeout(autoStopTimeout);
+      }
+      recorder.stopRecording();
+      
+      // Obtener los chunks finales
+      const chunks = recorder.getChunks();
+      const totalVad = chunks.reduce((sum, chunk) => sum + chunk.averageVad, 0);
+      
+      // Crear un buffer procesado combinando todos los chunks
+      // (esto es una aproximación, en producción sería más complejo)
+      const processedBuffer = new ArrayBuffer(0); // placeholder
+      
+      return {
+        chunks,
+        processedBuffer,
+        averageVad: chunks.length > 0 ? totalVad / chunks.length : 0,
+        totalDuration: chunks.reduce((sum, chunk) => sum + chunk.duration, 0),
+        metadata: {
+          sampleRate: 48000,
+          channels: 1,
+          originalDuration: chunks.reduce((sum, chunk) => sum + chunk.duration, 0)
+        }
+      };
+    },
+    getChunks: () => recorder.getChunks(),
+    get isRecording() { return recorder.isRecording; },
+    get isPaused() { return recorder.isPaused; }
+  };
 }
 
 async function processFileWithChunking(
@@ -487,7 +532,7 @@ export async function processFileWithMetrics(
 export async function processFileWithMetrics(
   useMic: 'Use.Mic',
   options?: ProcessFileOptions & { recordingDuration?: number }
-): Promise<ProcessFileResult>;
+): Promise<RecordingController>;
 
 export async function processFileWithMetrics(
   arrayBuffer: ArrayBuffer,
@@ -497,7 +542,7 @@ export async function processFileWithMetrics(
 export async function processFileWithMetrics(
   arrayBufferOrUseMic: ArrayBuffer | 'Use.Mic',
   optionsOrCallback?: ProcessFileOptions | ((metrics: ProcessingMetrics) => void)
-): Promise<ProcessFileResult | ProcessFileWithMetricsResult> {
+): Promise<ProcessFileResult | ProcessFileWithMetricsResult | RecordingController> {
   // Handle microphone recording
   if (arrayBufferOrUseMic === 'Use.Mic') {
     return processLiveMicrophone(optionsOrCallback as ProcessFileOptions & { recordingDuration?: number });
