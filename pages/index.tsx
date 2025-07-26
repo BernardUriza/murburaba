@@ -349,14 +349,33 @@ export default function App() {
                 <span>{isProcessing ? 'Initializing...' : 'Initialize Engine'}</span>
               </button>
             ) : (
-              <button 
-                className="btn btn-primary"
-                onClick={handleStartRecording}
-                disabled={isProcessing}
-              >
-                <span className="btn-icon">🎙️</span>
-                <span>{isProcessing ? 'Processing...' : 'Record Audio'}</span>
-              </button>
+              <>
+                <button 
+                  className="btn btn-primary"
+                  onClick={handleStartRecording}
+                  disabled={isProcessing}
+                  style={{ display: isRecording ? 'none' : 'flex' }}
+                >
+                  <span className="btn-icon">🎙️</span>
+                  <span>{isProcessing ? 'Processing...' : 'Record Audio'}</span>
+                </button>
+                {isRecording && (
+                  <button 
+                    className="btn btn-danger"
+                    onClick={() => {
+                      setIsRecording(false);
+                      setIsProcessing(false);
+                      if (currentStream) {
+                        currentStream.getTracks().forEach(track => track.stop());
+                        setCurrentStream(null);
+                      }
+                    }}
+                  >
+                    <span className="btn-icon">⏹️</span>
+                    <span>Stop Recording</span>
+                  </button>
+                )}
+              </>
             )}
             
             <div className="control-group" style={{ marginTop: '1rem' }}>

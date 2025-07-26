@@ -68,7 +68,7 @@ export function ChunkHeader({
           </span>
           <span className={styles.metaItem}>
             <span className={styles.metaLabel}>Latency:</span>
-            <span className={styles.metaValue}>{processingLatency.toFixed(1)}ms</span>
+            <span className={styles.metaValue}>{processingLatency?.toFixed(1) || '0.0'}ms</span>
           </span>
         </div>
       </div>

@@ -50,7 +50,7 @@ export function ProcessingMetrics({
         <div className={styles.metricItem}>
           <span className={styles.metricLabel}>Frames Processed</span>
           <span className={styles.metricValue}>
-            {frameCount.toLocaleString()}
+            {frameCount?.toLocaleString() || '0'}
           </span>
         </div>
 
