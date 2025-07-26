@@ -1,6 +1,7 @@
 import { LogLevel } from '../types';
+import { ILogger } from './interfaces';
 
-export class Logger {
+export class Logger implements ILogger {
   private level: LogLevel = 'info';
   private onLog?: (level: LogLevel, message: string, data?: any) => void;
   private prefix: string;
@@ -24,7 +25,7 @@ export class Logger {
     return currentIndex > 0 && messageIndex <= currentIndex;
   }
   
-  private log(level: LogLevel, message: string, data?: any): void {
+  log(level: LogLevel, message: string, data?: any): void {
     if (!this.shouldLog(level)) return;
     
     const timestamp = new Date().toISOString();
@@ -45,8 +46,12 @@ export class Logger {
     }
   }
   
-  error(message: string, data?: any): void {
-    this.log('error', message, data);
+  error(message: string, error?: Error | unknown, data?: any): void {
+    if (error && data === undefined) {
+      this.log('error', message, error);
+    } else {
+      this.log('error', message, data);
+    }
   }
   
   warn(message: string, data?: any): void {
@@ -59,5 +64,9 @@ export class Logger {
   
   debug(message: string, data?: any): void {
     this.log('debug', message, data);
+  }
+  
+  getLevel(): LogLevel {
+    return this.level;
   }
 }

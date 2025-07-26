@@ -1,5 +1,6 @@
 import { LogLevel } from '../types';
-export declare class Logger {
+import { ILogger } from './interfaces';
+export declare class Logger implements ILogger {
     private level;
     private onLog?;
     private prefix;
@@ -7,10 +8,11 @@ export declare class Logger {
     setLevel(level: LogLevel): void;
     setLogHandler(handler: (level: LogLevel, message: string, data?: any) => void): void;
     private shouldLog;
-    private log;
-    error(message: string, data?: any): void;
+    log(level: LogLevel, message: string, data?: any): void;
+    error(message: string, error?: Error | unknown, data?: any): void;
     warn(message: string, data?: any): void;
     info(message: string, data?: any): void;
     debug(message: string, data?: any): void;
+    getLevel(): LogLevel;
 }
 //# sourceMappingURL=Logger.d.ts.map

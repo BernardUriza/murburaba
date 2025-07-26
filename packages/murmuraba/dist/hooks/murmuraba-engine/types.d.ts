@@ -1,10 +1,5 @@
 import { MurmubaraConfig, ChunkMetrics, EngineState, ProcessingMetrics, DiagnosticInfo, StreamController, ProcessedChunk } from '../../types';
-export interface RecordingState {
-    isRecording: boolean;
-    isPaused: boolean;
-    recordingTime: number;
-    chunks: ProcessedChunk[];
-}
+export type { ProcessedChunk };
 export interface UseMurmubaraEngineOptions extends MurmubaraConfig {
     autoInitialize?: boolean;
     defaultChunkDuration?: number;
@@ -12,16 +7,13 @@ export interface UseMurmubaraEngineOptions extends MurmubaraConfig {
     onInitError?: (error: Error) => void;
     react19Mode?: boolean;
 }
-export interface UseMurmubaraEngineReturnInternal {
+export interface UseMurmubaraEngineReturn {
     isInitialized: boolean;
     isLoading: boolean;
     error: string | null;
     engineState: EngineState;
     metrics: ProcessingMetrics | null;
     diagnostics: DiagnosticInfo | null;
-    recordingState: RecordingState;
-    currentStream: MediaStream | null;
-    streamController: StreamController | null;
     initialize: () => Promise<void>;
     destroy: (force?: boolean) => Promise<void>;
     processStream: (stream: MediaStream) => Promise<StreamController>;
@@ -30,20 +22,7 @@ export interface UseMurmubaraEngineReturnInternal {
         onChunkProcessed?: (chunk: ChunkMetrics) => void;
     }) => Promise<StreamController>;
     processFile: (arrayBuffer: ArrayBuffer) => Promise<ArrayBuffer>;
-    _internal_startRecording: (chunkDuration?: number) => Promise<void>;
-    _internal_stopRecording: () => void;
-    _internal_pauseRecording: () => void;
-    _internal_resumeRecording: () => void;
-    _internal_clearRecordings: () => void;
-    toggleChunkPlayback: (chunkId: string, audioType: 'processed' | 'original') => Promise<void>;
-    exportChunkAsWav: (chunkId: string, audioType: 'processed' | 'original') => Promise<Blob>;
-    exportChunkAsMp3: (chunkId: string, audioType: 'processed' | 'original', bitrate?: number) => Promise<Blob>;
-    downloadChunk: (chunkId: string, format: 'webm' | 'wav' | 'mp3', audioType: 'processed' | 'original') => Promise<void>;
     getDiagnostics: () => DiagnosticInfo | null;
     resetError: () => void;
-    formatTime: (seconds: number) => string;
-    getAverageNoiseReduction: () => number;
-}
-export interface UseMurmubaraEngineReturn extends Omit<UseMurmubaraEngineReturnInternal, '_internal_startRecording' | '_internal_stopRecording' | '_internal_pauseRecording' | '_internal_resumeRecording' | '_internal_clearRecordings'> {
 }
 //# sourceMappingURL=types.d.ts.map

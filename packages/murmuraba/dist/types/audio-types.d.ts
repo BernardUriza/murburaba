@@ -66,19 +66,9 @@ export interface ProcessedChunk {
     originalAudioUrl?: string;
     vadData: Array<{
         time: number;
-        value: number;
-    }>;
-    metrics: {
-        noiseRemoved: number;
-        averageLevel: number;
         vad: number;
-        noiseReductionLevel: number;
-        processingLatency: number;
-        inputLevel: number;
-        outputLevel: number;
-        frameCount: number;
-        droppedFrames: number;
-    };
+    }>;
+    metrics: ProcessingMetrics;
     originalSize: number;
     processedSize: number;
     noiseRemoved: number;

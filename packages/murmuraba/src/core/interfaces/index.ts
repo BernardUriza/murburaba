@@ -5,3 +5,4 @@ export * from './IAudioEngine';
 export * from './IWorkerManager';
 export * from './IMetricsManager';
 export * from './IChunkProcessor';
+export * from './IAudioProcessor';

@@ -4,11 +4,12 @@
 
 ### ✅ What's Inside the Package (Good)
 - **Core Engine**: MurmubaraEngine class with full audio processing pipeline
-- **Hooks**: useMurmubaraEngine with complete recording/chunking logic
+- **🧨 MurmurabaSuite**: Modern DI-based React architecture (NEW)
+- **Services**: AudioProcessorService with dependency injection
 - **Managers**: WorkerManager, MetricsManager, ChunkProcessor
 - **Audio Utils**: AudioConverter (WAV/MP3), AudioStreamManager
-- **Recording System**: RecordingManager with concatenated streaming
 - **Types**: Full TypeScript types exported
+- **⚠️ REMOVED**: useMurmubaraEngine hook (use MurmurabaSuite instead)
 
 ### ❌ What's Outside (Needs Fix)
 - **RNNoise WASM**: Currently loaded from hardcoded paths

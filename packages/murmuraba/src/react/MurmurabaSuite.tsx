@@ -6,8 +6,11 @@ import { AudioProcessorService } from '../services/AudioProcessorService';
 import { MurmubaraConfig } from '../types';
 import { ILogger, IAudioProcessor } from '../core/interfaces';
 
+// Re-export TOKENS for external use
+export { TOKENS };
+
 // Extended tokens for suite services
-export const SUITE_TOKENS = {
+const SUITE_TOKENS = {
   ...TOKENS,
   AudioProcessor: Symbol('AudioProcessor'),
   ServiceLoader: Symbol('ServiceLoader')
@@ -240,3 +243,7 @@ export function useAudioProcessing() {
     cancel: () => processor?.cancel()
   };
 }
+
+// Re-export other types and utilities
+export type { MurmurabaSuiteConfig, MurmurabaSuiteContextValue };
+export { SUITE_TOKENS };

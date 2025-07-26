@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { ProcessedChunk } from '../hooks/murmuraba-engine/types';
+import { ProcessedChunk } from '../types';
 import { ChunkHeader } from './chunk-results/ChunkHeader';
 import { ProcessingMetrics } from './chunk-results/ProcessingMetrics';
 import { FileInfo } from './chunk-results/FileInfo';

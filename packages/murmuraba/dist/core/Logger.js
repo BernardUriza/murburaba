@@ -35,8 +35,13 @@ export class Logger {
             }
         }
     }
-    error(message, data) {
-        this.log('error', message, data);
+    error(message, error, data) {
+        if (error && data === undefined) {
+            this.log('error', message, error);
+        }
+        else {
+            this.log('error', message, data);
+        }
     }
     warn(message, data) {
         this.log('warn', message, data);
@@ -46,5 +51,8 @@ export class Logger {
     }
     debug(message, data) {
         this.log('debug', message, data);
+    }
+    getLevel() {
+        return this.level;
     }
 }

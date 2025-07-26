@@ -17,17 +17,17 @@ export { RNNoiseEngine } from './engines/RNNoiseEngine';
 export * from './types';
 // API functions
 export { initializeAudioEngine, getEngine, processStream, processStreamChunked, destroyEngine, getEngineStatus, getDiagnostics, onMetricsUpdate, processFile } from './api';
-// Enhanced processing functions
-export { processFileWithMetrics } from './api/processFileWithMetrics';
-// Hook exports
-export { useMurmubaraEngine } from './hooks/murmuraba-engine';
-export { useAudioEngine } from './hooks/useAudioEngine';
+// Modern API exports - Use MurmurabaSuite for all functionality
+// Legacy hooks have been removed in favor of the DI-based MurmurabaSuite
 // Utils
 export { AudioConverter, getAudioConverter } from './utils/audioConverter';
 // Version
 export const VERSION = '1.5.0';
 export const MURMURABA_VERSION = VERSION;
-// React/DI exports for easier imports
-export { MurmurabaSuite, useMurmurabaSuite, useAudioProcessor as useMurmurabaAudioProcessor, useAudioProcessing } from './react/MurmurabaSuite';
-export { DIContainer, TOKENS } from './core/DIContainer';
+// 🧨 MODERN MURMURABA API - MurmurabaSuite Architecture 🧨
+// All functionality now available through MurmurabaSuite
+export { MurmurabaSuite, useMurmurabaSuite, useAudioProcessor, useSuiteLogger, useAudioProcessing, TOKENS, SUITE_TOKENS } from './react/MurmurabaSuite';
+export { DIContainer } from './core/DIContainer';
 export { AudioProcessorService } from './services/AudioProcessorService';
+// UI Components - Export from components directory
+export { SimpleWaveformAnalyzer, WaveformAnalyzer, SyncedWaveforms, ChunkProcessingResults, AudioPlayer, AdvancedMetricsPanel, ErrorBoundary, withErrorBoundary, BuildInfo, BuildInfoBadge, BuildInfoBlock, BuildInfoInline } from './components';

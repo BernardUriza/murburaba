@@ -1,4 +1,3 @@
-import { Injectable, Inject, Log, Measure } from '../core/decorators';
 import { TOKENS, DIContainer } from '../core/DIContainer';
 import { IAudioProcessor, AudioProcessingOptions, AudioProcessingResult } from '../core/interfaces/IAudioProcessor';
 import { ILogger, IMetricsManager } from '../core/interfaces';
@@ -6,12 +5,8 @@ import { ProcessedChunk, ProcessingMetrics } from '../types';
 import { engineRegistry } from '../core/EngineRegistry';
 import { AudioConverter } from '../utils/audioConverter';
 
-@Injectable(TOKENS.AudioProcessor)
 export class AudioProcessorService implements IAudioProcessor {
-  @Inject(TOKENS.Logger)
   private logger!: ILogger;
-  
-  @Inject(TOKENS.MetricsManager)
   private metricsManager!: IMetricsManager;
   
   private progressCallbacks = new Set<(progress: number) => void>();
@@ -21,10 +16,13 @@ export class AudioProcessorService implements IAudioProcessor {
   private isProcessingFlag = false;
   private abortController?: AbortController;
   
-  constructor(private container?: DIContainer) {}
+  constructor(private container?: DIContainer) {
+    if (container) {
+      this.logger = container.get<ILogger>(TOKENS.Logger);
+      this.metricsManager = container.get<IMetricsManager>(TOKENS.MetricsManager);
+    }
+  }
   
-  @Log('info')
-  @Measure()
   async processFile(
     file: File | ArrayBuffer,
     options?: AudioProcessingOptions
@@ -52,8 +50,6 @@ export class AudioProcessorService implements IAudioProcessor {
     }
   }
   
-  @Log('info')
-  @Measure()
   async processStream(
     stream: MediaStream,
     options?: AudioProcessingOptions
@@ -97,7 +93,6 @@ export class AudioProcessorService implements IAudioProcessor {
     }
   }
   
-  @Log('info')
   async processRecording(
     duration: number,
     options?: AudioProcessingOptions
@@ -204,13 +199,11 @@ export class AudioProcessorService implements IAudioProcessor {
   
   private createDefaultMetrics(): ProcessedChunk['metrics'] {
     return {
-      noiseRemoved: 0,
-      averageLevel: 0,
-      vad: 0,
       noiseReductionLevel: 0,
       processingLatency: 0,
       inputLevel: 0,
       outputLevel: 0,
+      timestamp: Date.now(),
       frameCount: 0,
       droppedFrames: 0
     };

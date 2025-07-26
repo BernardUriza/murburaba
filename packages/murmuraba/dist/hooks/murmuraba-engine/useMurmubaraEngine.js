@@ -1,17 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { initializeAudioEngine, destroyEngine, processStream, processStreamChunked, getEngineStatus, getDiagnostics, onMetricsUpdate, processFile, } from '../../api';
-import { getAudioConverter, destroyAudioConverter } from '../../utils/audioConverter';
-// Import managers
-import { URLManager } from './urlManager';
-import { ChunkManager } from './chunkManager';
-import { RecordingManager } from './recordingManager';
-import { AudioExporter } from './audioExporter';
-import { PlaybackManager } from './playbackManager';
-import { createRecordingFunctions } from './recordingFunctions';
-// Import hooks
-import { useRecordingState } from './useRecordingState';
+import { destroyAudioConverter } from '../../utils/audioConverter';
+import { AudioStreamManager } from '../../utils/AudioStreamManager';
 // Import constants
-import { RECORDING_UPDATE_INTERVAL, LOG_PREFIX } from './constants';
+import { LOG_PREFIX } from './constants';
 /**
  * Main Murmuraba hook with medical-grade recording functionality
  * Refactored for better maintainability
@@ -25,21 +17,13 @@ export function useMurmubaraEngine(options = {}) {
     const [engineState, setEngineState] = useState('uninitialized');
     const [metrics, setMetrics] = useState(null);
     const [diagnostics, setDiagnostics] = useState(null);
-    // Use dedicated recording state hook
-    const { recordingState, startRecording: recordingStateStart, stopRecording: recordingStateStop, pauseRecording: recordingStatePause, resumeRecording: recordingStateResume, addChunk, toggleChunkPlayback: recordingStateTogglePlayback, clearRecordings: recordingStateClear, updateRecordingTime } = useRecordingState();
-    const [currentStream, setCurrentStream] = useState(null);
-    const [originalStream, setOriginalStream] = useState(null);
     const [streamController, setStreamController] = useState(null);
-    // Initialize managers
-    const urlManagerRef = useRef(new URLManager());
-    const chunkManagerRef = useRef(new ChunkManager(urlManagerRef.current));
-    const recordingManagerRef = useRef(new RecordingManager(urlManagerRef.current));
-    const audioExporterRef = useRef(new AudioExporter());
-    const playbackManagerRef = useRef(new PlaybackManager());
+    // Stream management
+    const audioContextRef = useRef(null);
+    const streamManagerRef = useRef(null);
     // Other refs
     const metricsUnsubscribeRef = useRef(null);
     const initializePromiseRef = useRef(null);
-    const audioConverterRef = useRef(null);
     // Update diagnostics
     const updateDiagnostics = useCallback(() => {
         if (!isInitialized) {
@@ -78,13 +62,13 @@ export function useMurmubaraEngine(options = {}) {
             try {
                 console.log(`🔧 ${LOG_PREFIX.LIFECYCLE} Calling initializeAudioEngine with config:`, config);
                 await initializeAudioEngine(config);
+                // Initialize AudioContext and stream manager
+                audioContextRef.current = new AudioContext({ sampleRate: 48000 });
+                streamManagerRef.current = new AudioStreamManager(audioContextRef.current);
                 // Set up metrics listener
                 onMetricsUpdate((newMetrics) => {
                     setMetrics(newMetrics);
                 });
-                // Initialize audio converter
-                audioConverterRef.current = getAudioConverter();
-                audioExporterRef.current.setAudioConverter(audioConverterRef.current);
                 setIsInitialized(true);
                 setEngineState('ready');
                 console.log(`🎉 ${LOG_PREFIX.LIFECYCLE} Engine initialized successfully!`);
@@ -114,20 +98,23 @@ export function useMurmubaraEngine(options = {}) {
             return;
         }
         try {
-            // Stop any ongoing recording
-            if (recordingState.isRecording) {
-                console.log(`🛑 ${LOG_PREFIX.LIFECYCLE} Stopping ongoing recording before destroy`);
-                recordingManagerRef.current.stopRecording();
-            }
             // Clean up event listeners
             if (metricsUnsubscribeRef.current) {
                 metricsUnsubscribeRef.current();
                 metricsUnsubscribeRef.current = null;
             }
+            // Clean up streams
+            if (streamManagerRef.current) {
+                streamManagerRef.current.removeAllStreams();
+                streamManagerRef.current = null;
+            }
+            // Clean up audio context
+            if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+                await audioContextRef.current.close();
+                audioContextRef.current = null;
+            }
             // CRITICAL: Destroy audio converter to prevent memory leaks
             destroyAudioConverter();
-            // Clean up all URLs
-            urlManagerRef.current.revokeAllUrls();
             await destroyEngine({ force });
             setIsInitialized(false);
             setEngineState('destroyed');
@@ -140,73 +127,7 @@ export function useMurmubaraEngine(options = {}) {
             setError(errorMessage);
             throw err;
         }
-    }, [isInitialized, recordingState.isRecording]);
-    // Export functions (delegated to AudioExporter)
-    const exportChunkAsWav = useCallback(async (chunkId, audioType) => {
-        const chunk = chunkManagerRef.current.findChunk(recordingState.chunks, chunkId);
-        if (!chunk)
-            throw new Error(`Chunk not found: ${chunkId}`);
-        return audioExporterRef.current.exportChunkAsWav(chunk, audioType);
-    }, [recordingState.chunks]);
-    const exportChunkAsMp3 = useCallback(async (chunkId, audioType, bitrate) => {
-        const chunk = chunkManagerRef.current.findChunk(recordingState.chunks, chunkId);
-        if (!chunk)
-            throw new Error(`Chunk not found: ${chunkId}`);
-        return audioExporterRef.current.exportChunkAsMp3(chunk, audioType, bitrate);
-    }, [recordingState.chunks]);
-    const downloadChunk = useCallback(async (chunkId, format, audioType) => {
-        const chunk = chunkManagerRef.current.findChunk(recordingState.chunks, chunkId);
-        if (!chunk)
-            throw new Error(`Chunk not found: ${chunkId}`);
-        return audioExporterRef.current.downloadChunk(chunk, format, audioType);
-    }, [recordingState.chunks]);
-    // Utility functions
-    const formatTime = useCallback((seconds) => {
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        const secs = seconds % 60;
-        if (hours > 0) {
-            return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
-        return `${minutes}:${secs.toString().padStart(2, '0')}`;
-    }, []);
-    const getAverageNoiseReduction = useCallback(() => {
-        return chunkManagerRef.current.getAverageNoiseReduction(recordingState.chunks);
-    }, [recordingState.chunks]);
-    // Create recording functions
-    const recordingFunctions = createRecordingFunctions({
-        isInitialized,
-        recordingState,
-        recordingStateHook: {
-            recordingState,
-            startRecording: recordingStateStart,
-            stopRecording: recordingStateStop,
-            pauseRecording: recordingStatePause,
-            resumeRecording: recordingStateResume,
-            addChunk,
-            toggleChunkPlayback: recordingStateTogglePlayback,
-            clearRecordings: recordingStateClear,
-            updateRecordingTime
-        },
-        currentStream,
-        originalStream,
-        setCurrentStream,
-        setOriginalStream,
-        setStreamController,
-        setError,
-        chunkManager: chunkManagerRef.current,
-        recordingManager: recordingManagerRef.current,
-        initialize
-    });
-    // Playback functions
-    const toggleChunkPlayback = useCallback(async (chunkId, audioType) => {
-        const chunk = chunkManagerRef.current.findChunk(recordingState.chunks, chunkId);
-        if (!chunk)
-            return;
-        await playbackManagerRef.current.toggleChunkPlayback(chunk, audioType, (id, isPlaying) => {
-            recordingStateTogglePlayback(id, isPlaying, audioType);
-        });
-    }, [recordingState.chunks, recordingStateTogglePlayback]);
+    }, [isInitialized]);
     // Effects
     // Auto-initialize
     useEffect(() => {
@@ -215,16 +136,6 @@ export function useMurmubaraEngine(options = {}) {
             initialize();
         }
     }, [autoInitialize, isInitialized, isLoading, initialize]);
-    // Update recording time
-    useEffect(() => {
-        if (recordingState.isRecording && !recordingState.isPaused) {
-            const startTime = Date.now() - recordingState.recordingTime * 1000;
-            const interval = setInterval(() => {
-                updateRecordingTime(Math.floor((Date.now() - startTime) / 1000));
-            }, RECORDING_UPDATE_INTERVAL);
-            return () => clearInterval(interval);
-        }
-    }, [recordingState.isRecording, recordingState.isPaused, recordingState.recordingTime, updateRecordingTime]);
     // Update engine state periodically
     useEffect(() => {
         if (!isInitialized)
@@ -243,17 +154,18 @@ export function useMurmubaraEngine(options = {}) {
     // Cleanup on unmount
     useEffect(() => {
         console.log(`🌟 ${LOG_PREFIX.LIFECYCLE} Component mounted, setting up cleanup handler`);
-        // Capture refs for cleanup
-        const urlManager = urlManagerRef.current;
-        const playbackManager = playbackManagerRef.current;
         return () => {
             console.log(`👋 ${LOG_PREFIX.LIFECYCLE} Component unmounting, cleaning up...`);
+            // Clean up streams
+            if (streamManagerRef.current) {
+                streamManagerRef.current.removeAllStreams();
+            }
+            // Clean up audio context
+            if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+                audioContextRef.current.close();
+            }
             // CRITICAL: Destroy audio converter to prevent memory leaks
             destroyAudioConverter();
-            // Clean up all URLs
-            urlManager.revokeAllUrls();
-            // Clean up audio elements
-            playbackManager.cleanup();
         };
     }, []);
     return {
@@ -264,34 +176,14 @@ export function useMurmubaraEngine(options = {}) {
         engineState,
         metrics,
         diagnostics,
-        // Recording State
-        recordingState,
-        currentStream,
-        streamController,
         // Actions
         initialize,
         destroy,
         processStream,
         processStreamChunked,
         processFile,
-        // Recording Actions - INTERNAL USE ONLY
-        // These functions are not exported in the public API
-        // Use processFileWithMetrics('Use.Mic') for external recording
-        _internal_startRecording: recordingFunctions.startRecording,
-        _internal_stopRecording: recordingFunctions.stopRecording,
-        _internal_pauseRecording: recordingFunctions.pauseRecording,
-        _internal_resumeRecording: recordingFunctions.resumeRecording,
-        _internal_clearRecordings: recordingFunctions.clearRecordings,
-        // Audio Playback Actions
-        toggleChunkPlayback,
-        // Export Actions
-        exportChunkAsWav,
-        exportChunkAsMp3,
-        downloadChunk,
         // Utility
         getDiagnostics: updateDiagnostics,
         resetError: () => setError(null),
-        formatTime,
-        getAverageNoiseReduction,
     };
 }
