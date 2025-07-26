@@ -8,6 +8,9 @@ import {
   ProcessedChunk
 } from '../../types';
 
+// Re-export ProcessedChunk for external use
+export type { ProcessedChunk };
+
 export interface RecordingState {
   isRecording: boolean;
   isPaused: boolean;

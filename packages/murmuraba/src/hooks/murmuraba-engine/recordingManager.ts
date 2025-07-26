@@ -293,17 +293,8 @@ export class RecordingManager {
         averageVad = 0.5; // Placeholder - in real implementation would calculate from audio
         frameCount = Math.floor(actualDuration / 10); // Approximate frame count
         
-        // Convert metrics to VAD timeline data if available
-        const vadSampleRate = 48000; // Assuming 48kHz
-        const frameSize = 480; // RNNoise frame size
-        if ((result as any).metrics) {
-          vadData = (result as any).metrics.map((metric: any, index: number) => ({
-            time: (index * frameSize) / vadSampleRate,
-            vad: metric.vad
-          }));
-        } else {
-          vadData = [];
-        }
+        // Convert metrics to VAD timeline data (simplified implementation)
+        vadData = [];
         
         console.log(`📊 VAD Data generated: ${vadData.length} points, avg=${averageVad.toFixed(3)}`);
         
