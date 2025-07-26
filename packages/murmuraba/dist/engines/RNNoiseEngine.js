@@ -1,4 +1,5 @@
-export class RNNoiseEngine {
+/* React externalized */
+class RNNoiseEngine {
     constructor(config) {
         this.name = 'RNNoise';
         this.description = 'Neural network-based noise suppression';
@@ -83,3 +84,6 @@ export class RNNoiseEngine {
         }
     }
 }
+
+
+module.exports = { RNNoiseEngine };

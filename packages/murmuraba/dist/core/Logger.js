@@ -1,4 +1,5 @@
-export class Logger {
+/* React externalized */
+class Logger {
     constructor(prefix = '[Murmuraba]') {
         this.level = 'info';
         this.prefix = prefix;
@@ -56,3 +57,6 @@ export class Logger {
         return this.level;
     }
 }
+
+
+module.exports = { Logger };

@@ -23,8 +23,9 @@ function processFile(filePath) {
     () => {
       reactRequired = true;
       return `const React = require('react');
-const _jsx = React.createElement;
-const _jsxs = React.createElement;`;
+const ReactJSXRuntime = require('react/jsx-runtime');
+const _jsx = ReactJSXRuntime.jsx;
+const _jsxs = ReactJSXRuntime.jsxs;`;
     }
   );
   
@@ -175,30 +176,16 @@ console.log(`✅ Externalized React in ${jsFiles.length} files`);
 // Create CommonJS wrapper that properly handles React externalization
 const cjsContent = `'use strict';
 
-// Ensure React is externalized
-if (typeof require !== 'undefined') {
-  const React = require('react');
-  const ReactDOM = require('react-dom');
-  
-  // Re-export everything from the TypeScript build
-  module.exports = require('./index.js');
-}
+// This file ensures React is properly externalized for CommonJS environments
+// Re-export everything from the TypeScript build
+module.exports = require('./index.js');
 `;
 
 fs.writeFileSync(path.join(__dirname, '../dist/index.cjs.js'), cjsContent);
 console.log('✅ Created CommonJS wrapper with React externalization');
 
 // Create ESM wrapper with proper externalization
-const esmContent = `// ESM wrapper with React externalization
-import React from 'react';
-import ReactDOM from 'react-dom';
-
-// Ensure React is available globally for the bundle
-if (typeof window !== 'undefined') {
-  window.React = React;
-  window.ReactDOM = ReactDOM;
-}
-
+const esmContent = `// ESM wrapper - React is expected to be provided by the host application
 export * from './index.js';
 `;
 

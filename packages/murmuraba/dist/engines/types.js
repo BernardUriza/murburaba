@@ -1,1 +1,2 @@
+/* React externalized */
 export {};

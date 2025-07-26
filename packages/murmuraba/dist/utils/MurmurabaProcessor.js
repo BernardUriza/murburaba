@@ -1,4 +1,5 @@
-export class MurmurabaProcessor {
+/* React externalized */
+class MurmurabaProcessor {
     constructor(frameSize = 480) {
         this.frameSize = frameSize;
         this.audioContext = null;
@@ -122,3 +123,6 @@ export class MurmurabaProcessor {
         }
     }
 }
+
+
+module.exports = { MurmurabaProcessor };
