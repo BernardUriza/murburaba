@@ -7,7 +7,7 @@ interface OverlayPanelProps {
   children: React.ReactNode
 }
 
-export function OverlayPanel({ show, onClose, title = "🎵 Audio Demo", children }: OverlayPanelProps) {
+export function OverlayPanel({ show, onClose, title = "", children }: OverlayPanelProps) {
   return (
     <>
       <div className={`slide-panel-overlay ${show ? 'active' : ''}`} onClick={onClose} />

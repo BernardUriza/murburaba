@@ -111,13 +111,25 @@ export default function AudioDemo({
 
       <div className={styles.audioPlayers}>
         <AudioBlock label="Original" src={urls.original} />
-        <AudioBlock label="Processed" src={urls.processed} />
+        {urls.processedChunks.length === 0 ? (
+          <AudioBlock label="Processed" src={null} />
+        ) : (
+          urls.processedChunks.map((chunkUrl, index) => (
+            <AudioBlock 
+              key={index} 
+              label={`Chunk ${index + 1}`} 
+              src={chunkUrl} 
+            />
+          ))
+        )}
       </div>
 
       <div className={styles.settings}>
         <strong>AGC:</strong> {enableAGC ? 'ON' : 'OFF'}
         {' | '}
         <strong>Duration:</strong> {chunkDuration}s
+        {' | '}
+        <strong>Chunks:</strong> {urls.processedChunks.length}
       </div>
     </div>
   )
