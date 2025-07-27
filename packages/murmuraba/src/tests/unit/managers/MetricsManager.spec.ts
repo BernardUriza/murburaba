@@ -61,10 +61,10 @@ describe('MetricsManager', () => {
 
   describe('Processing Metrics', () => {
     it('should update noise reduction', () => {
-      manager.updateNoiseReduction(75.5);
+      manager.updateNoiseReduction(0.755);
 
       const metrics = manager.getMetrics();
-      expect(metrics.noiseReductionLevel).toBe(75.5);
+      expect(metrics.noiseReductionLevel).toBe(0.755);
     });
 
     it('should update VAD score', () => {
@@ -185,7 +185,7 @@ describe('MetricsManager', () => {
 
       manager.updateInputLevel(0.5);
       manager.updateOutputLevel(0.3);
-      manager.updateNoiseReduction(60);
+      manager.updateNoiseReduction(0.6);
 
       manager.startAutoUpdate(100);
       vi.advanceTimersByTime(100);
@@ -193,7 +193,7 @@ describe('MetricsManager', () => {
       expect(callback).toHaveBeenCalledWith({
         inputLevel: 0.3,
         outputLevel: 0.3,
-        noiseReductionLevel: 60,
+        noiseReductionLevel: 0.6,
         processingLatency: expect.any(Number),
         frameCount: 0,
         droppedFrames: 0,
@@ -206,7 +206,7 @@ describe('MetricsManager', () => {
     it('should reset all metrics', () => {
       manager.updateInputLevel(0.8);
       manager.updateOutputLevel(0.7);
-      manager.updateNoiseReduction(80);
+      manager.updateNoiseReduction(0.8);
       manager.updateVAD(0.9);
       manager.recordFrame();
       manager.recordDroppedFrame();

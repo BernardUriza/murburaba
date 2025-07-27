@@ -13,6 +13,7 @@ export { engineRegistry } from './core/EngineRegistry';
 // Manager exports
 export { WorkerManager } from './managers/WorkerManager';
 export { MetricsManager } from './managers/MetricsManager';
+export { LoggingManager, logging } from './managers/LoggingManager';
 
 // Audio Module exports (NEW - Modular Architecture)
 export { WasmManager } from './audio/WasmManager';

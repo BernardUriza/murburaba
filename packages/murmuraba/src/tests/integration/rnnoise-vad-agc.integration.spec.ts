@@ -434,7 +434,7 @@ describe('RNNoise + VAD + AGC Integration', () => {
         { amplitude: 0.15, noiseLevel: 0.15, expectedVAD: 0.6 }, // Quiet speech with noise
       ];
 
-      scenarios.forEach((scenario, idx) => {
+      scenarios.forEach((scenario, _idx) => {
         const frame = new Float32Array(480);
         for (let i = 0; i < 480; i++) {
           const speech = Math.sin(i * 0.05) * scenario.amplitude;
@@ -456,7 +456,7 @@ describe('RNNoise + VAD + AGC Integration', () => {
         
         const inputRMS = frameProcessor.calculateRMS(frame);
         const outputRMS = frameProcessor.calculateRMS(result.output);
-        const noiseReduction = inputRMS > 0 ? (1 - outputRMS / inputRMS) * 100 : 0;
+        const noiseReduction = inputRMS > 0 ? (1 - outputRMS / inputRMS) : 0;
 
         qualityMetrics.push({
           inputRMS,

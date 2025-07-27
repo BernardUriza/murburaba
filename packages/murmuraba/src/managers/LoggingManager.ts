@@ -19,6 +19,7 @@ interface ThrottleConfig {
   lastLogged: number;
   count: number;
   threshold: number;
+  data?: any;
 }
 
 export class LoggingManager {

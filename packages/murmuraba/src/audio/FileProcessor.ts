@@ -36,7 +36,8 @@ export class FileProcessor {
     const startTime = Date.now();
 
     // Parse WAV header
-    const { pcmData, sampleRate, format } = this.parseWavFile(arrayBuffer);
+    const { pcmData, sampleRate } = this.parseWavFile(arrayBuffer);
+    // format is available but not used in current implementation
     
     // Resample to 48kHz if needed
     const { resampledData, outputSampleRate } = this.resampleIfNeeded(pcmData, sampleRate);
@@ -171,7 +172,7 @@ export class FileProcessor {
         // Calculate metrics
         const inputRMS = this.frameProcessor.calculateRMS(frame);
         const outputRMS = this.frameProcessor.calculateRMS(result.output);
-        const noiseReduction = inputRMS > 0 ? Math.max(0, (1 - outputRMS / inputRMS) * 100) : 0;
+        const noiseReduction = inputRMS > 0 ? Math.max(0, (1 - outputRMS / inputRMS)) : 0;
 
         // Track voice activity
         totalVAD += result.vad;

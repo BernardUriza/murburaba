@@ -36,7 +36,8 @@ export function GlobalAudioMonitor() {
       
       // Get current metrics from manager
       if (metricsManager && 'getMetrics' in metricsManager) {
-        const currentMetrics = (metricsManager as any).getMetrics()
+        // Current metrics available but not used directly
+        // const currentMetrics = (metricsManager as any).getMetrics()
       }
       
       // Also subscribe directly to MetricsManager
@@ -72,7 +73,7 @@ export function GlobalAudioMonitor() {
     } catch (error) {
       console.error('Failed to setup audio monitoring:', error)
     }
-  }, [container, isReady])
+  }, [container, isReady, dispatch])
   
   // Update stream info when stream changes
   useEffect(() => {

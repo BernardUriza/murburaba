@@ -180,6 +180,12 @@ export class AudioProcessorService implements IAudioProcessor {
 
       const chunks: ProcessedChunk[] = [];
       const engine = engineRegistry.getEngine();
+      
+      console.log('🚀 AudioProcessorService: Starting stream processing', {
+        engineReady: !!engine,
+        streamActive: stream.active,
+        streamId: stream.id
+      });
 
       // Connect metrics from engine to service
       const metricsManager = (engine as any).metricsManager;
@@ -194,14 +200,21 @@ export class AudioProcessorService implements IAudioProcessor {
         );
       }
 
+      console.log('🎯 AudioProcessorService: Calling engine.processStream', {
+        chunkDuration: recordingOptions.chunkDuration * 1000
+      });
+      
       const controller = await engine.processStream(stream, {
         chunkDuration: recordingOptions.chunkDuration * 1000, // Convert seconds to milliseconds
         onChunkProcessed: (chunk: any) => {
+          console.log('📦 AudioProcessorService: Chunk processed', chunk);
           const processedChunk = this.normalizeChunk(chunk);
           chunks.push(processedChunk);
           this.notifyChunk(processedChunk);
         },
       });
+      
+      console.log('🎮 AudioProcessorService: Controller obtained', !!controller);
 
       // Stop recording after specified duration
       console.log(`⏱️ AudioProcessorService: Recording will stop in ${duration}ms`);

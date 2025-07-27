@@ -6,6 +6,7 @@ import { WorkerManager } from '../managers/WorkerManager';
 import { MetricsManager } from '../managers/MetricsManager';
 import { ChunkProcessor } from '../managers/ChunkProcessor';
 import { SimpleAGC } from '../utils/SimpleAGC';
+import { logging } from '../managers/LoggingManager';
 import {
   MurmubaraConfig,
   EngineEvents,
@@ -37,6 +38,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
   private errorHistory: Array<{ timestamp: number; error: string }> = [];
   private agcEnabled = true;
   private agc?: SimpleAGC;
+  private supportsAudioWorklet: boolean = false;
 
   constructor(config: MurmubaraConfig = {}) {
     super();
@@ -206,26 +208,18 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       // Try to initialize AudioWorklet if available
       if ('audioWorklet' in this.audioContext) {
         try {
-          // Get the AudioWorklet processor code directly
-          const { AudioWorkletEngine } = await import('../engines/AudioWorkletEngine');
-          const workletEngine = new AudioWorkletEngine({ enableRNNoise: true });
-
-          // Register the processor in OUR audio context
-          const processorCode = (workletEngine as any).getProcessorCode();
-          const blob = new Blob([processorCode], { type: 'application/javascript' });
-          const processorUrl = URL.createObjectURL(blob);
-
-          try {
-            await this.audioContext.audioWorklet.addModule(processorUrl);
-            this.logger.info('AudioWorklet processor registered successfully in MurmubaraEngine');
-          } finally {
-            URL.revokeObjectURL(processorUrl);
-          }
+          // Use the ES6 module pattern as specified in ANTI_PATTERNS.md
+          const workletPath = '/worklets/rnnoise-processor.worklet.js';
+          
+          await this.audioContext.audioWorklet.addModule(workletPath);
+          this.supportsAudioWorklet = true;
+          this.logger.info('AudioWorklet processor registered successfully in MurmubaraEngine');
         } catch (error) {
           this.logger.warn(
             'Failed to initialize AudioWorklet, will fallback to ScriptProcessor:',
             error
           );
+          this.supportsAudioWorklet = false;
         }
       }
     } catch (error) {
@@ -605,11 +599,11 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       processor.port.onmessage = event => {
         if (event.data.type === 'metrics') {
           // Update metrics from worklet
-          const { inputLevel, outputLevel, vad, noiseReduction } = event.data;
-          this.metricsManager.updateInputLevel(inputLevel);
-          this.metricsManager.updateOutputLevel(outputLevel);
-          this.metricsManager.updateVAD(vad);
-          this.metricsManager.updateNoiseReduction(noiseReduction);
+          const { inputLevel, outputLevel, vad, noiseReduction } = event.data.data || event.data;
+          this.metricsManager.updateInputLevel(inputLevel || 0);
+          this.metricsManager.updateOutputLevel(outputLevel || 0);
+          this.metricsManager.updateVAD(vad || 0);
+          this.metricsManager.updateNoiseReduction(noiseReduction || 0);
         }
       };
     } else {
@@ -746,7 +740,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
 
         // Calculate actual noise reduction based on power analysis
         if (framesProcessed > 0) {
-          const avgNoiseReduction = (totalNoiseRemoved / framesProcessed) * 100;
+          const avgNoiseReduction = totalNoiseRemoved / framesProcessed;
 
           this.metricsManager.updateNoiseReduction(avgNoiseReduction);
         }
@@ -1313,13 +1307,13 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
 
       // Calculate output RMS
       const outputRMS = this.metricsManager.calculateRMS(output);
-      const noiseReduction = inputRMS > 0 ? Math.max(0, (1 - outputRMS / inputRMS) * 100) : 0;
+      const noiseReduction = inputRMS > 0 ? Math.max(0, (1 - outputRMS / inputRMS)) : 0;
 
       // Log frame metrics
       this.logger.debug(
         `Frame ${frameIndex + 1}/${numFrames}: VAD=${vad.toFixed(3)}, ` +
           `InputRMS=${inputRMS.toFixed(4)}, OutputRMS=${outputRMS.toFixed(4)}, ` +
-          `NoiseReduction=${noiseReduction.toFixed(1)}%`
+          `NoiseReduction=${(noiseReduction * 100).toFixed(1)}%`
       );
 
       // Track voice activity

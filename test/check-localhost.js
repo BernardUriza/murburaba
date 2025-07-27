@@ -220,6 +220,103 @@ async function checkLocalhost() {
     // Esperar un poco más para asegurar carga completa
     await new Promise(resolve => setTimeout(resolve, 2000));
     
+    // Paso 5: Verificar "Start Recording" deshabilitado y luego habilitado
+    console.log('\n🕒 Verificando botón "Start Recording"...');
+    
+    // Esperar a que el botón esté en el DOM
+    let recordBtn;
+    try {
+      await page.waitForSelector('button#start-recording', { timeout: 5000 });
+      recordBtn = await page.$('button#start-recording');
+      if (!recordBtn) throw new Error();
+      console.log('✅ "Start Recording" está presente');
+    } catch {
+      console.error('❌ No se encontró el botón "Start Recording"');
+      errors.push('Botón "Start Recording" no encontrado');
+      return;
+    }
+    
+    // Comprobar que NO es clickeable justo después de cargar
+    const isDisabledImmediately = await page.evaluate(btn => btn.disabled, recordBtn);
+    if (!isDisabledImmediately) {
+      console.error('❌ "Start Recording" debe estar deshabilitado al inicio');
+      errors.push('"Start Recording" habilitado demasiado pronto');
+    } else {
+      console.log('✅ "Start Recording" correctamente deshabilitado al inicio');
+    }
+    
+    // Esperar delay razonable (3 segundos)
+    await new Promise(res => setTimeout(res, 3000));
+    
+    // Verificar que ahora SÍ es clickeable
+    const isEnabledLater = await page.evaluate(btn => !btn.disabled, recordBtn);
+    if (!isEnabledLater) {
+      console.error('❌ "Start Recording" NO se habilitó tras el delay');
+      errors.push('"Start Recording" sigue deshabilitado después del delay');
+    } else {
+      console.log('✅ "Start Recording" habilitado después del delay');
+    }
+    
+    // Clickear el botón "Start Recording"
+    await recordBtn.click();
+    console.log('▶️ Click en "Start Recording" hecho');
+    
+    // Simular input de audio mock (voice)
+    console.log('🎤 Mockeando input de voz');
+    await page.evaluate(() => {
+      // Sobreescribe getUserMedia y despacha evento de audio
+      window.navigator.mediaDevices.getUserMedia = async () => {
+        // Simula stream vacío/mocked (o usa sinon si tienes)
+        return {
+          getTracks: () => [{ stop: () => {} }],
+          getAudioTracks: () => [{ stop: () => {}, enabled: true, label: 'Mock Audio Track' }],
+          id: 'mock-stream-' + Date.now(),
+          active: true
+        };
+      };
+      // Puedes disparar un evento personalizado aquí si tu app lo soporta
+      const evt = new Event('audioinput');
+      window.dispatchEvent(evt);
+    });
+    
+    console.log('✅ Mock de input de voz inyectado');
+    
+    // Verificar que la app reacciona al audio mockeado
+    console.log('\n🔍 Verificando reacción al audio mockeado...');
+    
+    // Esperar cambios en UI que indiquen grabación activa
+    try {
+      await page.waitForFunction(
+        () => {
+          const body = document.body.innerText;
+          // Buscar indicadores de grabación activa
+          return body.includes('Recording') || 
+                 body.includes('Stop') ||
+                 document.querySelector('.recording-indicator') ||
+                 document.querySelector('[class*="recording"]');
+        },
+        { timeout: 5000 }
+      );
+      console.log('✅ UI reaccionó correctamente al input de audio');
+    } catch {
+      console.error('❌ UI no mostró indicadores de grabación activa');
+      errors.push('UI no reaccionó al audio mockeado');
+    }
+    
+    // Verificar que el botón cambió a "Stop Recording" o similar
+    const buttonText = await page.evaluate(() => {
+      const btns = Array.from(document.querySelectorAll('button'));
+      const stopBtn = btns.find(b => b.textContent.toLowerCase().includes('stop'));
+      return stopBtn ? stopBtn.textContent : null;
+    });
+    
+    if (buttonText) {
+      console.log(`✅ Botón cambió a: "${buttonText}"`);
+    } else {
+      console.error('❌ No se encontró botón de "Stop"');
+      errors.push('Botón no cambió a modo "Stop"');
+    }
+    
     // Tomar screenshot
     const screenshotPath = 'test/localhost-final.png';
     await page.screenshot({ 

@@ -97,10 +97,12 @@ export function useAudioProcessor() {
     }
 
     try {
+      console.log('🎯 useAudioProcessor: Starting recording process')
       dispatch(setProcessing(true))
       dispatch(setRecording(true))
       dispatch(clearError())
       dispatch(clearChunks())
+      console.log('✅ useAudioProcessor: Redux states updated - recording should be true')
 
       const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor)
       console.log('🔍 Processor obtained:', !!processor, 'has getCurrentStream:', !!processor.getCurrentStream)
@@ -162,6 +164,7 @@ export function useAudioProcessor() {
       return result
 
     } catch (error) {
+      console.error('❌ useAudioProcessor: Recording failed', error)
       const errorMessage = error instanceof Error ? error.message : 'Recording failed'
       dispatch(setError({
         message: errorMessage,
@@ -173,6 +176,7 @@ export function useAudioProcessor() {
       }))
       return null
     } finally {
+      console.log('🏁 useAudioProcessor: Recording finished, resetting states')
       dispatch(setProcessing(false))
       dispatch(setRecording(false))
       // Don't clear stream immediately - let it be cleared when unmounting or starting new recording
