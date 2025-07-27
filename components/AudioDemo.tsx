@@ -13,7 +13,7 @@ interface AudioDemoProps {
 type Urls = { original: string | null; processed: string | null }
 
 export default function AudioDemo({
-  autoProcess = true,
+  autoProcess = false,
   onProcessComplete,
   onError
 }: AudioDemoProps) {
@@ -77,11 +77,11 @@ export default function AudioDemo({
   }, [processFile, dispatch, onProcessComplete, onError, chunkDuration, enableAGC])
 
   useEffect(() => {
-    if (autoProcess && isReady && !started && !isProcessing) {
+    if (autoProcess && isReady && !started) {
       setStarted(true)
       handleProcess()
     }
-  }, [autoProcess, isReady, started, isProcessing, handleProcess])
+  }, [autoProcess, isReady, started, handleProcess])
 
   return (
     <div className={styles.container}>

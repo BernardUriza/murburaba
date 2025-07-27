@@ -75,7 +75,7 @@ export class AudioProcessorService implements IAudioProcessor {
       const engine = engineRegistry.getEngine();
       
       const controller = await engine.processStream(stream, {
-        chunkDuration: options?.chunkDuration || 8000,
+        chunkDuration: options?.chunkDuration || 8,
         onChunkProcessed: (chunk: any) => {
           const processedChunk = this.normalizeChunk(chunk);
           chunks.push(processedChunk);
@@ -121,7 +121,7 @@ export class AudioProcessorService implements IAudioProcessor {
     try {
       return await this.processStream(stream, {
         ...options,
-        chunkDuration: Math.min(duration, options?.chunkDuration || 8000)
+        chunkDuration: Math.min(duration, options?.chunkDuration || 8)
       });
     } finally {
       stream.getTracks().forEach(track => track.stop());
@@ -185,7 +185,7 @@ export class AudioProcessorService implements IAudioProcessor {
     
     // Calculate chunk parameters
     const sampleRate = audioBuffer.sampleRate;
-    const chunkDurationSeconds = (options.chunkDuration || 8000) / 1000;
+    const chunkDurationSeconds = options.chunkDuration || 8;
     const samplesPerChunk = Math.floor(sampleRate * chunkDurationSeconds);
     const totalSamples = audioBuffer.length;
     const channelData = audioBuffer.getChannelData(0);

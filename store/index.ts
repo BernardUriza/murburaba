@@ -14,10 +14,14 @@ export const store = configureStore({
       serializableCheck: {
         // Only ignore specific non-serializable fields
         ignoredActions: [
-          'murmuraba/SET_CONTAINER' // DI Container only
+          'murmuraba/SET_CONTAINER', // DI Container only
+          'audio/addChunk', // Chunks contain Blobs
+          'audio/setProcessingResults' // Results contain ArrayBuffers
         ],
         ignoredActionPaths: [
-          'payload.container' // DI Container
+          'payload.container', // DI Container
+          'payload.blob', // Blob in chunks
+          'payload.chunks.*.blob' // Blobs in chunk arrays
         ],
         ignoredPaths: [
           'audio.processingResults.processedBuffer', // ArrayBuffer in state

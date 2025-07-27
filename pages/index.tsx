@@ -117,7 +117,6 @@ export default function App() {
         {/* Audio Demo Panel */}
         <OverlayPanel show={showAudioDemo} onClose={() => dispatch(toggleAudioDemo())}>
           <AudioDemo
-            autoProcess
             onProcessComplete={() => notify('success', '¡Audio procesado exitosamente!')}
             onError={err => notify('error', 'Error al procesar audio', err.message)}
           />
