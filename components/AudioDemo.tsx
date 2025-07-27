@@ -10,7 +10,7 @@ interface AudioDemoProps {
   onError?: (error: Error) => void
 }
 
-type Urls = { original: string | null; processed: string | null }
+type Urls = { original: string | null; processedChunks: string[] }
 
 export default function AudioDemo({
   autoProcess = false,
@@ -21,7 +21,7 @@ export default function AudioDemo({
   const { isProcessing, enableAGC, chunkDuration } = useAppSelector(s => s.audio)
   const { isReady, processFile } = useAudioProcessor()
 
-  const [urls, setUrls] = useState<Urls>({ original: null, processed: null })
+  const [urls, setUrls] = useState<Urls>({ original: null, processedChunks: [] })
   const [error, setError] = useState<string | null>(null)
   const [started, setStarted] = useState(false)
 
@@ -55,18 +55,25 @@ export default function AudioDemo({
       }
       
       console.log('[AudioDemo] Chunks in result:', result.chunks?.length || 0)
-      const chunk = result?.chunks?.[0]
-      if (!chunk?.blob) {
-        console.error('[AudioDemo] No chunk blob found in result:', result)
+      if (!result.chunks || result.chunks.length === 0) {
         throw new Error('Processing completed but no audio chunks were generated')
       }
       
-      console.log('[AudioDemo] Chunk blob size:', chunk.blob.size)
+      // Create URLs for all chunks
+      const chunkUrls = result.chunks
+        .filter(chunk => chunk.blob)
+        .map(chunk => URL.createObjectURL(chunk.blob!))
+      
+      console.log('[AudioDemo] Created URLs for', chunkUrls.length, 'chunks')
       setUrls(u => ({
         ...u,
-        processed: URL.createObjectURL(chunk.blob!)
+        processedChunks: chunkUrls
       }))
-      onProcessComplete?.(await chunk.blob!.arrayBuffer())
+      
+      // For callback, use first chunk
+      if (result.chunks[0]?.blob) {
+        onProcessComplete?.(await result.chunks[0].blob.arrayBuffer())
+      }
       dispatch(addNotification({ type: 'success', message: 'Demo processed!' }))
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Processing failed'
