@@ -37,6 +37,7 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
           // Debug what methods are available
           console.log('MetricsManager methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(metricsManager)));
           
+          console.log('📌 Registering metrics-update listener');
           metricsManager.on('metrics-update', (metrics: any) => {
             console.log('📊 Metrics received in Redux:', {
               inputLevel: metrics.inputLevel,

@@ -278,9 +278,6 @@ export default function App() {
           onApplyChanges={async () => console.log('Apply changes')}
         />
       </main>
-      
-      {/* Development Status */}
-      <MurmurabaSuiteStatus />
     </>
   )
 }

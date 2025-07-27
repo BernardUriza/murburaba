@@ -41,10 +41,14 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
   
   updateInputLevel(level: number): void {
     this.metrics.inputLevel = Math.max(0, Math.min(1, level));
+    // Emit update immediately for real-time feedback
+    this.emit('metrics-update', { ...this.metrics });
   }
   
   updateOutputLevel(level: number): void {
     this.metrics.outputLevel = Math.max(0, Math.min(1, level));
+    // Emit update immediately for real-time feedback
+    this.emit('metrics-update', { ...this.metrics });
   }
   
   updateNoiseReduction(level: number): void {

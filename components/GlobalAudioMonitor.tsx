@@ -2,13 +2,16 @@ import React, { useEffect, useState } from 'react'
 import { useMurmurabaSuite, SUITE_TOKENS, TOKENS } from 'murmuraba'
 import type { IAudioProcessor, IMetricsManager, ProcessingMetrics } from 'murmuraba'
 import { useAppSelector } from '../store/hooks'
+import { useMediaStream } from '../context/MediaStreamContext'
 import styles from './GlobalAudioMonitor.module.css'
 
 export function GlobalAudioMonitor() {
   const { container, isReady } = useMurmurabaSuite()
-  const { isProcessing, isRecording, chunks } = useAppSelector(state => state.audio)
+  const { isProcessing, isRecording, chunks, currentInputLevel } = useAppSelector(state => state.audio)
+  const { currentStream } = useMediaStream()
   const [metrics, setMetrics] = useState<ProcessingMetrics | null>(null)
   const [vadLevel, setVadLevel] = useState(0)
+  const [streamInfo, setStreamInfo] = useState<{id: string, tracks: number} | null>(null)
   
   useEffect(() => {
     if (!isReady || !container) return
@@ -61,16 +64,35 @@ export function GlobalAudioMonitor() {
     }
   }, [container, isReady, chunks])
   
-  if (!isReady || !metrics) return null
+  // Update stream info when stream changes
+  useEffect(() => {
+    if (currentStream) {
+      setStreamInfo({
+        id: currentStream.id,
+        tracks: currentStream.getTracks().length
+      })
+    } else {
+      setStreamInfo(null)
+    }
+  }, [currentStream])
   
+  // Always show the monitor for debugging
   return (
     <div className={styles.monitor}>
       <div className={styles.header}>
-        <h4>Audio Monitor</h4>
+        <h4>🎙️ Audio Monitor</h4>
         <div className={styles.status}>
           {isRecording && <span className={styles.recording}>● REC</span>}
           {isProcessing && <span className={styles.processing}>⚡ Processing</span>}
+          {!isReady && <span style={{color: '#ff9900'}}>⏳ Loading</span>}
         </div>
+      </div>
+      
+      {/* Stream Status */}
+      <div style={{ padding: '10px', fontSize: '12px', borderBottom: '1px solid #333' }}>
+        <div>Stream: {streamInfo ? `✅ ${streamInfo.id.slice(0, 8)}... (${streamInfo.tracks} tracks)` : '❌ No stream'}</div>
+        <div>Engine: {isReady ? '✅ Ready' : '⏳ Initializing'}</div>
+        <div>Live Input Level: {(currentInputLevel * 100).toFixed(0)}%</div>
       </div>
       
       <div className={styles.metrics}>
@@ -80,12 +102,12 @@ export function GlobalAudioMonitor() {
             <div 
               className={styles.fill}
               style={{ 
-                width: `${metrics.inputLevel * 100}%`,
-                backgroundColor: metrics.inputLevel > 0.8 ? '#ff4444' : '#44ff44'
+                width: `${(currentInputLevel || (metrics?.inputLevel || 0)) * 100}%`,
+                backgroundColor: (currentInputLevel || (metrics?.inputLevel || 0)) > 0.8 ? '#ff4444' : '#44ff44'
               }}
             />
           </div>
-          <span>{(metrics.inputLevel * 100).toFixed(0)}%</span>
+          <span>{((currentInputLevel || (metrics?.inputLevel || 0)) * 100).toFixed(0)}%</span>
         </div>
         
         <div className={styles.metric}>
@@ -94,12 +116,12 @@ export function GlobalAudioMonitor() {
             <div 
               className={styles.fill}
               style={{ 
-                width: `${metrics.outputLevel * 100}%`,
+                width: `${(metrics?.outputLevel || 0) * 100}%`,
                 backgroundColor: '#4444ff'
               }}
             />
           </div>
-          <span>{(metrics.outputLevel * 100).toFixed(0)}%</span>
+          <span>{((metrics?.outputLevel || 0) * 100).toFixed(0)}%</span>
         </div>
         
         <div className={styles.metric}>
@@ -108,12 +130,12 @@ export function GlobalAudioMonitor() {
             <div 
               className={styles.fill}
               style={{ 
-                width: `${metrics.noiseReductionLevel * 100}%`,
+                width: `${(metrics?.noiseReductionLevel || 0) * 100}%`,
                 backgroundColor: '#ff44ff'
               }}
             />
           </div>
-          <span>{(metrics.noiseReductionLevel * 100).toFixed(0)}%</span>
+          <span>{((metrics?.noiseReductionLevel || 0) * 100).toFixed(0)}%</span>
         </div>
         
         <div className={styles.metric}>
@@ -132,10 +154,19 @@ export function GlobalAudioMonitor() {
       </div>
       
       <div className={styles.stats}>
-        <div>Latency: {metrics.processingLatency.toFixed(1)}ms</div>
-        <div>Frames: {metrics.frameCount}</div>
-        <div>Dropped: {metrics.droppedFrames}</div>
+        <div>Latency: {(metrics?.processingLatency || 0).toFixed(1)}ms</div>
+        <div>Frames: {metrics?.frameCount || 0}</div>
+        <div>Dropped: {metrics?.droppedFrames || 0}</div>
         <div>Chunks: {chunks.length}</div>
+      </div>
+      
+      {/* Debug Info */}
+      <div style={{ padding: '10px', fontSize: '11px', color: '#888', borderTop: '1px solid #333' }}>
+        <div>🐛 Debug Info:</div>
+        <div>- isProcessing: {isProcessing ? 'true' : 'false'}</div>
+        <div>- isRecording: {isRecording ? 'true' : 'false'}</div>
+        <div>- hasMetrics: {metrics ? 'true' : 'false'}</div>
+        <div>- Redux inputLevel: {(currentInputLevel * 100).toFixed(1)}%</div>
       </div>
     </div>
   )
