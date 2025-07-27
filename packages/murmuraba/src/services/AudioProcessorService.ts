@@ -15,6 +15,8 @@ export class AudioProcessorService implements IAudioProcessor {
   
   private isProcessingFlag = false;
   private abortController?: AbortController;
+  private currentStream?: MediaStream;
+  private currentAGCSetting = false;
   
   constructor(private container?: DIContainer) {
     if (container) {
@@ -108,23 +110,88 @@ export class AudioProcessorService implements IAudioProcessor {
   
   async processRecording(
     duration: number,
-    options?: AudioProcessingOptions
+    options?: AudioProcessingOptions & { stream?: MediaStream }
   ): Promise<AudioProcessingResult> {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: options?.enableAGC ?? false
+    let stream: MediaStream;
+    let shouldStopStream = false;
+    
+    if (options?.stream) {
+      // Use provided stream
+      stream = options.stream;
+    } else {
+      // Check if we need a new stream due to AGC change
+      const needNewStream = !this.currentStream || 
+        (options?.enableAGC !== undefined && options.enableAGC !== this.currentAGCSetting);
+      
+      if (needNewStream) {
+        // Clean up old stream if exists
+        if (this.currentStream) {
+          this.currentStream.getTracks().forEach(track => track.stop());
+        }
+        
+        // Get new stream with updated settings
+        shouldStopStream = true;
+        this.currentAGCSetting = options?.enableAGC ?? false;
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: this.currentAGCSetting
+          }
+        });
+        this.currentStream = stream;
+      } else {
+        // Reuse existing stream
+        stream = this.currentStream!;
+        shouldStopStream = false;
       }
-    });
+    }
     
     try {
-      return await this.processStream(stream, {
+      // Set up duration-based recording
+      const recordingOptions = {
         ...options,
-        chunkDuration: Math.min(duration, options?.chunkDuration || 8)
+        chunkDuration: options?.chunkDuration || 8
+      };
+      
+      // Start processing the stream
+      this.isProcessingFlag = true;
+      this.abortController = new AbortController();
+      
+      const chunks: ProcessedChunk[] = [];
+      const engine = engineRegistry.getEngine();
+      
+      const controller = await engine.processStream(stream, {
+        chunkDuration: recordingOptions.chunkDuration,
+        onChunkProcessed: (chunk: any) => {
+          const processedChunk = this.normalizeChunk(chunk);
+          chunks.push(processedChunk);
+          this.notifyChunk(processedChunk);
+        }
       });
+      
+      // Stop recording after specified duration
+      setTimeout(() => {
+        controller.stop();
+      }, duration);
+      
+      // Wait for recording to complete
+      await new Promise<void>((resolve) => {
+        this.abortController?.signal.addEventListener('abort', () => {
+          controller.stop();
+          resolve();
+        });
+        
+        setTimeout(resolve, duration + 500); // Add small buffer
+      });
+      
+      return this.createResult(chunks);
     } finally {
-      stream.getTracks().forEach(track => track.stop());
+      this.isProcessingFlag = false;
+      this.abortController = undefined;
+      
+      // Don't stop the stream here anymore - keep it for reuse
+      // Stream will be stopped when a new one is needed or on cleanup
     }
   }
   
@@ -145,6 +212,16 @@ export class AudioProcessorService implements IAudioProcessor {
   
   cancel(): void {
     this.abortController?.abort();
+    
+    // Also try to stop the engine's processing
+    try {
+      const engine = engineRegistry.getEngine();
+      if (engine) {
+        (engine as any).stopProcessing?.();
+      }
+    } catch (error) {
+      // Engine might not exist, ignore
+    }
   }
   
   isProcessing(): boolean {
@@ -307,5 +384,56 @@ export class AudioProcessorService implements IAudioProcessor {
   
   private notifyChunk(chunk: ProcessedChunk): void {
     this.chunkCallbacks.forEach(cb => cb(chunk));
+  }
+  
+  // Method to clean up resources
+  public cleanup(): void {
+    // Cancel any ongoing processing
+    this.cancel();
+    
+    // Stop all media tracks
+    if (this.currentStream) {
+      this.currentStream.getTracks().forEach(track => {
+        track.stop();
+        // Also remove all event listeners from the track
+        track.removeEventListener('ended', () => {});
+        track.removeEventListener('mute', () => {});
+      });
+      this.currentStream = undefined;
+    }
+    
+    // Reset state
+    this.currentAGCSetting = false;
+    this.isProcessingFlag = false;
+    this.abortController = undefined;
+    
+    // Clear all callbacks to prevent memory leaks
+    this.progressCallbacks.clear();
+    this.metricsCallbacks.clear();
+    this.chunkCallbacks.clear();
+    
+    this.logger?.info('Audio resources cleaned up successfully');
+  }
+  
+  // Method to destroy everything including the engine
+  public async destroyEngine(): Promise<void> {
+    // First cleanup local resources
+    this.cleanup();
+    
+    // Cancel any ongoing processing
+    this.cancel();
+    
+    // Clear all callbacks
+    this.progressCallbacks.clear();
+    this.metricsCallbacks.clear();
+    this.chunkCallbacks.clear();
+    
+    // Destroy the engine
+    try {
+      await engineRegistry.destroyEngine();
+      this.logger?.info('Engine destroyed successfully');
+    } catch (error) {
+      this.logger?.error('Failed to destroy engine:', error);
+    }
   }
 }

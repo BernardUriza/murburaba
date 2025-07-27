@@ -74,10 +74,10 @@ export function MurmurabaReduxProvider({
   enableAGC = false,
   noiseReductionLevel = 'medium',
   allowDegraded = true,
-  lazy = false
+  lazy = false as any
 }: MurmurabaReduxProviderProps) {
   const [shouldInitialize, setShouldInitialize] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(false);
+  const [, setIsInitializing] = useState(false);
 
   const handleManualInit = () => {
     setShouldInitialize(true);

@@ -15,6 +15,8 @@ import { BannerHero } from '../components/ui/BannerHero'
 import { useNotifications } from '../hooks/useNotifications'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { useAudioProcessor } from '../hooks/useAudioProcessor'
+import { useMurmurabaSuite, SUITE_TOKENS } from 'murmuraba'
+import type { IAudioProcessor } from 'murmuraba'
 import {
   setChunkDuration,
   setEnableAGC,
@@ -54,6 +56,9 @@ export default function App() {
   // Debug log
   console.log('🔍 Engine status:', { isInitialized, isProcessing, isRecording })
   
+  // Get suite container and reinitialize function
+  const { container, reinitializeEngine } = useMurmurabaSuite()
+  
   // Audio processor hook
   const { isReady, processRecording, cancelProcessing } = useAudioProcessor()
 
@@ -85,7 +90,13 @@ export default function App() {
       setStream(stream)
       dispatch(setCurrentStreamId(stream.id))
       
-      const result = await processRecording(chunkDuration * 1000, {})
+      // Process for duration in seconds
+      const durationInSeconds = 30; // Record for 30 seconds
+      const result = await processRecording(durationInSeconds * 1000, {
+        enableAGC,
+        chunkDuration,
+        stream
+      })
       if (result) notify('success', 'Recording completed successfully!')
     } catch (error: any) {
       notify('error', 'Recording Failed', error?.message || 'Unknown error')
@@ -94,9 +105,22 @@ export default function App() {
     }
   }
 
-  const handleStopRecording = () => {
+  const handleStopRecording = async () => {
     cancelProcessing()
     stopStream()
+    
+    // Clean up audio resources to ensure no phantom recording
+    if (isReady) {
+      try {
+        const processor = container?.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor)
+        if (processor?.cleanup) {
+          processor.cleanup()
+          notify('info', 'Audio resources cleaned up')
+        }
+      } catch (error) {
+        console.error('Failed to cleanup audio resources:', error)
+      }
+    }
   }
 
   // Loading state

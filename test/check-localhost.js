@@ -7,8 +7,8 @@
  * USA: Puppeteer para browser real + happy-dom para testing rápido
  */
 
-const puppeteer = require('puppeteer');
-const { Window } = require('happy-dom');
+import puppeteer from 'puppeteer';
+import { Window } from 'happy-dom';
 
 async function checkLocalhost() {
   // Detectar puerto automáticamente
@@ -58,7 +58,7 @@ async function checkLocalhost() {
         if (args.length > 0) {
           text = args.join(' ');
         }
-      } catch (e) {
+      } catch {
         // Mantener el texto original si falla
       }
       
@@ -110,7 +110,7 @@ async function checkLocalhost() {
         waitUntil: 'networkidle0',
         timeout: 10000
       });
-    } catch (err) {
+    } catch {
       console.error(`\n❌ FATAL: No se pudo conectar a ${url}`);
       console.error('   Asegúrate de que el servidor esté corriendo: npm run dev');
       console.error('   Si el puerto 3000 está ocupado, usa: PORT=3001 node test/check-localhost.js');
@@ -139,7 +139,7 @@ async function checkLocalhost() {
         fullPage: true 
       });
       console.log('📸 Screenshot inicial guardado en: test/localhost-welcome.png');
-    } catch (e) {
+    } catch {
       console.error('❌ No se encontró el botón de inicialización');
       errors.push('Botón "Initialize Audio Engine" no encontrado');
       return;
@@ -170,7 +170,7 @@ async function checkLocalhost() {
         fullPage: true 
       });
       console.log('📸 Screenshot de carga guardado en: test/localhost-loading.png');
-    } catch (e) {
+    } catch {
       console.error('❌ No apareció la pantalla de carga');
       errors.push('Pantalla "Initializing MurmurabaSuite..." no apareció');
     }
@@ -194,7 +194,7 @@ async function checkLocalhost() {
         console.log('\n📋 Logs de inicialización:');
         initLogs.forEach(log => console.log(`   ${log}`));
       }
-    } catch (e) {
+    } catch {
       console.error('❌ Error: La inicialización tomó más de 10 segundos');
       errors.push('Timeout en inicialización de MurmurabaSuite');
       
@@ -255,10 +255,10 @@ async function checkLocalhost() {
 }
 
 // Función adicional: Verificar que el build funciona
-async function checkBuild() {
+// async function checkBuild() {
   console.log('\n3️⃣ Verificando que el proyecto compila...');
   
-  const { execSync } = require('child_process');
+  // const { execSync } = require('child_process');
   
   try {
     // Intentar build de TypeScript
@@ -282,7 +282,7 @@ async function checkBuild() {
     console.error('\n🔧 Arregla los errores de TypeScript/build antes de continuar');
     process.exit(1);
   }
-}
+// }
 
 // Ejecutar TODO
 async function runAllChecks() {

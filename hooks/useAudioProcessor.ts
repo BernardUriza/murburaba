@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useMurmurabaSuite } from 'murmuraba'
 import { SUITE_TOKENS } from 'murmuraba'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
@@ -84,7 +84,7 @@ export function useAudioProcessor() {
 
   const processRecording = useCallback(async (
     duration: number,
-    options?: AudioProcessingOptions
+    options?: AudioProcessingOptions & { stream?: MediaStream }
   ) => {
     if (!isReady || !container) {
       dispatch(setError({
@@ -151,6 +151,22 @@ export function useAudioProcessor() {
       console.error('Failed to cancel processing:', error)
     }
   }, [container, isReady, dispatch])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (container && isReady) {
+        try {
+          const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor) as any
+          if (processor.cleanup) {
+            processor.cleanup()
+          }
+        } catch (error) {
+          console.error('Failed to cleanup processor:', error)
+        }
+      }
+    }
+  }, [container, isReady])
 
   return {
     isReady,

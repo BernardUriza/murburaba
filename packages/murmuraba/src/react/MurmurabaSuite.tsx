@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { DIContainer, TOKENS } from '../core/DIContainer';
-import { MurmubaraEngineFactory } from '../core/MurmubaraEngineFactory';
+// import { MurmubaraEngineFactory } from '../core/MurmubaraEngineFactory';
 import { ServiceLoader, SERVICE_MODULES } from '../core/ServiceLoader';
 import { AudioProcessorService } from '../services/AudioProcessorService';
 import { MurmubaraConfig } from '../types';
@@ -36,6 +36,7 @@ interface MurmurabaSuiteContextValue {
   error: Error | null;
   getService: <T>(token: symbol | string) => T | null;
   loadService: (name: string) => Promise<void>;
+  reinitializeEngine: () => Promise<void>;
 }
 
 const MurmurabaSuiteContext = createContext<MurmurabaSuiteContextValue | null>(null);
@@ -53,6 +54,7 @@ export function MurmurabaSuite({
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [serviceLoader] = useState(() => new ServiceLoader(container));
+  const [isReinitializing, setIsReinitializing] = useState(false);
 
   useEffect(() => {
     const initializeSuite = async () => {
@@ -103,7 +105,7 @@ export function MurmurabaSuite({
         });
         
         // Register standard modules
-        Object.entries(SERVICE_MODULES).forEach(([name, module]) => {
+        Object.entries(SERVICE_MODULES).forEach(([_name, module]) => {
           serviceLoader.registerModule(module);
         });
         
@@ -179,12 +181,77 @@ export function MurmurabaSuite({
     await serviceLoader.loadModule(name);
   };
 
+  const reinitializeEngine = async () => {
+    if (isReinitializing) {
+      console.log('⏳ Engine reinitialization already in progress');
+      return;
+    }
+    
+    console.log('🔄 Reinitializing engine...');
+    setIsReinitializing(true);
+    setIsReady(false);
+    setError(null);
+    
+    try {
+      // Clear the container
+      container.clear();
+      
+      // Recreate engine
+      const engine = engineRegistry.createEngine(engineConfig);
+      
+      try {
+        await engine.initialize();
+      } catch (err) {
+        console.error('⚠️ Engine reinitialization failed:', err);
+        if (!allowDegraded) {
+          throw err;
+        }
+      }
+      
+      // Re-bind services
+      const engineContainer = (engine as any).getContainer();
+      if (engineContainer) {
+        container.bindValue(TOKENS.Logger, engineContainer.get(TOKENS.Logger));
+        container.bindValue(TOKENS.StateManager, engineContainer.get(TOKENS.StateManager));
+        container.bindValue(TOKENS.EventEmitter, engineContainer.get(TOKENS.EventEmitter));
+      }
+      
+      // Re-bind service loader and audio processor
+      container.bindValue(SUITE_TOKENS.ServiceLoader, serviceLoader);
+      
+      // Re-register the audio processor module
+      serviceLoader.registerModule({
+        name: 'audioProcessor',
+        token: SUITE_TOKENS.AudioProcessor,
+        dependencies: [TOKENS.Logger, TOKENS.MetricsManager],
+        load: async () => new AudioProcessorService(container)
+      });
+      
+      // Also need to ensure MetricsManager is available
+      if (!container.has(TOKENS.MetricsManager)) {
+        await serviceLoader.loadModule('metricsManager');
+      }
+      
+      // Now reload audio processor service
+      await serviceLoader.loadModule('audioProcessor');
+      
+      console.log('✅ Engine reinitialized successfully');
+      setIsReady(true);
+    } catch (err) {
+      console.error('❌ Engine reinitialization failed:', err);
+      setError(err as Error);
+    } finally {
+      setIsReinitializing(false);
+    }
+  };
+
   const contextValue: MurmurabaSuiteContextValue = {
     container,
     isReady,
     error,
     getService,
-    loadService
+    loadService,
+    reinitializeEngine
   };
 
   return (

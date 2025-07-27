@@ -42,4 +42,8 @@ export interface IAudioProcessor {
   
   cancel(): void;
   isProcessing(): boolean;
+  
+  // Optional cleanup methods
+  cleanup?(): void;
+  destroyEngine?(): Promise<void>;
 }
