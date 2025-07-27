@@ -89,6 +89,18 @@ async function checkLocalhost() {
       errors.push('Landing page returned 404');
     }
     
+    // Esperar 10 segundos y tomar screenshot
+    console.log('\n⏳ Esperando 10 segundos para screenshot final...');
+    await page.waitForTimeout(10000);
+    
+    // Tomar screenshot
+    const screenshotPath = 'test/localhost-final.png';
+    await page.screenshot({ 
+      path: screenshotPath,
+      fullPage: true 
+    });
+    console.log(`📸 Screenshot guardado en: ${screenshotPath}`);
+    
     await browser.close();
     
     // Reporte final
@@ -119,8 +131,45 @@ async function checkLocalhost() {
   }
 }
 
-// Ejecutar
-checkLocalhost().catch(err => {
-  console.error('Fatal:', err);
-  process.exit(1);
-});
+// Función adicional: Verificar que el build funciona
+async function checkBuild() {
+  console.log('\n3️⃣ Verificando que el proyecto compila...');
+  
+  const { execSync } = require('child_process');
+  
+  try {
+    // Intentar build de TypeScript
+    execSync('cd packages/murmuraba && npx tsc --noEmit', { 
+      stdio: 'pipe',
+      encoding: 'utf-8' 
+    });
+    console.log('✅ TypeScript del paquete OK');
+    
+    // Intentar build de Next.js (solo type-check)
+    execSync('npx next build --no-lint', { 
+      stdio: 'pipe',
+      encoding: 'utf-8',
+      env: { ...process.env, SKIP_BUILD: 'true' }
+    });
+    console.log('✅ Next.js types OK');
+    
+  } catch (error) {
+    console.error('\n❌ ERROR DE COMPILACIÓN:');
+    console.error(error.stdout || error.stderr || error.message);
+    console.error('\n🔧 Arregla los errores de TypeScript/build antes de continuar');
+    process.exit(1);
+  }
+}
+
+// Ejecutar TODO
+async function runAllChecks() {
+  try {
+    await checkBuild();  // Primero verificar que compila
+    await checkLocalhost();  // Luego verificar runtime
+  } catch (err) {
+    console.error('Fatal:', err);
+    process.exit(1);
+  }
+}
+
+runAllChecks();

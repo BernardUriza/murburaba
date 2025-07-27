@@ -64,9 +64,9 @@ export default function AudioDemo({
       console.log('[AudioDemo] Chunk blob size:', chunk.blob.size)
       setUrls(u => ({
         ...u,
-        processed: URL.createObjectURL(chunk.blob)
+        processed: URL.createObjectURL(chunk.blob!)
       }))
-      onProcessComplete?.(await chunk.blob.arrayBuffer())
+      onProcessComplete?.(await chunk.blob!.arrayBuffer())
       dispatch(addNotification({ type: 'success', message: 'Demo processed!' }))
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Processing failed'
@@ -74,7 +74,7 @@ export default function AudioDemo({
       dispatch(addNotification({ type: 'error', message: msg }))
       onError?.(err instanceof Error ? err : new Error(msg))
     }
-  }, [processFile, dispatch, onProcessComplete, onError])
+  }, [processFile, dispatch, onProcessComplete, onError, chunkDuration, enableAGC])
 
   useEffect(() => {
     if (autoProcess && isReady && !started && !isProcessing) {
