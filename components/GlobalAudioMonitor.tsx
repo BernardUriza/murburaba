@@ -14,8 +14,15 @@ export function GlobalAudioMonitor() {
     if (!isReady || !container) return
     
     try {
+      if (!container.has(SUITE_TOKENS.AudioProcessor)) {
+        console.log('AudioProcessor not available yet')
+        return
+      }
+      
       const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor)
-      const metricsManager = container.get<IMetricsManager>(TOKENS.MetricsManager)
+      const metricsManager = container.has(TOKENS.MetricsManager) 
+        ? container.get<IMetricsManager>(TOKENS.MetricsManager)
+        : null
       
       // Subscribe to metrics updates
       const unsubscribe = processor.onMetrics((newMetrics) => {
@@ -28,9 +35,11 @@ export function GlobalAudioMonitor() {
         }
       })
       
-      // Get historical metrics
-      const historicalMetrics = metricsManager.getMetricsHistory()
-      console.log('Historical metrics:', historicalMetrics)
+      // Get current metrics from manager
+      if (metricsManager && 'getMetrics' in metricsManager) {
+        const currentMetrics = (metricsManager as any).getMetrics()
+        console.log('Current metrics:', currentMetrics)
+      }
       
       return unsubscribe
     } catch (error) {

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useMurmurabaSuite, TOKENS, SUITE_TOKENS } from 'murmuraba'
+import type { ILogger } from 'murmuraba'
 import styles from './ServiceMonitor.module.css'
 
 interface ServiceInfo {
@@ -58,11 +59,15 @@ export function ServiceMonitor() {
     setServices(serviceList)
     
     // Use logger if available
-    const logger = container.get(TOKENS.Logger)
-    if (logger) {
-      logger.info('Service Monitor initialized', {
-        availableServices: serviceList.filter(s => s.available).map(s => s.name)
-      })
+    try {
+      const logger = container.get<ILogger>(TOKENS.Logger)
+      if (logger) {
+        logger.info('Service Monitor initialized', {
+          availableServices: serviceList.filter(s => s.available).map(s => s.name)
+        })
+      }
+    } catch (error) {
+      // Logger might not be available yet
     }
   }, [container, isReady])
   

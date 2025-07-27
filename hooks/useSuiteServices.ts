@@ -62,14 +62,14 @@ export function useSuiteServices() {
     services.eventEmitter.emit(event, data)
   }, [services.eventEmitter])
   
-  const getState = useCallback((key: string) => {
+  const getEngineState = useCallback(() => {
     if (!services.stateManager) return null
-    return services.stateManager.get(key)
+    return services.stateManager.getState()
   }, [services.stateManager])
   
-  const setState = useCallback((key: string, value: any) => {
-    if (!services.stateManager) return
-    services.stateManager.set(key, value)
+  const onStateChange = useCallback((callback: (oldState: any, newState: any) => void) => {
+    if (!services.stateManager) return () => {}
+    return services.stateManager.onStateChange(callback)
   }, [services.stateManager])
   
   return {
@@ -79,7 +79,7 @@ export function useSuiteServices() {
     log,
     recordMetric,
     emit,
-    getState,
-    setState
+    getEngineState,
+    onStateChange
   }
 }

@@ -18,16 +18,33 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
     if (!isReady || !container) return;
     
     try {
-      const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor);
-      const metricsManager = container.get<IMetricsManager>(TOKENS.MetricsManager);
+      // Check if services are available first
+      if (!container.has(SUITE_TOKENS.AudioProcessor)) {
+        console.log('AudioProcessor not yet available');
+        return;
+      }
       
-      // Subscribe to metrics for audio level
-      if (processor && metricsManager) {
-        processor.onMetrics((metrics) => {
-          setAudioLevel(metrics.inputLevel || 0);
-          // Also dispatch to Redux if needed
-          store.dispatch({ type: 'audio/updateMetrics', payload: metrics });
-        });
+      const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor);
+      
+      // MetricsManager might not be available yet, check first
+      if (container.has(TOKENS.MetricsManager)) {
+        const metricsManager = container.get<IMetricsManager>(TOKENS.MetricsManager);
+        
+        // Subscribe to metrics for audio level
+        if (processor && metricsManager) {
+          processor.onMetrics((metrics) => {
+            setAudioLevel(metrics.inputLevel || 0);
+            // Also dispatch to Redux if needed
+            store.dispatch({ type: 'audio/updateMetrics', payload: metrics });
+          });
+        }
+      } else {
+        // Just use processor metrics without MetricsManager
+        if (processor) {
+          processor.onMetrics((metrics) => {
+            setAudioLevel(metrics.inputLevel || 0);
+          });
+        }
       }
     } catch (error) {
       console.error('Failed to setup audio monitoring:', error);
@@ -51,9 +68,9 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
       // Setup additional monitoring
       setupAudioLevelMonitoring();
       
-      // Get services for enhanced functionality
-      const logger = container.get<ILogger>(TOKENS.Logger);
-      const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor);
+      // Get services for enhanced functionality (with checks)
+      const logger = container.has(TOKENS.Logger) ? container.get<ILogger>(TOKENS.Logger) : null;
+      const processor = container.has(SUITE_TOKENS.AudioProcessor) ? container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor) : null;
       
       // Subscribe to processing state
       if (processor) {
