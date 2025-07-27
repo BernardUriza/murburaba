@@ -94,6 +94,10 @@ export class AudioWorkletEngine implements AudioEngine {
           this.rnnoiseModule = null;
           this.rnnoiseState = null;
           
+          // Optimize for low latency
+          this.maxBufferSize = 960; // 2x frame size max
+          this.processingDelay = 0;
+          
           // Metrics
           this.framesProcessed = 0;
           this.processingTimeSum = 0;

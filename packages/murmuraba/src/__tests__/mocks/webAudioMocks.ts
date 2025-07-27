@@ -26,7 +26,7 @@ export const setupAllAudioMocks = () => {
       length,
       sampleRate,
       numberOfChannels: channels,
-      getChannelData: vi.fn((channel) => new Float32Array(length)),
+      getChannelData: vi.fn((_channel) => new Float32Array(length)),
       copyFromChannel: vi.fn(),
       copyToChannel: vi.fn(),
     })),
@@ -127,12 +127,33 @@ export const setupAllAudioMocks = () => {
       rolloffFactor: 1,
     })),
     createPeriodicWave: vi.fn(() => ({})),
-    createScriptProcessor: vi.fn(() => ({
-      connect: vi.fn(),
-      disconnect: vi.fn(),
-      onaudioprocess: null,
-      bufferSize: 4096,
-    })),
+    createScriptProcessor: vi.fn((bufferSize = 4096) => {
+      console.warn('Mock: ScriptProcessor is deprecated, use AudioWorklet instead');
+      return {
+        connect: vi.fn(),
+        disconnect: vi.fn(),
+        onaudioprocess: null,
+        bufferSize,
+        // Simulate processing events for legacy tests
+        _simulateProcessing: vi.fn(() => {
+          const mockEvent = {
+            inputBuffer: {
+              getChannelData: vi.fn(() => new Float32Array(bufferSize)),
+              numberOfChannels: 1,
+              length: bufferSize,
+              sampleRate: 48000,
+            },
+            outputBuffer: {
+              getChannelData: vi.fn(() => new Float32Array(bufferSize)),
+              numberOfChannels: 1,
+              length: bufferSize,
+              sampleRate: 48000,
+            },
+          };
+          return mockEvent;
+        }),
+      };
+    }),
     createStereoPanner: vi.fn(() => ({
       connect: vi.fn(),
       disconnect: vi.fn(),
@@ -144,7 +165,7 @@ export const setupAllAudioMocks = () => {
       curve: null,
       oversample: 'none',
     })),
-    decodeAudioData: vi.fn((buffer) => {
+    decodeAudioData: vi.fn((_buffer) => {
       return Promise.resolve({
         length: 1024,
         sampleRate: 48000,
@@ -181,13 +202,60 @@ export const setupAllAudioMocks = () => {
     },
     onstatechange: null,
     audioWorklet: {
-      addModule: vi.fn(() => Promise.resolve()),
+      addModule: vi.fn((moduleURL) => {
+        // Simulate successful worklet loading
+        console.log(`Mock: AudioWorklet module loaded: ${moduleURL}`);
+        return Promise.resolve();
+      }),
     },
   };
 
   // Mock AudioContext constructor
   (global as any).AudioContext = vi.fn(() => mockAudioContext) as any;
   (global as any).webkitAudioContext = vi.fn(() => mockAudioContext) as any;
+
+  // AudioWorkletNode mock
+  const createMockAudioWorkletNode = (context: any, name: string, options?: any) => {
+    const mockNode = {
+      context,
+      numberOfInputs: options?.numberOfInputs || 1,
+      numberOfOutputs: options?.numberOfOutputs || 1,
+      channelCount: 1,
+      channelCountMode: 'explicit',
+      channelInterpretation: 'speakers',
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      port: {
+        postMessage: vi.fn((message) => {
+          console.log(`Mock: AudioWorkletNode received message:`, message);
+          // Simulate async response from worklet
+          setTimeout(() => {
+            if (mockNode.port.onmessage) {
+              mockNode.port.onmessage({
+                data: {
+                  type: 'metrics',
+                  inputLevel: Math.random() * 0.5,
+                  outputLevel: Math.random() * 0.4,
+                  vad: Math.random() * 0.8,
+                  noiseReduction: Math.random() * 30
+                }
+              } as any);
+            }
+          }, 10);
+        }),
+        onmessage: null as any,
+        start: vi.fn(),
+        close: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      },
+      onprocessorerror: null,
+      parameters: new Map(),
+    };
+    return mockNode;
+  };
+
+  (global as any).AudioWorkletNode = vi.fn(createMockAudioWorkletNode) as any;
 
   // MediaRecorder mock
   const mockMediaRecorder = {
@@ -246,7 +314,32 @@ export const setupAllAudioMocks = () => {
   // Navigator.mediaDevices mock
   Object.defineProperty(navigator, 'mediaDevices', {
     value: {
-      getUserMedia: vi.fn(() => Promise.resolve(mockMediaStream())),
+      getUserMedia: vi.fn((constraints) => {
+        console.log('Mock: getUserMedia called with constraints:', constraints);
+        const stream = mockMediaStream();
+        
+        // Simulate constraint validation for audio
+        if (constraints?.audio) {
+          const audioConstraints = constraints.audio;
+          if (typeof audioConstraints === 'object') {
+            // Mock constraint application
+            if (audioConstraints.sampleRate && audioConstraints.sampleRate !== 48000) {
+              console.warn(`Mock: Requested sampleRate ${audioConstraints.sampleRate}, using 48000`);
+            }
+            if (audioConstraints.echoCancellation === false) {
+              console.log('Mock: Echo cancellation disabled');
+            }
+            if (audioConstraints.noiseSuppression === false) {
+              console.log('Mock: Noise suppression disabled');
+            }
+            if (audioConstraints.autoGainControl === false) {
+              console.log('Mock: Auto gain control disabled');
+            }
+          }
+        }
+        
+        return Promise.resolve(stream);
+      }),
       getDisplayMedia: vi.fn(() => Promise.resolve(mockMediaStream())),
       enumerateDevices: vi.fn(() => Promise.resolve([
         {
@@ -329,4 +422,57 @@ export const setupAllAudioMocks = () => {
 
   (global as any).OfflineAudioContext = vi.fn(mockOfflineAudioContext) as any;
   (global as any).webkitOfflineAudioContext = vi.fn(mockOfflineAudioContext) as any;
+
+  // WebAssembly mock for WASM-based engines
+  if (typeof global.WebAssembly === 'undefined') {
+    (global as any).WebAssembly = {
+      instantiate: vi.fn(() => Promise.resolve({
+        instance: {
+          exports: {
+            _malloc: vi.fn(() => 1024), // Mock memory pointer
+            _free: vi.fn(),
+            _rnnoise_create: vi.fn(() => 2048), // Mock RNNoise state pointer
+            _rnnoise_destroy: vi.fn(),
+            _rnnoise_process_frame: vi.fn(() => Math.random() * 0.8), // Mock VAD
+            HEAPF32: new Float32Array(4096),
+            HEAP16: new Int16Array(2048),
+            memory: {
+              buffer: new ArrayBuffer(65536)
+            }
+          }
+        },
+        module: {}
+      })),
+      compile: vi.fn(() => Promise.resolve({})),
+      compileStreaming: vi.fn(() => Promise.resolve({})),
+      instantiateStreaming: vi.fn(() => Promise.resolve({
+        instance: { exports: {} },
+        module: {}
+      })),
+      Module: vi.fn(),
+      Memory: vi.fn(),
+      Table: vi.fn(),
+      CompileError: Error,
+      RuntimeError: Error,
+      LinkError: Error,
+    };
+  }
+
+  // Blob and URL mock for worklet loading
+  if (typeof global.Blob === 'undefined') {
+    (global as any).Blob = vi.fn((content, options) => ({
+      size: content?.[0]?.length || 0,
+      type: options?.type || 'text/plain',
+      stream: vi.fn(),
+      text: vi.fn(() => Promise.resolve(content?.[0] || '')),
+      arrayBuffer: vi.fn(() => Promise.resolve(new ArrayBuffer(0))),
+    }));
+  }
+
+  if (typeof global.URL === 'undefined') {
+    (global as any).URL = {
+      createObjectURL: vi.fn((_blob) => `blob:mock-${Math.random()}`),
+      revokeObjectURL: vi.fn(),
+    };
+  }
 };

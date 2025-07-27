@@ -211,6 +211,29 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
           // The engine will work once user interacts with the page
         }
       }
+      
+      // Try to initialize AudioWorklet if available
+      if ('audioWorklet' in this.audioContext) {
+        try {
+          // Get the AudioWorklet processor code directly
+          const { AudioWorkletEngine } = await import('../engines/AudioWorkletEngine');
+          const workletEngine = new AudioWorkletEngine({ enableRNNoise: true });
+          
+          // Register the processor in OUR audio context
+          const processorCode = (workletEngine as any).getProcessorCode();
+          const blob = new Blob([processorCode], { type: 'application/javascript' });
+          const processorUrl = URL.createObjectURL(blob);
+          
+          try {
+            await this.audioContext.audioWorklet.addModule(processorUrl);
+            this.logger.info('AudioWorklet processor registered successfully in MurmubaraEngine');
+          } finally {
+            URL.revokeObjectURL(processorUrl);
+          }
+        } catch (error) {
+          this.logger.warn('Failed to initialize AudioWorklet, will fallback to ScriptProcessor:', error);
+        }
+      }
     } catch (error) {
       throw new Error(`Failed to create AudioContext: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -338,13 +361,13 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     
     try {
       for (let i = 0; i < 10; i++) {
-        const { output, vad } = this.processFrame(silentFrame);
+        const { vad } = this.processFrame(silentFrame);
         // Silent frame should have VAD close to 0
         if (i === 9) {
           this.logger.debug(`Warmup complete. Silent frame VAD: ${vad.toFixed(3)}`);
         }
       }
-    } catch (error) {
+    } catch {
       this.logger.warn('Failed to warm up model, continuing in degraded mode');
     }
   }
@@ -472,7 +495,40 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     
     const source = this.audioContext.createMediaStreamSource(stream);
     const destination = this.audioContext.createMediaStreamDestination();
-    const processor = this.audioContext.createScriptProcessor(this.config.bufferSize, 1, 1);
+    
+    // Use AudioWorklet instead of deprecated ScriptProcessor
+    let processor: AudioWorkletNode | ScriptProcessorNode;
+    let useWorklet = false;
+    const audioContext = this.audioContext; // Type assertion to help TypeScript
+    
+    // Check if AudioWorklet is available (Safari compatibility)
+    const isAudioWorkletSupported = 'audioWorklet' in audioContext && 
+                                   typeof audioContext.audioWorklet.addModule === 'function';
+    
+    if (isAudioWorkletSupported) {
+      try {
+        // Try to use existing worklet if available
+        processor = new AudioWorkletNode(audioContext, 'rnnoise-processor', {
+          numberOfInputs: 1,
+          numberOfOutputs: 1,
+          outputChannelCount: [1],
+          processorOptions: {
+            sampleRate: audioContext.sampleRate,
+            bufferSize: this.config.bufferSize
+          }
+        });
+        useWorklet = true;
+        this.logger.info('✅ Using AudioWorkletNode for low-latency processing');
+      } catch {
+        // Fallback to ScriptProcessor if worklet not registered
+        this.logger.warn('⚠️  AudioWorklet failed, falling back to ScriptProcessor');
+        processor = (audioContext as any).createScriptProcessor(this.config.bufferSize, 1, 1);
+      }
+    } else {
+      // Fallback for Safari/older browsers
+      this.logger.warn('⚠️  AudioWorklet not supported (Safari?), using ScriptProcessor');
+      processor = (audioContext as any).createScriptProcessor(this.config.bufferSize, 1, 1);
+    }
     
     // Create analyser for reliable level monitoring
     const analyser = this.audioContext.createAnalyser();
@@ -536,7 +592,32 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       };
     }
     
-    processor.onaudioprocess = (event) => {
+    // Setup processing handler based on node type
+    if (useWorklet && processor instanceof AudioWorkletNode) {
+      // For AudioWorklet, send configuration
+      processor.port.postMessage({
+        type: 'initialize',
+        data: {
+          enableRNNoise: true,
+          enableAGC: this.agcEnabled,
+          targetLevel: 0.3
+        }
+      });
+      
+      // Handle messages from worklet
+      processor.port.onmessage = (event) => {
+        if (event.data.type === 'metrics') {
+          // Update metrics from worklet
+          const { inputLevel, outputLevel, vad, noiseReduction } = event.data;
+          this.metricsManager.updateInputLevel(inputLevel);
+          this.metricsManager.updateOutputLevel(outputLevel);
+          this.metricsManager.updateVAD(vad);
+          this.metricsManager.updateNoiseReduction(noiseReduction);
+        }
+      };
+    } else {
+      // Legacy ScriptProcessor handler
+      (processor as ScriptProcessorNode).onaudioprocess = (event) => {
       if (isStopped || isPaused) {
         event.outputBuffer.getChannelData(0).fill(0);
         return;
@@ -545,8 +626,12 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       const input = event.inputBuffer.getChannelData(0);
       const output = event.outputBuffer.getChannelData(0);
       
+      // Performance monitoring (very minimal)
+      if (Math.random() < 0.001) { // 0.1% for production
+        this.logger.debug(`🔊 ScriptProcessor active: bufferSize=${input.length}`);
+      }
+      
       // Update metrics
-      const inputLevel = this.metricsManager.calculateRMS(input);
       const inputPeak = this.metricsManager.calculatePeak(input);
       this.metricsManager.updateInputLevel(inputPeak);
       
@@ -567,8 +652,6 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       }
       
       // Process frames
-      let totalInputPower = 0;
-      let totalOutputPower = 0;
       let totalNoiseRemoved = 0;
       let framesProcessed = 0;
       
@@ -578,6 +661,11 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         
         const { output: processed, vad } = this.processFrame(frame);
         const frameOutputRMS = this.metricsManager.calculateRMS(processed);
+        
+        // Log critical VAD events only
+        if (vad > 0.7 && framesProcessed % 50 === 0) {
+          this.logger.debug(`🎤 Voice detected: VAD=${vad.toFixed(3)}`);
+        }
         
         // Commented out for too frequent logging
         //   const inputPower = frame.reduce((sum, s) => sum + s * s, 0) / frame.length;
@@ -632,33 +720,23 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
           totalNoiseRemoved += frameNoiseReduction;
         }
         
-        totalInputPower += frameInputPower;
-        totalOutputPower += frameOutputPower;
         framesProcessed++;
         
         this.metricsManager.recordFrame();
       }
       
       // Output processed audio
-      let outputFramesWritten = 0;
       for (let i = 0; i < output.length; i++) {
         if (outputBuffer.length > 0) {
           output[i] = outputBuffer.shift()!;
-          if (Math.abs(output[i]) > 0.001) outputFramesWritten++;
         } else {
           output[i] = 0;
         }
       }
       
       // Update output metrics
-      const outputLevel = this.metricsManager.calculateRMS(output);
       const outputPeak = this.metricsManager.calculatePeak(output);
       this.metricsManager.updateOutputLevel(outputPeak);
-      
-      // Track AGC gain for metrics if enabled
-      if (agc) {
-        const currentGain = agc.getCurrentGain();
-      }
       
       // Calculate actual noise reduction based on power analysis
       if (framesProcessed > 0) {
@@ -668,6 +746,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         this.metricsManager.updateNoiseReduction(avgNoiseReduction);
       }
     };
+    }
     
     // Direct connection: source -> (AGC) -> processor -> destination
     if (agc) {

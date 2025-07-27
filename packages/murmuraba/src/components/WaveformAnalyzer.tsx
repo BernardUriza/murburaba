@@ -1,5 +1,12 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
+// Interfaces para métricas del engine
+interface EngineMetrics {
+  currentInputLevel: number;
+  isProcessing: boolean;
+  isRecording: boolean;
+}
+
 interface WaveformAnalyzerProps {
   stream?: MediaStream;
   audioUrl?: string;
@@ -17,6 +24,11 @@ interface WaveformAnalyzerProps {
   height?: number;
   disabled?: boolean;
   disablePlayback?: boolean;
+  // Nuevas props para métricas del engine
+  currentInputLevel?: number;
+  isProcessing?: boolean;
+  isRecording?: boolean;
+  currentVadLevel?: number;
 }
 
 export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({ 
@@ -35,7 +47,12 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   width = 800,
   height = 200,
   disabled = false,
-  disablePlayback = false
+  disablePlayback = false,
+  // Métricas del engine pasadas como props
+  currentInputLevel = 0,
+  isProcessing = false,
+  isRecording = false,
+  currentVadLevel = 0
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -113,17 +130,25 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     ctx.fillText('Audio Visualization', 10, 25);
   }, [color]);
 
+  // Usar métricas del engine pasadas como props
+  const engineMetrics = {
+    currentInputLevel,
+    isProcessing,
+    isRecording,
+    currentVadLevel
+  };
+  
   // Drawing functions
-  const drawLiveWaveform = useCallback((analyserNode: AnalyserNode) => {
+  const drawLiveWaveform = useCallback(() => {
     if (!canvasRef.current || disabled) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const bufferLength = analyserNode.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    const waveformData = new Uint8Array(bufferLength);
+    // Simular datos basados en métricas reales del engine
+    const bufferLength = 256;
+    const inputLevel = engineMetrics.currentInputLevel;
 
     const drawVisual = () => {
       animationRef.current = requestAnimationFrame(drawVisual);
@@ -134,10 +159,23 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      if (isActive && !isPaused) {
-        analyserNode.getByteFrequencyData(dataArray);
-        analyserNode.getByteTimeDomainData(waveformData);
+      // Generar datos sintéticos basados en métricas reales
+      const dataArray = new Uint8Array(bufferLength);
+      const waveformData = new Uint8Array(bufferLength);
+      
+      if (isActive && !isPaused && inputLevel > 0) {
+        // Simular frequency data basado en inputLevel
+        for (let i = 0; i < bufferLength; i++) {
+          const frequency = (inputLevel * 255) * (Math.random() * 0.3 + 0.7);
+          dataArray[i] = Math.min(255, frequency * (1 - i / bufferLength));
+        }
         
+        // Simular waveform data
+        for (let i = 0; i < bufferLength; i++) {
+          const phase = (i / bufferLength) * Math.PI * 4;
+          const amplitude = inputLevel * 127 * (Math.sin(phase) + Math.sin(phase * 3) * 0.3);
+          waveformData[i] = 128 + amplitude + (Math.random() - 0.5) * 10;
+        }
       } else {
         dataArray.fill(0);
         waveformData.fill(128);
@@ -181,13 +219,43 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      // Draw amplitude meter
-      let sum = 0;
-      for (let i = 0; i < waveformData.length; i++) {
-        sum += Math.abs(waveformData[i] - 128);
+      // Draw VAD overlay line - más gruesa y resaltada
+      if (engineMetrics.currentVadLevel > 0.1) {
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = '#ff6b35'; // Color naranja brillante para VAD
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#ff6b35';
+        ctx.globalAlpha = 0.8;
+        ctx.beginPath();
+
+        const vadSliceWidth = canvas.width / bufferLength;
+        let vadX = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+          // Crear forma semi-cuadrada basada en VAD
+          const baseY = canvas.height / 2;
+          const vadAmplitude = engineMetrics.currentVadLevel * canvas.height * 0.4;
+          
+          // Patrón semi-cuadrado: alterna entre valores altos y medios
+          const isHigh = (i % 8) < 4; // Patrón de 8 muestras
+          const vadMultiplier = isHigh ? 1.0 : 0.6;
+          const vadY = baseY + (Math.sin(i * 0.2) * vadAmplitude * vadMultiplier);
+
+          if (i === 0) {
+            ctx.moveTo(vadX, vadY);
+          } else {
+            ctx.lineTo(vadX, vadY);
+          }
+          vadX += vadSliceWidth;
+        }
+
+        ctx.stroke();
+        ctx.globalAlpha = 1.0;
+        ctx.shadowBlur = 0;
       }
-      const average = sum / waveformData.length;
-      const normalizedAmplitude = average / 128;
+
+      // Draw amplitude meter usando métricas reales
+      const normalizedAmplitude = inputLevel;
       
       const ampGradient = ctx.createLinearGradient(10, 0, 110, 0);
       ampGradient.addColorStop(0, '#4A90E2');
@@ -200,18 +268,39 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       
       ctx.fillStyle = '#CACBDA';
       ctx.font = '12px monospace';
-      ctx.fillText(`Volume: ${(normalizedAmplitude * 100).toFixed(1)}%`, 10, 35);
+      ctx.fillText(`Input Level: ${(inputLevel * 100).toFixed(1)}%`, 10, 35);
       
-      // Status indicator
+      // VAD Level display
+      ctx.fillText(`VAD: ${(engineMetrics.currentVadLevel * 100).toFixed(1)}%`, 10, 50);
+      
+      // VAD bar
+      const vadGradient = ctx.createLinearGradient(120, 0, 220, 0);
+      vadGradient.addColorStop(0, '#ff6b35');
+      vadGradient.addColorStop(1, '#ff8c42');
+      ctx.fillStyle = vadGradient;
+      ctx.fillRect(120, 40, engineMetrics.currentVadLevel * 100, 10);
+      
+      ctx.strokeStyle = '#2E3039';
+      ctx.strokeRect(120, 40, 100, 10);
+      
+      // Status indicator usando estado real del engine
       if (stream) {
-        if (isActive && !isPaused) {
+        if (engineMetrics.isRecording && isActive && !isPaused) {
           ctx.fillStyle = '#22c55e';
           ctx.beginPath();
           ctx.arc(canvas.width - 20, 20, 5, 0, Math.PI * 2);
           ctx.fill();
           ctx.fillStyle = '#CACBDA';
           ctx.font = '10px monospace';
-          ctx.fillText('LIVE', canvas.width - 50, 25);
+          ctx.fillText('RECORDING', canvas.width - 70, 25);
+        } else if (engineMetrics.isProcessing) {
+          ctx.fillStyle = '#3b82f6';
+          ctx.beginPath();
+          ctx.arc(canvas.width - 20, 20, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#CACBDA';
+          ctx.font = '10px monospace';
+          ctx.fillText('PROCESSING', canvas.width - 80, 25);
         } else if (isPaused) {
           ctx.fillStyle = '#f59e0b';
           ctx.beginPath();
@@ -220,12 +309,20 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
           ctx.fillStyle = '#CACBDA';
           ctx.font = '10px monospace';
           ctx.fillText('PAUSED', canvas.width - 60, 25);
+        } else {
+          ctx.fillStyle = '#6b7280';
+          ctx.beginPath();
+          ctx.arc(canvas.width - 20, 20, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#CACBDA';
+          ctx.font = '10px monospace';
+          ctx.fillText('READY', canvas.width - 50, 25);
         }
       }
     };
 
     drawVisual();
-  }, [isActive, isPaused, color, disabled]);
+  }, [isActive, isPaused, color, disabled, engineMetrics]);
 
   const draw = useCallback(() => {
     if (!canvasRef.current || disabled) return;
@@ -393,14 +490,9 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     }
   }, [volume, isMuted, audioContext, disabled, analyser, source]);
 
+  // Simplificado: solo verificar stream sin crear AudioContext
   const initializeLiveStream = useCallback(async () => {
     if (!stream || disabled) return;
-    
-    // If we already have an audio context for this stream, don't create a new one
-    if (audioContext && source && source instanceof MediaStreamAudioSourceNode) {
-      console.log('WaveformAnalyzer: Audio context already initialized for stream');
-      return;
-    }
     
     // Check if canvas is visible and has valid dimensions
     if (canvasRef.current) {
@@ -413,7 +505,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     }
 
     try {
-      console.log('WaveformAnalyzer: Initializing live stream...');
+      console.log('WaveformAnalyzer: Initializing live stream visualization...');
       console.log('Stream tracks:', stream.getTracks().map(t => ({ 
         kind: t.kind, 
         enabled: t.enabled, 
@@ -444,62 +536,16 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
         readyState: activeTrack.readyState
       });
       
-      // Clean up previous context if it exists
-      if (audioContext && audioContext.state !== 'closed') {
-        console.log('Closing previous AudioContext...');
-        await audioContext.close();
-      }
-      
-      const ctx = new AudioContext();
-      console.log('AudioContext state:', ctx.state);
-      
-      // Resume AudioContext if suspended
-      if (ctx.state === 'suspended') {
-        console.log('AudioContext suspended, resuming...');
-        try {
-          await ctx.resume();
-          console.log('AudioContext resumed, new state:', ctx.state);
-        } catch (resumeError) {
-          console.error('Failed to resume AudioContext:', resumeError);
-          setError('Audio playback blocked by browser - click to enable');
-          await ctx.close();
-          return;
-        }
-      }
-      
-      const analyserNode = ctx.createAnalyser();
-      analyserNode.fftSize = 2048;
-      analyserNode.smoothingTimeConstant = 0.8;
-      analyserNode.minDecibels = -90;
-      analyserNode.maxDecibels = -10;
-
-      const sourceNode = ctx.createMediaStreamSource(stream);
-      sourceNode.connect(analyserNode);
-      
-      setAudioContext(ctx);
-      setAnalyser(analyserNode);
-      setSource(sourceNode);
       setError(null);
       
-      console.log('WaveformAnalyzer: Live stream initialized successfully');
-      // Start drawing after initialization
-      if (analyserNode) {
-        drawLiveWaveform(analyserNode);
-      }
+      console.log('WaveformAnalyzer: Live stream verification completed - using engine metrics');
+      // Start drawing using engine metrics
+      drawLiveWaveform();
     } catch (error) {
-      console.error('Error initializing live stream:', error);
-      if (error instanceof Error) {
-        console.error('Error details:', {
-          name: error.name,
-          message: error.message,
-          stack: error.stack
-        });
-        setError(`Failed to initialize live stream: ${error.message}`);
-      } else {
-        setError('Failed to initialize live stream');
-      }
+      console.error('Error verifying live stream:', error);
+      setError(`Failed to verify live stream: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  }, [stream, audioContext, disabled, source]);
+  }, [stream, disabled, drawLiveWaveform]);
 
   // Effects
   useEffect(() => {
@@ -512,7 +558,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [stream, isActive, isPaused, disabled]);
+  }, [stream, isActive, isPaused, disabled, initializeLiveStream]);
 
   useEffect(() => {
     return () => {

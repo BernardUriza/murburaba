@@ -5,7 +5,6 @@ import { useMediaStream } from '../context/MediaStreamContext'
 import AudioDemo from '../components/AudioDemo'
 import { Settings } from '../components/Settings'
 import { CopilotChat } from '../components/CopilotChat'
-import { MurmurabaSuiteStatus } from '../components/MurmurabaSuiteStatus'
 import { OverlayPanel } from '../components/ui/OverlayPanel'
 import { StudioHeader } from '../components/ui/StudioHeader'
 import { ProcessingBar } from '../components/ui/ProcessingBar'
@@ -19,8 +18,7 @@ import { useAudioProcessor } from '../hooks/useAudioProcessor'
 import { WaveformAnalyzer } from 'murmuraba'
 import {
   setChunkDuration,
-  setEnableAGC,
-  setCurrentStreamId
+  setEnableAGC
 } from '../store/slices/audioSlice'
 import {
   toggleAudioDemo,
@@ -188,6 +186,9 @@ export default function App() {
                   disablePlayback={true}
                   isActive={true}
                   isPaused={false}
+                  currentInputLevel={currentInputLevel}
+                  isProcessing={isProcessing}
+                  isRecording={isRecording}
                 />
               ) : (
                 <div style={{ 
