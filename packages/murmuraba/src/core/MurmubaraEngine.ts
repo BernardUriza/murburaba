@@ -474,6 +474,12 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     const destination = this.audioContext.createMediaStreamDestination();
     const processor = this.audioContext.createScriptProcessor(this.config.bufferSize, 1, 1);
     
+    // Create analyser for reliable level monitoring
+    const analyser = this.audioContext.createAnalyser();
+    analyser.fftSize = 2048;
+    analyser.smoothingTimeConstant = 0.8;
+    const analyserDataArray = new Uint8Array(analyser.frequencyBinCount);
+    
     // RNNoise handles all noise reduction - no pre-filters needed
     
     // Create AGC if enabled
@@ -562,6 +568,14 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       const inputLevel = this.metricsManager.calculateRMS(input);
       const inputPeak = this.metricsManager.calculatePeak(input);
       
+      // DEBUG: Force log when we have audio
+      if (inputPeak > 0.01 && debugLogCount % 50 === 0) {
+        console.log('🎤 AUDIO DETECTED IN ENGINE:', {
+          inputLevel: inputLevel.toFixed(4),
+          inputPeak: inputPeak.toFixed(4),
+          timestamp: Date.now()
+        });
+      }
       
       this.metricsManager.updateInputLevel(inputPeak);
       
@@ -738,9 +752,41 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     
     processor.connect(destination);
     
-    // CRITICAL: Connect processor to context.destination to ensure onaudioprocess fires
-    // Without this, the scriptProcessor won't process audio
-    processor.connect(context.destination);
+    // Connect analyser in parallel for level monitoring
+    if (agc) {
+      // AGC is already connected to processor, tap from there
+      processor.connect(analyser);
+    } else {
+      // Connect source directly to analyser
+      source.connect(analyser);
+    }
+    
+    // Start real-time level monitoring with analyser
+    const levelMonitoringInterval = setInterval(() => {
+      if (isStopped) {
+        clearInterval(levelMonitoringInterval);
+        return;
+      }
+      
+      analyser.getByteTimeDomainData(analyserDataArray);
+      
+      // Calculate RMS from time domain data
+      let sum = 0;
+      for (let i = 0; i < analyserDataArray.length; i++) {
+        const normalized = (analyserDataArray[i] - 128) / 128;
+        sum += normalized * normalized;
+      }
+      const rms = Math.sqrt(sum / analyserDataArray.length);
+      
+      // Update metrics manager with analyser data
+      if (rms > 0.001) {
+        this.metricsManager.updateInputLevel(rms);
+        // Log occasionally for debug
+        if (Math.random() < 0.02) {
+          console.log('📊 Analyser RMS:', rms.toFixed(4));
+        }
+      }
+    }, 50); // Update every 50ms
     
     // Debug: Verificar el stream de destino
     console.log('MurmubaraEngine: Destination stream created:', {
@@ -765,6 +811,11 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       stop: () => {
         isStopped = true;
         
+        // Clean up level monitoring interval
+        if (levelMonitoringInterval) {
+          clearInterval(levelMonitoringInterval);
+        }
+        
         // Flush any remaining chunks
         if (chunkProcessor) {
           chunkProcessor.flush();
@@ -772,6 +823,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         
         processor.disconnect();
         source.disconnect();
+        analyser.disconnect();
         this.activeStreams.delete(streamId);
         this.logger.info(`Stream ${streamId} stopped`);
         

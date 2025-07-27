@@ -178,6 +178,16 @@ export class AudioProcessorService implements IAudioProcessor {
       const chunks: ProcessedChunk[] = [];
       const engine = engineRegistry.getEngine();
       
+      // Connect metrics from engine to service
+      const metricsManager = (engine as any).metricsManager;
+      if (metricsManager && metricsManager.on) {
+        console.log('🔌 Connecting metrics from engine to AudioProcessorService');
+        const metricsUnsubscribe = metricsManager.on('metrics-update', (metrics: ProcessingMetrics) => {
+          // Forward metrics to callbacks
+          this.metricsCallbacks.forEach(cb => cb(metrics));
+        });
+      }
+      
       const controller = await engine.processStream(stream, {
         chunkDuration: recordingOptions.chunkDuration * 1000, // Convert seconds to milliseconds
         onChunkProcessed: (chunk: any) => {
