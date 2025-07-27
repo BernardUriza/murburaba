@@ -80,25 +80,30 @@ export class AudioWorkletEngine implements AudioEngine {
   }
   
   private getProcessorCode(): string {
-    // This will be the inline AudioWorkletProcessor code
+    // Migrated from ScriptProcessorNode by direct refactor, no new class created.
     return `
       class RNNoiseProcessor extends AudioWorkletProcessor {
         constructor() {
           super();
           this.isActive = true;
+          this.isPaused = false;
           this.frameSize = 480; // RNNoise frame size
-          this.inputBuffer = new Float32Array(this.frameSize);
-          this.bufferIndex = 0;
+          this.inputBuffer = [];
+          this.outputBuffer = [];
           this.isRNNoiseReady = false;
           this.rnnoiseModule = null;
           this.rnnoiseState = null;
-          this.inputPtr = null;
-          this.outputPtr = null;
           
-          // Performance metrics
+          // Metrics
           this.framesProcessed = 0;
           this.processingTimeSum = 0;
-          this.bufferUnderruns = 0;
+          this.inputLevel = 0;
+          this.outputLevel = 0;
+          
+          // AGC state
+          this.agcEnabled = false;
+          this.agcTargetLevel = 0.3;
+          this.agcCurrentGain = 1.0;
           
           // Setup message handling
           this.port.onmessage = (event) => {
@@ -112,12 +117,22 @@ export class AudioWorkletEngine implements AudioEngine {
               if (message.data.enableRNNoise) {
                 this.initializeRNNoise(message.data.wasmUrl);
               }
+              if (message.data.enableAGC !== undefined) {
+                this.agcEnabled = message.data.enableAGC;
+              }
               break;
-            case 'updateSettings':
-              // Handle settings updates
+            case 'pause':
+              this.isPaused = true;
               break;
-            case 'loadWASM':
-              this.initializeRNNoise(message.data.wasmUrl);
+            case 'resume':
+              this.isPaused = false;
+              break;
+            case 'stop':
+              this.isActive = false;
+              break;
+            case 'updateAGC':
+              this.agcEnabled = message.data.enabled;
+              this.agcTargetLevel = message.data.targetLevel || 0.3;
               break;
           }
         }
@@ -151,32 +166,101 @@ export class AudioWorkletEngine implements AudioEngine {
           return processed;
         }
         
+        calculateRMS(samples) {
+          let sum = 0;
+          for (let i = 0; i < samples.length; i++) {
+            sum += samples[i] * samples[i];
+          }
+          return Math.sqrt(sum / samples.length);
+        }
+        
+        calculatePeak(samples) {
+          let peak = 0;
+          for (let i = 0; i < samples.length; i++) {
+            peak = Math.max(peak, Math.abs(samples[i]));
+          }
+          return peak;
+        }
+        
+        updateAGC(inputLevel) {
+          if (!this.agcEnabled) return;
+          
+          const targetGain = this.agcTargetLevel / (inputLevel + 0.001);
+          const limitedGain = Math.min(targetGain, 10); // Max 10x gain
+          
+          // Smooth gain changes
+          const rate = limitedGain > this.agcCurrentGain ? 0.1 : 0.5;
+          this.agcCurrentGain += (limitedGain - this.agcCurrentGain) * rate;
+        }
+        
         process(inputs, outputs, parameters) {
           const startTime = currentTime;
           const input = inputs[0];
           const output = outputs[0];
           
-          if (!input || !input[0]) {
-            this.bufferUnderruns++;
+          if (!input || !input[0] || this.isPaused) {
+            // Fill with silence if paused or no input
+            if (output && output[0]) {
+              output[0].fill(0);
+            }
             return this.isActive;
           }
           
           const inputChannel = input[0];
           const outputChannel = output[0];
           
-          // Process samples in chunks of 480 (RNNoise frame size)
+          // Calculate metrics
+          this.inputLevel = this.calculateRMS(inputChannel);
+          const inputPeak = this.calculatePeak(inputChannel);
+          
+          // Update AGC
+          this.updateAGC(this.inputLevel);
+          
+          // Add input to buffer
           for (let i = 0; i < inputChannel.length; i++) {
-            this.inputBuffer[this.bufferIndex++] = inputChannel[i];
+            this.inputBuffer.push(inputChannel[i]);
+          }
+          
+          // Process buffered frames
+          let outputIndex = 0;
+          while (this.inputBuffer.length >= this.frameSize && outputIndex < outputChannel.length) {
+            // Get frame
+            const frame = new Float32Array(this.frameSize);
+            for (let i = 0; i < this.frameSize; i++) {
+              frame[i] = this.inputBuffer.shift();
+            }
             
-            if (this.bufferIndex === this.frameSize) {
-              // Process the frame
-              const processedFrame = this.isRNNoiseReady 
-                ? this.processFrame(this.inputBuffer)
-                : this.inputBuffer;
-              
-              // Copy processed frame to output
-              const startIdx = i - this.frameSize + 1;
-              for (let j = 0; j < this.frameSize; j++) {
+            // Apply AGC if enabled
+            if (this.agcEnabled) {
+              for (let i = 0; i < frame.length; i++) {
+                frame[i] *= this.agcCurrentGain;
+              }
+            }
+            
+            // Process with RNNoise if ready
+            const processed = this.isRNNoiseReady 
+              ? this.processFrame(frame)
+              : frame;
+            
+            // Add to output buffer
+            for (let i = 0; i < processed.length; i++) {
+              this.outputBuffer.push(processed[i]);
+            }
+            
+            this.framesProcessed++;
+          }
+          
+          // Output buffered samples
+          for (let i = 0; i < outputChannel.length; i++) {
+            if (this.outputBuffer.length > 0) {
+              outputChannel[i] = this.outputBuffer.shift();
+            } else {
+              outputChannel[i] = 0;
+            }
+          }
+          
+          // Calculate output metrics
+          this.outputLevel = this.calculateRMS(outputChannel);
                 if (startIdx + j >= 0 && startIdx + j < outputChannel.length) {
                   outputChannel[startIdx + j] = processedFrame[j];
                 }
