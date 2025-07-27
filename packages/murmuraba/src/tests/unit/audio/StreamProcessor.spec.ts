@@ -78,7 +78,7 @@ describe('StreamProcessor', () => {
     mockAudioContext.createMediaStreamSource.mockReturnValue(mockMediaStreamSource);
     mockAudioContext.createMediaStreamDestination.mockReturnValue(mockMediaStreamDestination);
     mockAudioContext.audioWorklet.addModule.mockResolvedValue(undefined);
-    mockAudioContext.createScriptProcessor.mockReturnValue({
+    (mockAudioContext as any).createScriptProcessor = vi.fn().mockReturnValue({
       connect: vi.fn(),
       disconnect: vi.fn(),
       onaudioprocess: null,
@@ -264,7 +264,7 @@ describe('StreamProcessor', () => {
       // Simulate worklet sending metrics
       const messageHandler = mockAudioWorkletNode.port.onmessage;
       if (messageHandler) {
-        messageHandler({
+        (messageHandler as any)({
           data: {
             type: 'metrics',
             inputLevel: 0.5,
@@ -320,7 +320,7 @@ describe('StreamProcessor', () => {
 
     it('should handle WASM initialization errors gracefully', async () => {
       // Mock WASM manager as not initialized
-      mockWasmManager.isInitialized.mockReturnValue(false);
+      vi.mocked(mockWasmManager.isInitialized).mockReturnValue(false);
 
       const controller = await streamProcessor.processStream(mockStream);
       expect(controller).toBeDefined();

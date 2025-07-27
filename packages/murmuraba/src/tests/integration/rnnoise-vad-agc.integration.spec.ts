@@ -5,7 +5,7 @@
  * Voice Activity Detection, and Automatic Gain Control working together
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { WasmManager } from '../../audio/WasmManager';
 import { FrameProcessor } from '../../audio/FrameProcessor';
 import { StreamProcessor } from '../../audio/StreamProcessor';
@@ -293,7 +293,7 @@ describe('RNNoise + VAD + AGC Integration', () => {
       const controller = await streamProcessor.processStream(mockStream);
 
       // Verify AGC was configured in worklet
-      const mockWorkletNode = global.AudioWorkletNode.mock.results[0].value;
+      const mockWorkletNode = vi.mocked(global.AudioWorkletNode).mock.results[0].value;
       expect(mockWorkletNode.port.postMessage).toHaveBeenCalledWith({
         type: 'initialize',
         data: {
@@ -318,7 +318,7 @@ describe('RNNoise + VAD + AGC Integration', () => {
       const controller = await agcStreamProcessor.processStream(mockStream);
 
       // Simulate worklet sending metrics with varying levels
-      const mockWorkletNode = global.AudioWorkletNode.mock.results[0].value;
+      const mockWorkletNode = vi.mocked(global.AudioWorkletNode).mock.results[0].value;
       const metricsHandler = vi.fn();
       agcStreamProcessor.on('metrics', metricsHandler);
 

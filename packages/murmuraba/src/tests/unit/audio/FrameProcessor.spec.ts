@@ -78,7 +78,7 @@ describe('FrameProcessor', () => {
 
       const result = frameProcessor.processFrame(
         inputFrame, 
-        null, // No WASM module
+        null as any, // No WASM module
         0, 
         0, 
         0

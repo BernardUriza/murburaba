@@ -15,6 +15,40 @@ vi.mock('../../../utils/AudioResampler', () => ({
   },
 }));
 
+// Helper function to create mock WAV buffer - moved to module scope
+function createMockWavBuffer(): ArrayBuffer {
+  // Create a minimal valid WAV file buffer
+  const buffer = new ArrayBuffer(44 + 960); // Header + 480 samples * 2 bytes
+  const view = new DataView(buffer);
+  
+  // RIFF header
+  view.setUint32(0, 0x46464952, false); // 'RIFF'
+  view.setUint32(4, buffer.byteLength - 8, true); // File size - 8
+  view.setUint32(8, 0x45564157, false); // 'WAVE'
+  
+  // fmt chunk
+  view.setUint32(12, 0x20746D66, false); // 'fmt '
+  view.setUint32(16, 16, true); // fmt chunk size
+  view.setUint16(20, 1, true); // PCM format
+  view.setUint16(22, 1, true); // Mono
+  view.setUint32(24, 48000, true); // Sample rate
+  view.setUint32(28, 96000, true); // Byte rate (48000 * 2)
+  view.setUint16(32, 2, true); // Block align
+  view.setUint16(34, 16, true); // Bits per sample
+  
+  // data chunk
+  view.setUint32(36, 0x61746164, false); // 'data'
+  view.setUint32(40, 960, true); // Data size (480 samples * 2 bytes)
+  
+  // Add some sample data (480 samples)
+  const samples = new Int16Array(buffer, 44, 480);
+  for (let i = 0; i < 480; i++) {
+    samples[i] = Math.sin(i * 0.1) * 16384; // Sine wave
+  }
+  
+  return buffer;
+}
+
 describe('FileProcessor', () => {
   let fileProcessor: FileProcessor;
   let mockWasmManager: WasmManager;
@@ -65,38 +99,6 @@ describe('FileProcessor', () => {
   });
 
   describe('WAV file parsing', () => {
-    function createMockWavBuffer(): ArrayBuffer {
-      // Create a minimal valid WAV file buffer
-      const buffer = new ArrayBuffer(44 + 960); // Header + 480 samples * 2 bytes
-      const view = new DataView(buffer);
-      
-      // RIFF header
-      view.setUint32(0, 0x46464952, false); // 'RIFF'
-      view.setUint32(4, buffer.byteLength - 8, true); // File size - 8
-      view.setUint32(8, 0x45564157, false); // 'WAVE'
-      
-      // fmt chunk
-      view.setUint32(12, 0x20746D66, false); // 'fmt '
-      view.setUint32(16, 16, true); // fmt chunk size
-      view.setUint16(20, 1, true); // PCM format
-      view.setUint16(22, 1, true); // Mono
-      view.setUint32(24, 48000, true); // Sample rate
-      view.setUint32(28, 96000, true); // Byte rate (48000 * 2)
-      view.setUint16(32, 2, true); // Block align
-      view.setUint16(34, 16, true); // Bits per sample
-      
-      // data chunk
-      view.setUint32(36, 0x61746164, false); // 'data'
-      view.setUint32(40, 960, true); // Data size (480 samples * 2 bytes)
-      
-      // Add some sample data (480 samples)
-      const samples = new Int16Array(buffer, 44, 480);
-      for (let i = 0; i < 480; i++) {
-        samples[i] = Math.sin(i * 0.1) * 16384; // Sine wave
-      }
-      
-      return buffer;
-    }
 
     it('should parse valid WAV file', async () => {
       const mockBuffer = createMockWavBuffer();
@@ -106,6 +108,7 @@ describe('FileProcessor', () => {
       vi.mocked(AudioResampler.resampleToRNNoiseRate).mockReturnValue({
         resampledData: new Int16Array(480),
         outputSampleRate: 48000,
+        wasResampled: false,
       });
 
       const result = await fileProcessor.processFile(mockBuffer);
@@ -161,6 +164,7 @@ describe('FileProcessor', () => {
       vi.mocked(AudioResampler.resampleToRNNoiseRate).mockReturnValue({
         resampledData: new Int16Array(480), // Exactly 1 frame
         outputSampleRate: 48000,
+        wasResampled: false,
       });
 
       await fileProcessor.processFile(mockBuffer, progressSpy);
@@ -182,6 +186,7 @@ describe('FileProcessor', () => {
       vi.mocked(AudioResampler.resampleToRNNoiseRate).mockReturnValue({
         resampledData: new Int16Array(960), // Upsampled to 2x
         outputSampleRate: 48000,
+        wasResampled: true,
       });
 
       const result = await fileProcessor.processFile(mockBuffer);
@@ -207,7 +212,7 @@ describe('FileProcessor', () => {
 
   describe('WASM integration', () => {
     it('should initialize WASM if not already initialized', async () => {
-      mockWasmManager.isInitialized.mockReturnValue(false);
+      vi.mocked(mockWasmManager.isInitialized).mockReturnValue(false);
       
       const mockBuffer = createMockWavBuffer();
       
@@ -216,6 +221,7 @@ describe('FileProcessor', () => {
       vi.mocked(AudioResampler.resampleToRNNoiseRate).mockReturnValue({
         resampledData: new Int16Array(480),
         outputSampleRate: 48000,
+        wasResampled: false,
       });
 
       await fileProcessor.processFile(mockBuffer);
@@ -231,6 +237,7 @@ describe('FileProcessor', () => {
       vi.mocked(AudioResampler.resampleToRNNoiseRate).mockReturnValue({
         resampledData: new Int16Array(480),
         outputSampleRate: 48000,
+        wasResampled: false,
       });
 
       await fileProcessor.processFile(mockBuffer);
@@ -253,6 +260,7 @@ describe('FileProcessor', () => {
       vi.mocked(AudioResampler.resampleToRNNoiseRate).mockReturnValue({
         resampledData: new Int16Array(480),
         outputSampleRate: 48000,
+        wasResampled: false,
       });
 
       await fileProcessor.processFile(mockBuffer, progressSpy);
@@ -272,6 +280,7 @@ describe('FileProcessor', () => {
       vi.mocked(AudioResampler.resampleToRNNoiseRate).mockReturnValue({
         resampledData: new Int16Array(480),
         outputSampleRate: 48000,
+        wasResampled: false,
       });
 
       await fileProcessor.processFile(mockBuffer);
@@ -291,6 +300,7 @@ describe('FileProcessor', () => {
       vi.mocked(AudioResampler.resampleToRNNoiseRate).mockReturnValue({
         resampledData: new Int16Array(480),
         outputSampleRate: 48000,
+        wasResampled: false,
       });
 
       const result = await fileProcessor.processFile(mockBuffer);
@@ -312,13 +322,14 @@ describe('FileProcessor', () => {
       const mockBuffer = createMockWavBuffer();
       
       // Mock WASM to throw error
-      mockWasmManager.getModule.mockReturnValue(null);
+      vi.mocked(mockWasmManager.getModule).mockReturnValue(null);
       
       // Mock resampler
       const { AudioResampler } = await import('../../../utils/AudioResampler');
       vi.mocked(AudioResampler.resampleToRNNoiseRate).mockReturnValue({
         resampledData: new Int16Array(480),
         outputSampleRate: 48000,
+        wasResampled: false,
       });
 
       const result = await fileProcessor.processFile(mockBuffer);
@@ -332,15 +343,18 @@ describe('FileProcessor', () => {
       
       // Mock frame processor to throw error after allocation
       const mockModule = mockWasmManager.getModule();
-      mockModule._rnnoise_process_frame.mockImplementation(() => {
-        throw new Error('Processing failed');
-      });
+      if (mockModule) {
+        vi.mocked(mockModule._rnnoise_process_frame).mockImplementation(() => {
+          throw new Error('Processing failed');
+        });
+      }
       
       // Mock resampler
       const { AudioResampler } = await import('../../../utils/AudioResampler');
       vi.mocked(AudioResampler.resampleToRNNoiseRate).mockReturnValue({
         resampledData: new Int16Array(480),
         outputSampleRate: 48000,
+        wasResampled: false,
       });
 
       const result = await fileProcessor.processFile(mockBuffer);

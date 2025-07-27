@@ -4,7 +4,7 @@
  * Tests the complete audio processing pipeline with all modules working together
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { WasmManager } from '../../audio/WasmManager';
 import { FrameProcessor } from '../../audio/FrameProcessor';
 import { StreamProcessor } from '../../audio/StreamProcessor';
@@ -248,6 +248,7 @@ describe('Audio Pipeline Integration', () => {
       vi.mocked(AudioResampler.resampleToRNNoiseRate).mockReturnValue({
         resampledData: new Int16Array(960),
         outputSampleRate: 48000,
+        wasResampled: false,
       });
 
       const result = await fileProcessor.processFile(testBuffer, progressSpy);
@@ -273,6 +274,7 @@ describe('Audio Pipeline Integration', () => {
       vi.mocked(AudioResampler.resampleToRNNoiseRate).mockReturnValue({
         resampledData: new Int16Array(4800),
         outputSampleRate: 48000,
+        wasResampled: false,
       });
 
       const result = await fileProcessor.processFile(largeBuffer, progressSpy);
@@ -352,8 +354,7 @@ describe('Audio Pipeline Integration', () => {
       expect(controller.processor.state).toBe('processing');
 
       // Verify AGC configuration was sent to worklet
-      const workletCalls = global.AudioWorkletNode.mock.calls;
-      expect(workletCalls.length).toBeGreaterThan(0);
+      expect(global.AudioWorkletNode).toHaveBeenCalled();
 
       controller.stop();
       agcStreamProcessor.cleanup();
@@ -378,7 +379,7 @@ describe('Audio Pipeline Integration', () => {
 
       const result = degradedFrameProcessor.processFrame(
         testFrame,
-        null, // No WASM
+        null as any, // No WASM
         0,
         0,
         0
