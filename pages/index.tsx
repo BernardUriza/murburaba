@@ -54,8 +54,20 @@ export default function App() {
   const { showAudioDemo, showAdvancedMetrics, showSettings, showCopilot } = uiFlags
   const { processingResults, currentInputLevel } = useAppSelector(state => state.audio)
   
-  // Debug log
-  console.log('🔍 Engine status:', { isInitialized, isProcessing, isRecording, currentStream: !!currentStream, currentInputLevel })
+  // Debug log - log every 2 seconds only
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log('🔍 Engine status:', { 
+        isInitialized, 
+        isProcessing, 
+        isRecording, 
+        currentStream: !!currentStream, 
+        showLiveWaveform,
+        currentInputLevel 
+      })
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [isInitialized, isProcessing, isRecording, currentStream, showLiveWaveform, currentInputLevel])
   
   // Audio processor hook
   const { isReady, processRecording, cancelProcessing } = useAudioProcessor()

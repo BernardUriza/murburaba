@@ -420,10 +420,10 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       output[i] = scaledOutput[i] / 32768.0;
     }
     
-    // Log VAD for debugging
-    if (vad > 0.5) {
-      this.logger.debug(`🎤 VOICE DETECTED: VAD=${vad.toFixed(3)}`);
-    }
+    // Log VAD for debugging - commented out for too frequent logging
+    // if (vad > 0.5) {
+    //   this.logger.debug(`🎤 VOICE DETECTED: VAD=${vad.toFixed(3)}`);
+    // }
     
     return { output, vad };
   }
@@ -592,21 +592,22 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         const frameOutputRMS = this.metricsManager.calculateRMS(processed);
         
         // Debug: Log frame processing details
-        if (vad > 0.01 || debugLogCount < 20) {
-          const inputPower = frame.reduce((sum, s) => sum + s * s, 0) / frame.length;
-          const outputPower = processed.reduce((sum, s) => sum + s * s, 0) / processed.length;
-          const frameReduction = inputPower > 0 ? (1 - outputPower / inputPower) * 100 : 0;
-          
-          console.log(`🎤 Frame Analysis:`, {
-            vad: vad.toFixed(3),
-            inputRMS: frameInputRMS.toFixed(6),
-            outputRMS: frameOutputRMS.toFixed(6),
-            inputPower: inputPower.toFixed(8),
-            outputPower: outputPower.toFixed(8),
-            powerReduction: frameReduction.toFixed(1) + '%',
-            isVoice: vad > 0.5
-          });
-        }
+        // Commented out for too frequent logging
+        // if (vad > 0.01 || debugLogCount < 20) {
+        //   const inputPower = frame.reduce((sum, s) => sum + s * s, 0) / frame.length;
+        //   const outputPower = processed.reduce((sum, s) => sum + s * s, 0) / processed.length;
+        //   const frameReduction = inputPower > 0 ? (1 - outputPower / inputPower) * 100 : 0;
+        //   
+        //   console.log(`🎤 Frame Analysis:`, {
+        //     vad: vad.toFixed(3),
+        //     inputRMS: frameInputRMS.toFixed(6),
+        //     outputRMS: frameOutputRMS.toFixed(6),
+        //     inputPower: inputPower.toFixed(8),
+        //     outputPower: outputPower.toFixed(8),
+        //     powerReduction: frameReduction.toFixed(1) + '%',
+        //     isVoice: vad > 0.5
+        //   });
+        // }
         
         // Update VAD metrics
         this.metricsManager.updateVAD(vad);
@@ -682,23 +683,23 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       // Track AGC gain for metrics if enabled
       if (agc) {
         const currentGain = agc.getCurrentGain();
-        // This gain info will be used for diagnostics
-        this.logger.debug(`AGC gain: ${currentGain.toFixed(2)}x`);
+        // This gain info will be used for diagnostics - commented out for too frequent logging
+        // this.logger.debug(`AGC gain: ${currentGain.toFixed(2)}x`);
       }
       
       // Calculate actual noise reduction based on power analysis
       if (framesProcessed > 0) {
         const avgNoiseReduction = (totalNoiseRemoved / framesProcessed) * 100;
         
-        // Log for debugging
-        if (debugLogCount < 10 || avgNoiseReduction > 10) {
-          console.log(`🔊 Noise Reduction Calculated:`, {
-            avgReduction: avgNoiseReduction.toFixed(1) + '%',
-            framesProcessed,
-            avgInputPower: (totalInputPower / framesProcessed).toFixed(6),
-            avgOutputPower: (totalOutputPower / framesProcessed).toFixed(6)
-          });
-        }
+        // Log for debugging - commented out for too frequent logging
+        // if (debugLogCount < 10 || avgNoiseReduction > 10) {
+        //   console.log(`🔊 Noise Reduction Calculated:`, {
+        //     avgReduction: avgNoiseReduction.toFixed(1) + '%',
+        //     framesProcessed,
+        //     avgInputPower: (totalInputPower / framesProcessed).toFixed(6),
+        //     avgOutputPower: (totalOutputPower / framesProcessed).toFixed(6)
+        //   });
+        // }
         
         this.metricsManager.updateNoiseReduction(avgNoiseReduction);
       }

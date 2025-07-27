@@ -3,6 +3,8 @@ import { MurmurabaReduxProvider } from '../providers/MurmurabaReduxProvider'
 import { MediaStreamProvider } from '../context/MediaStreamContext'
 import '../styles/globals.css'
 import '../styles/components.css'
+import { GlobalAudioMonitor } from '@/components/GlobalAudioMonitor'
+import { ServiceMonitor } from '@/components/ServiceMonitor'
 
 export default function App({ Component, pageProps }: AppProps) {
   const isDev = process.env.NODE_ENV === 'development'
@@ -20,12 +22,12 @@ export default function App({ Component, pageProps }: AppProps) {
     >
       <MediaStreamProvider>
         {/* Global monitoring components - disabled for cleaner UI */}
-        {/* {isDev && (
+        {isDev && (
           <>
             <GlobalAudioMonitor />
             <ServiceMonitor />
           </>
-        )} */}
+        )} 
         
         <Component {...pageProps} />
       </MediaStreamProvider>

@@ -12,6 +12,12 @@ export function MediaStreamProvider({ children }: PropsWithChildren) {
   const [currentStream, setCurrentStream] = useState<MediaStream | null>(null)
 
   const setStream = useCallback((stream: MediaStream | null) => {
+    console.log('📡 MediaStreamContext.setStream called:', {
+      newStream: !!stream,
+      streamId: stream?.id,
+      trackCount: stream?.getTracks()?.length || 0,
+      currentStream: !!currentStream
+    })
     // Stop previous stream if exists
     if (currentStream && currentStream !== stream) {
       currentStream.getTracks().forEach(track => track.stop())

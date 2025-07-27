@@ -103,6 +103,7 @@ export function useAudioProcessor() {
       dispatch(clearChunks())
 
       const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor)
+      console.log('🔍 Processor obtained:', !!processor, 'has getCurrentStream:', !!processor.getCurrentStream)
       
       // Set up chunk tracking
       const unsubscribeChunk = processor.onChunk((chunk) => {
@@ -114,14 +115,24 @@ export function useAudioProcessor() {
       
       // Get the stream right after starting recording
       // Check multiple times to ensure we catch the stream
+      let streamCheckCount = 0
       const checkForStream = () => {
+        streamCheckCount++
         if (processor.getCurrentStream) {
           const stream = processor.getCurrentStream()
+          console.log(`🎤 Stream check #${streamCheckCount}:`, {
+            hasGetCurrentStream: true,
+            stream: !!stream,
+            streamId: stream?.id,
+            trackCount: stream?.getTracks()?.length || 0
+          })
           if (stream) {
             console.log('🎤 Setting MediaStream during recording:', stream)
             setStream(stream)
             return true
           }
+        } else {
+          console.log(`🎤 Stream check #${streamCheckCount}: getCurrentStream method not available`)
         }
         return false
       }
