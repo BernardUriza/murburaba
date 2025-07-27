@@ -81,7 +81,7 @@ async function checkLocalhost() {
     }
     
     // Esperar un momento para que todo cargue
-    await page.waitForTimeout(2000);
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     // Verificar que no hay errores 404
     const response = page.url();
@@ -91,7 +91,7 @@ async function checkLocalhost() {
     
     // Esperar 10 segundos y tomar screenshot
     console.log('\n⏳ Esperando 10 segundos para screenshot final...');
-    await page.waitForTimeout(10000);
+    await new Promise(resolve => setTimeout(resolve, 10000));
     
     // Tomar screenshot
     const screenshotPath = 'test/localhost-final.png';
