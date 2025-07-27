@@ -42,23 +42,8 @@ function MurmurabaReduxBridge({ children }: { children: ReactNode }) {
   
   // Show loading state while initializing
   if (!isReady && !error) {
-    console.log('⏳ MurmurabaSuite: Showing loading state');
-    return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        gap: '1rem'
-      }}>
-        <div style={{
-          fontSize: '2rem',
-          animation: 'pulse 1.5s ease-in-out infinite'
-        }}>⚡</div>
-        <div style={{ color: '#666' }}>Initializing MurmurabaSuite...</div>
-      </div>
-    );
+    console.log('⏳ MurmurabaSuite: Showing loading state', { isReady, hasContainer: !!container });
+    // Don't show loading screen, just render children
   }
   
   // Show error state if initialization failed
@@ -153,24 +138,7 @@ export function MurmurabaReduxProvider({
         onUserInteraction={() => setIsInitializing(false)}
       >
         <MurmurabaReduxBridge>
-          {isInitializing ? (
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: '100vh',
-              padding: '2rem'
-            }}>
-              <div className="loading-spinner" style={{ marginBottom: '1rem' }}></div>
-              <h3>Initializing MurmurabaSuite...</h3>
-              <p style={{ opacity: 0.7, marginTop: '0.5rem' }}>
-                This may take up to 9 seconds
-              </p>
-            </div>
-          ) : (
-            children
-          )}
+          {children}
         </MurmurabaReduxBridge>
       </MurmurabaSuite>
     </Provider>

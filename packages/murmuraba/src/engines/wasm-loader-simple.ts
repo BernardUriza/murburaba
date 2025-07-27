@@ -36,11 +36,37 @@ async function initializeWASM(): Promise<RNNoiseModule> {
       throw new Error('No se encontró función de creación en @jitsi/rnnoise-wasm');
     }
     
-    // Crear el módulo con configuración por defecto
+    // Crear el módulo con configuración para cargar WASM desde public
     console.log('[WASM Loader] Creating module...');
     const moduleStart = performance.now();
-    const module = await createModule();
+    
+    // Debug: verificar el tipo de createModule
+    console.log('[WASM Loader] createModule type:', typeof createModule);
+    console.log('[WASM Loader] createModule:', createModule);
+    
+    const module = await createModule({
+      locateFile: (path: string) => {
+        console.log('[WASM Loader] locateFile called with:', path);
+        if (path.endsWith('.wasm')) {
+          const wasmPath = '/rnnoise.wasm';
+          console.log('[WASM Loader] Returning WASM path:', wasmPath);
+          return wasmPath;
+        }
+        return path;
+      },
+      onRuntimeInitialized: () => {
+        console.log('[WASM Loader] Runtime initialized!');
+      },
+      print: (text: string) => {
+        console.log('[WASM Module]', text);
+      },
+      printErr: (text: string) => {
+        console.error('[WASM Module Error]', text);
+      }
+    });
     console.log('[WASM Loader] Module created in', (performance.now() - moduleStart).toFixed(2), 'ms');
+    console.log('[WASM Loader] Module type:', typeof module);
+    console.log('[WASM Loader] Module keys:', Object.keys(module).slice(0, 10));
     
     // Validar que el módulo tiene las funciones necesarias
     const requiredFunctions = [

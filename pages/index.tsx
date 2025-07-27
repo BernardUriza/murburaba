@@ -51,6 +51,9 @@ export default function App() {
   const { chunkDuration, enableAGC } = audioConfig
   const { showAudioDemo, showAdvancedMetrics, showSettings, showCopilot } = uiFlags
   
+  // Debug log
+  console.log('🔍 Engine status:', { isInitialized, isProcessing, isRecording })
+  
   // Audio processor hook
   const { isReady, processRecording, cancelProcessing } = useAudioProcessor()
 

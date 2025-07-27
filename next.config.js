@@ -14,6 +14,12 @@ const nextConfig = {
       'murmuraba': path.resolve(__dirname, 'packages/murmuraba/dist')
     };
     
+    // Enable WebAssembly
+    config.experiments = {
+      asyncWebAssembly: true,
+      layers: true,
+    };
+    
     // Permitir importar archivos desde packages/murmuraba/src
     config.module.rules.push({
       test: /\.(ts|tsx)$/,
