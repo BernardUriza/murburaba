@@ -296,19 +296,19 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
 
     try {
       // Dynamic import the RNNoise loader
-      this.logger.debug('Importing wasm-loader-unified...');
+      this.logger.debug('Importing rnnoise-loader...');
       const importStart = performance.now();
-      const { loadRNNoiseWASM } = await import('../engines/wasm-loader-unified');
+      const { loadRNNoiseModule } = await import('../utils/rnnoise-loader');
       this.logger.debug(
-        `wasm-loader imported in ${(performance.now() - importStart).toFixed(2)}ms`
+        `rnnoise-loader imported in ${(performance.now() - importStart).toFixed(2)}ms`
       );
 
       try {
-        this.logger.debug('Calling loadRNNoiseWASM...');
+        this.logger.debug('Calling loadRNNoiseModule...');
         const loadStart = performance.now();
-        this.wasmModule = await loadRNNoiseWASM();
+        this.wasmModule = await loadRNNoiseModule();
         this.logger.debug(
-          `loadRNNoiseWASM completed in ${(performance.now() - loadStart).toFixed(2)}ms`
+          `loadRNNoiseModule completed in ${(performance.now() - loadStart).toFixed(2)}ms`
         );
       } catch (wasmError: any) {
         const errorMsg = wasmError?.message || String(wasmError);

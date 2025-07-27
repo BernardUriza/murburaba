@@ -15,11 +15,7 @@ export { WorkerManager } from './managers/WorkerManager';
 export { MetricsManager } from './managers/MetricsManager';
 export { LoggingManager, logging } from './managers/LoggingManager';
 
-// Audio Module exports (NEW - Modular Architecture)
-export { WasmManager } from './audio/WasmManager';
-export { FrameProcessor } from './audio/FrameProcessor';
-export { StreamProcessor } from './audio/StreamProcessor';
-export { FileProcessor } from './audio/FileProcessor';
+// Audio Module exports - Removed modular architecture in favor of v2.3.1 approach
 
 // Engine exports
 export { RNNoiseEngine } from './engines/RNNoiseEngine';

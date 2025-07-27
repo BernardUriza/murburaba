@@ -110,34 +110,14 @@ export class AudioWorkletEngine implements AudioEngine {
       }
     };
 
-    // Send initialization message with WASM buffer
-    if (this.config.enableRNNoise) {
-      try {
-        // Load WASM buffer directly from wasm-data module
-        const { decodeWasmBase64 } = await import('../utils/wasm-data');
-        const wasmBuffer = await decodeWasmBase64();
-
-        this.workletNode.port.postMessage({
-          type: 'initialize',
-          data: {
-            wasmBuffer: wasmBuffer,
-          },
-        });
-        console.log('[AudioWorkletEngine] WASM buffer sent to worklet');
-      } catch (error) {
-        console.error('[AudioWorkletEngine] Failed to load WASM for worklet:', error);
-        // Initialize without RNNoise
-        this.workletNode.port.postMessage({
-          type: 'initialize',
-          data: {},
-        });
-      }
-    } else {
-      this.workletNode.port.postMessage({
-        type: 'initialize',
-        data: {},
-      });
-    }
+    // Send initialization message
+    this.workletNode.port.postMessage({
+      type: 'initialize',
+      data: {
+        enableRNNoise: this.config.enableRNNoise,
+        wasmUrl: this.config.rnnoiseWasmUrl || '/rnnoise.wasm'
+      },
+    });
 
     return this.workletNode;
   }
