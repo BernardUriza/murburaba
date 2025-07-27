@@ -9,6 +9,47 @@ import { setEngineInitialized, setProcessing, updateMetrics } from '../store/sli
 import { DebugError } from '../components/DebugError';
 import type { ILogger, IMetricsManager, IAudioProcessor } from 'murmuraba';
 
+// Wrapper component to show loading state
+function MurmurabaSuiteWrapper({ children, isInitializing, showAudioLevel }: { children: ReactNode; isInitializing: boolean; showAudioLevel?: boolean }) {
+  const { isReady } = useMurmurabaSuite();
+  
+  // Show loading screen while initializing
+  if (isInitializing && !isReady) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        padding: '2rem',
+        textAlign: 'center'
+      }}>
+        <h2 style={{ marginBottom: '1rem' }}>Initializing MurmurabaSuite...</h2>
+        <div style={{ marginBottom: '2rem', opacity: 0.8 }}>
+          Loading audio processing engine
+        </div>
+        <div style={{
+          width: '50px',
+          height: '50px',
+          border: '4px solid rgba(255,255,255,0.2)',
+          borderTopColor: '#fff',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }} />
+        <style jsx>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+  
+  return <MurmurabaReduxBridge showAudioLevel={showAudioLevel}>{children}</MurmurabaReduxBridge>;
+}
+
 // Inner component that has access to MurmurabaSuite context
 function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNode; showAudioLevel?: boolean }) {
   const { container, isReady, error } = useMurmurabaSuite();
@@ -243,7 +284,7 @@ export function MurmurabaReduxProvider({
   showAudioMonitoring = process.env.NODE_ENV === 'development'
 }: MurmurabaReduxProviderProps & { showAudioMonitoring?: boolean }) {
   const [shouldInitialize, setShouldInitialize] = useState(false);
-  const [, setIsInitializing] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
 
   const handleManualInit = () => {
     setShouldInitialize(true);
@@ -304,9 +345,9 @@ export function MurmurabaReduxProvider({
         }}
         onUserInteraction={() => setIsInitializing(false)}
       >
-        <MurmurabaReduxBridge showAudioLevel={showAudioMonitoring}>
+        <MurmurabaSuiteWrapper isInitializing={isInitializing} showAudioLevel={showAudioMonitoring}>
           {children}
-        </MurmurabaReduxBridge>
+        </MurmurabaSuiteWrapper>
       </MurmurabaSuite>
     </Provider>
   );

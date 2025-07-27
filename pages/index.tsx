@@ -36,6 +36,7 @@ import {
 export default function App() {
   const [mounted, setMounted] = useState(false)
   const [showLiveWaveform, setShowLiveWaveform] = useState(false)
+  const [buttonReady, setButtonReady] = useState(false)
   const dispatch = useAppDispatch()
   const { notify } = useNotifications()
   
@@ -74,6 +75,17 @@ export default function App() {
   const { isReady, processRecording, cancelProcessing } = useAudioProcessor()
 
   useEffect(() => { setMounted(true) }, [])
+  
+  // Add delay for button enable after engine is ready
+  useEffect(() => {
+    if (isReady) {
+      // Wait 3 seconds after engine is ready before enabling button
+      const timer = setTimeout(() => {
+        setButtonReady(true)
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [isReady])
 
   // Event handlers
   const handleInitializeEngine = async () => {
@@ -152,7 +164,7 @@ export default function App() {
 
         {/* Control Panel */}
         <ControlPanel
-          isReady={isReady}
+          isReady={buttonReady}
           isProcessing={isProcessing}
           isRecording={isRecording}
           enableAGC={enableAGC}
