@@ -11,7 +11,10 @@ const nextConfig = {
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': path.resolve(__dirname, 'src'),
-      'murmuraba': path.resolve(__dirname, 'packages/murmuraba/dist')
+      'murmuraba': path.resolve(__dirname, 'packages/murmuraba'),
+      // Asegurar que React se resuelva desde el proyecto principal
+      'react': path.resolve(__dirname, 'node_modules/react'),
+      'react-dom': path.resolve(__dirname, 'node_modules/react-dom')
     };
     
     // Enable WebAssembly
