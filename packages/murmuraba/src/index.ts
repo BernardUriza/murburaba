@@ -1,6 +1,6 @@
 /**
- * Murmuraba v1.5.0
- * Real-time audio noise reduction
+ * Murmuraba v2.3.6
+ * Real-time audio noise reduction with modular architecture
  */
 
 // Core exports
@@ -13,6 +13,12 @@ export { engineRegistry } from './core/EngineRegistry';
 // Manager exports
 export { WorkerManager } from './managers/WorkerManager';
 export { MetricsManager } from './managers/MetricsManager';
+
+// Audio Module exports (NEW - Modular Architecture)
+export { WasmManager } from './audio/WasmManager';
+export { FrameProcessor } from './audio/FrameProcessor';
+export { StreamProcessor } from './audio/StreamProcessor';
+export { FileProcessor } from './audio/FileProcessor';
 
 // Engine exports
 export { RNNoiseEngine } from './engines/RNNoiseEngine';
@@ -41,7 +47,7 @@ export {
 export { AudioConverter, getAudioConverter } from './utils/audioConverter';
 
 // Version
-export const VERSION = '1.5.0';
+export const VERSION = '2.3.6';
 export const MURMURABA_VERSION = VERSION;
 
 // 🧨 MODERN MURMURABA API - MurmurabaSuite Architecture 🧨

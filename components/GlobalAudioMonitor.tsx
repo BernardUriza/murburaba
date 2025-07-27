@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useMurmurabaSuite, SUITE_TOKENS, TOKENS } from 'murmuraba'
 import type { IAudioProcessor, IMetricsManager, ProcessingMetrics } from 'murmuraba'
 import { useAppSelector, useAppDispatch } from '../store/hooks'
-import { setVadLevel } from '../store/slices/audioSlice'
+import { setVadLevel as setReduxVadLevel } from '../store/slices/audioSlice'
 import { useMediaStream } from '../context/MediaStreamContext'
 import styles from './GlobalAudioMonitor.module.css'
 
@@ -49,7 +49,7 @@ export function GlobalAudioMonitor() {
           if (metricsManager && 'getAverageVAD' in metricsManager) {
             const averageVAD = (metricsManager as any).getAverageVAD()
             setVadLevel(averageVAD)
-            dispatch(setVadLevel(averageVAD))
+            dispatch(setReduxVadLevel(averageVAD))
           }
         })
         metricsUnsubscribe = () => (metricsManager as any).off('metrics-update')
@@ -60,7 +60,7 @@ export function GlobalAudioMonitor() {
         if (metricsManager && 'getAverageVAD' in metricsManager) {
           const averageVAD = (metricsManager as any).getAverageVAD()
           setVadLevel(averageVAD)
-          dispatch(setVadLevel(averageVAD))
+          dispatch(setReduxVadLevel(averageVAD))
         }
       }, 100) // Update every 100ms
       

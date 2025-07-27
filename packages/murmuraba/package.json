@@ -13,9 +13,23 @@
     },
     "./components": {
       "types": "./dist/components/index.d.ts",
-      "import": "./dist/components/index.esm.js",
-      "require": "./dist/components/index.js",
-      "default": "./dist/components/index.esm.js"
+      "import": "./dist/components/index.js",
+      "require": "./dist/components/index.js"
+    },
+    "./audio": {
+      "types": "./dist/audio/index.d.ts",
+      "import": "./dist/audio/index.js",
+      "require": "./dist/audio/index.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js",
+      "require": "./dist/core/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "require": "./dist/types/index.js"
     },
     "./rnnoise.wasm": "./dist/rnnoise.wasm",
     "./package.json": "./package.json"
@@ -24,6 +38,11 @@
     "dist",
     "README.md",
     "LICENSE"
+  ],
+  "sideEffects": [
+    "**/*.css",
+    "**/*.wasm",
+    "**/wasm-data.ts"
   ],
   "keywords": [
     "audio",
@@ -37,7 +56,15 @@
     "chunks",
     "streaming",
     "voice",
-    "noise-suppression"
+    "noise-suppression",
+    "vad",
+    "voice-activity-detection",
+    "modular-architecture",
+    "dependency-injection",
+    "wasm",
+    "neural-network",
+    "agc",
+    "automatic-gain-control"
   ],
   "author": "Bernard",
   "license": "MIT",
@@ -48,18 +75,24 @@
   "scripts": {
     "build": "npm run clean && npm run generate:wasm && npm run build:ts && npm run copy:css",
     "build:simple": "node scripts/build-simple.mjs",
+    "build:fast": "npm run build:ts && npm run copy:css",
     "generate:wasm": "node scripts/encode-wasm.mjs",
     "build:ts": "tsc",
     "copy:css": "node scripts/copy-css.mjs",
     "clean": "rimraf dist",
-    "quality:gate": "node scripts/check-coverage.js",
-    "prepublishOnly": "npm run build",
+    "quality:gate": "npm run lint && npm run test:coverage && node scripts/check-coverage.js",
+    "prepublishOnly": "npm run quality:gate && npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint src --ext .ts,.tsx",
-    "watch": "npm run copy:css && tsc --watch"
+    "test:unit": "vitest run src/tests/unit",
+    "test:integration": "vitest run src/tests/integration",
+    "lint": "eslint src --ext .ts,.tsx --fix",
+    "lint:check": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "watch": "npm run copy:css && tsc --watch",
+    "dev": "npm run watch"
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
