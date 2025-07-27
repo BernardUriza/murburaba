@@ -27,13 +27,21 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
   startAutoUpdate(intervalMs: number = 100): void {
     this.stopAutoUpdate();
     console.log(`[MetricsManager] Starting auto-update with interval: ${intervalMs}ms`);
+    console.log('[MetricsManager] Current listeners:', this.listenerCount('metrics-update'));
+    
+    // Emit initial metrics immediately
+    const initialMetrics = { ...this.metrics };
+    console.log('[MetricsManager] Emitting initial metrics:', initialMetrics);
+    this.emit('metrics-update', initialMetrics);
+    
     this.updateInterval = setInterval(() => {
       this.calculateLatency();
       const metricsSnapshot = { ...this.metrics };
-      console.log('[MetricsManager] Emitting metrics update:', {
+      console.log('[MetricsManager] Auto-update tick:', {
         inputLevel: metricsSnapshot.inputLevel,
         frameCount: metricsSnapshot.frameCount,
-        timestamp: new Date(metricsSnapshot.timestamp).toISOString()
+        timestamp: new Date(metricsSnapshot.timestamp).toISOString(),
+        listeners: this.listenerCount('metrics-update')
       });
       this.emit('metrics-update', metricsSnapshot);
     }, intervalMs);
@@ -47,7 +55,19 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
   }
   
   updateInputLevel(level: number): void {
+    const oldLevel = this.metrics.inputLevel;
     this.metrics.inputLevel = Math.max(0, Math.min(1, level));
+    
+    // Log only when level changes significantly
+    if (Math.abs(oldLevel - this.metrics.inputLevel) > 0.01) {
+      console.log('[MetricsManager] Input level updated:', {
+        oldLevel: oldLevel.toFixed(4),
+        newLevel: this.metrics.inputLevel.toFixed(4),
+        rawLevel: level.toFixed(4),
+        listeners: this.listenerCount('metrics-update')
+      });
+    }
+    
     // Emit update immediately for real-time feedback
     this.emit('metrics-update', { ...this.metrics });
   }

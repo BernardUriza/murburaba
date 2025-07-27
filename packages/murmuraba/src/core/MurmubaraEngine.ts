@@ -565,9 +565,20 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       
       // Log metrics update every 2 seconds
       if (debugLogCount % 100 === 0) {
+        // Check actual audio values
+        let nonZeroCount = 0;
+        let maxVal = 0;
+        for (let i = 0; i < input.length; i++) {
+          if (Math.abs(input[i]) > 0.0001) nonZeroCount++;
+          maxVal = Math.max(maxVal, Math.abs(input[i]));
+        }
+        
         this.logger.debug('📊 Metrics updated:', {
           inputLevel: inputLevel.toFixed(4),
           inputPeak: inputPeak.toFixed(4),
+          inputLength: input.length,
+          nonZeroSamples: nonZeroCount,
+          maxValue: maxVal.toFixed(6),
           timestamp: new Date().toISOString()
         });
       }

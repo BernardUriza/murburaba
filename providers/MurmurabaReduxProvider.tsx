@@ -15,7 +15,11 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
   
   // Setup audio level monitoring
   const setupAudioLevelMonitoring = useCallback(async () => {
-    if (!isReady || !container) return;
+    console.log('🔧 setupAudioLevelMonitoring called:', { isReady, hasContainer: !!container });
+    if (!isReady || !container) {
+      console.log('❌ Not ready to setup monitoring');
+      return;
+    }
     
     try {
       // Check if services are available first
@@ -89,6 +93,7 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
       store.dispatch(setEngineInitialized(true));
       
       // Setup additional monitoring
+      console.log('🚀 Calling setupAudioLevelMonitoring from useEffect');
       setupAudioLevelMonitoring();
       
       // Get services for enhanced functionality (with checks)
