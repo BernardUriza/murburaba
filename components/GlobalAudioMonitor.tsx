@@ -12,6 +12,7 @@ export function GlobalAudioMonitor() {
   const [metrics, setMetrics] = useState<ProcessingMetrics | null>(null)
   const [vadLevel, setVadLevel] = useState(0)
   const [streamInfo, setStreamInfo] = useState<{id: string, tracks: number} | null>(null)
+  const [isCollapsed, setIsCollapsed] = useState(false)
   
   useEffect(() => {
     if (!isReady || !container) return
@@ -31,12 +32,6 @@ export function GlobalAudioMonitor() {
       const unsubscribe = processor.onMetrics((newMetrics) => {
         console.log('🎯 GlobalAudioMonitor received metrics:', newMetrics)
         setMetrics(newMetrics)
-        
-        // Calculate average VAD from chunks
-        if (chunks.length > 0) {
-          const avgVad = chunks.reduce((sum, chunk) => sum + chunk.averageVad, 0) / chunks.length
-          setVadLevel(avgVad)
-        }
       })
       
       // Get current metrics from manager
@@ -51,18 +46,34 @@ export function GlobalAudioMonitor() {
         (metricsManager as any).on('metrics-update', (metrics: ProcessingMetrics) => {
           console.log('🎯 GlobalAudioMonitor received metrics from MetricsManager:', metrics)
           setMetrics(metrics)
+          
+          // Get real VAD from MetricsManager
+          if (metricsManager && 'getAverageVAD' in metricsManager) {
+            const averageVAD = (metricsManager as any).getAverageVAD()
+            console.log('🎙️ VAD Level:', averageVAD)
+            setVadLevel(averageVAD)
+          }
         })
         metricsUnsubscribe = () => (metricsManager as any).off('metrics-update')
       }
       
+      // Periodic VAD update
+      const vadInterval = setInterval(() => {
+        if (metricsManager && 'getAverageVAD' in metricsManager) {
+          const averageVAD = (metricsManager as any).getAverageVAD()
+          setVadLevel(averageVAD)
+        }
+      }, 100) // Update every 100ms
+      
       return () => {
         unsubscribe()
         if (metricsUnsubscribe) metricsUnsubscribe()
+        clearInterval(vadInterval)
       }
     } catch (error) {
       console.error('Failed to setup audio monitoring:', error)
     }
-  }, [container, isReady, chunks])
+  }, [container, isReady])
   
   // Update stream info when stream changes
   useEffect(() => {
@@ -78,24 +89,35 @@ export function GlobalAudioMonitor() {
   
   // Always show the monitor for debugging
   return (
-    <div className={styles.monitor}>
+    <div className={`${styles.monitor} ${isCollapsed ? styles.collapsed : ''}`}>
       <div className={styles.header}>
         <h4>🎙️ Audio Monitor</h4>
-        <div className={styles.status}>
-          {isRecording && <span className={styles.recording}>● REC</span>}
-          {isProcessing && <span className={styles.processing}>⚡ Processing</span>}
-          {!isReady && <span style={{color: '#ff9900'}}>⏳ Loading</span>}
+        <div className={styles.headerRight}>
+          <div className={styles.status}>
+            {isRecording && <span className={styles.recording}>● REC</span>}
+            {isProcessing && <span className={styles.processing}>⚡ Processing</span>}
+            {!isReady && <span style={{color: '#ff9900'}}>⏳ Loading</span>}
+          </div>
+          <button 
+            className={styles.collapseButton}
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+          >
+            {isCollapsed ? '▲' : '▼'}
+          </button>
         </div>
       </div>
       
-      {/* Stream Status */}
-      <div style={{ padding: '10px', fontSize: '12px', borderBottom: '1px solid #333' }}>
-        <div>Stream: {streamInfo ? `✅ ${streamInfo.id.slice(0, 8)}... (${streamInfo.tracks} tracks)` : '❌ No stream'}</div>
-        <div>Engine: {isReady ? '✅ Ready' : '⏳ Initializing'}</div>
-        <div>Live Input Level: {(currentInputLevel * 100).toFixed(0)}%</div>
-      </div>
-      
-      <div className={styles.metrics}>
+      {!isCollapsed && (
+        <>
+          {/* Stream Status */}
+          <div style={{ padding: '10px', fontSize: '12px', borderBottom: '1px solid #333' }}>
+            <div>Stream: {streamInfo ? `✅ ${streamInfo.id.slice(0, 8)}... (${streamInfo.tracks} tracks)` : '❌ No stream'}</div>
+            <div>Engine: {isReady ? '✅ Ready' : '⏳ Initializing'}</div>
+            <div>Live Input Level: {(currentInputLevel * 100).toFixed(0)}%</div>
+          </div>
+          
+          <div className={styles.metrics}>
         <div className={styles.metric}>
           <label>Input Level</label>
           <div className={styles.bar}>
@@ -151,23 +173,25 @@ export function GlobalAudioMonitor() {
           </div>
           <span>{(vadLevel * 100).toFixed(0)}%</span>
         </div>
-      </div>
-      
-      <div className={styles.stats}>
-        <div>Latency: {(metrics?.processingLatency || 0).toFixed(1)}ms</div>
-        <div>Frames: {metrics?.frameCount || 0}</div>
-        <div>Dropped: {metrics?.droppedFrames || 0}</div>
-        <div>Chunks: {chunks.length}</div>
-      </div>
-      
-      {/* Debug Info */}
-      <div style={{ padding: '10px', fontSize: '11px', color: '#888', borderTop: '1px solid #333' }}>
-        <div>🐛 Debug Info:</div>
-        <div>- isProcessing: {isProcessing ? 'true' : 'false'}</div>
-        <div>- isRecording: {isRecording ? 'true' : 'false'}</div>
-        <div>- hasMetrics: {metrics ? 'true' : 'false'}</div>
-        <div>- Redux inputLevel: {(currentInputLevel * 100).toFixed(1)}%</div>
-      </div>
+          </div>
+          
+          <div className={styles.stats}>
+            <div>Latency: {(metrics?.processingLatency || 0).toFixed(1)}ms</div>
+            <div>Frames: {metrics?.frameCount || 0}</div>
+            <div>Dropped: {metrics?.droppedFrames || 0}</div>
+            <div>Chunks: {chunks.length}</div>
+          </div>
+          
+          {/* Debug Info */}
+          <div style={{ padding: '10px', fontSize: '11px', color: '#888', borderTop: '1px solid #333' }}>
+            <div>🐛 Debug Info:</div>
+            <div>- isProcessing: {isProcessing ? 'true' : 'false'}</div>
+            <div>- isRecording: {isRecording ? 'true' : 'false'}</div>
+            <div>- hasMetrics: {metrics ? 'true' : 'false'}</div>
+            <div>- Redux inputLevel: {(currentInputLevel * 100).toFixed(1)}%</div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

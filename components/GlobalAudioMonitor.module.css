@@ -13,6 +13,12 @@
   z-index: 1000;
   font-family: monospace;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.collapsed {
+  min-width: auto;
+  padding: 15px 20px;
 }
 
 .header {
@@ -24,10 +30,22 @@
   padding-bottom: 10px;
 }
 
+.collapsed .header {
+  margin-bottom: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
 .header h4 {
   margin: 0;
   font-size: 16px;
   color: #ffffff;
+}
+
+.headerRight {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 .status {
@@ -104,4 +122,30 @@
 
 .stats div {
   white-space: nowrap;
+}
+
+.collapseButton {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.8);
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.collapseButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #ffffff;
+}
+
+.collapseButton:active {
+  transform: scale(0.95);
 }
