@@ -26,7 +26,6 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
   
   startAutoUpdate(intervalMs: number = 100): void {
     this.stopAutoUpdate();
-    console.log(`[MetricsManager] Starting auto-update with interval: ${intervalMs}ms`);
     
     // Emit initial metrics immediately
     const initialMetrics = { ...this.metrics };

@@ -788,10 +788,6 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       // Update metrics manager with analyser data
       if (rms > 0.001) {
         this.metricsManager.updateInputLevel(rms);
-        // Log occasionally for debug
-        if (Math.random() < 0.02) {
-          console.log('📊 Analyser RMS:', rms.toFixed(4));
-        }
       }
     }, 50); // Update every 50ms
     
@@ -870,7 +866,6 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     // TESTING: Set all reduction factors to 1.0 to preserve full volume
     const DISABLE_VOLUME_REDUCTION = true;
     if (DISABLE_VOLUME_REDUCTION) {
-      console.log('🔧 Volume reduction DISABLED (factor = 1.0)');
       return 1.0;
     }
     // Adjusted factors to preserve volume when using AGC

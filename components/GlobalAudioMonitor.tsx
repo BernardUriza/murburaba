@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { useMurmurabaSuite, SUITE_TOKENS, TOKENS } from 'murmuraba'
 import type { IAudioProcessor, IMetricsManager, ProcessingMetrics } from 'murmuraba'
-import { useAppSelector } from '../store/hooks'
+import { useAppSelector, useAppDispatch } from '../store/hooks'
+import { setVadLevel } from '../store/slices/audioSlice'
 import { useMediaStream } from '../context/MediaStreamContext'
 import styles from './GlobalAudioMonitor.module.css'
 
 export function GlobalAudioMonitor() {
+  const dispatch = useAppDispatch()
   const { container, isReady } = useMurmurabaSuite()
   const { isProcessing, isRecording, chunks, currentInputLevel } = useAppSelector(state => state.audio)
   const { currentStream } = useMediaStream()
@@ -19,7 +21,6 @@ export function GlobalAudioMonitor() {
     
     try {
       if (!container.has(SUITE_TOKENS.AudioProcessor)) {
-        console.log('AudioProcessor not available yet')
         return
       }
       
@@ -30,28 +31,25 @@ export function GlobalAudioMonitor() {
       
       // Subscribe to metrics updates
       const unsubscribe = processor.onMetrics((newMetrics) => {
-        console.log('🎯 GlobalAudioMonitor received metrics:', newMetrics)
         setMetrics(newMetrics)
       })
       
       // Get current metrics from manager
       if (metricsManager && 'getMetrics' in metricsManager) {
         const currentMetrics = (metricsManager as any).getMetrics()
-        console.log('Current metrics:', currentMetrics)
       }
       
       // Also subscribe directly to MetricsManager
       let metricsUnsubscribe: (() => void) | null = null
       if (metricsManager && 'on' in metricsManager) {
         (metricsManager as any).on('metrics-update', (metrics: ProcessingMetrics) => {
-          console.log('🎯 GlobalAudioMonitor received metrics from MetricsManager:', metrics)
           setMetrics(metrics)
           
           // Get real VAD from MetricsManager
           if (metricsManager && 'getAverageVAD' in metricsManager) {
             const averageVAD = (metricsManager as any).getAverageVAD()
-            console.log('🎙️ VAD Level:', averageVAD)
             setVadLevel(averageVAD)
+            dispatch(setVadLevel(averageVAD))
           }
         })
         metricsUnsubscribe = () => (metricsManager as any).off('metrics-update')
@@ -62,6 +60,7 @@ export function GlobalAudioMonitor() {
         if (metricsManager && 'getAverageVAD' in metricsManager) {
           const averageVAD = (metricsManager as any).getAverageVAD()
           setVadLevel(averageVAD)
+          dispatch(setVadLevel(averageVAD))
         }
       }, 100) // Update every 100ms
       

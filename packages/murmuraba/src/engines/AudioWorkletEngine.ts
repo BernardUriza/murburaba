@@ -65,17 +65,14 @@ export class AudioWorkletEngine implements AudioEngine {
     const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
     this.audioContext = new AudioContextClass();
     
-    // Load the AudioWorklet processor
-    const processorCode = this.getProcessorCode();
-    const blob = new Blob([processorCode], { type: 'application/javascript' });
-    const processorUrl = URL.createObjectURL(blob);
-    
     try {
-      await this.audioContext!.audioWorklet.addModule(processorUrl);
+      // Use ES6 module instead of string pattern
+      await this.audioContext!.audioWorklet.addModule('/packages/murmuraba/src/engines/rnnoise-processor.worklet.js');
       this.isInitialized = true;
-    } finally {
-      // Clean up the blob URL
-      URL.revokeObjectURL(processorUrl);
+      console.log('[AudioWorkletEngine] ES6 worklet module loaded successfully');
+    } catch (error) {
+      console.error('[AudioWorkletEngine] Failed to load ES6 worklet:', error);
+      throw new Error(`Failed to load AudioWorklet module: ${error}`);
     }
   }
   

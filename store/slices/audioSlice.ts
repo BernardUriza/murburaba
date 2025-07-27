@@ -22,6 +22,7 @@ interface AudioState extends ErrorState {
   
   // Live metrics
   currentInputLevel: number
+  currentVadLevel: number
   
 }
 
@@ -36,6 +37,7 @@ const initialState: AudioState = {
   selectedChunkId: null,
   currentStreamId: null,
   currentInputLevel: 0,
+  currentVadLevel: 0,
   hasError: false,
   errorMessage: null
 }
@@ -95,6 +97,9 @@ const audioSlice = createSlice({
     setInputLevel: (state, action: PayloadAction<number>) => {
       state.currentInputLevel = Math.max(0, Math.min(1, action.payload))
     },
+    setVadLevel: (state, action: PayloadAction<number>) => {
+      state.currentVadLevel = Math.max(0, Math.min(1, action.payload))
+    },
     updateMetrics: (state, action: PayloadAction<{ inputLevel?: number; outputLevel?: number }>) => {
       if (action.payload.inputLevel !== undefined) {
         state.currentInputLevel = Math.max(0, Math.min(1, action.payload.inputLevel))
@@ -116,6 +121,7 @@ export const {
   setError,
   clearError,
   setInputLevel,
+  setVadLevel,
   updateMetrics
 } = audioSlice.actions
 
