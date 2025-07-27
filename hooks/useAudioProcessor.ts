@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useMurmurabaSuite } from 'murmuraba'
-import { TOKENS } from '../packages/murmuraba/src/core/DIContainer'
+import { SUITE_TOKENS } from 'murmuraba'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import {
   setProcessing,
@@ -38,7 +38,7 @@ export function useAudioProcessor() {
       dispatch(clearError())
       dispatch(clearChunks())
 
-      const processor = container.get<IAudioProcessor>(TOKENS.AudioProcessor)
+      const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor)
       console.log('[useAudioProcessor] Got processor:', !!processor)
       
       if (!processor) {
@@ -100,7 +100,7 @@ export function useAudioProcessor() {
       dispatch(clearError())
       dispatch(clearChunks())
 
-      const processor = container.get<IAudioProcessor>(TOKENS.AudioProcessor)
+      const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor)
       
       // Set up chunk tracking
       const unsubscribeChunk = processor.onChunk((chunk) => {
@@ -139,7 +139,7 @@ export function useAudioProcessor() {
     if (!container || !isReady) return
 
     try {
-      const processor = container.get<IAudioProcessor>(TOKENS.AudioProcessor)
+      const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor)
       processor.cancel()
       dispatch(setProcessing(false))
       dispatch(setRecording(false))

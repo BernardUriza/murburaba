@@ -83,6 +83,9 @@ export function MurmurabaReduxProvider({
   allowDegraded = true,
   lazy = true
 }: MurmurabaReduxProviderProps) {
+  // Detect if we're in a headless browser (Puppeteer)
+  const isTestMode = typeof window !== 'undefined' && window.navigator?.webdriver;
+  
   return (
     <Provider store={store}>
       <MurmurabaSuite
@@ -92,6 +95,7 @@ export function MurmurabaReduxProvider({
         noiseReductionLevel={noiseReductionLevel}
         allowDegraded={allowDegraded}
         lazy={lazy}
+        testMode={isTestMode}
         services={{
           audioProcessor: true,
           metricsManager: true,

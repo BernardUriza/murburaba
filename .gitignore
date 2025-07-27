@@ -43,3 +43,7 @@ next-env.d.ts
 .netlify
 /packages/murmuraba/html/html.meta.json.gz
 /packages/murmuraba/html/html.meta.json.gz
+
+# WASM symlinks
+public/rnnoise.wasm
+public/rnnoise.js
