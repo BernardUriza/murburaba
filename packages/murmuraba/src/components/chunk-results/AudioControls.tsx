@@ -27,7 +27,7 @@ export function AudioControls({
   onDownload,
   processedAudioUrl,
   originalAudioUrl,
-  currentlyPlayingType
+  currentlyPlayingType,
 }: AudioControlsProps) {
   return (
     <div className={styles.slimContainer}>
@@ -46,7 +46,7 @@ export function AudioControls({
               <span className={styles.slimBtnLabel}>Original</span>
             </button>
           )}
-          
+
           <button
             className={`${styles.slimBtn} ${styles.slimBtnPrimary} ${isPlaying && currentlyPlayingType === 'processed' ? styles.slimBtnActive : ''}`}
             onClick={() => onTogglePlayback('processed')}
@@ -58,14 +58,14 @@ export function AudioControls({
             <span className={styles.slimBtnLabel}>Processed</span>
           </button>
         </div>
-        
+
         {/* Divider */}
         <div className={styles.slimDivider} />
-        
+
         {/* Download Controls */}
         <div className={styles.slimDownloadGroup}>
           <span className={styles.slimGroupLabel}>📥</span>
-          
+
           <div className={styles.slimDownloadOptions}>
             <button
               className={styles.slimDownloadBtn}
@@ -76,7 +76,7 @@ export function AudioControls({
             >
               WAV
             </button>
-            
+
             <button
               className={styles.slimDownloadBtn}
               onClick={() => onDownload('mp3', 'processed')}
@@ -86,7 +86,7 @@ export function AudioControls({
             >
               MP3
             </button>
-            
+
             {hasOriginalAudio && (
               <button
                 className={`${styles.slimDownloadBtn} ${styles.slimDownloadBtnSecondary}`}
@@ -100,7 +100,7 @@ export function AudioControls({
             )}
           </div>
         </div>
-        
+
         {/* Compact Waveform */}
         {processedAudioUrl && originalAudioUrl && (
           <div className={styles.slimWaveformToggle}>
@@ -120,10 +120,14 @@ export function AudioControls({
           </div>
         )}
       </div>
-      
+
       {/* Hidden Waveform */}
       {processedAudioUrl && originalAudioUrl && (
-        <div id={`waveform-${chunkId}`} className={styles.slimWaveformContainer} style={{ display: 'none' }}>
+        <div
+          id={`waveform-${chunkId}`}
+          className={styles.slimWaveformContainer}
+          style={{ display: 'none' }}
+        >
           <SyncedWaveforms
             processedAudioUrl={processedAudioUrl}
             originalAudioUrl={originalAudioUrl}
@@ -133,7 +137,7 @@ export function AudioControls({
             showPlaybackControls={true}
             processedLabel="Processed"
             originalLabel="Original"
-            onPlayingChange={(playing) => {
+            onPlayingChange={playing => {
               if (playing) {
                 onTogglePlayback('processed');
               } else {

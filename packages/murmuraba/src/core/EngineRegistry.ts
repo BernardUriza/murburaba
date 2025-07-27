@@ -16,19 +16,19 @@ class EngineRegistry {
 
   createEngine(config?: MurmubaraConfig & { id?: string }): MurmubaraEngine {
     const id = config?.id || this.generateId();
-    
+
     if (this.instances.has(id)) {
       throw new Error(`Engine with id "${id}" already exists`);
     }
 
     const engine = MurmubaraEngineFactory.create(config);
     const container = (engine as any).getContainer?.() || new DIContainer();
-    
+
     this.instances.set(id, {
       id,
       engine,
       container,
-      createdAt: Date.now()
+      createdAt: Date.now(),
     });
 
     if (!this.defaultInstanceId) {
@@ -40,7 +40,7 @@ class EngineRegistry {
 
   getEngine(id?: string): MurmubaraEngine {
     const targetId = id || this.defaultInstanceId;
-    
+
     if (!targetId) {
       throw new Error('No engine instances available');
     }
@@ -55,7 +55,7 @@ class EngineRegistry {
 
   async destroyEngine(id?: string): Promise<void> {
     const targetId = id || this.defaultInstanceId;
-    
+
     if (!targetId) {
       return;
     }
@@ -69,17 +69,16 @@ class EngineRegistry {
     this.instances.delete(targetId);
 
     if (this.defaultInstanceId === targetId) {
-      this.defaultInstanceId = this.instances.size > 0 
-        ? Array.from(this.instances.keys())[0] 
-        : null;
+      this.defaultInstanceId =
+        this.instances.size > 0 ? Array.from(this.instances.keys())[0] : null;
     }
   }
 
   async destroyAll(): Promise<void> {
-    const destroyPromises = Array.from(this.instances.values()).map(
-      instance => instance.engine.destroy(true)
+    const destroyPromises = Array.from(this.instances.values()).map(instance =>
+      instance.engine.destroy(true)
     );
-    
+
     await Promise.all(destroyPromises);
     this.instances.clear();
     this.defaultInstanceId = null;

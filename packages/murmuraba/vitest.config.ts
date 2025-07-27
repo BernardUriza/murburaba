@@ -9,9 +9,9 @@ export default defineConfig({
         settings: {
           disableJavaScriptFileLoading: false,
           disableCSSFileLoading: true,
-          enableFileSystemHttpRequests: false
-        }
-      }
+          enableFileSystemHttpRequests: false,
+        },
+      },
     },
     globals: true,
     setupFiles: ['./src/tests/setup.ts'],
@@ -26,7 +26,7 @@ export default defineConfig({
         'src/engines/**/*.ts',
         'src/managers/**/*.ts',
         'src/utils/**/*.ts',
-        'src/components/**/*.tsx'
+        'src/components/**/*.tsx',
       ],
       exclude: [
         'node_modules/',
@@ -41,7 +41,7 @@ export default defineConfig({
         '**/*.config.ts',
         'src/types/**',
         'src/**/types.ts',
-        'src/**/interfaces.ts'
+        'src/**/interfaces.ts',
       ],
       thresholds: {
         lines: 5,
@@ -53,14 +53,14 @@ export default defineConfig({
           lines: 10,
           functions: 10,
           branches: 5,
-          statements: 10
+          statements: 10,
         },
         'src/core/MurmubaraEngine.ts': {
           lines: 5,
           functions: 5,
           branches: 5,
-          statements: 5
-        }
+          statements: 5,
+        },
       },
       reportOnFailure: true,
       skipFull: false,
@@ -75,9 +75,9 @@ export default defineConfig({
     pool: 'threads',
     poolOptions: {
       threads: {
-        singleThread: true
-      }
-    }
+        singleThread: true,
+      },
+    },
   },
   resolve: {
     alias: {

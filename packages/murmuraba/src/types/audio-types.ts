@@ -1,8 +1,8 @@
-export type EngineState = 
+export type EngineState =
   | 'uninitialized'
   | 'initializing'
   | 'loading-wasm'
-  | 'creating-context' 
+  | 'creating-context'
   | 'ready'
   | 'processing'
   | 'paused'
@@ -65,7 +65,7 @@ export interface ChunkMetrics {
   duration: number;
   startTime: number;
   endTime: number;
-  vadData?: Array<{ time: number; vad: number; }>;
+  vadData?: Array<{ time: number; vad: number }>;
   averageVad?: number;
 }
 

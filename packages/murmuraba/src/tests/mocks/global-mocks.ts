@@ -11,13 +11,13 @@ export class MockAudioContext {
   sampleRate = 48000;
   currentTime = 0;
   destination = {} as AudioDestinationNode;
-  
+
   createGain = vi.fn(() => ({
     gain: { value: 1, setValueAtTime: vi.fn(), setTargetAtTime: vi.fn() },
     connect: vi.fn(),
     disconnect: vi.fn(),
   }));
-  
+
   createAnalyser = vi.fn(() => ({
     fftSize: 2048,
     frequencyBinCount: 1024,
@@ -30,19 +30,19 @@ export class MockAudioContext {
     connect: vi.fn(),
     disconnect: vi.fn(),
   }));
-  
+
   createMediaStreamSource = vi.fn(() => ({
     connect: vi.fn(),
     disconnect: vi.fn(),
   }));
-  
+
   createScriptProcessor = vi.fn(() => ({
     connect: vi.fn(),
     disconnect: vi.fn(),
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
   }));
-  
+
   close = vi.fn();
   resume = vi.fn();
   suspend = vi.fn();
@@ -54,9 +54,9 @@ export class MockMediaStream implements MediaStream {
   active = true;
   onaddtrack: ((this: MediaStream, ev: MediaStreamTrackEvent) => any) | null = null;
   onremovetrack: ((this: MediaStream, ev: MediaStreamTrackEvent) => any) | null = null;
-  
+
   private tracks: MediaStreamTrack[] = [];
-  
+
   constructor() {
     // Add a default audio track
     this.tracks.push({
@@ -80,7 +80,7 @@ export class MockMediaStream implements MediaStream {
       applyConstraints: vi.fn(() => Promise.resolve()),
     } as unknown as MediaStreamTrack);
   }
-  
+
   getTracks = () => [...this.tracks];
   getAudioTracks = () => this.tracks.filter(t => t.kind === 'audio');
   getVideoTracks = () => this.tracks.filter(t => t.kind === 'video');
@@ -111,38 +111,38 @@ export class MockMediaRecorder {
   ondataavailable: ((event: any) => void) | null = null;
   onstop: (() => void) | null = null;
   onerror: ((event: any) => void) | null = null;
-  
+
   constructor(stream: MediaStream, options?: any) {
     this.stream = stream;
   }
-  
+
   start = vi.fn(() => {
     this.state = 'recording';
     // Simulate data available after a delay
     setTimeout(() => {
       if (this.ondataavailable) {
         this.ondataavailable({
-          data: new Blob([new ArrayBuffer(1024)], { type: 'audio/webm' })
+          data: new Blob([new ArrayBuffer(1024)], { type: 'audio/webm' }),
         });
       }
     }, 100);
   });
-  
+
   stop = vi.fn(() => {
     this.state = 'inactive';
     if (this.onstop) {
       this.onstop();
     }
   });
-  
+
   pause = vi.fn(() => {
     this.state = 'paused';
   });
-  
+
   resume = vi.fn(() => {
     this.state = 'recording';
   });
-  
+
   static isTypeSupported = vi.fn((type: string) => {
     return ['audio/webm', 'audio/webm;codecs=opus'].includes(type);
   });
@@ -161,21 +161,23 @@ export const mockFetch = vi.fn((url: string) => {
 
 // Mock WebAssembly
 export const mockWebAssembly = {
-  instantiate: vi.fn(() => Promise.resolve({
-    instance: {
-      exports: {
-        _rnnoise_create: vi.fn(() => 1),
-        _rnnoise_destroy: vi.fn(),
-        _rnnoise_process_frame: vi.fn(() => 1),
-        _rnnoise_get_size: vi.fn(() => 480),
-        _malloc: vi.fn((size: number) => 1000),
-        _free: vi.fn(),
-        memory: {
-          buffer: new ArrayBuffer(65536),
+  instantiate: vi.fn(() =>
+    Promise.resolve({
+      instance: {
+        exports: {
+          _rnnoise_create: vi.fn(() => 1),
+          _rnnoise_destroy: vi.fn(),
+          _rnnoise_process_frame: vi.fn(() => 1),
+          _rnnoise_get_size: vi.fn(() => 480),
+          _malloc: vi.fn((size: number) => 1000),
+          _free: vi.fn(),
+          memory: {
+            buffer: new ArrayBuffer(65536),
+          },
         },
       },
-    },
-  })),
+    })
+  ),
   Module: vi.fn(),
 };
 
@@ -192,12 +194,12 @@ export class MockAudioWorkletNode {
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
   };
-  
+
   connect = vi.fn();
   disconnect = vi.fn();
   addEventListener = vi.fn();
   removeEventListener = vi.fn();
-  
+
   constructor(context: any, name: string, options?: any) {
     // Constructor implementation
   }
@@ -212,43 +214,43 @@ export function installGlobalMocks() {
       value: global,
     });
   }
-  
+
   // Define AudioContext on global
   Object.defineProperty(global, 'AudioContext', {
     writable: true,
     value: MockAudioContext,
   });
-  
+
   // Define MediaStream on global
   Object.defineProperty(global, 'MediaStream', {
     writable: true,
     value: MockMediaStream,
   });
-  
+
   // Define MediaRecorder on global
   Object.defineProperty(global, 'MediaRecorder', {
     writable: true,
     value: MockMediaRecorder,
   });
-  
+
   // Mock fetch
   Object.defineProperty(global, 'fetch', {
     writable: true,
     value: mockFetch,
   });
-  
+
   // Mock WebAssembly
   Object.defineProperty(global, 'WebAssembly', {
     writable: true,
     value: mockWebAssembly,
   });
-  
+
   // Mock AudioWorkletNode
   Object.defineProperty(global, 'AudioWorkletNode', {
     writable: true,
     value: MockAudioWorkletNode,
   });
-  
+
   // Mock document
   if (typeof document === 'undefined') {
     Object.defineProperty(global, 'document', {
@@ -264,7 +266,7 @@ export function installGlobalMocks() {
       },
     });
   }
-  
+
   // Mock performance
   Object.defineProperty(global, 'performance', {
     writable: true,

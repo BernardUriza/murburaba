@@ -8,7 +8,7 @@ Modern test structure following TDD principles and 2025 best practices.
 tests/
 ├── unit/           # Isolated unit tests for individual functions/classes
 ├── integration/    # Tests for component interactions
-├── e2e/           # End-to-end tests for complete workflows  
+├── e2e/           # End-to-end tests for complete workflows
 ├── fixtures/       # Test data and mock files
 ├── utils/         # Test helpers and utilities
 └── mocks/         # Mock implementations
@@ -25,18 +25,21 @@ tests/
 ## Test Categories
 
 ### Unit Tests
+
 - Pure functions
 - Class methods
 - State management
 - Business logic
 
-### Integration Tests  
+### Integration Tests
+
 - API interactions
 - Component integration
 - Event flows
 - Data transformations
 
 ### E2E Tests
+
 - Complete user workflows
 - Real browser environment
 - Performance validations
@@ -64,20 +67,22 @@ npm test -- --watch
 ## Writing Tests
 
 Follow the AAA pattern:
+
 - **Arrange**: Set up test data
 - **Act**: Execute the function
 - **Assert**: Verify the result
 
 Example:
+
 ```typescript
 describe('processAudio', () => {
   it('should remove noise from audio signal', () => {
     // Arrange
     const noisyAudio = createNoisyAudioFixture();
-    
+
     // Act
     const result = processAudio(noisyAudio);
-    
+
     // Assert
     expect(result.noiseLevel).toBeLessThan(0.1);
   });

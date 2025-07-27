@@ -17,16 +17,6 @@
     "jsx": "react",
     "typeRoots": ["./node_modules/@types", "./src/types"]
   },
-  "include": [
-    "src/**/*",
-    "src/types/**/*.d.ts",
-    "global.d.ts",
-    "wasm.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*.test.tsx"
-  ]
+  "include": ["src/**/*", "src/types/**/*.d.ts", "global.d.ts", "wasm.d.ts"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"]
 }

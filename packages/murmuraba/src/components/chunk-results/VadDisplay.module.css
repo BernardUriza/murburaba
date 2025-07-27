@@ -10,18 +10,18 @@
   transition: all 0.3s ease;
 }
 
-.vad-display[data-vad-level="high"] {
+.vad-display[data-vad-level='high'] {
   background: rgba(126, 211, 33, 0.15);
   border-color: rgba(126, 211, 33, 0.5);
   box-shadow: 0 0 10px rgba(126, 211, 33, 0.2);
 }
 
-.vad-display[data-vad-level="medium"] {
+.vad-display[data-vad-level='medium'] {
   background: rgba(255, 193, 7, 0.1);
   border-color: rgba(255, 193, 7, 0.3);
 }
 
-.vad-display[data-vad-level="low"] {
+.vad-display[data-vad-level='low'] {
   background: rgba(244, 67, 54, 0.1);
   border-color: rgba(244, 67, 54, 0.3);
 }
@@ -76,7 +76,7 @@
 .vad-metric__value--large {
   font-size: 2rem;
   font-weight: 700;
-  color: #7ED321;
+  color: #7ed321;
 }
 
 .vadBigDisplay {
@@ -106,15 +106,15 @@
 }
 
 .vad-metric__fill--high {
-  background: linear-gradient(90deg, #7ED321, #5FB829);
+  background: linear-gradient(90deg, #7ed321, #5fb829);
 }
 
 .vad-metric__fill--medium {
-  background: linear-gradient(90deg, #FFC107, #FF9800);
+  background: linear-gradient(90deg, #ffc107, #ff9800);
 }
 
 .vad-metric__fill--low {
-  background: linear-gradient(90deg, #F44336, #D32F2F);
+  background: linear-gradient(90deg, #f44336, #d32f2f);
 }
 
 .vad-display__secondary {
@@ -145,17 +145,17 @@
 
 .vad-status--high {
   background: rgba(126, 211, 33, 0.2);
-  color: #7ED321;
+  color: #7ed321;
 }
 
 .vad-status--medium {
   background: rgba(255, 193, 7, 0.2);
-  color: #FFC107;
+  color: #ffc107;
 }
 
 .vad-status--low {
   background: rgba(244, 67, 54, 0.2);
-  color: #F44336;
+  color: #f44336;
 }
 
 /* Sparkline visualization */

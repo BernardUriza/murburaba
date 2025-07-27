@@ -104,9 +104,9 @@ describe('WASM Loading Tests', () => {
       } else if (req.url === '/dist/rnnoise.wasm') {
         const filePath = path.join(__dirname, '../../../../public/dist/rnnoise.wasm');
         if (fs.existsSync(filePath)) {
-          res.writeHead(200, { 
+          res.writeHead(200, {
             'Content-Type': 'application/wasm',
-            'Access-Control-Allow-Origin': '*'
+            'Access-Control-Allow-Origin': '*',
           });
           fs.createReadStream(filePath).pipe(res);
         } else {
@@ -130,11 +130,7 @@ describe('WASM Loading Tests', () => {
     // Launch browser
     browser = await puppeteer.launch({
       headless: 'new',
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage'
-      ]
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
     });
   });
 
@@ -159,14 +155,11 @@ describe('WASM Loading Tests', () => {
   test('WASM module loads successfully', async () => {
     await page.goto(`http://localhost:${PORT}`, {
       waitUntil: 'networkidle0',
-      timeout: 30000
+      timeout: 30000,
     });
 
     // Wait for test to complete
-    await page.waitForFunction(
-      () => window.testResult !== undefined,
-      { timeout: 10000 }
-    );
+    await page.waitForFunction(() => window.testResult !== undefined, { timeout: 10000 });
 
     const result = await page.evaluate(() => window.testResult);
     const error = await page.evaluate(() => window.testError);
@@ -179,26 +172,23 @@ describe('WASM Loading Tests', () => {
 
   test('WASM paths are correctly resolved', async () => {
     const requests = [];
-    
+
     page.on('request', request => {
       requests.push(request.url());
     });
 
     await page.goto(`http://localhost:${PORT}`, {
       waitUntil: 'networkidle0',
-      timeout: 30000
+      timeout: 30000,
     });
 
     // Wait for test completion
-    await page.waitForFunction(
-      () => window.testResult !== undefined,
-      { timeout: 10000 }
-    );
+    await page.waitForFunction(() => window.testResult !== undefined, { timeout: 10000 });
 
     // Check that WASM was requested at the correct path
     const wasmRequests = requests.filter(url => url.includes('.wasm'));
     expect(wasmRequests.length).toBeGreaterThan(0);
-    
+
     // Ensure no double /dist/ paths
     wasmRequests.forEach(url => {
       expect(url).not.toMatch(/\/dist\/\/dist\//);

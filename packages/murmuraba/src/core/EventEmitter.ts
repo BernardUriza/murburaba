@@ -2,11 +2,11 @@ export type EventHandler = (...args: any[]) => void;
 
 export class EventEmitter<T extends Record<string, EventHandler>> {
   private events: Record<string, Set<EventHandler>> = {};
-  
+
   constructor() {
     // Initialize as plain object instead of Map
   }
-  
+
   on<K extends keyof T>(event: K, handler: T[K]): void {
     const eventKey = String(event);
     if (!this.events[eventKey]) {
@@ -14,7 +14,7 @@ export class EventEmitter<T extends Record<string, EventHandler>> {
     }
     this.events[eventKey].add(handler);
   }
-  
+
   off<K extends keyof T>(event: K, handler: T[K]): void {
     const eventKey = String(event);
     const handlers = this.events[eventKey];
@@ -25,7 +25,7 @@ export class EventEmitter<T extends Record<string, EventHandler>> {
       }
     }
   }
-  
+
   emit<K extends keyof T>(event: K, ...args: Parameters<T[K]>): void {
     const eventKey = String(event);
     const handlers = this.events[eventKey];
@@ -39,7 +39,7 @@ export class EventEmitter<T extends Record<string, EventHandler>> {
       });
     }
   }
-  
+
   once<K extends keyof T>(event: K, handler: T[K]): void {
     const wrappedHandler = ((...args: any[]) => {
       this.off(event, wrappedHandler as T[K]);
@@ -47,7 +47,7 @@ export class EventEmitter<T extends Record<string, EventHandler>> {
     }) as T[K];
     this.on(event, wrappedHandler);
   }
-  
+
   removeAllListeners(event?: keyof T): void {
     if (event) {
       delete this.events[String(event)];
@@ -55,7 +55,7 @@ export class EventEmitter<T extends Record<string, EventHandler>> {
       this.events = {};
     }
   }
-  
+
   listenerCount(event: keyof T): number {
     const handlers = this.events[String(event)];
     return handlers ? handlers.size : 0;

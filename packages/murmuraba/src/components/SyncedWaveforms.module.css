@@ -14,7 +14,7 @@
 }
 
 /* Custom slider styles for cross-browser support */
-.waveformsGrid input[type="range"] {
+.waveformsGrid input[type='range'] {
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
@@ -22,21 +22,21 @@
   transition: background 0.2s ease;
 }
 
-.waveformsGrid input[type="range"]::-webkit-slider-track {
+.waveformsGrid input[type='range']::-webkit-slider-track {
   background: transparent;
   height: 6px;
 }
 
-.waveformsGrid input[type="range"]::-moz-range-track {
+.waveformsGrid input[type='range']::-moz-range-track {
   background: transparent;
   height: 6px;
 }
 
-.waveformsGrid input[type="range"]:focus {
+.waveformsGrid input[type='range']:focus {
   outline: none;
 }
 
-.waveformsGrid input[type="range"]:focus-visible {
+.waveformsGrid input[type='range']:focus-visible {
   outline: 2px solid #4f46e5;
   outline-offset: 2px;
   border-radius: 4px;
@@ -48,11 +48,11 @@
 }
 
 /* Accessibility improvements */
-.waveformsGrid [role="region"] {
+.waveformsGrid [role='region'] {
   position: relative;
 }
 
-.waveformsGrid [aria-live="polite"] {
+.waveformsGrid [aria-live='polite'] {
   position: absolute;
   left: -10000px;
   width: 1px;

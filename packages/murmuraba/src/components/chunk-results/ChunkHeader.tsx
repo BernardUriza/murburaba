@@ -36,7 +36,7 @@ export function ChunkHeader({
   onToggleOriginalPlayback,
   onToggleProcessedPlayback,
   formatTime,
-  formatPercentage
+  formatPercentage,
 }: ChunkHeaderProps) {
   return (
     <div className={styles.chunkHeader}>
@@ -45,10 +45,12 @@ export function ChunkHeader({
           <h3 className={styles.chunkTitle}>
             Chunk {index + 1}
             {!isValid && (
-              <span className={styles.chunkErrorBadge} aria-label="Error">❌</span>
+              <span className={styles.chunkErrorBadge} aria-label="Error">
+                ❌
+              </span>
             )}
           </h3>
-          
+
           <div className={styles.chunkMeta}>
             <span className={styles.metaItem}>
               <span className={styles.metaLabel}>Duration:</span>
@@ -66,10 +68,10 @@ export function ChunkHeader({
             </span>
           </div>
         </div>
-        
+
         {averageVad !== undefined && (
           <div className={styles.chunkVadContainer}>
-            <VadDisplay 
+            <VadDisplay
               averageVad={averageVad}
               vadData={vadData}
               chunkIndex={index}
@@ -86,7 +88,7 @@ export function ChunkHeader({
           isEnabled={hasOriginalAudio && isValid}
           onTogglePlayback={onToggleOriginalPlayback}
         />
-        
+
         <AudioPlayButton
           label="Processed"
           isPlaying={isPlayingProcessed}

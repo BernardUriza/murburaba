@@ -19,7 +19,7 @@ export const BuildInfo = ({
   showPrefix = true,
   separator = '•',
   format = 'inline',
-  size = 'medium'
+  size = 'medium',
 }: BuildInfoProps) => {
   const formattedBuildDate = useMemo(() => {
     try {
@@ -55,24 +55,30 @@ export const BuildInfo = ({
       baseStyles.border = '1px solid var(--neutral-400, #4E5165)';
       baseStyles.borderRadius = '12px';
       baseStyles.padding = size === 'small' ? '0.25rem 0.5rem' : '0.375rem 0.75rem';
-      baseStyles.fontSize = size === 'small' ? '0.6875rem' : size === 'large' ? '0.875rem' : '0.75rem';
+      baseStyles.fontSize =
+        size === 'small' ? '0.6875rem' : size === 'large' ? '0.875rem' : '0.75rem';
     }
 
     return baseStyles;
   }, [format, size]);
 
-  const separatorStyles = useMemo(() => ({
-    opacity: 0.5,
-    margin: format === 'block' ? '0' : '0 0.25rem',
-    userSelect: 'none' as const,
-  }), [format]);
+  const separatorStyles = useMemo(
+    () => ({
+      opacity: 0.5,
+      margin: format === 'block' ? '0' : '0 0.25rem',
+      userSelect: 'none' as const,
+    }),
+    [format]
+  );
 
   return (
-    <div 
+    <div
       className={`murmuraba-build-info murmuraba-build-info--${format} murmuraba-build-info--${size} ${className}`}
       style={styles}
       role="status"
-      aria-label={ariaLabel || `Build information: Version ${version}, built on ${formattedBuildDate}`}
+      aria-label={
+        ariaLabel || `Build information: Version ${version}, built on ${formattedBuildDate}`
+      }
     >
       {format === 'block' ? (
         <>
@@ -81,11 +87,9 @@ export const BuildInfo = ({
         </>
       ) : (
         <>
-          <span className="murmuraba-build-info__version">
-            {versionText}
-          </span>
+          <span className="murmuraba-build-info__version">{versionText}</span>
           {separator && (
-            <span 
+            <span
               className="murmuraba-build-info__separator"
               style={separatorStyles}
               aria-hidden="true"
@@ -93,9 +97,7 @@ export const BuildInfo = ({
               {separator}
             </span>
           )}
-          <span className="murmuraba-build-info__date">
-            {formattedBuildDate}
-          </span>
+          <span className="murmuraba-build-info__date">{formattedBuildDate}</span>
         </>
       )}
     </div>
@@ -119,7 +121,7 @@ export const formatBuildDate = (date: Date | string): string => {
     return d.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   } catch {
     return new Date().toLocaleDateString();
@@ -127,14 +129,14 @@ export const formatBuildDate = (date: Date | string): string => {
 };
 
 // Pre-configured variants for common use cases
-export const BuildInfoBadge: React.FC<Omit<BuildInfoProps, 'format'>> = (props) => (
+export const BuildInfoBadge: React.FC<Omit<BuildInfoProps, 'format'>> = props => (
   <BuildInfo {...props} format="badge" />
 );
 
-export const BuildInfoBlock: React.FC<Omit<BuildInfoProps, 'format'>> = (props) => (
+export const BuildInfoBlock: React.FC<Omit<BuildInfoProps, 'format'>> = props => (
   <BuildInfo {...props} format="block" />
 );
 
-export const BuildInfoInline: React.FC<Omit<BuildInfoProps, 'format'>> = (props) => (
+export const BuildInfoInline: React.FC<Omit<BuildInfoProps, 'format'>> = props => (
   <BuildInfo {...props} format="inline" />
 );

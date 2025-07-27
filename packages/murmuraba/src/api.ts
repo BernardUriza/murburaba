@@ -1,7 +1,9 @@
 import { engineRegistry } from './core/EngineRegistry';
 import { MurmubaraConfig } from './types';
 
-export async function initializeAudioEngine(config?: MurmubaraConfig & { id?: string }): Promise<void> {
+export async function initializeAudioEngine(
+  config?: MurmubaraConfig & { id?: string }
+): Promise<void> {
   const engine = engineRegistry.createEngine(config);
   await engine.initialize();
 }
@@ -26,7 +28,9 @@ export async function processStreamChunked(
   return engine.processStream(stream, config);
 }
 
-export async function destroyEngine(idOrOptions?: string | { force?: boolean; id?: string }): Promise<void> {
+export async function destroyEngine(
+  idOrOptions?: string | { force?: boolean; id?: string }
+): Promise<void> {
   const id = typeof idOrOptions === 'string' ? idOrOptions : idOrOptions?.id;
   await engineRegistry.destroyEngine(id);
 }

@@ -17,13 +17,13 @@ export async function loadRNNoiseModule(): Promise<RNNoiseModule> {
         // Import the base64 encoded WASM
         const { decodeWasmBase64 } = await import('./wasm-data');
         const wasmBuffer = await decodeWasmBase64();
-        
+
         console.log('[RNNoise Loader] Loading WASM from base64 bundle');
-        
+
         // Import the RNNoise module
         const rnnoiseModule = await import('@jitsi/rnnoise-wasm');
         const { createRNNWasmModule } = rnnoiseModule as any;
-        
+
         // Create the module with the decoded WASM buffer
         const module = await createRNNWasmModule({
           wasmBinary: new Uint8Array(wasmBuffer),
@@ -33,9 +33,9 @@ export async function loadRNNoiseModule(): Promise<RNNoiseModule> {
               return '';
             }
             return filename;
-          }
+          },
         });
-        
+
         return module as unknown as RNNoiseModule;
       } catch (error) {
         console.error('[RNNoise Loader] Failed to load WASM from base64:', error);

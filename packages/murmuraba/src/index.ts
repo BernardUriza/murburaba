@@ -31,9 +31,8 @@ export {
   getEngineStatus,
   getDiagnostics,
   onMetricsUpdate,
-  processFile
+  processFile,
 } from './api';
-
 
 // Modern API exports - Use MurmurabaSuite for all functionality
 // Legacy hooks have been removed in favor of the DI-based MurmurabaSuite
@@ -47,22 +46,26 @@ export const MURMURABA_VERSION = VERSION;
 
 // 🧨 MODERN MURMURABA API - MurmurabaSuite Architecture 🧨
 // All functionality now available through MurmurabaSuite
-export { 
-  MurmurabaSuite, 
-  useMurmurabaSuite, 
-  useAudioProcessor, 
+export {
+  MurmurabaSuite,
+  useMurmurabaSuite,
+  useAudioProcessor,
   useSuiteLogger,
   useAudioProcessing,
   TOKENS,
-  SUITE_TOKENS
+  SUITE_TOKENS,
 } from './react/MurmurabaSuite';
 export { DIContainer } from './core/DIContainer';
 export { AudioProcessorService } from './services/AudioProcessorService';
-export type { IAudioProcessor, AudioProcessingOptions, AudioProcessingResult } from './core/interfaces/IAudioProcessor';
+export type {
+  IAudioProcessor,
+  AudioProcessingOptions,
+  AudioProcessingResult,
+} from './core/interfaces/IAudioProcessor';
 export type { ILogger, IMetricsManager, IStateManager, IEventEmitter } from './core/interfaces';
 
 // UI Components - Export from components directory
-export { 
+export {
   WaveformAnalyzer,
   SyncedWaveforms,
   ChunkProcessingResults,
@@ -73,7 +76,7 @@ export {
   BuildInfo,
   BuildInfoBadge,
   BuildInfoBlock,
-  BuildInfoInline
+  BuildInfoInline,
 } from './components';
 
 // Component types
@@ -81,5 +84,5 @@ export type {
   ChunkProcessingResultsProps,
   AdvancedMetricsPanelProps,
   AudioPlayerProps,
-  BuildInfoProps
+  BuildInfoProps,
 } from './components';

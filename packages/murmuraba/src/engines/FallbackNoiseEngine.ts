@@ -8,7 +8,7 @@ export class FallbackNoiseEngine implements AudioEngine {
   name = 'Fallback Noise Reduction';
   description = 'Simple noise reduction without WASM (degraded performance)';
   isInitialized = false;
-  
+
   private noiseFloor = 0.01;
   private smoothingFactor = 0.95;
   private previousMagnitude = 0;
@@ -24,17 +24,17 @@ export class FallbackNoiseEngine implements AudioEngine {
     }
 
     const output = new Float32Array(inputBuffer.length);
-    
+
     // Simple noise gate with smoothing
     for (let i = 0; i < inputBuffer.length; i++) {
       const sample = inputBuffer[i];
       const magnitude = Math.abs(sample);
-      
+
       // Smooth the magnitude to avoid harsh transitions
-      const smoothedMagnitude = this.smoothingFactor * this.previousMagnitude + 
-                                (1 - this.smoothingFactor) * magnitude;
+      const smoothedMagnitude =
+        this.smoothingFactor * this.previousMagnitude + (1 - this.smoothingFactor) * magnitude;
       this.previousMagnitude = smoothedMagnitude;
-      
+
       // Apply noise gate
       if (smoothedMagnitude < this.noiseFloor) {
         // Fade out noise
@@ -44,7 +44,7 @@ export class FallbackNoiseEngine implements AudioEngine {
         output[i] = sample;
       }
     }
-    
+
     return output;
   }
 

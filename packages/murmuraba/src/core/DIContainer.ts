@@ -14,12 +14,16 @@ interface Binding<T> {
 export class DIContainer {
   private bindings = new Map<symbol | string, Binding<any>>();
 
-  bind<T>(token: symbol | string, provider: Provider<T>, options?: { singleton?: boolean; lazy?: boolean }): void {
+  bind<T>(
+    token: symbol | string,
+    provider: Provider<T>,
+    options?: { singleton?: boolean; lazy?: boolean }
+  ): void {
     this.bindings.set(token, {
       provider,
       singleton: options?.singleton ?? false,
       lazy: options?.lazy ?? false,
-      instance: undefined
+      instance: undefined,
     });
   }
 
@@ -35,13 +39,13 @@ export class DIContainer {
     this.bindings.set(token, {
       provider: value,
       singleton: true,
-      instance: value
+      instance: value,
     });
   }
 
   get<T>(token: symbol | string): T {
     const binding = this.bindings.get(token);
-    
+
     if (!binding) {
       throw new Error(`No binding found for token: ${String(token)}`);
     }
@@ -55,10 +59,10 @@ export class DIContainer {
     }
 
     let instance: T;
-    
+
     if (typeof binding.provider === 'function') {
       const isConstructor = binding.provider.prototype !== undefined;
-      
+
       if (isConstructor) {
         instance = new (binding.provider as Constructor<T>)();
       } else {
@@ -77,7 +81,7 @@ export class DIContainer {
 
   async getAsync<T>(token: symbol | string): Promise<T> {
     const binding = this.bindings.get(token);
-    
+
     if (!binding) {
       throw new Error(`No binding found for token: ${String(token)}`);
     }
@@ -92,10 +96,10 @@ export class DIContainer {
 
     const loadInstance = async (): Promise<T> => {
       let instance: T;
-      
+
       if (typeof binding.provider === 'function') {
         const isConstructor = binding.provider.prototype !== undefined;
-        
+
         if (isConstructor) {
           instance = new (binding.provider as Constructor<T>)();
         } else {
@@ -143,7 +147,11 @@ export class DIContainer {
     return child;
   }
 
-  bindLazy<T>(token: symbol | string, provider: AsyncFactory<T>, options?: { singleton?: boolean }): void {
+  bindLazy<T>(
+    token: symbol | string,
+    provider: AsyncFactory<T>,
+    options?: { singleton?: boolean }
+  ): void {
     this.bind(token, provider, { ...options, lazy: true });
   }
 
@@ -162,7 +170,7 @@ export const TOKENS = {
   WorkerManager: Symbol('WorkerManager'),
   AudioContext: Symbol('AudioContext'),
   Config: Symbol('Config'),
-  AudioProcessor: Symbol('AudioProcessor')
+  AudioProcessor: Symbol('AudioProcessor'),
 } as const;
 
 // Global container instance

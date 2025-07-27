@@ -12,32 +12,32 @@ import { ILogger, IStateManager, IEventEmitter, IAudioEngine } from './interface
 export class MurmubaraEngineFactory {
   static create(config?: MurmubaraConfig): MurmubaraEngine {
     const container = new DIContainer();
-    
+
     // Bind configuration
     container.bindValue(TOKENS.Config, config || {});
-    
+
     // Bind core services
     container.bindSingleton(TOKENS.Logger, () => {
       const logger = new Logger('[Murmuraba]');
       logger.setLevel(config?.logLevel || 'warn');
       return logger;
     });
-    
+
     container.bindSingleton(TOKENS.StateManager, () => new StateManager());
-    
+
     container.bindSingleton(TOKENS.EventEmitter, () => new EventEmitter<EngineEvents>());
-    
+
     // Bind managers
     container.bindSingleton(TOKENS.MetricsManager, () => new MetricsManager());
-    
+
     container.bindSingleton(TOKENS.WorkerManager, () => {
       const logger = container.get<ILogger>(TOKENS.Logger);
       return new WorkerManager(logger as Logger);
     });
-    
+
     // Bind audio engine
     container.bindSingleton(TOKENS.AudioEngine, () => new RNNoiseEngine());
-    
+
     // Create engine with injected dependencies
     return new MurmubaraEngineWithDI(container);
   }
@@ -46,12 +46,12 @@ export class MurmubaraEngineFactory {
 // Extended engine that uses DI
 class MurmubaraEngineWithDI extends MurmubaraEngine {
   private container: DIContainer;
-  
+
   constructor(container: DIContainer) {
     const config = container.get<MurmubaraConfig>(TOKENS.Config);
     super(config);
     this.container = container;
-    
+
     // Replace internal services with DI versions
     (this as any).logger = container.get<ILogger>(TOKENS.Logger);
     (this as any).stateManager = container.get<IStateManager>(TOKENS.StateManager);
@@ -59,7 +59,7 @@ class MurmubaraEngineWithDI extends MurmubaraEngine {
     (this as any).metricsManager = container.get(TOKENS.MetricsManager);
     (this as any).workerManager = container.get(TOKENS.WorkerManager);
   }
-  
+
   getContainer(): DIContainer {
     return this.container;
   }

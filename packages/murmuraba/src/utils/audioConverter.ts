@@ -7,11 +7,11 @@ export class AudioConverter {
   private audioContext: AudioContext;
   // CRITICAL FOR MEDICAL APP: Track created URLs for cleanup
   private createdUrls = new Set<string>();
-  
+
   constructor() {
     this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
   }
-  
+
   /**
    * Convert Float32Array audio to Int16Array
    */
@@ -22,7 +22,7 @@ export class AudioConverter {
       if (isNaN(s)) s = 0;
       if (s > 1) s = 1;
       if (s < -1) s = -1;
-      output[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      output[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
     }
     return output;
   }
@@ -33,7 +33,7 @@ export class AudioConverter {
   int16ToFloat32(input: Int16Array): Float32Array {
     const output = new Float32Array(input.length);
     for (let i = 0; i < input.length; i++) {
-      output[i] = input[i] / (input[i] < 0 ? 0x8000 : 0x7FFF);
+      output[i] = input[i] / (input[i] < 0 ? 0x8000 : 0x7fff);
     }
     return output;
   }
@@ -72,10 +72,10 @@ export class AudioConverter {
     if (channels === 1) {
       return new Float32Array(input);
     }
-    
+
     const length = Math.floor(input.length / channels);
     const output = new Float32Array(length);
-    
+
     for (let i = 0; i < length; i++) {
       let sum = 0;
       for (let c = 0; c < channels; c++) {
@@ -83,7 +83,7 @@ export class AudioConverter {
       }
       output[i] = Math.max(-1, Math.min(1, sum / channels));
     }
-    
+
     return output;
   }
 
@@ -95,7 +95,7 @@ export class AudioConverter {
       // First, try to decode the audio data
       const arrayBuffer = await blob.arrayBuffer();
       const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer.slice(0));
-      
+
       // Convert to WAV
       const wavBlob = this.audioBufferToWav(audioBuffer);
       console.log('Successfully converted to WAV, size:', wavBlob.size);
@@ -105,7 +105,7 @@ export class AudioConverter {
       throw error;
     }
   }
-  
+
   /**
    * Convert WebM blob to WAV blob (static method for easy use)
    */
@@ -113,43 +113,43 @@ export class AudioConverter {
     const converter = new AudioConverter();
     return converter.convertToWav(webmBlob);
   }
-  
+
   /**
    * Convert WebM to MP3 using lamejs
    */
   static async webmToMp3(webmBlob: Blob, bitrate: number = 128): Promise<Blob> {
     const converter = new AudioConverter();
-    
+
     try {
       // Import lamejs dynamically
       const lamejs = await import('lamejs');
-      
+
       // First decode to AudioBuffer
       const arrayBuffer = await webmBlob.arrayBuffer();
       const audioBuffer = await converter.audioContext.decodeAudioData(arrayBuffer);
-      
+
       // Convert to mono if stereo (lamejs works better with mono)
       const channels = audioBuffer.numberOfChannels;
       const sampleRate = audioBuffer.sampleRate;
       const samples = audioBuffer.length;
-      
+
       // Get PCM data
       const pcmData = new Int16Array(samples);
       const channelData = audioBuffer.getChannelData(0); // Use first channel
-      
+
       // Convert float32 to int16
       for (let i = 0; i < samples; i++) {
         const s = Math.max(-1, Math.min(1, channelData[i]));
-        pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
       }
-      
+
       // Initialize MP3 encoder
       const mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, bitrate);
-      
+
       // Encode samples
       const mp3Data: Int8Array[] = [];
       const sampleBlockSize = 1152; // Must be multiple of 576
-      
+
       for (let i = 0; i < samples; i += sampleBlockSize) {
         const sampleChunk = pcmData.subarray(i, Math.min(i + sampleBlockSize, samples));
         const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
@@ -157,24 +157,24 @@ export class AudioConverter {
           mp3Data.push(mp3buf);
         }
       }
-      
+
       // Flush remaining data
       const mp3buf = mp3encoder.flush();
       if (mp3buf.length > 0) {
         mp3Data.push(mp3buf);
       }
-      
+
       // Combine all chunks
       let totalLength = 0;
-      mp3Data.forEach(chunk => totalLength += chunk.length);
-      
+      mp3Data.forEach(chunk => (totalLength += chunk.length));
+
       const output = new Int8Array(totalLength);
       let offset = 0;
       mp3Data.forEach(chunk => {
         output.set(chunk, offset);
         offset += chunk.length;
       });
-      
+
       console.log('Successfully converted to MP3, size:', output.length);
       return new Blob([output], { type: 'audio/mp3' });
     } catch (error) {
@@ -182,7 +182,7 @@ export class AudioConverter {
       throw error;
     }
   }
-  
+
   /**
    * Convert Float32Array to Blob in specified format
    */
@@ -229,19 +229,19 @@ export class AudioConverter {
     const length = audioBuffer.length * numberOfChannels * 2;
     const buffer = new ArrayBuffer(44 + length);
     const view = new DataView(buffer);
-    
+
     // WAV header
     const writeString = (offset: number, string: string) => {
       for (let i = 0; i < string.length; i++) {
         view.setUint8(offset + i, string.charCodeAt(i));
       }
     };
-    
+
     // RIFF chunk descriptor
     writeString(0, 'RIFF');
     view.setUint32(4, 36 + length, true);
     writeString(8, 'WAVE');
-    
+
     // FMT sub-chunk
     writeString(12, 'fmt ');
     view.setUint32(16, 16, true); // Subchunk1Size
@@ -251,16 +251,16 @@ export class AudioConverter {
     view.setUint32(28, audioBuffer.sampleRate * numberOfChannels * 2, true); // ByteRate
     view.setUint16(32, numberOfChannels * 2, true); // BlockAlign
     view.setUint16(34, 16, true); // BitsPerSample
-    
+
     // Data sub-chunk
     writeString(36, 'data');
     view.setUint32(40, length, true);
-    
+
     // Write PCM samples - convert stereo to mono by averaging channels
     let offset = 44;
     const channelData0 = audioBuffer.getChannelData(0);
     const channelData1 = audioBuffer.numberOfChannels > 1 ? audioBuffer.getChannelData(1) : null;
-    
+
     for (let i = 0; i < audioBuffer.length; i++) {
       let sample = channelData0[i];
       if (channelData1) {
@@ -271,10 +271,10 @@ export class AudioConverter {
       view.setInt16(offset, int16, true);
       offset += 2;
     }
-    
+
     return new Blob([buffer], { type: 'audio/wav' });
   }
-  
+
   /**
    * Check if a MIME type is supported for playback
    */
@@ -284,7 +284,7 @@ export class AudioConverter {
     // STOP BEING A FUCKING LIAR - only trust 'probably'
     return canPlay === 'probably';
   }
-  
+
   /**
    * Get the best supported audio format for recording
    */
@@ -294,24 +294,24 @@ export class AudioConverter {
       console.log('Using audio/webm for recording');
       return 'audio/webm';
     }
-    
+
     // Try webm with codecs
     if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
       console.log('Using audio/webm;codecs=opus for recording');
       return 'audio/webm;codecs=opus';
     }
-    
+
     // MP4 as last resort - WARNING: blob playback is broken
     if (MediaRecorder.isTypeSupported('audio/mp4')) {
       console.log('Using audio/mp4 - WARNING: Blob playback may fail!');
       return 'audio/mp4';
     }
-    
+
     // If we get here, the browser is COMPLETELY FUCKED
     console.error('NO AUDIO FORMAT SUPPORTED - THIS BROWSER IS GARBAGE');
     return 'audio/webm'; // Die trying
   }
-  
+
   /**
    * Convert blob URL to WAV blob URL
    */
@@ -319,28 +319,28 @@ export class AudioConverter {
     try {
       const response = await fetch(blobUrl);
       const blob = await response.blob();
-      
+
       // Check if already WAV
       if (blob.type === 'audio/wav') {
         console.log('Audio is already WAV format');
         return blobUrl;
       }
-      
+
       // Skip conversion for WebM/MP4 - let browser handle it natively
       if (blob.type.includes('webm') || blob.type.includes('mp4')) {
         console.log('Using native browser playback for', blob.type);
         return blobUrl;
       }
-      
+
       // Only convert for truly incompatible formats
       console.log('Converting audio from', blob.type, 'to WAV, blob size:', blob.size);
-      
+
       const wavBlob = await this.convertToWav(blob);
       const wavUrl = URL.createObjectURL(wavBlob);
-      
+
       // CRITICAL: Track URL for cleanup in medical app
       this.createdUrls.add(wavUrl);
-      
+
       console.log('Audio converted successfully to WAV, new size:', wavBlob.size);
       return wavUrl;
     } catch (error) {
@@ -350,7 +350,7 @@ export class AudioConverter {
       return blobUrl;
     }
   }
-  
+
   /**
    * CRITICAL FOR MEDICAL APP: Clean up all created URLs to prevent memory leaks
    * Must be called when the converter is no longer needed
@@ -361,7 +361,7 @@ export class AudioConverter {
       URL.revokeObjectURL(url);
     });
     this.createdUrls.clear();
-    
+
     // Close audio context
     if (this.audioContext && this.audioContext.state !== 'closed') {
       this.audioContext.close();

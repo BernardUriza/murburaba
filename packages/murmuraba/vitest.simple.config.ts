@@ -9,16 +9,8 @@ export default defineConfig({
       provider: 'v8',
       enabled: true,
       reporter: ['text'],
-      include: [
-        'src/core/**/*.ts',
-        'src/hooks/**/*.ts'
-      ],
-      exclude: [
-        '**/*.test.ts',
-        '**/*.d.ts',
-        '**/types.ts',
-        '**/interfaces.ts'
-      ]
-    }
-  }
+      include: ['src/core/**/*.ts', 'src/hooks/**/*.ts'],
+      exclude: ['**/*.test.ts', '**/*.d.ts', '**/types.ts', '**/interfaces.ts'],
+    },
+  },
 });

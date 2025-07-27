@@ -84,8 +84,13 @@
 }
 
 @keyframes subtlePulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.9; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.9;
+  }
 }
 
 .slimBtnLabel {
@@ -208,21 +213,21 @@
     gap: 0.75rem;
     padding: 1rem;
   }
-  
+
   .slimDownloadGroup {
     margin-left: 0;
     width: 100%;
     justify-content: space-between;
   }
-  
+
   .slimDivider {
     display: none;
   }
-  
+
   .slimPlaybackGroup {
     flex: 1;
   }
-  
+
   .slimBtn {
     flex: 1;
     justify-content: center;
@@ -234,17 +239,17 @@
   .slimControlsBar {
     padding: 0.75rem;
   }
-  
+
   .slimBtn {
     padding: 0.375rem 0.5rem;
     font-size: 0.75rem;
     height: 28px;
   }
-  
+
   .slimBtnLabel {
     display: none;
   }
-  
+
   .slimDownloadBtn {
     padding: 0.25rem 0.5rem;
     font-size: 0.7rem;
@@ -258,42 +263,42 @@
     background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
     border-color: rgba(255, 255, 255, 0.1);
   }
-  
+
   .slimBtn {
     background: #1e293b;
     color: #e2e8f0;
     border-color: rgba(255, 255, 255, 0.1);
   }
-  
+
   .slimBtn:hover:not(:disabled) {
     background: #334155;
   }
-  
+
   .slimDownloadBtn {
     background: #1e293b;
     color: #e2e8f0;
     border-color: rgba(255, 255, 255, 0.1);
   }
-  
+
   .slimDownloadBtn:hover:not(:disabled) {
     background: #334155;
     border-color: #7c3aed;
     color: #a78bfa;
   }
-  
+
   .slimWaveformBtn {
     background: #1e293b;
     border-color: rgba(255, 255, 255, 0.1);
   }
-  
+
   .slimWaveformBtn:hover {
     background: #334155;
   }
-  
+
   .slimDivider {
     background: rgba(255, 255, 255, 0.1);
   }
-  
+
   .slimWaveformContainer {
     background: #0f172a;
     border-color: rgba(255, 255, 255, 0.1);

@@ -11,7 +11,7 @@ interface ServiceModule {
 export class ServiceLoader {
   private modules = new Map<string, ServiceModule>();
   private loadingPromises = new Map<string, Promise<void>>();
-  
+
   constructor(private container: DIContainer) {}
 
   registerModule(module: ServiceModule): void {
@@ -29,7 +29,7 @@ export class ServiceLoader {
 
     const loadPromise = this.loadModuleInternal(module);
     this.loadingPromises.set(name, loadPromise);
-    
+
     try {
       await loadPromise;
     } finally {
@@ -42,15 +42,14 @@ export class ServiceLoader {
     if (module.dependencies) {
       await Promise.all(
         module.dependencies.map(dep => {
-          const depModule = Array.from(this.modules.values())
-            .find(m => m.token === dep);
+          const depModule = Array.from(this.modules.values()).find(m => m.token === dep);
           return depModule ? this.loadModule(depModule.name) : Promise.resolve();
         })
       );
     }
 
-    const logger = this.container.has(TOKENS.Logger) 
-      ? this.container.get<ILogger>(TOKENS.Logger) 
+    const logger = this.container.has(TOKENS.Logger)
+      ? this.container.get<ILogger>(TOKENS.Logger)
       : null;
 
     logger?.debug(`Loading module: ${module.name}`);
@@ -86,18 +85,18 @@ export const SERVICE_MODULES = {
     load: async (container: DIContainer) => {
       const { RNNoiseEngine } = await import('../engines/RNNoiseEngine');
       return new RNNoiseEngine();
-    }
+    },
   },
-  
+
   metricsManager: {
     name: 'metricsManager',
     token: TOKENS.MetricsManager,
     load: async (container: DIContainer) => {
       const { MetricsManager } = await import('../managers/MetricsManager');
       return new MetricsManager();
-    }
+    },
   },
-  
+
   workerManager: {
     name: 'workerManager',
     token: TOKENS.WorkerManager,
@@ -107,6 +106,6 @@ export const SERVICE_MODULES = {
       const { Logger } = await import('./Logger');
       const logger = container.get<ILogger>(TOKENS.Logger);
       return new WorkerManager(logger as InstanceType<typeof Logger>);
-    }
-  }
+    },
+  },
 };

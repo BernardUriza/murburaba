@@ -19,10 +19,10 @@ export interface MurmubaraProviderProps {
   autoInitialize?: boolean;
 }
 
-export function MurmubaraProvider({ 
-  children, 
+export function MurmubaraProvider({
+  children,
   config,
-  autoInitialize = true 
+  autoInitialize = true,
 }: MurmubaraProviderProps) {
   const [engine, setEngine] = useState<MurmubaraEngine | null>(null);
   const [container, setContainer] = useState<DIContainer | null>(null);
@@ -36,9 +36,9 @@ export function MurmubaraProvider({
       try {
         const newEngine = MurmubaraEngineFactory.create(config);
         const newContainer = (newEngine as any).getContainer();
-        
+
         await newEngine.initialize();
-        
+
         setEngine(newEngine);
         setContainer(newContainer);
         setIsInitialized(true);
@@ -65,21 +65,21 @@ export function MurmubaraProvider({
 
 export function useMurmuraba() {
   const context = useContext(MurmubaraContext);
-  
+
   if (!context) {
     throw new Error('useMurmuraba must be used within MurmubaraProvider');
   }
-  
+
   return context;
 }
 
 export function useService<T>(token: symbol | string): T | null {
   const { container } = useMurmuraba();
-  
+
   if (!container || !container.has(token)) {
     return null;
   }
-  
+
   return container.get<T>(token);
 }
 

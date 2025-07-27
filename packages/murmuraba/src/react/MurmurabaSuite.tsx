@@ -14,7 +14,7 @@ export { TOKENS };
 const SUITE_TOKENS = {
   ...TOKENS,
   AudioProcessor: Symbol('AudioProcessor'),
-  ServiceLoader: Symbol('ServiceLoader')
+  ServiceLoader: Symbol('ServiceLoader'),
 } as const;
 
 interface MurmurabaSuiteConfig extends MurmubaraConfig {
@@ -41,14 +41,14 @@ interface MurmurabaSuiteContextValue {
 
 const MurmurabaSuiteContext = createContext<MurmurabaSuiteContextValue | null>(null);
 
-export function MurmurabaSuite({ 
+export function MurmurabaSuite({
   children,
   services = {},
   lazy = true,
   allowDegraded = true, // Changed to true by default for better UX
   initTimeout = 6000, // Reduced to 6 seconds (WASM timeout is 5s)
   onUserInteraction,
-  ...engineConfig 
+  ...engineConfig
 }: MurmurabaSuiteConfig) {
   const [container] = useState(() => new DIContainer());
   const [isReady, setIsReady] = useState(false);
@@ -63,12 +63,18 @@ export function MurmurabaSuite({
         // Create and bind engine
         const engine = engineRegistry.createEngine(engineConfig);
         console.log('🔧 MurmurabaSuite: Engine created and registered, initializing...');
-        
+
         // Add timeout to initialization
-        const initTimeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error(`Engine initialization timeout after ${initTimeout / 1000} seconds`)), initTimeout)
+        const initTimeoutPromise = new Promise((_, reject) =>
+          setTimeout(
+            () =>
+              reject(
+                new Error(`Engine initialization timeout after ${initTimeout / 1000} seconds`)
+              ),
+            initTimeout
+          )
         );
-        
+
         try {
           await Promise.race([engine.initialize(), initTimeoutPromise]);
         } catch (err) {
@@ -79,11 +85,11 @@ export function MurmurabaSuite({
           }
           console.log('⚡ Continuing in degraded mode without engine');
         }
-        
+
         // Get container from engine
         const engineContainer = (engine as any).getContainer();
         console.log('📦 MurmurabaSuite: Engine container obtained:', !!engineContainer);
-        
+
         // Copy bindings from engine container to suite container
         if (engineContainer) {
           // This is a simplified approach - in production you'd properly merge containers
@@ -92,27 +98,27 @@ export function MurmurabaSuite({
           container.bindValue(TOKENS.EventEmitter, engineContainer.get(TOKENS.EventEmitter));
           console.log('🔗 MurmurabaSuite: Core services bound');
         }
-        
+
         // Bind service loader
         container.bindValue(SUITE_TOKENS.ServiceLoader, serviceLoader);
-        
+
         // Register available service modules
         serviceLoader.registerModule({
           name: 'audioProcessor',
           token: SUITE_TOKENS.AudioProcessor,
           dependencies: [TOKENS.Logger, TOKENS.MetricsManager],
-          load: async () => new AudioProcessorService(container)
+          load: async () => new AudioProcessorService(container),
         });
-        
+
         // Register standard modules
         Object.entries(SERVICE_MODULES).forEach(([_name, module]) => {
           serviceLoader.registerModule(module);
         });
-        
+
         // Load requested services
         if (!lazy) {
           const servicesToLoad = [];
-          
+
           if (services.audioProcessor !== false) {
             servicesToLoad.push('audioProcessor');
           }
@@ -122,13 +128,13 @@ export function MurmurabaSuite({
           if (services.workerManager !== false) {
             servicesToLoad.push('workerManager');
           }
-          
+
           await Promise.all(servicesToLoad.map(name => serviceLoader.loadModule(name)));
         }
-        
+
         console.log('✅ MurmurabaSuite: Initialization complete!');
         setIsReady(true);
-        
+
         // Setup user interaction handler for AudioContext resume
         const handleInteraction = async () => {
           try {
@@ -136,7 +142,7 @@ export function MurmurabaSuite({
             if (audioContext && audioContext.state === 'suspended') {
               await audioContext.resume();
               console.log('🔊 AudioContext resumed after user interaction');
-              
+
               // Call the callback if provided
               if (onUserInteraction) {
                 onUserInteraction();
@@ -146,11 +152,11 @@ export function MurmurabaSuite({
             console.warn('Failed to resume AudioContext:', err);
           }
         };
-        
+
         // Register interaction handler
         document.addEventListener('click', handleInteraction, { once: true });
         document.addEventListener('keydown', handleInteraction, { once: true });
-        
+
         // Store AudioContext reference globally for manual initialization
         if (typeof window !== 'undefined') {
           (window as any).audioContext = (engine as any).audioContext;
@@ -186,19 +192,19 @@ export function MurmurabaSuite({
       console.log('⏳ Engine reinitialization already in progress');
       return;
     }
-    
+
     console.log('🔄 Reinitializing engine...');
     setIsReinitializing(true);
     setIsReady(false);
     setError(null);
-    
+
     try {
       // Clear the container
       container.clear();
-      
+
       // Recreate engine
       const engine = engineRegistry.createEngine(engineConfig);
-      
+
       try {
         await engine.initialize();
       } catch (err) {
@@ -207,7 +213,7 @@ export function MurmurabaSuite({
           throw err;
         }
       }
-      
+
       // Re-bind services
       const engineContainer = (engine as any).getContainer();
       if (engineContainer) {
@@ -215,26 +221,26 @@ export function MurmurabaSuite({
         container.bindValue(TOKENS.StateManager, engineContainer.get(TOKENS.StateManager));
         container.bindValue(TOKENS.EventEmitter, engineContainer.get(TOKENS.EventEmitter));
       }
-      
+
       // Re-bind service loader and audio processor
       container.bindValue(SUITE_TOKENS.ServiceLoader, serviceLoader);
-      
+
       // Re-register the audio processor module
       serviceLoader.registerModule({
         name: 'audioProcessor',
         token: SUITE_TOKENS.AudioProcessor,
         dependencies: [TOKENS.Logger, TOKENS.MetricsManager],
-        load: async () => new AudioProcessorService(container)
+        load: async () => new AudioProcessorService(container),
       });
-      
+
       // Also need to ensure MetricsManager is available
       if (!container.has(TOKENS.MetricsManager)) {
         await serviceLoader.loadModule('metricsManager');
       }
-      
+
       // Now reload audio processor service
       await serviceLoader.loadModule('audioProcessor');
-      
+
       console.log('✅ Engine reinitialized successfully');
       setIsReady(true);
     } catch (err) {
@@ -251,13 +257,11 @@ export function MurmurabaSuite({
     error,
     getService,
     loadService,
-    reinitializeEngine
+    reinitializeEngine,
   };
 
   return (
-    <MurmurabaSuiteContext.Provider value={contextValue}>
-      {children}
-    </MurmurabaSuiteContext.Provider>
+    <MurmurabaSuiteContext.Provider value={contextValue}>{children}</MurmurabaSuiteContext.Provider>
   );
 }
 
@@ -274,24 +278,24 @@ export function useMurmurabaSuite() {
 export function useAudioProcessor(): IAudioProcessor | null {
   const { getService, loadService, isReady } = useMurmurabaSuite();
   const [processor, setProcessor] = useState<IAudioProcessor | null>(null);
-  
+
   useEffect(() => {
     if (!isReady) return;
-    
+
     const loadProcessor = async () => {
       let proc = getService<IAudioProcessor>(SUITE_TOKENS.AudioProcessor);
-      
+
       if (!proc) {
         await loadService('audioProcessor');
         proc = getService<IAudioProcessor>(SUITE_TOKENS.AudioProcessor);
       }
-      
+
       setProcessor(proc);
     };
-    
+
     loadProcessor();
   }, [isReady]);
-  
+
   return processor;
 }
 
@@ -306,19 +310,19 @@ export function useAudioProcessing() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<Error | null>(null);
-  
+
   const processFile = async (file: File, options?: any) => {
     if (!processor) {
       setError(new Error('Audio processor not available'));
       return null;
     }
-    
+
     setIsProcessing(true);
     setError(null);
     setProgress(0);
-    
+
     const unsubscribe = processor.onProgress(setProgress);
-    
+
     try {
       const result = await processor.processFile(file, options);
       return result;
@@ -330,19 +334,19 @@ export function useAudioProcessing() {
       unsubscribe();
     }
   };
-  
+
   const processRecording = async (duration: number, options?: any) => {
     if (!processor) {
       setError(new Error('Audio processor not available'));
       return null;
     }
-    
+
     setIsProcessing(true);
     setError(null);
     setProgress(0);
-    
+
     const unsubscribe = processor.onProgress(setProgress);
-    
+
     try {
       const result = await processor.processRecording(duration, options);
       return result;
@@ -354,14 +358,14 @@ export function useAudioProcessing() {
       unsubscribe();
     }
   };
-  
+
   return {
     processFile,
     processRecording,
     isProcessing,
     progress,
     error,
-    cancel: () => processor?.cancel()
+    cancel: () => processor?.cancel(),
   };
 }
 

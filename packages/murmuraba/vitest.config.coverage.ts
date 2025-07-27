@@ -22,14 +22,14 @@ export default defineConfig({
         'src/engines/RNNoiseEngine.ts',
         'src/engines/wasm-loader-unified.ts',
         'src/hooks/useAudioEngine.ts',
-        'src/hooks/murmuraba-engine/**/*'
+        'src/hooks/murmuraba-engine/**/*',
       ],
       thresholds: {
         lines: 95,
         functions: 95,
         branches: 90,
-        statements: 95
-      }
+        statements: 95,
+      },
     },
     // Only run specific test files
     include: [
@@ -37,7 +37,7 @@ export default defineConfig({
       'src/__tests__/core/Logger.test.ts',
       'src/__tests__/managers/WorkerManager.test.ts',
       'src/__tests__/managers/MetricsManager.test.ts',
-      'src/__tests__/utils/performance.test.ts'
-    ]
-  }
+      'src/__tests__/utils/performance.test.ts',
+    ],
+  },
 });

@@ -1,18 +1,18 @@
 export class AudioStreamManager {
   private streams: Map<string, MediaStream> = new Map();
   private sources: Map<string, MediaStreamAudioSourceNode> = new Map();
-  
+
   constructor(private audioContext: AudioContext) {}
 
   addStream(id: string, stream: MediaStream): MediaStreamAudioSourceNode {
     if (this.streams.has(id)) {
       this.removeStream(id);
     }
-    
+
     this.streams.set(id, stream);
     const source = this.audioContext.createMediaStreamSource(stream);
     this.sources.set(id, source);
-    
+
     return source;
   }
 
@@ -30,7 +30,7 @@ export class AudioStreamManager {
       stream.getTracks().forEach(track => track.stop());
       this.streams.delete(id);
     }
-    
+
     const source = this.sources.get(id);
     if (source) {
       source.disconnect();

@@ -20,7 +20,7 @@ async function ensureScreenshotDir() {
 // Wait for server to be ready
 async function waitForServer(url, maxAttempts = 30) {
   console.log(`⏳ Waiting for server at ${url}...`);
-  
+
   for (let i = 0; i < maxAttempts; i++) {
     try {
       const response = await fetch(url);
@@ -31,28 +31,28 @@ async function waitForServer(url, maxAttempts = 30) {
     } catch (error) {
       // Server not ready yet
     }
-    
+
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
-  
+
   throw new Error('Server failed to start within timeout');
 }
 
 // Start Next.js server
 function startServer() {
   console.log('🚀 Starting Next.js server...');
-  
+
   const serverProcess = spawn('npm', ['run', 'dev'], {
     cwd: path.resolve(__dirname, '../../../..'), // Go to project root
     stdio: ['ignore', 'pipe', 'pipe'],
-    shell: true
+    shell: true,
   });
 
-  serverProcess.stdout.on('data', (data) => {
+  serverProcess.stdout.on('data', data => {
     console.log(`[SERVER] ${data.toString()}`);
   });
 
-  serverProcess.stderr.on('data', (data) => {
+  serverProcess.stderr.on('data', data => {
     console.error(`[SERVER ERROR] ${data.toString()}`);
   });
 
@@ -68,7 +68,7 @@ async function captureBrowserLogs() {
     network: [],
     performance: [],
     engineStatus: [],
-    audioProcessing: []
+    audioProcessing: [],
   };
 
   let serverProcess = null;
@@ -86,11 +86,11 @@ async function captureBrowserLogs() {
     console.log('🎭 Launching Puppeteer...');
     browser = await puppeteer.launch({
       headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
 
     const page = await browser.newPage();
-    
+
     // Enable coverage collection
     await page.coverage.startJSCoverage();
     await page.coverage.startCSSCoverage();
@@ -101,7 +101,7 @@ async function captureBrowserLogs() {
         type: msg.type(),
         text: msg.text(),
         timestamp: new Date().toISOString(),
-        location: msg.location()
+        location: msg.location(),
       };
 
       logs.console.push(logEntry);
@@ -119,8 +119,12 @@ async function captureBrowserLogs() {
       }
 
       // Extract audio processing logs
-      if (msg.text().includes('Audio') || msg.text().includes('processing') || 
-          msg.text().includes('VAD') || msg.text().includes('RNNoise')) {
+      if (
+        msg.text().includes('Audio') ||
+        msg.text().includes('processing') ||
+        msg.text().includes('VAD') ||
+        msg.text().includes('RNNoise')
+      ) {
         logs.audioProcessing.push(logEntry);
       }
 
@@ -132,7 +136,7 @@ async function captureBrowserLogs() {
       const errorEntry = {
         message: error.message,
         stack: error.stack,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
       logs.errors.push(errorEntry);
       console.error('[PAGE ERROR]', error.message);
@@ -144,7 +148,7 @@ async function captureBrowserLogs() {
         url: request.url(),
         method: request.method(),
         failure: request.failure(),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
       logs.network.push(failureEntry);
       console.error('[REQUEST FAILED]', request.url(), request.failure());
@@ -155,9 +159,9 @@ async function captureBrowserLogs() {
     await page.goto(SERVER_URL, { waitUntil: 'networkidle2' });
 
     // Take initial screenshot
-    await page.screenshot({ 
+    await page.screenshot({
       path: path.join(SCREENSHOT_DIR, 'initial-load.png'),
-      fullPage: true 
+      fullPage: true,
     });
 
     // Wait for AudioDemo to be visible
@@ -165,9 +169,9 @@ async function captureBrowserLogs() {
     await page.waitForSelector('[data-testid="audio-demo"]', { timeout: 30000 });
 
     // Take screenshot after AudioDemo loads
-    await page.screenshot({ 
+    await page.screenshot({
       path: path.join(SCREENSHOT_DIR, 'audio-demo-loaded.png'),
-      fullPage: true 
+      fullPage: true,
     });
 
     // Wait for engine status
@@ -180,7 +184,7 @@ async function captureBrowserLogs() {
     console.log(`🔧 Engine Status: ${engineStatus}`);
     logs.engineStatus.push({
       status: engineStatus,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     // Wait for engine to be ready (with shorter timeout)
@@ -197,11 +201,11 @@ async function captureBrowserLogs() {
       } catch (timeoutError) {
         console.log('⚠️ Engine did not reach ready state within timeout');
         console.log('📸 Taking screenshot of current state...');
-        await page.screenshot({ 
+        await page.screenshot({
           path: path.join(SCREENSHOT_DIR, 'engine-timeout-state.png'),
-          fullPage: true 
+          fullPage: true,
         });
-        
+
         // Try to initialize engine manually
         console.log('🔧 Attempting to initialize engine manually...');
         const initButton = await page.$('button:has-text("Initialize Engine")');
@@ -213,9 +217,9 @@ async function captureBrowserLogs() {
     }
 
     // Take screenshot when engine is ready
-    await page.screenshot({ 
+    await page.screenshot({
       path: path.join(SCREENSHOT_DIR, 'engine-ready.png'),
-      fullPage: true 
+      fullPage: true,
     });
 
     // Check if auto-processing happens
@@ -228,23 +232,23 @@ async function captureBrowserLogs() {
         },
         { timeout: 30000 }
       );
-      
+
       console.log('✅ Auto-processing completed!');
-      
+
       // Take screenshot after processing
-      await page.screenshot({ 
+      await page.screenshot({
         path: path.join(SCREENSHOT_DIR, 'processing-complete.png'),
-        fullPage: true 
+        fullPage: true,
       });
     } catch (error) {
       console.log('⚠️ Auto-processing did not complete within timeout');
-      
+
       // Try manual processing
       const processButton = await page.$('button:has-text("Probar Audio Demo")');
       if (processButton) {
         console.log('🖱️ Clicking process button...');
         await processButton.click();
-        
+
         // Wait for processing
         await page.waitForFunction(
           () => {
@@ -257,38 +261,38 @@ async function captureBrowserLogs() {
     }
 
     // Extract logs from the UI
-    const uiLogs = await page.$$eval('[data-testid="audio-logs"] > div', elements => 
+    const uiLogs = await page.$$eval('[data-testid="audio-logs"] > div', elements =>
       elements.map(el => el.textContent)
     );
-    
+
     logs.audioProcessing.push({
       source: 'UI',
       logs: uiLogs,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     // Measure performance
     const performanceMetrics = await page.metrics();
     logs.performance.push({
       metrics: performanceMetrics,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     // Get page coverage (if possible)
     const jsCoverage = await page.coverage.stopJSCoverage();
     const cssCoverage = await page.coverage.stopCSSCoverage();
-    
+
     logs.coverage = {
       js: jsCoverage.map(entry => ({
         url: entry.url,
         usedBytes: entry.ranges.reduce((sum, range) => sum + range.end - range.start, 0),
-        totalBytes: entry.text.length
+        totalBytes: entry.text.length,
       })),
       css: cssCoverage.map(entry => ({
         url: entry.url,
         usedBytes: entry.ranges.reduce((sum, range) => sum + range.end - range.start, 0),
-        totalBytes: entry.text.length
-      }))
+        totalBytes: entry.text.length,
+      })),
     };
 
     // Save logs
@@ -313,10 +317,9 @@ async function captureBrowserLogs() {
         console.log(error.message || error.text);
       });
     }
-
   } catch (error) {
     console.error('❌ Capture failed:', error);
-    
+
     // Save partial logs even on error
     try {
       console.log('💾 Saving partial logs...');
@@ -325,21 +328,21 @@ async function captureBrowserLogs() {
     } catch (saveError) {
       console.error('❌ Failed to save partial logs:', saveError);
     }
-    
+
     throw error;
   } finally {
     // Cleanup
     if (browser) {
       await browser.close();
     }
-    
+
     if (serverProcess) {
       console.log('🛑 Stopping server...');
       serverProcess.kill('SIGTERM');
-      
+
       // Give it time to shutdown gracefully
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       // Force kill if still running
       try {
         serverProcess.kill('SIGKILL');
