@@ -8,14 +8,7 @@
 import { EventEmitter } from '../core/EventEmitter';
 import { FrameProcessor } from './FrameProcessor';
 import { WasmManager } from './WasmManager';
-import type { Logger } from '../core/Logger';
-import type { ChunkConfig } from '../types/audio-types';
-
-export interface StreamProcessorConfig {
-  bufferSize?: number;
-  enableAGC?: boolean;
-  logger?: Logger;
-}
+import type { StreamProcessorConfig, Logger, ChunkConfig } from '../types';
 
 export interface StreamController {
   stream: MediaStream;
@@ -31,12 +24,12 @@ export interface StreamController {
   getState: () => string;
 }
 
-export class StreamProcessor extends EventEmitter {
+export class StreamProcessor extends EventEmitter<any> {
   private audioContext: AudioContext;
   private wasmManager: WasmManager;
   private frameProcessor: FrameProcessor;
   private logger?: Logger;
-  private config: Required<StreamProcessorConfig>;
+  private config: Omit<Required<StreamProcessorConfig>, 'logger'> & { logger?: Logger };
   
   private activeControllers = new Map<string, StreamController>();
   private processorId = 0;
@@ -128,7 +121,7 @@ export class StreamProcessor extends EventEmitter {
     return controller;
   }
 
-  private async createAudioProcessor(): Promise<AudioWorkletNode | ScriptProcessorNode> {
+  private async createAudioProcessor(): Promise<AudioWorkletNode | AudioNode> {
     // Check if AudioWorklet is available
     const isAudioWorkletSupported = 
       'audioWorklet' in this.audioContext && 
@@ -137,7 +130,7 @@ export class StreamProcessor extends EventEmitter {
     if (isAudioWorkletSupported) {
       return this.createWorkletProcessor();
     } else {
-      return this.createScriptProcessor();
+      return this.createScriptProcessor() as AudioWorkletNode;
     }
   }
 
@@ -175,11 +168,11 @@ export class StreamProcessor extends EventEmitter {
       return processor;
     } catch (error) {
       this.logger?.warn('⚠️  AudioWorklet failed, falling back to ScriptProcessor');
-      return this.createScriptProcessor();
+      return this.createScriptProcessor() as AudioWorkletNode;
     }
   }
 
-  private createScriptProcessor(): ScriptProcessorNode {
+  private createScriptProcessor(): AudioNode {
     this.logger?.warn('⚠️  Using ScriptProcessor (higher latency)');
     
     const processor = (this.audioContext as any).createScriptProcessor(
@@ -273,7 +266,7 @@ export class StreamProcessor extends EventEmitter {
 
   private setupProcessingPipeline(
     source: MediaStreamAudioSourceNode,
-    processor: AudioWorkletNode | ScriptProcessorNode,
+    processor: AudioWorkletNode | AudioNode,
     destination: MediaStreamAudioDestinationNode
   ): void {
     // Direct connection: source -> processor -> destination

@@ -1,24 +1,18 @@
 /**
  * WasmManager - Centralized WASM lifecycle management
  * 
- * CONSOLIDATION: Eliminates duplication between wasm-loader-simple and wasm-loader-unified
+ * CONSOLIDATION: Eliminates duplication with unified WASM loader
  * PHILOSOPHY: One module = one responsibility (WASM lifecycle)
  */
 
 import type { RNNoiseModule } from '../utils/rnnoise-loader';
-import type { Logger } from '../core/Logger';
-
-export interface WasmManagerConfig {
-  timeoutMs?: number;
-  logger?: Logger;
-  enableFallback?: boolean;
-}
+import type { WasmManagerConfig, Logger } from '../types';
 
 export class WasmManager {
   private module: RNNoiseModule | null = null;
   private initPromise: Promise<RNNoiseModule> | null = null;
   private logger?: Logger;
-  private config: Required<WasmManagerConfig>;
+  private config: Omit<Required<WasmManagerConfig>, 'logger'> & { logger?: Logger };
 
   constructor(config: WasmManagerConfig = {}) {
     this.config = {

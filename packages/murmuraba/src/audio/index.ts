@@ -10,27 +10,17 @@ export { FrameProcessor } from './FrameProcessor';
 export { StreamProcessor } from './StreamProcessor';
 export { FileProcessor } from './FileProcessor';
 
+// Re-export types from centralized types module
 export type {
   WasmManagerConfig,
   FrameProcessingResult,
   FrameProcessorConfig,
   StreamProcessorConfig,
-  StreamController,
   FileProcessorConfig,
   ProcessingProgress,
-} from './WasmManager';
+  Logger,
+} from '../types';
 
 export type {
-  FrameProcessingResult as FrameResult,
-  FrameProcessorConfig as FrameConfig,
-} from './FrameProcessor';
-
-export type {
-  StreamProcessorConfig as StreamConfig,
   StreamController,
 } from './StreamProcessor';
-
-export type {
-  FileProcessorConfig as FileConfig,
-  ProcessingProgress,
-} from './FileProcessor';

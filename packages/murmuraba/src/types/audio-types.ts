@@ -179,6 +179,9 @@ export interface DiagnosticReport {
   warnings: number;
 }
 
+// Import Logger for type definitions
+import type { Logger } from '../core/Logger';
+
 export const ErrorCodes = {
   WASM_NOT_LOADED: 'WASM_NOT_LOADED',
   INVALID_STREAM: 'INVALID_STREAM',
@@ -191,3 +194,43 @@ export const ErrorCodes = {
   NOT_INITIALIZED: 'NOT_INITIALIZED',
   ALREADY_INITIALIZED: 'ALREADY_INITIALIZED',
 } as const;
+
+// Modular Audio Types (from audio modules)
+export interface FrameProcessingResult {
+  output: Float32Array;
+  vad: number;
+}
+
+export interface FrameProcessorConfig {
+  enableValidation?: boolean;
+  enableScaling?: boolean;
+}
+
+export interface WasmManagerConfig {
+  timeoutMs?: number;
+  logger?: Logger;
+  enableFallback?: boolean;
+}
+
+export interface StreamProcessorConfig {
+  bufferSize?: number;
+  enableAGC?: boolean;
+  logger?: Logger;
+}
+
+export interface FileProcessorConfig {
+  logger?: Logger;
+  enableResampling?: boolean;
+  chunkSize?: number;
+}
+
+export interface ProcessingProgress {
+  frameIndex: number;
+  totalFrames: number;
+  progress: number; // 0-100
+  vad: number;
+  noiseReduction: number;
+}
+
+// Re-export core Logger class instead of interface
+export type { Logger } from '../core/Logger';

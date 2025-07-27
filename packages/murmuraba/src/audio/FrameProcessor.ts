@@ -6,19 +6,10 @@
  */
 
 import type { RNNoiseModule } from '../utils/rnnoise-loader';
-
-export interface FrameProcessingResult {
-  output: Float32Array;
-  vad: number;
-}
-
-export interface FrameProcessorConfig {
-  enableValidation?: boolean;
-  enableScaling?: boolean;
-}
+import type { FrameProcessingResult, FrameProcessorConfig } from '../types';
 
 export class FrameProcessor {
-  private static readonly FRAME_SIZE = 480;
+  public static readonly FRAME_SIZE = 480;
   private static readonly SCALE_FACTOR = 32768.0;
   
   private config: Required<FrameProcessorConfig>;
@@ -165,7 +156,4 @@ export class FrameProcessor {
     return peak;
   }
 
-  static get FRAME_SIZE(): number {
-    return 480;
-  }
 }

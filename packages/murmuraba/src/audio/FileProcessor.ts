@@ -8,27 +8,13 @@
 import { FrameProcessor } from './FrameProcessor';
 import { WasmManager } from './WasmManager';
 import { AudioResampler } from '../utils/AudioResampler';
-import type { Logger } from '../core/Logger';
-
-export interface FileProcessorConfig {
-  logger?: Logger;
-  enableResampling?: boolean;
-  chunkSize?: number;
-}
-
-export interface ProcessingProgress {
-  frameIndex: number;
-  totalFrames: number;
-  progress: number; // 0-100
-  vad: number;
-  noiseReduction: number;
-}
+import type { FileProcessorConfig, ProcessingProgress, Logger } from '../types';
 
 export class FileProcessor {
   private wasmManager: WasmManager;
   private frameProcessor: FrameProcessor;
   private logger?: Logger;
-  private config: Required<FileProcessorConfig>;
+  private config: Omit<Required<FileProcessorConfig>, 'logger'> & { logger?: Logger };
 
   constructor(wasmManager: WasmManager, config: FileProcessorConfig = {}) {
     this.wasmManager = wasmManager;
