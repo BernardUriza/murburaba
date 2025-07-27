@@ -270,7 +270,7 @@ export function MurmurabaReduxProvider({
         noiseReductionLevel={noiseReductionLevel}
         allowDegraded={allowDegraded}
         lazy={false}
-        initTimeout={9000}
+        initTimeout={15000}
         services={{
           audioProcessor: true,
           metricsManager: true,

@@ -50,8 +50,8 @@ export function ControlPanel({
           </button>
         )}
         
-        <div className="control-group" style={{ marginTop: '1rem' }}>
-          <label className="control-label">⏱️ Recording Duration</label>
+        <div className="control-group" style={{ marginTop: '1.5rem' }}>
+          <label className="control-label">Chunk Duration</label>
           <div className="nav-pills" style={{ justifyContent: 'center' }}>
             {durations.map(duration => (
               <button
@@ -77,11 +77,6 @@ export function ControlPanel({
             />
             🎚️ Enable AGC (Auto Gain Control)
           </label>
-          {isReady && (
-            <small style={{ color: '#999', marginTop: '0.25rem', display: 'block' }}>
-              Reinitialize engine to change AGC setting
-            </small>
-          )}
         </div>
       </div>
     </section>

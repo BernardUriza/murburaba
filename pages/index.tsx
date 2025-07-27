@@ -15,6 +15,7 @@ import { BannerHero } from '../components/ui/BannerHero'
 import { useNotifications } from '../hooks/useNotifications'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { useAudioProcessor } from '../hooks/useAudioProcessor'
+import { WaveformAnalyzer } from 'murmuraba'
 import {
   setChunkDuration,
   setEnableAGC,
@@ -44,12 +45,13 @@ export default function App() {
   const uiFlags = useAppSelector(selectUIFlags, shallowEqual)
   
   // Media stream context
-  const { setStream, stopStream } = useMediaStream()
+  const { currentStream, setStream, stopStream } = useMediaStream()
   
   // Destructured state
   const { isInitialized, isProcessing, isRecording } = engineStatus
   const { chunkDuration, enableAGC } = audioConfig
   const { showAudioDemo, showAdvancedMetrics, showSettings, showCopilot } = uiFlags
+  const { processingResults } = useAppSelector(state => state.audio)
   
   // Debug log
   console.log('🔍 Engine status:', { isInitialized, isProcessing, isRecording })
@@ -85,7 +87,13 @@ export default function App() {
       setStream(stream)
       dispatch(setCurrentStreamId(stream.id))
       
-      const result = await processRecording(chunkDuration * 1000, {})
+      // Record for 30 seconds total
+      const recordingDuration = 30 * 1000; // 30 seconds
+      const result = await processRecording(recordingDuration, {
+        enableAGC,
+        chunkDuration,
+        stream
+      })
       if (result) notify('success', 'Recording completed successfully!')
     } catch (error: any) {
       notify('error', 'Recording Failed', error?.message || 'Unknown error')
@@ -145,6 +153,57 @@ export default function App() {
           onSetDuration={d => dispatch(setChunkDuration(d))}
         />
 
+        {/* Live Waveform Display */}
+        {isRecording && currentStream && (
+          <section className="recording-panel glass-card" style={{ marginTop: '1rem' }}>
+            <div className="panel-header">
+              <h3 className="panel-title">Live Audio</h3>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem' }}>
+              <WaveformAnalyzer
+                stream={currentStream}
+                width={400}
+                height={120}
+                label=""
+                hideControls={true}
+                disablePlayback={true}
+              />
+            </div>
+          </section>
+        )}
+
+        {/* Processing Results */}
+        {processingResults && processingResults.chunks.length > 0 && (
+          <section className="recording-panel glass-card" style={{ marginTop: '1rem' }}>
+            <div className="panel-header">
+              <h3 className="panel-title">Processed Chunks ({processingResults.chunks.length})</h3>
+            </div>
+            <div style={{ padding: '1rem' }}>
+              <div style={{ marginBottom: '1rem', fontSize: '14px', opacity: 0.8 }}>
+                Average noise reduction: {((processingResults.averageVad || 0) * 100).toFixed(1)}%
+              </div>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                {processingResults.chunks.map((chunk, idx) => (
+                  <div key={chunk.id} style={{
+                    padding: '10px',
+                    background: 'rgba(255,255,255,0.1)',
+                    borderRadius: '8px',
+                    minWidth: '120px',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ fontSize: '12px', opacity: 0.7 }}>Chunk {idx + 1}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
+                      {chunk.duration}s
+                    </div>
+                    <div style={{ fontSize: '11px', opacity: 0.6 }}>
+                      VAD: {(chunk.averageVad * 100).toFixed(0)}%
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Floating Action Buttons */}
         <FabButtons

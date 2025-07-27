@@ -1,8 +1,6 @@
 import type { AppProps } from 'next/app'
 import { MurmurabaReduxProvider } from '../providers/MurmurabaReduxProvider'
 import { MediaStreamProvider } from '../context/MediaStreamContext'
-import { GlobalAudioMonitor } from '../components/GlobalAudioMonitor'
-import { ServiceMonitor } from '../components/ServiceMonitor'
 import '../styles/globals.css'
 import '../styles/components.css'
 
@@ -18,16 +16,16 @@ export default function App({ Component, pageProps }: AppProps) {
       noiseReductionLevel="medium"
       allowDegraded={true}
       lazy={false} // Changed to false to ensure services are available
-      showAudioMonitoring={isDev}
+      showAudioMonitoring={false} // Disabled for cleaner UI
     >
       <MediaStreamProvider>
-        {/* Global monitoring components */}
-        {isDev && (
+        {/* Global monitoring components - disabled for cleaner UI */}
+        {/* {isDev && (
           <>
             <GlobalAudioMonitor />
             <ServiceMonitor />
           </>
-        )}
+        )} */}
         
         <Component {...pageProps} />
       </MediaStreamProvider>
