@@ -215,6 +215,55 @@ const JURAMENTO_DEL_COPILOTO_BRUTAL_V4_2 = `
 
 ## 🔍 REGLA CARDINAL: NO REINVENTES LA PUTA RUEDA
 
+### CASO DE ESTUDIO: El React Import Nightmare (27-01-2025)
+
+**CONTEXTO:** "Cannot read properties of null (reading 'useState')"
+
+**LO QUE HICE (MAL):**
+```javascript
+// 🤡 Creé scripts para convertir ES modules a CommonJS
+npm run post-compile
+npm run fix-react-imports
+npm run watch-and-fix
+// 🤡 Modifiqué el build process con 5 scripts diferentes
+// 🤡 Intenté "arreglar" React con namespace imports
+// 🤡 Perdí 2 horas en soluciones cada vez más complejas
+```
+
+**LA CAUSA REAL:**
+```javascript
+// next.config.js
+config.resolve.alias = {
+  'murmuraba': path.resolve(__dirname, 'packages/murmuraba/dist') // ❌ MAL
+}
+// DEBÍA SER:
+config.resolve.alias = {
+  'murmuraba': path.resolve(__dirname, 'packages/murmuraba') // ✅ BIEN
+}
+```
+
+**LECCIÓN BRUTAL:**
+> "que coraje" - Bernard
+> El error más simple causó la solución más complicada.
+
+### PROTOCOLO ANTI-OVERENGINEERING:
+
+1. **ANTES de crear soluciones complejas:**
+   - Busca la configuración del bundler (webpack, next.config.js)
+   - Verifica los aliases y resolución de módulos
+   - Revisa las versiones de dependencias
+
+2. **Señales de que estás complicando demasiado:**
+   - Crear más de 2 scripts para "arreglar" un build
+   - Modificar imports/exports en archivos compilados
+   - Convertir entre sistemas de módulos (ES/CommonJS)
+   - "Arreglar" React cuando antes funcionaba
+
+3. **La navaja de Occam del debugging:**
+   - Si funcionaba antes y dejó de funcionar, algo simple cambió
+   - Los errores de "Cannot read null" suelen ser de resolución de módulos
+   - Next.js + paquetes locales = revisar webpack aliases PRIMERO
+
 ### CASO DE ESTUDIO: El Audio Level Fiasco (27-01-2025)
 
 **CONTEXTO:** Bernard dice "el audio level no se actualiza visualmente"
