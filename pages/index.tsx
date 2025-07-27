@@ -45,7 +45,7 @@ export default function App() {
   const uiFlags = useAppSelector(selectUIFlags, shallowEqual)
   
   // Media stream context
-  const { currentStream, setStream, stopStream } = useMediaStream()
+  const { currentStream } = useMediaStream()
   
   // Destructured state
   const { isInitialized, isProcessing, isRecording } = engineStatus
@@ -81,30 +81,22 @@ export default function App() {
     
     try {
       notify('info', 'Starting microphone recording...')
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: enableAGC }
-      })
-      setStream(stream)
-      dispatch(setCurrentStreamId(stream.id))
       
       // Record for 30 seconds total
       const recordingDuration = 30 * 1000; // 30 seconds
       const result = await processRecording(recordingDuration, {
         enableAGC,
-        chunkDuration,
-        stream
+        chunkDuration
       })
+      
       if (result) notify('success', 'Recording completed successfully!')
     } catch (error: any) {
       notify('error', 'Recording Failed', error?.message || 'Unknown error')
-    } finally {
-      stopStream()
     }
   }
 
   const handleStopRecording = () => {
     cancelProcessing()
-    stopStream()
   }
 
   // Loading state
@@ -155,19 +147,33 @@ export default function App() {
 
         {/* Live Waveform Display */}
         {isRecording && currentStream && (
-          <section className="recording-panel glass-card" style={{ marginTop: '1rem' }}>
-            <div className="panel-header">
-              <h3 className="panel-title">Live Audio</h3>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem' }}>
-              <WaveformAnalyzer
-                stream={currentStream}
-                width={400}
-                height={120}
-                label=""
-                hideControls={true}
-                disablePlayback={true}
-              />
+          <section className="live-waveform-section" style={{ marginTop: '1.5rem' }}>
+            <div className="live-waveform-container">
+              <div className="live-indicator">
+                <span className="live-dot"></span>
+                <span className="live-text">LIVE</span>
+              </div>
+              <div className="waveform-wrapper">
+                <div className="waveform-glow"></div>
+                <WaveformAnalyzer
+                  stream={currentStream}
+                  width={600}
+                  height={180}
+                  label=""
+                  hideControls={true}
+                  disablePlayback={true}
+                  isActive={true}
+                  isPaused={false}
+                />
+              </div>
+              <div className="audio-metrics">
+                <div className="metric-item">
+                  <span className="metric-label">Input Level</span>
+                  <div className="metric-bar">
+                    <div className="metric-fill" style={{ width: '0%' }}></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
         )}

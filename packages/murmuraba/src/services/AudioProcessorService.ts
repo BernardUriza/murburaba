@@ -387,6 +387,10 @@ export class AudioProcessorService implements IAudioProcessor {
   }
   
   // Method to clean up resources
+  getCurrentStream(): MediaStream | undefined {
+    return this.currentStream;
+  }
+  
   public cleanup(): void {
     // Cancel any ongoing processing
     this.cancel();

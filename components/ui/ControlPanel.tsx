@@ -1,4 +1,5 @@
 import React from 'react'
+import styles from './ControlPanel.module.css'
 
 interface ControlPanelProps {
   isReady: boolean
@@ -28,35 +29,50 @@ export function ControlPanel({
   const durations = [5, 8, 10, 15]
 
   return (
-    <section className="recording-panel glass-card">
-      <div className="panel-header">
-        <h2 className="panel-title">Audio Controls</h2>
+    <section className={styles.controlPanel}>
+      <div className={styles.panelHeader}>
+        <h2 className={styles.panelTitle}>
+          <span className={styles.titleIcon}>🎛️</span>
+          Audio Controls
+        </h2>
+        <div className={styles.headerGlow}></div>
       </div>
       
-      <div className="controls-grid">
+      <div className={styles.controlsGrid}>
         <button
-          className="btn btn-primary"
+          className={`${styles.actionButton} ${styles.recordButton} ${(isProcessing || !isReady) ? styles.disabled : ''}`}
           onClick={onRecord}
           disabled={isProcessing || !isReady}
           style={{ display: isRecording ? 'none' : 'flex' }}
         >
-          <span className="btn-icon">🎙️</span>
-          <span>{isProcessing ? 'Processing...' : 'Start Recording'}</span>
+          <div className={styles.buttonContent}>
+            <span className={styles.buttonIcon}>🎙️</span>
+            <span className={styles.buttonText}>
+              {isProcessing ? 'Processing...' : 'Start Recording'}
+            </span>
+          </div>
+          <div className={styles.buttonGlow}></div>
         </button>
         {isRecording && (
-          <button className="btn btn-danger" onClick={onStop}>
-            <span className="btn-icon">⏹️</span>
-            <span>Stop Recording</span>
+          <button className={`${styles.actionButton} ${styles.stopButton}`} onClick={onStop}>
+            <div className={styles.buttonContent}>
+              <span className={styles.buttonIcon}>⏹️</span>
+              <span className={styles.buttonText}>Stop Recording</span>
+            </div>
+            <div className={styles.pulseAnimation}></div>
           </button>
         )}
         
-        <div className="control-group" style={{ marginTop: '1.5rem' }}>
-          <label className="control-label">Chunk Duration</label>
-          <div className="nav-pills" style={{ justifyContent: 'center' }}>
+        <div className={styles.controlGroup}>
+          <label className={styles.controlLabel}>
+            <span className={styles.labelIcon}>⏱️</span>
+            Chunk Duration
+          </label>
+          <div className={styles.navPills}>
             {durations.map(duration => (
               <button
                 key={duration}
-                className={`nav-pill ${chunkDuration === duration ? 'active' : ''}`}
+                className={`${styles.navPill} ${chunkDuration === duration ? styles.active : ''}`}
                 onClick={() => onSetDuration(duration)}
                 disabled={isProcessing}
               >
@@ -66,16 +82,22 @@ export function ControlPanel({
           </div>
         </div>
         
-        <div className="control-group" style={{ marginTop: '1rem' }}>
-          <label className="control-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <input
-              type="checkbox"
-              checked={enableAGC}
-              onChange={e => onSetAGC(e.target.checked)}
-              disabled={isReady}
-              style={{ width: 18, height: 18, cursor: isReady ? 'not-allowed' : 'pointer' }}
-            />
-            🎚️ Enable AGC (Auto Gain Control)
+        <div className={styles.controlGroup}>
+          <label className={styles.checkboxLabel}>
+            <div className={styles.checkboxWrapper}>
+              <input
+                type="checkbox"
+                checked={true}
+                onChange={() => {}}
+                disabled={true}
+                className={styles.checkbox}
+              />
+              <div className={styles.checkboxCheckmark}></div>
+            </div>
+            <span className={styles.checkboxText}>
+              <span className={styles.labelIcon}>🎚️</span>
+              Enable AGC (Auto Gain Control)
+            </span>
           </label>
         </div>
       </div>

@@ -46,4 +46,5 @@ export interface IAudioProcessor {
   // Optional cleanup methods
   cleanup?(): void;
   destroyEngine?(): Promise<void>;
+  getCurrentStream?(): MediaStream | undefined;
 }

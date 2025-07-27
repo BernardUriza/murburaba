@@ -12,11 +12,13 @@ import {
   clearError
 } from '../store/slices/audioSlice'
 import { addNotification } from '../store/slices/uiSlice'
+import { useMediaStream } from '../context/MediaStreamContext'
 import type { IAudioProcessor, AudioProcessingOptions } from 'murmuraba'
 
 export function useAudioProcessor() {
   const dispatch = useAppDispatch()
   const { container, isReady } = useMurmurabaSuite()
+  const { setStream } = useMediaStream()
   const isProcessing = useAppSelector(state => state.audio.isProcessing)
   const isRecording = useAppSelector(state => state.audio.isRecording)
 
@@ -109,6 +111,14 @@ export function useAudioProcessor() {
 
       const result = await processor.processRecording(duration, options)
       
+      // Get the current stream from processor if available
+      if (processor.getCurrentStream) {
+        const stream = processor.getCurrentStream()
+        if (stream) {
+          setStream(stream)
+        }
+      }
+      
       dispatch(setProcessingResults(result))
       dispatch(addNotification({
         type: 'success',
@@ -132,8 +142,10 @@ export function useAudioProcessor() {
     } finally {
       dispatch(setProcessing(false))
       dispatch(setRecording(false))
+      // Clean up stream when recording stops
+      setStream(null)
     }
-  }, [container, isReady, dispatch])
+  }, [container, isReady, dispatch, setStream])
 
   const cancelProcessing = useCallback(() => {
     if (!container || !isReady) return
@@ -147,10 +159,12 @@ export function useAudioProcessor() {
         type: 'info',
         message: 'Processing cancelled'
       }))
+      // Clean up stream when cancelled
+      setStream(null)
     } catch (error) {
       console.error('Failed to cancel processing:', error)
     }
-  }, [container, isReady, dispatch])
+  }, [container, isReady, dispatch, setStream])
 
   // Cleanup on unmount
   useEffect(() => {

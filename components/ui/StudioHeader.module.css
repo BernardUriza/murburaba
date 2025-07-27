@@ -1,0 +1,304 @@
+/* Studio Header - Modern Glassmorphism Design 2025 */
+
+.studioHeader {
+  position: relative;
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.headerBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.bgGradient {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(102, 126, 234, 0.15) 0%,
+    rgba(118, 75, 162, 0.1) 40%,
+    transparent 70%
+  );
+  animation: rotate 30s linear infinite;
+}
+
+.bgPattern {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 35px,
+      rgba(255, 255, 255, 0.01) 35px,
+      rgba(255, 255, 255, 0.01) 70px
+    );
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.headerContent {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 3rem;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  box-shadow: 
+    0 8px 32px rgba(31, 38, 135, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.brandSection {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.logoWrapper {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoIcon {
+  font-size: 2.5rem;
+  z-index: 1;
+  filter: drop-shadow(0 4px 8px rgba(102, 126, 234, 0.3));
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.logoGlow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 80px;
+  background: radial-gradient(
+    circle,
+    rgba(102, 126, 234, 0.4) 0%,
+    transparent 70%
+  );
+  filter: blur(20px);
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+}
+
+.brandInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.brandName {
+  font-size: 2rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.brandMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.version {
+  font-weight: 600;
+  background: rgba(102, 126, 234, 0.2);
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+}
+
+.separator {
+  opacity: 0.3;
+}
+
+.tagline {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* Status Section */
+.statusSection {
+  position: relative;
+}
+
+.statusIndicator {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 100px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.statusIcon {
+  font-size: 1.25rem;
+  z-index: 1;
+}
+
+.statusLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  z-index: 1;
+}
+
+.statusPulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  border-radius: 100px;
+  opacity: 0;
+}
+
+/* Status States */
+.ready {
+  border-color: rgba(34, 197, 94, 0.3);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.ready .statusLabel {
+  color: #22c55e;
+}
+
+.ready .statusPulse {
+  background: rgba(34, 197, 94, 0.3);
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
+.processing {
+  border-color: rgba(102, 126, 234, 0.3);
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.processing .statusLabel {
+  color: #667eea;
+}
+
+.processing .statusIcon {
+  animation: spin 1s linear infinite;
+}
+
+.processing .statusPulse {
+  background: rgba(102, 126, 234, 0.3);
+  animation: statusPulse 1s ease-in-out infinite;
+}
+
+.uninitialized {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.uninitialized .statusLabel {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+@keyframes statusPulse {
+  0%, 100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(1.5);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .headerContent {
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+  
+  .brandSection {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .brandName {
+    font-size: 1.5rem;
+  }
+  
+  .logoWrapper {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .logoIcon {
+    font-size: 2rem;
+  }
+}

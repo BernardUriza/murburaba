@@ -29,7 +29,7 @@ const initialState: AudioState = {
   isProcessing: false,
   isRecording: false,
   chunkDuration: 8,
-  enableAGC: false,
+  enableAGC: true,
   processingResults: null,
   chunks: [],
   selectedChunkId: null,

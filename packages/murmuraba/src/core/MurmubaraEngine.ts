@@ -140,8 +140,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       this.stateManager.transitionTo('loading-wasm');
       await this.loadWasmModuleWithTimeout(10000);
       
-      // Initialize metrics
-      this.metricsManager.startAutoUpdate(100);
+      // Don't start auto-update here - only during recording
       
       this.stateManager.transitionTo('ready');
       this._isInitialized = true;
@@ -445,6 +444,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       if (this.activeStreams.size === 1) {
         this.stateManager.transitionTo('processing');
         this.emit('processing-start');
+        // Start metrics updates only during recording
+        this.metricsManager.startAutoUpdate(100);
       }
       
       return controller;
@@ -750,6 +751,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         if (this.activeStreams.size === 0) {
           this.stateManager.transitionTo('ready');
           this.emit('processing-end');
+          // Stop metrics updates when no active streams
+          this.metricsManager.stopAutoUpdate();
         }
       },
       pause: () => {
