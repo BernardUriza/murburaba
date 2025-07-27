@@ -6,7 +6,6 @@
 import { beforeAll, afterEach, afterAll, vi } from 'vitest';
 import { installGlobalMocks, uninstallGlobalMocks } from './mocks/global-mocks';
 import './mocks/rnnoise-wasm.mock';
-import './mocks/rnnoise-loader.mock';
 
 // Install global mocks before all tests
 beforeAll(() => {

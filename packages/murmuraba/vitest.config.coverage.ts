@@ -20,8 +20,7 @@ export default defineConfig({
         'src/components/**/*',
         'src/__tests__/**/*',
         'src/engines/RNNoiseEngine.ts',
-        'src/utils/rnnoise-loader.ts',
-        'src/utils/simd-universal-loader.ts',
+        'src/engines/wasm-loader-unified.ts',
         'src/hooks/useAudioEngine.ts',
         'src/hooks/murmuraba-engine/**/*'
       ],

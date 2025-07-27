@@ -275,10 +275,10 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     
     try {
       // Dynamic import the RNNoise loader
-      const { loadRNNoiseModule } = await import('../utils/rnnoise-loader');
+      const { loadRNNoiseWASM } = await import('../engines/wasm-loader-unified');
       
       try {
-        this.wasmModule = await loadRNNoiseModule();
+        this.wasmModule = await loadRNNoiseWASM();
       } catch (wasmError: any) {
         const errorMsg = wasmError?.message || String(wasmError);
         
