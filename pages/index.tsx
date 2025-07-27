@@ -58,8 +58,8 @@ export default function App() {
 
   // Event handlers
   const handleInitializeEngine = async () => {
-    if (isReady) return notify('info', 'Audio engine already initialized!')
-    notify('info', 'Waiting for MurmurabaSuite...')
+    // This function is no longer needed since initialization is handled in MurmurabaReduxProvider
+    notify('info', 'Engine initialization is handled at startup')
   }
 
   const handleStartRecording = async () => {

@@ -35,7 +35,20 @@ export class AudioProcessorService implements IAudioProcessor {
         ? await file.arrayBuffer() 
         : file;
       
+      // Check if engine exists in registry
+      if (!engineRegistry.hasEngine()) {
+        this.logger.error('No engine available in registry');
+        throw new Error('No engine available');
+      }
+      
       const engine = engineRegistry.getEngine();
+      
+      // Check if engine is initialized
+      if (!engine.isInitialized) {
+        this.logger.error('Engine is not initialized');
+        throw new Error('Engine not initialized');
+      }
+      
       const result = await this.processArrayBuffer(arrayBuffer, options);
       
       this.logger.info('File processing completed', {

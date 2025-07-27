@@ -11,7 +11,10 @@ const puppeteer = require('puppeteer');
 const { Window } = require('happy-dom');
 
 async function checkLocalhost() {
-  console.log('🔍 Checking http://localhost:3000...\n');
+  // Detectar puerto automáticamente
+  const port = process.env.PORT || 3000;
+  const url = `http://localhost:${port}`;
+  console.log(`🔍 Checking ${url}...\n`);
   
   // Primero: Test rápido con happy-dom
   console.log('1️⃣ Pre-check con happy-dom...');
@@ -103,13 +106,14 @@ async function checkLocalhost() {
     
     // Navegar a localhost
     try {
-      await page.goto('http://localhost:3000', {
+      await page.goto(url, {
         waitUntil: 'networkidle0',
         timeout: 10000
       });
     } catch (err) {
-      console.error('\n❌ FATAL: No se pudo conectar a localhost:3000');
+      console.error(`\n❌ FATAL: No se pudo conectar a ${url}`);
       console.error('   Asegúrate de que el servidor esté corriendo: npm run dev');
+      console.error('   Si el puerto 3000 está ocupado, usa: PORT=3001 node test/check-localhost.js');
       process.exit(1);
     }
     
@@ -122,39 +126,91 @@ async function checkLocalhost() {
       errors.push('Landing page returned 404');
     }
     
-    // Verificar que la aplicación se inicializa correctamente
-    console.log('\n⏳ Esperando inicialización de la aplicación...');
+    console.log('\n🔍 Verificando pantalla de bienvenida...');
     
+    // Paso 1: Verificar que aparece la pantalla de bienvenida
     try {
-      // Esperar a que desaparezca el mensaje de inicialización o aparezca contenido principal
+      await page.waitForSelector('button:has-text("Initialize Audio Engine")', { timeout: 5000 });
+      console.log('✅ Pantalla de bienvenida cargada correctamente');
+      
+      // Tomar screenshot de la pantalla inicial
+      await page.screenshot({ 
+        path: 'test/localhost-welcome.png',
+        fullPage: true 
+      });
+      console.log('📸 Screenshot inicial guardado en: test/localhost-welcome.png');
+    } catch (e) {
+      console.error('❌ No se encontró el botón de inicialización');
+      errors.push('Botón "Initialize Audio Engine" no encontrado');
+      return;
+    }
+    
+    // Capturar logs de inicialización
+    const initLogs = [];
+    page.on('console', msg => {
+      const text = msg.text();
+      if (text.includes('MurmurabaSuite') || text.includes('engine') || text.includes('WASM')) {
+        initLogs.push(`[${msg.type()}] ${text}`);
+      }
+    });
+    
+    console.log('\n🚀 Haciendo clic en "Initialize Audio Engine"...');
+    
+    // Paso 2: Hacer clic en el botón de inicialización
+    await page.click('button:has-text("Initialize Audio Engine")');
+    
+    // Paso 3: Verificar que aparece la pantalla de carga
+    try {
+      await page.waitForSelector('h3:has-text("Initializing MurmurabaSuite")', { timeout: 2000 });
+      console.log('✅ Pantalla de carga apareció correctamente');
+      
+      // Tomar screenshot de la pantalla de carga
+      await page.screenshot({ 
+        path: 'test/localhost-loading.png',
+        fullPage: true 
+      });
+      console.log('📸 Screenshot de carga guardado en: test/localhost-loading.png');
+    } catch (e) {
+      console.error('❌ No apareció la pantalla de carga');
+      errors.push('Pantalla "Initializing MurmurabaSuite..." no apareció');
+    }
+    
+    console.log('\n⏳ Esperando inicialización completa (hasta 10 segundos)...');
+    
+    // Paso 4: Esperar a que termine la inicialización
+    try {
       await page.waitForFunction(
         () => {
           const body = document.body.innerText;
-          // Si todavía muestra "Initializing" después de 5 segundos, es un error
-          return !body.includes('Initializing MurmurabaSuite') || 
-                 body.includes('MurmurABA') || 
-                 body.includes('Audio') ||
-                 body.includes('Record');
+          return !body.includes('Initializing MurmurabaSuite') && 
+                 (body.includes('MurmurABA') || body.includes('Audio Controls'));
         },
-        { timeout: 5000 }
+        { timeout: 10000 }
       );
       console.log('✅ Aplicación inicializada correctamente');
+      
+      // Imprimir logs de inicialización capturados
+      if (initLogs.length > 0) {
+        console.log('\n📋 Logs de inicialización:');
+        initLogs.forEach(log => console.log(`   ${log}`));
+      }
     } catch (e) {
-      // Obtener más información sobre el estado
+      console.error('❌ Error: La inicialización tomó más de 10 segundos');
+      errors.push('Timeout en inicialización de MurmurabaSuite');
+      
+      // Obtener información de debug
       const debugInfo = await page.evaluate(() => {
         const body = document.body.innerText;
         const hasError = document.querySelector('.error-message');
         return {
-          bodyText: body.substring(0, 200),
+          bodyText: body.substring(0, 300),
           hasError: !!hasError,
           errorText: hasError ? hasError.textContent : null,
-          url: window.location.href
+          audioContext: window.audioContext ? window.audioContext.state : 'no context'
         };
       });
       
-      console.error('❌ Error de inicialización: La app no progresó más allá del mensaje de carga');
       console.error('📋 Debug info:', JSON.stringify(debugInfo, null, 2));
-      errors.push('La aplicación se quedó atascada en "Initializing MurmurabaSuite..." por más de 5 segundos');
     }
     
     // Esperar un poco más para asegurar carga completa

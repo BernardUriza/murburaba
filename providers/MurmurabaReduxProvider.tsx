@@ -1,4 +1,4 @@
-import React, { useEffect, ReactNode } from 'react';
+import React, { useEffect, ReactNode, useState } from 'react';
 import { Provider } from 'react-redux';
 import { store } from '../store';
 import { MurmurabaSuite, useMurmurabaSuite } from 'murmuraba';
@@ -91,6 +91,50 @@ export function MurmurabaReduxProvider({
   allowDegraded = true,
   lazy = false
 }: MurmurabaReduxProviderProps) {
+  const [shouldInitialize, setShouldInitialize] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
+
+  const handleManualInit = () => {
+    setShouldInitialize(true);
+    setIsInitializing(true);
+  };
+
+  // If not initialized yet, show initialization button
+  if (!shouldInitialize) {
+    return (
+      <Provider store={store}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          padding: '2rem',
+          textAlign: 'center'
+        }}>
+          <h2 style={{ marginBottom: '1rem' }}>Welcome to Murmuraba Audio Engine</h2>
+          <p style={{ marginBottom: '2rem', opacity: 0.8 }}>
+            Click the button below to initialize the audio processing engine
+          </p>
+          <button 
+            onClick={handleManualInit}
+            className="btn btn-primary"
+            style={{ 
+              padding: '1rem 2rem',
+              fontSize: '1.1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            <span>🚀</span>
+            <span>Initialize Audio Engine</span>
+          </button>
+        </div>
+      </Provider>
+    );
+  }
+
   return (
     <Provider store={store}>
       <MurmurabaSuite
@@ -100,15 +144,33 @@ export function MurmurabaReduxProvider({
         noiseReductionLevel={noiseReductionLevel}
         allowDegraded={allowDegraded}
         lazy={false}
-        initTimeout={3000}
+        initTimeout={9000}
         services={{
           audioProcessor: true,
           metricsManager: true,
           workerManager: true
         }}
+        onUserInteraction={() => setIsInitializing(false)}
       >
         <MurmurabaReduxBridge>
-          {children}
+          {isInitializing ? (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '100vh',
+              padding: '2rem'
+            }}>
+              <div className="loading-spinner" style={{ marginBottom: '1rem' }}></div>
+              <h3>Initializing MurmurabaSuite...</h3>
+              <p style={{ opacity: 0.7, marginTop: '0.5rem' }}>
+                This may take up to 9 seconds
+              </p>
+            </div>
+          ) : (
+            children
+          )}
         </MurmurabaReduxBridge>
       </MurmurabaSuite>
     </Provider>

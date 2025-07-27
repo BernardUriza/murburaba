@@ -5,6 +5,7 @@ import { ServiceLoader, SERVICE_MODULES } from '../core/ServiceLoader';
 import { AudioProcessorService } from '../services/AudioProcessorService';
 import { MurmubaraConfig } from '../types';
 import { ILogger, IAudioProcessor } from '../core/interfaces';
+import { engineRegistry } from '../core/EngineRegistry';
 
 // Re-export TOKENS for external use
 export { TOKENS };
@@ -26,6 +27,7 @@ interface MurmurabaSuiteConfig extends MurmubaraConfig {
   allowDegraded?: boolean;
   children?: ReactNode;
   initTimeout?: number; // Timeout in milliseconds for engine initialization
+  onUserInteraction?: () => void; // Callback to resume AudioContext on user interaction
 }
 
 interface MurmurabaSuiteContextValue {
@@ -42,8 +44,9 @@ export function MurmurabaSuite({
   children,
   services = {},
   lazy = true,
-  allowDegraded = false,
-  initTimeout = 10000, // Default to 10 seconds
+  allowDegraded = true, // Changed to true by default for better UX
+  initTimeout = 6000, // Reduced to 6 seconds (WASM timeout is 5s)
+  onUserInteraction,
   ...engineConfig 
 }: MurmurabaSuiteConfig) {
   const [container] = useState(() => new DIContainer());
@@ -56,8 +59,8 @@ export function MurmurabaSuite({
       console.log('🚀 MurmurabaSuite: Starting initialization...');
       try {
         // Create and bind engine
-        const engine = MurmubaraEngineFactory.create(engineConfig);
-        console.log('🔧 MurmurabaSuite: Engine created, initializing...');
+        const engine = engineRegistry.createEngine(engineConfig);
+        console.log('🔧 MurmurabaSuite: Engine created and registered, initializing...');
         
         // Add timeout to initialization
         const initTimeoutPromise = new Promise((_, reject) => 
@@ -123,6 +126,33 @@ export function MurmurabaSuite({
         
         console.log('✅ MurmurabaSuite: Initialization complete!');
         setIsReady(true);
+        
+        // Setup user interaction handler for AudioContext resume
+        const handleInteraction = async () => {
+          try {
+            const audioContext = (engine as any).audioContext;
+            if (audioContext && audioContext.state === 'suspended') {
+              await audioContext.resume();
+              console.log('🔊 AudioContext resumed after user interaction');
+              
+              // Call the callback if provided
+              if (onUserInteraction) {
+                onUserInteraction();
+              }
+            }
+          } catch (err) {
+            console.warn('Failed to resume AudioContext:', err);
+          }
+        };
+        
+        // Register interaction handler
+        document.addEventListener('click', handleInteraction, { once: true });
+        document.addEventListener('keydown', handleInteraction, { once: true });
+        
+        // Store AudioContext reference globally for manual initialization
+        if (typeof window !== 'undefined') {
+          (window as any).audioContext = (engine as any).audioContext;
+        }
       } catch (err) {
         setError(err as Error);
         console.error('❌ MurmurabaSuite initialization failed:', err);

@@ -37,7 +37,7 @@ export function ControlPanel({
         <button
           className="btn btn-primary"
           onClick={onRecord}
-          disabled={isProcessing}
+          disabled={isProcessing || !isReady}
           style={{ display: isRecording ? 'none' : 'flex' }}
         >
           <span className="btn-icon">🎙️</span>

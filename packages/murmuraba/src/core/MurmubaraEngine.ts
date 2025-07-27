@@ -20,6 +20,7 @@ import {
 } from '../types';
 
 export class MurmubaraEngine extends EventEmitter<EngineEvents> {
+  private _isInitialized: boolean = false;
   private config: Required<MurmubaraConfig>;
   private stateManager: StateManager;
   private logger: Logger;
@@ -137,12 +138,13 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       
       // Load WASM module with timeout
       this.stateManager.transitionTo('loading-wasm');
-      await this.loadWasmModuleWithTimeout(5000);
+      await this.loadWasmModuleWithTimeout(10000);
       
       // Initialize metrics
       this.metricsManager.startAutoUpdate(100);
       
       this.stateManager.transitionTo('ready');
+      this._isInitialized = true;
       this.emit('initialized');
       this.logger.info('Murmuraba engine initialized successfully');
       
@@ -216,8 +218,14 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
   }
   
   private async loadWasmModuleWithTimeout(timeoutMs: number): Promise<void> {
+    this.logger.info(`Starting WASM module load with ${timeoutMs}ms timeout...`);
+    const startTime = performance.now();
+    
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error(`WASM loading timeout after ${timeoutMs}ms`)), timeoutMs);
+      setTimeout(() => {
+        const elapsed = performance.now() - startTime;
+        reject(new Error(`WASM loading timeout after ${elapsed.toFixed(2)}ms (limit: ${timeoutMs}ms)`));
+      }, timeoutMs);
     });
     
     try {
@@ -225,6 +233,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         this.loadWasmModule(),
         timeoutPromise
       ]);
+      const loadTime = performance.now() - startTime;
+      this.logger.info(`WASM module loaded successfully in ${loadTime.toFixed(2)}ms`);
     } catch (error) {
       if (error instanceof Error && error.message.includes('timeout')) {
         this.logger.error('WASM module loading timed out');
@@ -275,10 +285,16 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     
     try {
       // Dynamic import the RNNoise loader
-      const { loadRNNoiseWASM } = await import('../engines/wasm-loader-unified');
+      this.logger.debug('Importing wasm-loader-simple...');
+      const importStart = performance.now();
+      const { loadRNNoiseWASM } = await import('../engines/wasm-loader-simple');
+      this.logger.debug(`wasm-loader imported in ${(performance.now() - importStart).toFixed(2)}ms`);
       
       try {
+        this.logger.debug('Calling loadRNNoiseWASM...');
+        const loadStart = performance.now();
         this.wasmModule = await loadRNNoiseWASM();
+        this.logger.debug(`loadRNNoiseWASM completed in ${(performance.now() - loadStart).toFixed(2)}ms`);
       } catch (wasmError: any) {
         const errorMsg = wasmError?.message || String(wasmError);
         
@@ -793,6 +809,10 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     return `stream-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
   
+  get isInitialized(): boolean {
+    return this._isInitialized;
+  }
+
   async destroy(force: boolean = false): Promise<void> {
     if (!this.stateManager.canTransitionTo('destroying')) {
       if (force) {
@@ -853,6 +873,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       // Remove all event listeners
       this.removeAllListeners();
       
+      this._isInitialized = false;
       this.stateManager.transitionTo('destroyed');
       this.emit('destroyed');
       this.logger.info('Murmuraba engine destroyed successfully');

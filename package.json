@@ -42,6 +42,7 @@
     "eslint-config-next": "^15.4.0",
     "happy-dom": "^18.0.1",
     "puppeteer": "^24.15.0",
+    "ts-loader": "^9.5.2",
     "typescript": "5.8.3",
     "vitest": "^3.2.4"
   }
