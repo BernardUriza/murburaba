@@ -47,7 +47,7 @@
     "url": "https://github.com/BernardUriza/murmuraba"
   },
   "scripts": {
-    "build": "npm run clean && npm run generate:wasm && npm run build:ts && npm run build:simple",
+    "build": "npm run clean && npm run generate:wasm && npm run build:ts",
     "build:simple": "node scripts/build-simple.mjs",
     "generate:wasm": "node scripts/encode-wasm.mjs",
     "build:ts": "tsc",

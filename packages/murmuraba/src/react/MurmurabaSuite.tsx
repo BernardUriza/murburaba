@@ -25,6 +25,7 @@ interface MurmurabaSuiteConfig extends MurmubaraConfig {
   lazy?: boolean;
   allowDegraded?: boolean;
   children?: ReactNode;
+  initTimeout?: number; // Timeout in milliseconds for engine initialization
 }
 
 interface MurmurabaSuiteContextValue {
@@ -42,6 +43,7 @@ export function MurmurabaSuite({
   services = {},
   lazy = true,
   allowDegraded = false,
+  initTimeout = 10000, // Default to 10 seconds
   ...engineConfig 
 }: MurmurabaSuiteConfig) {
   const [container] = useState(() => new DIContainer());
@@ -58,12 +60,12 @@ export function MurmurabaSuite({
         console.log('🔧 MurmurabaSuite: Engine created, initializing...');
         
         // Add timeout to initialization
-        const initTimeout = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Engine initialization timeout after 3 seconds')), 3000)
+        const initTimeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error(`Engine initialization timeout after ${initTimeout / 1000} seconds`)), initTimeout)
         );
         
         try {
-          await Promise.race([engine.initialize(), initTimeout]);
+          await Promise.race([engine.initialize(), initTimeoutPromise]);
         } catch (err) {
           console.error('⚠️ Engine initialization failed or timed out:', err);
           // Continue anyway if allowDegraded is true

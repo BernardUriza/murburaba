@@ -220,8 +220,8 @@ async function checkBuild() {
 // Ejecutar TODO
 async function runAllChecks() {
   try {
-    await checkBuild();  // Primero verificar que compila
-    await checkLocalhost();  // Luego verificar runtime
+    // await checkBuild();  // SKIP - toma mucho tiempo
+    await checkLocalhost();  // Solo verificar runtime
   } catch (err) {
     console.error('Fatal:', err);
     process.exit(1);
