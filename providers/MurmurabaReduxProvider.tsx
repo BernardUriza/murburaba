@@ -76,12 +76,12 @@ interface MurmurabaReduxProviderProps {
 
 export function MurmurabaReduxProvider({
   children,
-  logLevel = 'warn',
+  logLevel = 'debug',
   algorithm = 'rnnoise',
   enableAGC = false,
   noiseReductionLevel = 'medium',
   allowDegraded = true,
-  lazy = true
+  lazy = false
 }: MurmurabaReduxProviderProps) {
   return (
     <Provider store={store}>
@@ -91,11 +91,11 @@ export function MurmurabaReduxProvider({
         enableAGC={enableAGC}
         noiseReductionLevel={noiseReductionLevel}
         allowDegraded={allowDegraded}
-        lazy={lazy}
+        lazy={false}
         services={{
-          audioProcessor: true,
-          metricsManager: true,
-          workerManager: !lazy
+          audioProcessor: false,
+          metricsManager: false,
+          workerManager: false
         }}
       >
         <MurmurabaReduxBridge>

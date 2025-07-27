@@ -23,6 +23,7 @@ interface MurmurabaSuiteConfig extends MurmubaraConfig {
     workerManager?: boolean;
   };
   lazy?: boolean;
+  allowDegraded?: boolean;
   children?: ReactNode;
 }
 
@@ -40,6 +41,7 @@ export function MurmurabaSuite({
   children,
   services = {},
   lazy = true,
+  allowDegraded = false,
   ...engineConfig 
 }: MurmurabaSuiteConfig) {
   const [container] = useState(() => new DIContainer());
@@ -54,7 +56,22 @@ export function MurmurabaSuite({
         // Create and bind engine
         const engine = MurmubaraEngineFactory.create(engineConfig);
         console.log('🔧 MurmurabaSuite: Engine created, initializing...');
-        await engine.initialize();
+        
+        // Add timeout to initialization
+        const initTimeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Engine initialization timeout after 3 seconds')), 3000)
+        );
+        
+        try {
+          await Promise.race([engine.initialize(), initTimeout]);
+        } catch (err) {
+          console.error('⚠️ Engine initialization failed or timed out:', err);
+          // Continue anyway if allowDegraded is true
+          if (!allowDegraded) {
+            throw err;
+          }
+          console.log('⚡ Continuing in degraded mode without engine');
+        }
         
         // Get container from engine
         const engineContainer = (engine as any).getContainer();

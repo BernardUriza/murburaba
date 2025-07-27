@@ -45,16 +45,30 @@ async function checkLocalhost() {
     const errors = [];
     const warnings = [];
     
-    page.on('console', msg => {
+    page.on('console', async msg => {
       const type = msg.type();
-      const text = msg.text();
+      let text = msg.text();
+      
+      // Intentar obtener los argumentos completos del mensaje
+      try {
+        const args = await Promise.all(msg.args().map(arg => arg.jsonValue().catch(() => arg.toString())));
+        if (args.length > 0) {
+          text = args.join(' ');
+        }
+      } catch (e) {
+        // Mantener el texto original si falla
+      }
       
       if (type === 'error') {
         errors.push(text);
         console.error(`❌ Console Error: ${text}`);
-      } else if (type === 'warning' && text.includes('React')) {
+      } else if (type === 'warning') {
         warnings.push(text);
-        console.warn(`⚠️  React Warning: ${text}`);
+        console.warn(`⚠️  Console Warning: ${text}`);
+      } else if (type === 'log' || type === 'info') {
+        console.log(`📝 Console ${type}: ${text}`);
+      } else if (type === 'debug') {
+        console.log(`🔍 Console debug: ${text}`);
       }
     });
     
@@ -66,6 +80,14 @@ async function checkLocalhost() {
     page.on('error', err => {
       errors.push(err.toString());
       console.error(`❌ Error: ${err}`);
+    });
+    
+    // Capturar errores de requests fallidos
+    page.on('requestfailed', request => {
+      const failure = request.failure();
+      if (failure) {
+        console.error(`❌ Request failed: ${request.url()} - ${failure.errorText}`);
+      }
     });
     
     // Navegar a localhost
@@ -89,9 +111,43 @@ async function checkLocalhost() {
       errors.push('Landing page returned 404');
     }
     
-    // Esperar 10 segundos y tomar screenshot
-    console.log('\n⏳ Esperando 10 segundos para screenshot final...');
-    await new Promise(resolve => setTimeout(resolve, 10000));
+    // Verificar que la aplicación se inicializa correctamente
+    console.log('\n⏳ Esperando inicialización de la aplicación...');
+    
+    try {
+      // Esperar a que desaparezca el mensaje de inicialización o aparezca contenido principal
+      await page.waitForFunction(
+        () => {
+          const body = document.body.innerText;
+          // Si todavía muestra "Initializing" después de 5 segundos, es un error
+          return !body.includes('Initializing MurmurabaSuite') || 
+                 body.includes('MurmurABA') || 
+                 body.includes('Audio') ||
+                 body.includes('Record');
+        },
+        { timeout: 5000 }
+      );
+      console.log('✅ Aplicación inicializada correctamente');
+    } catch (e) {
+      // Obtener más información sobre el estado
+      const debugInfo = await page.evaluate(() => {
+        const body = document.body.innerText;
+        const hasError = document.querySelector('.error-message');
+        return {
+          bodyText: body.substring(0, 200),
+          hasError: !!hasError,
+          errorText: hasError ? hasError.textContent : null,
+          url: window.location.href
+        };
+      });
+      
+      console.error('❌ Error de inicialización: La app no progresó más allá del mensaje de carga');
+      console.error('📋 Debug info:', JSON.stringify(debugInfo, null, 2));
+      errors.push('La aplicación se quedó atascada en "Initializing MurmurabaSuite..." por más de 5 segundos');
+    }
+    
+    // Esperar un poco más para asegurar carga completa
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     // Tomar screenshot
     const screenshotPath = 'test/localhost-final.png';

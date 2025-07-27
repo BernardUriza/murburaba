@@ -9,7 +9,9 @@
       "Bash(npm run quality:gate:*)",
       "Bash(npm run test:coverage:*)",
       "Bash(node:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": []
   }
