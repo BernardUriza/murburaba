@@ -16,6 +16,7 @@ import { useNotifications } from '../hooks/useNotifications'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { useAudioProcessor } from '../hooks/useAudioProcessor'
 import { useMurmurabaSuite, SUITE_TOKENS } from 'murmuraba'
+import { useSuiteServices } from '../hooks/useSuiteServices'
 import type { IAudioProcessor } from 'murmuraba'
 import {
   setChunkDuration,
@@ -56,8 +57,9 @@ export default function App() {
   // Debug log
   console.log('🔍 Engine status:', { isInitialized, isProcessing, isRecording })
   
-  // Get suite container and reinitialize function
-  const { container, reinitializeEngine } = useMurmurabaSuite()
+  // Get suite container and services
+  const { container } = useMurmurabaSuite()
+  const { services, log, recordMetric, emit } = useSuiteServices()
   
   // Audio processor hook
   const { isReady, processRecording, cancelProcessing } = useAudioProcessor()
@@ -73,32 +75,56 @@ export default function App() {
   const handleStartRecording = async () => {
     if (!isReady) {
       notify('info', 'Initializing audio engine...')
+      log('info', 'Waiting for engine initialization')
       // Esperar un momento para que el engine se inicialice
       await new Promise(resolve => setTimeout(resolve, 1000))
       
       // Si después de esperar sigue sin estar listo, mostrar mensaje
       if (!isReady) {
+        log('warn', 'Engine not ready after waiting')
         return notify('warning', 'Audio engine is still initializing. Please try again in a moment.')
       }
     }
     
     try {
       notify('info', 'Starting microphone recording...')
+      log('info', 'Starting recording', { enableAGC, chunkDuration })
+      emit('recording:start', { timestamp: Date.now() })
+      
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: enableAGC }
       })
       setStream(stream)
       dispatch(setCurrentStreamId(stream.id))
       
+      // Record metrics
+      recordMetric('recording.started', 1)
+      
       // Process for duration in seconds
       const durationInSeconds = 30; // Record for 30 seconds
+      const startTime = performance.now()
+      
       const result = await processRecording(durationInSeconds * 1000, {
         enableAGC,
         chunkDuration,
         stream
       })
-      if (result) notify('success', 'Recording completed successfully!')
+      
+      const processingTime = performance.now() - startTime
+      recordMetric('recording.duration', processingTime)
+      
+      if (result) {
+        log('info', 'Recording completed', { 
+          chunks: result.chunks.length,
+          duration: result.totalDuration,
+          processingTime 
+        })
+        emit('recording:complete', result)
+        notify('success', 'Recording completed successfully!')
+      }
     } catch (error: any) {
+      log('error', 'Recording failed', error)
+      emit('recording:error', { error: error.message })
       notify('error', 'Recording Failed', error?.message || 'Unknown error')
     } finally {
       stopStream()
@@ -106,6 +132,9 @@ export default function App() {
   }
 
   const handleStopRecording = async () => {
+    log('info', 'Stopping recording')
+    emit('recording:stop', { timestamp: Date.now() })
+    
     cancelProcessing()
     stopStream()
     
@@ -115,12 +144,16 @@ export default function App() {
         const processor = container?.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor)
         if (processor?.cleanup) {
           processor.cleanup()
+          log('info', 'Audio resources cleaned up')
           notify('info', 'Audio resources cleaned up')
         }
       } catch (error) {
+        log('error', 'Failed to cleanup audio resources', error)
         console.error('Failed to cleanup audio resources:', error)
       }
     }
+    
+    recordMetric('recording.stopped', 1)
   }
 
   // Loading state

@@ -1,15 +1,38 @@
-import React, { useEffect, ReactNode, useState } from 'react';
+import React, { useEffect, ReactNode, useState, useCallback } from 'react';
 import { Provider } from 'react-redux';
 import { store } from '../store';
-import { MurmurabaSuite, useMurmurabaSuite } from 'murmuraba';
+import { MurmurabaSuite, useMurmurabaSuite, WaveformAnalyzer, SUITE_TOKENS, TOKENS } from 'murmuraba';
 import { setSuiteContainer, MURMURABA_ACTIONS } from '../store/middleware/murmurabaSuiteMiddleware';
-import { setEngineInitialized } from '../store/slices/audioSlice';
-import { TOKENS } from '../packages/murmuraba/src/core/DIContainer';
+import { setEngineInitialized, setProcessing } from '../store/slices/audioSlice';
 import { DebugError } from '../components/DebugError';
+import type { ILogger, IMetricsManager, IAudioProcessor } from 'murmuraba';
 
 // Inner component that has access to MurmurabaSuite context
-function MurmurabaReduxBridge({ children }: { children: ReactNode }) {
+function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNode; showAudioLevel?: boolean }) {
   const { container, isReady, error } = useMurmurabaSuite();
+  const [currentStream, setCurrentStream] = useState<MediaStream | null>(null);
+  const [audioLevel, setAudioLevel] = useState(0);
+  
+  // Setup audio level monitoring
+  const setupAudioLevelMonitoring = useCallback(async () => {
+    if (!isReady || !container) return;
+    
+    try {
+      const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor);
+      const metricsManager = container.get<IMetricsManager>(TOKENS.MetricsManager);
+      
+      // Subscribe to metrics for audio level
+      if (processor && metricsManager) {
+        processor.onMetrics((metrics) => {
+          setAudioLevel(metrics.inputLevel || 0);
+          // Also dispatch to Redux if needed
+          store.dispatch({ type: 'audio/updateMetrics', payload: metrics });
+        });
+      }
+    } catch (error) {
+      console.error('Failed to setup audio monitoring:', error);
+    }
+  }, [container, isReady]);
   
   useEffect(() => {
     console.log('🔄 MurmurabaSuite status:', { 
@@ -25,12 +48,31 @@ function MurmurabaReduxBridge({ children }: { children: ReactNode }) {
       store.dispatch({ type: MURMURABA_ACTIONS.SET_CONTAINER, payload: container as any });
       store.dispatch(setEngineInitialized(true));
       
+      // Setup additional monitoring
+      setupAudioLevelMonitoring();
+      
+      // Get services for enhanced functionality
+      const logger = container.get<ILogger>(TOKENS.Logger);
+      const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor);
+      
+      // Subscribe to processing state
+      if (processor) {
+        const interval = setInterval(() => {
+          const isProcessing = processor.isProcessing();
+          store.dispatch(setProcessing(isProcessing));
+        }, 100);
+        
+        return () => clearInterval(interval);
+      }
+      
       // Log successful connection
-      console.log('✅ MurmurabaSuite connected to Redux');
-      console.log('Available services:', {
-        audioProcessor: container.has(TOKENS.AudioProcessor),
+      logger?.info('✅ MurmurabaSuite connected to Redux');
+      logger?.debug('Available services:', {
+        audioProcessor: container.has(SUITE_TOKENS.AudioProcessor),
         logger: container.has(TOKENS.Logger),
-        metricsManager: container.has(TOKENS.MetricsManager)
+        metricsManager: container.has(TOKENS.MetricsManager),
+        stateManager: container.has(TOKENS.StateManager),
+        eventEmitter: container.has(TOKENS.EventEmitter)
       });
     }
     
@@ -38,13 +80,24 @@ function MurmurabaReduxBridge({ children }: { children: ReactNode }) {
       store.dispatch(setEngineInitialized(false));
       console.error('❌ MurmurabaSuite initialization error:', error);
     }
-  }, [isReady, container, error]);
+  }, [isReady, container, error, setupAudioLevelMonitoring]);
   
-  // Show loading state while initializing
-  if (!isReady && !error) {
-    console.log('⏳ MurmurabaSuite: Showing loading state', { isReady, hasContainer: !!container });
-    // Don't show loading screen, just render children
-  }
+  // Listen for stream changes from Redux
+  useEffect(() => {
+    const unsubscribe = store.subscribe(() => {
+      const state = store.getState();
+      const streamId = state.audio.currentStreamId;
+      if (streamId && navigator.mediaDevices) {
+        // Get active media streams
+        navigator.mediaDevices.enumerateDevices().then(() => {
+          // Note: We can't directly get stream by ID, this is a limitation
+          // Instead, we'll rely on the MediaStreamContext
+        });
+      }
+    });
+    
+    return unsubscribe;
+  }, []);
   
   // Show error state if initialization failed
   if (error) {
@@ -52,8 +105,63 @@ function MurmurabaReduxBridge({ children }: { children: ReactNode }) {
     return <DebugError error={error} />;
   }
   
-  console.log('✅ MurmurabaSuite: Rendering children');
-  return <>{children}</>;
+  return (
+    <>
+      {/* Audio Level Indicator */}
+      {showAudioLevel && isReady && (
+        <div style={{
+          position: 'fixed',
+          top: 10,
+          right: 10,
+          zIndex: 1000,
+          background: 'rgba(0,0,0,0.8)',
+          padding: '10px',
+          borderRadius: '8px',
+          minWidth: '200px'
+        }}>
+          <div style={{ color: 'white', fontSize: '12px', marginBottom: '5px' }}>Audio Level</div>
+          <div style={{
+            width: '100%',
+            height: '20px',
+            background: 'rgba(255,255,255,0.2)',
+            borderRadius: '4px',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              width: `${audioLevel * 100}%`,
+              height: '100%',
+              background: audioLevel > 0.7 ? '#ff4444' : audioLevel > 0.4 ? '#ffaa00' : '#44ff44',
+              transition: 'width 0.1s ease-out'
+            }} />
+          </div>
+        </div>
+      )}
+      
+      {/* Waveform Visualizer for current stream */}
+      {currentStream && showAudioLevel && (
+        <div style={{
+          position: 'fixed',
+          bottom: 10,
+          right: 10,
+          zIndex: 1000,
+          background: 'rgba(0,0,0,0.9)',
+          padding: '10px',
+          borderRadius: '8px'
+        }}>
+          <WaveformAnalyzer
+            stream={currentStream}
+            width={300}
+            height={100}
+            label="Live Audio"
+            hideControls={true}
+            disablePlayback={true}
+          />
+        </div>
+      )}
+      
+      {children}
+    </>
+  );
 }
 
 interface MurmurabaReduxProviderProps {
@@ -74,8 +182,9 @@ export function MurmurabaReduxProvider({
   enableAGC = false,
   noiseReductionLevel = 'medium',
   allowDegraded = true,
-  lazy = false as any
-}: MurmurabaReduxProviderProps) {
+  lazy: _lazy = false,
+  showAudioMonitoring = process.env.NODE_ENV === 'development'
+}: MurmurabaReduxProviderProps & { showAudioMonitoring?: boolean }) {
   const [shouldInitialize, setShouldInitialize] = useState(false);
   const [, setIsInitializing] = useState(false);
 
@@ -137,7 +246,7 @@ export function MurmurabaReduxProvider({
         }}
         onUserInteraction={() => setIsInitializing(false)}
       >
-        <MurmurabaReduxBridge>
+        <MurmurabaReduxBridge showAudioLevel={showAudioMonitoring}>
           {children}
         </MurmurabaReduxBridge>
       </MurmurabaSuite>

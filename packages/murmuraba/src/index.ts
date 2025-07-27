@@ -59,6 +59,7 @@ export {
 export { DIContainer } from './core/DIContainer';
 export { AudioProcessorService } from './services/AudioProcessorService';
 export type { IAudioProcessor, AudioProcessingOptions, AudioProcessingResult } from './core/interfaces/IAudioProcessor';
+export type { ILogger, IMetricsManager, IStateManager, IEventEmitter } from './core/interfaces';
 
 // UI Components - Export from components directory
 export { 

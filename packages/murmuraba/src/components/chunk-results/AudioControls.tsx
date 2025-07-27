@@ -30,117 +30,121 @@ export function AudioControls({
   currentlyPlayingType
 }: AudioControlsProps) {
   return (
-    <div className={styles.detailsSection}>
-      <h4 className={styles.sectionTitle}>🎵 Audio Controls</h4>
-      
-      <div className={styles.audioControlsContainer}>
-        {processedAudioUrl && originalAudioUrl && (
-          <div className={styles.syncedWaveformsContainer}>
-            <SyncedWaveforms
-              processedAudioUrl={processedAudioUrl}
-              originalAudioUrl={originalAudioUrl}
-              isPlaying={isPlaying && currentlyPlayingType !== null}
-              disabled={false}
-              showVolumeControls={true}
-              showPlaybackControls={true}
-              processedLabel="Processed Audio"
-              originalLabel="Original Audio"
-              onPlayingChange={(playing) => {
-                if (playing) {
-                  onTogglePlayback('processed');
-                } else {
-                  // Stop current playback
-                  if (currentlyPlayingType) {
-                    onTogglePlayback(currentlyPlayingType);
-                  }
-                }
-              }}
-            />
-          </div>
-        )}
-        
-        <div className={styles.audioControlsGrid}>
-          {/* Original Audio First */}
+    <div className={styles.slimContainer}>
+      <div className={styles.slimControlsBar}>
+        {/* Playback Controls */}
+        <div className={styles.slimPlaybackGroup}>
           {hasOriginalAudio && (
-            <div className={styles.audioGroup}>
-              <h5 className={styles.audioGroupTitle}>Original Audio</h5>
-              <div className={styles.audioControlsRow}>
-                <button
-                  className={`${styles.btn} ${styles.btnSecondary} ${isPlaying && currentlyPlayingType === 'original' ? styles.btnPlaying : ''}`}
-                  onClick={() => onTogglePlayback('original')}
-                  disabled={!hasOriginalAudio || !isValid}
-                  aria-label={`${isPlaying && currentlyPlayingType === 'original' ? 'Pause' : 'Play'} original audio`}
-                  type="button"
-                >
-                  <span className={styles.btnIcon} aria-hidden="true">
-                    {isPlaying && currentlyPlayingType === 'original' ? '⏸️' : '▶️'}
-                  </span>
-                  <span>{isPlaying && currentlyPlayingType === 'original' ? 'Pause' : 'Play'} Original</span>
-                </button>
-
-                <button
-                  className={`${styles.btn} ${styles.btnGhost} ${styles.btnSmall}`}
-                  onClick={() => onDownload('wav', 'original')}
-                  disabled={!hasOriginalAudio || !isValid}
-                  aria-label="Download original audio as WAV"
-                  type="button"
-                >
-                  📄 Original WAV
-                </button>
-
-                <button
-                  className={`${styles.btn} ${styles.btnGhost} ${styles.btnSmall}`}
-                  onClick={() => onDownload('mp3', 'original')}
-                  disabled={!hasOriginalAudio || !isValid}
-                  aria-label="Download original audio as MP3"
-                  type="button"
-                >
-                  🎵 Original MP3
-                </button>
-              </div>
-            </div>
+            <button
+              className={`${styles.slimBtn} ${isPlaying && currentlyPlayingType === 'original' ? styles.slimBtnActive : ''}`}
+              onClick={() => onTogglePlayback('original')}
+              disabled={!hasOriginalAudio || !isValid}
+              aria-label={`${isPlaying && currentlyPlayingType === 'original' ? 'Pause' : 'Play'} original`}
+              type="button"
+            >
+              {isPlaying && currentlyPlayingType === 'original' ? '⏸' : '▶'}
+              <span className={styles.slimBtnLabel}>Original</span>
+            </button>
           )}
-
-          {/* Processed Audio Second */}
-          <div className={styles.audioGroup}>
-            <h5 className={styles.audioGroupTitle}>Processed Audio</h5>
-            <div className={styles.audioControlsRow}>
+          
+          <button
+            className={`${styles.slimBtn} ${styles.slimBtnPrimary} ${isPlaying && currentlyPlayingType === 'processed' ? styles.slimBtnActive : ''}`}
+            onClick={() => onTogglePlayback('processed')}
+            disabled={!hasProcessedAudio || !isValid}
+            aria-label={`${isPlaying && currentlyPlayingType === 'processed' ? 'Pause' : 'Play'} processed`}
+            type="button"
+          >
+            {isPlaying && currentlyPlayingType === 'processed' ? '⏸' : '▶'}
+            <span className={styles.slimBtnLabel}>Processed</span>
+          </button>
+        </div>
+        
+        {/* Divider */}
+        <div className={styles.slimDivider} />
+        
+        {/* Download Controls */}
+        <div className={styles.slimDownloadGroup}>
+          <span className={styles.slimGroupLabel}>📥</span>
+          
+          <div className={styles.slimDownloadOptions}>
+            <button
+              className={styles.slimDownloadBtn}
+              onClick={() => onDownload('wav', 'processed')}
+              disabled={!hasProcessedAudio || !isValid}
+              aria-label="Download WAV"
+              type="button"
+            >
+              WAV
+            </button>
+            
+            <button
+              className={styles.slimDownloadBtn}
+              onClick={() => onDownload('mp3', 'processed')}
+              disabled={!hasProcessedAudio || !isValid}
+              aria-label="Download MP3"
+              type="button"
+            >
+              MP3
+            </button>
+            
+            {hasOriginalAudio && (
               <button
-                className={`${styles.btn} ${styles.btnSecondary} ${isPlaying && currentlyPlayingType === 'processed' ? styles.btnPlaying : ''}`}
-                onClick={() => onTogglePlayback('processed')}
-                disabled={!hasProcessedAudio || !isValid}
-                aria-label={`${isPlaying && currentlyPlayingType === 'processed' ? 'Pause' : 'Play'} processed audio`}
+                className={`${styles.slimDownloadBtn} ${styles.slimDownloadBtnSecondary}`}
+                onClick={() => onDownload('wav', 'original')}
+                disabled={!hasOriginalAudio || !isValid}
+                aria-label="Download original"
                 type="button"
               >
-                <span className={styles.btnIcon} aria-hidden="true">
-                  {isPlaying && currentlyPlayingType === 'processed' ? '⏸️' : '▶️'}
-                </span>
-                <span>{isPlaying && currentlyPlayingType === 'processed' ? 'Pause' : 'Play'} Processed</span>
+                Original
               </button>
-
-              <button
-                className={`${styles.btn} ${styles.btnGhost} ${styles.btnSmall}`}
-                onClick={() => onDownload('wav', 'processed')}
-                disabled={!hasProcessedAudio || !isValid}
-                aria-label="Download processed audio as WAV"
-                type="button"
-              >
-                📄 WAV
-              </button>
-
-              <button
-                className={`${styles.btn} ${styles.btnGhost} ${styles.btnSmall}`}
-                onClick={() => onDownload('mp3', 'processed')}
-                disabled={!hasProcessedAudio || !isValid}
-                aria-label="Download processed audio as MP3"
-                type="button"
-              >
-                🎵 MP3
-              </button>
-            </div>
+            )}
           </div>
         </div>
+        
+        {/* Compact Waveform */}
+        {processedAudioUrl && originalAudioUrl && (
+          <div className={styles.slimWaveformToggle}>
+            <button
+              className={styles.slimWaveformBtn}
+              onClick={() => {
+                const elem = document.getElementById(`waveform-${chunkId}`);
+                if (elem) {
+                  elem.style.display = elem.style.display === 'none' ? 'block' : 'none';
+                }
+              }}
+              aria-label="Toggle waveform"
+              type="button"
+            >
+              📈
+            </button>
+          </div>
+        )}
       </div>
+      
+      {/* Hidden Waveform */}
+      {processedAudioUrl && originalAudioUrl && (
+        <div id={`waveform-${chunkId}`} className={styles.slimWaveformContainer} style={{ display: 'none' }}>
+          <SyncedWaveforms
+            processedAudioUrl={processedAudioUrl}
+            originalAudioUrl={originalAudioUrl}
+            isPlaying={isPlaying && currentlyPlayingType !== null}
+            disabled={false}
+            showVolumeControls={true}
+            showPlaybackControls={true}
+            processedLabel="Processed"
+            originalLabel="Original"
+            onPlayingChange={(playing) => {
+              if (playing) {
+                onTogglePlayback('processed');
+              } else {
+                if (currentlyPlayingType) {
+                  onTogglePlayback(currentlyPlayingType);
+                }
+              }
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

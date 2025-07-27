@@ -1,0 +1,76 @@
+.monitor {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  min-width: 280px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  font-family: monospace;
+}
+
+.title {
+  margin: 0 0 15px 0;
+  font-size: 14px;
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 10px;
+}
+
+.services {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.service {
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.available {
+  background: rgba(68, 255, 68, 0.1);
+  border: 1px solid rgba(68, 255, 68, 0.3);
+}
+
+.unavailable {
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+  opacity: 0.6;
+}
+
+.serviceHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.indicator {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.available .indicator {
+  color: #44ff44;
+}
+
+.unavailable .indicator {
+  color: #ff4444;
+}
+
+.name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.description {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-left: 22px;
+}
