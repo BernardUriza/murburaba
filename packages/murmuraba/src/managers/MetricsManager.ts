@@ -1,5 +1,6 @@
 import { ProcessingMetrics, ChunkMetrics } from '../types';
 import { EventEmitter } from '../core/EventEmitter';
+import { logging } from './LoggingManager';
 
 interface MetricsEvents {
   'metrics-update': (metrics: ProcessingMetrics) => void;
@@ -49,8 +50,12 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
   updateInputLevel(level: number): void {
     const oldLevel = this.metrics.inputLevel;
     this.metrics.inputLevel = Math.max(0, Math.min(1, level));
-
-    // Removed debug logging
+    
+    // Only log significant changes (>10%)
+    const change = Math.abs(level - oldLevel);
+    if (change > 0.1) {
+      logging.metric('inputLevel', level);
+    }
 
     // Emit update immediately for real-time feedback
     this.emit('metrics-update', { ...this.metrics });
@@ -63,7 +68,7 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
   }
 
   updateNoiseReduction(level: number): void {
-    this.metrics.noiseReductionLevel = Math.max(0, Math.min(100, level));
+    this.metrics.noiseReductionLevel = Math.max(0, Math.min(1, level));
   }
 
   recordFrame(timestamp: number = Date.now()): void {
@@ -136,6 +141,14 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
     this.vadHistory.push(vad);
     if (this.vadHistory.length > this.maxFrameHistory) {
       this.vadHistory.shift();
+    }
+    
+    // Only log significant VAD events
+    if (vad > 0.5 && this.vadHistory.length > 0) {
+      const prevVad = this.vadHistory[this.vadHistory.length - 2] || 0;
+      if (prevVad <= 0.5) {
+        logging.metric('voiceDetected', vad);
+      }
     }
   }
 

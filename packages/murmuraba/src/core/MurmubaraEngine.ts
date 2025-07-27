@@ -145,15 +145,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       this.stateManager.transitionTo('ready');
       this._isInitialized = true;
       this.emit('initialized');
-      this.logger.info('Murmuraba engine initialized successfully');
-
-      // Log initialization details for debugging
-      this.logger.debug('Initialization details:', {
-        audioContextState: this.audioContext?.state,
-        wasmLoaded: !!this.wasmModule,
-        rnnoiseState: !!this.rnnoiseState,
-        workersEnabled: this.config.useWorker,
-      });
+      logging.lifecycle('ENGINE', 'start', 'Ready');
     } catch (error) {
       this.stateManager.transitionTo('error');
       this.recordError(error);

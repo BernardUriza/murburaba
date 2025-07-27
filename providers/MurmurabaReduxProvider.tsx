@@ -296,6 +296,7 @@ export function MurmurabaReduxProvider({
         allowDegraded={allowDegraded}
         lazy={false}
         initTimeout={15000}
+        useWorker={true}
         services={{
           audioProcessor: true,
           metricsManager: true,

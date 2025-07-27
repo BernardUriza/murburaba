@@ -213,8 +213,8 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
    * Main audio processing method
    * Optimized for 128-sample WebAudio quanta -> 480-sample RNNoise frames
    */
-  process(inputs, outputs, parameters) {
-    const startTime = currentTime;
+  process(inputs, outputs, _parameters) {
+    const startTime = globalThis.currentTime;
     const input = inputs[0];
     const output = outputs[0];
 
@@ -281,11 +281,11 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
     this.outputLevel = this.calculateRMS(outputChannel);
 
     // Track performance
-    const processingTime = currentTime - startTime;
+    const processingTime = globalThis.currentTime - startTime;
     this.processingTimeSum += processingTime;
 
-    // Send metrics every 100 frames (~2.1 seconds at 48kHz)
-    if (this.framesProcessed % 100 === 0) {
+    // Send metrics every 10 frames (~0.21 seconds at 48kHz) for better responsiveness
+    if (this.framesProcessed % 10 === 0) {
       this.port.postMessage({
         type: 'metrics',
         data: {
@@ -298,6 +298,11 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
         },
       });
       this.processingTimeSum = 0;
+      
+      // Debug VAD
+      if (this.lastVad > 0.01) {
+        console.log('[RNNoiseProcessor] VAD:', this.lastVad.toFixed(3));
+      }
     }
 
     return this.isActive;

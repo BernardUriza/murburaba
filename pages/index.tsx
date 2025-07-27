@@ -15,7 +15,7 @@ import { useNotifications } from '../hooks/useNotifications'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { store } from '../store'
 import { useAudioProcessor } from '../hooks/useAudioProcessor'
-import { WaveformAnalyzer } from 'murmuraba'
+import { WaveformAnalyzer, ChunkProcessingResults } from 'murmuraba'
 import {
   setChunkDuration,
   setEnableAGC
@@ -218,35 +218,15 @@ export default function App() {
 
         {/* Processing Results */}
         {processingResults && processingResults.chunks.length > 0 && (
-          <section className="recording-panel glass-card" style={{ marginTop: '1rem' }}>
-            <div className="panel-header">
-              <h3 className="panel-title">Processed Chunks ({processingResults.chunks.length})</h3>
-            </div>
-            <div style={{ padding: '1rem' }}>
-              <div style={{ marginBottom: '1rem', fontSize: '14px', opacity: 0.8 }}>
-                Average noise reduction: {((processingResults.averageVad || 0) * 100).toFixed(1)}%
-              </div>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                {processingResults.chunks.map((chunk, idx) => (
-                  <div key={chunk.id} style={{
-                    padding: '10px',
-                    background: 'rgba(255,255,255,0.1)',
-                    borderRadius: '8px',
-                    minWidth: '120px',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ fontSize: '12px', opacity: 0.7 }}>Chunk {idx + 1}</div>
-                    <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
-                      {chunk.duration}s
-                    </div>
-                    <div style={{ fontSize: '11px', opacity: 0.6 }}>
-                      VAD: {(chunk.averageVad * 100).toFixed(0)}%
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
+          <ChunkProcessingResults 
+            chunks={processingResults.chunks}
+            averageNoiseReduction={processingResults.averageNoiseReduction || 0}
+            selectedChunk={null}
+            onTogglePlayback={async () => {}}
+            onClearAll={() => {}}
+            onDownloadChunk={async () => {}}
+            className="glass-card"
+          />
         )}
 
         {/* Floating Action Buttons */}

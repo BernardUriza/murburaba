@@ -6,6 +6,7 @@ import { AudioProcessorService } from '../services/AudioProcessorService';
 import { MurmubaraConfig } from '../types';
 import { ILogger, IAudioProcessor } from '../core/interfaces';
 import { engineRegistry } from '../core/EngineRegistry';
+import { logging } from '../managers/LoggingManager';
 
 // Re-export TOKENS for external use
 export { TOKENS };
@@ -58,11 +59,11 @@ export function MurmurabaSuite({
 
   useEffect(() => {
     const initializeSuite = async () => {
-      console.log('🚀 MurmurabaSuite: Starting initialization...');
+      logging.lifecycle('REACT', 'start', 'MurmurabaSuite initializing');
       try {
         // Create and bind engine
         const engine = engineRegistry.createEngine(engineConfig);
-        console.log('🔧 MurmurabaSuite: Engine created and registered, initializing...');
+        logging.debug('REACT', 'Engine created, initializing');
 
         // Add timeout to initialization
         const initTimeoutPromise = new Promise((_, reject) =>
@@ -78,17 +79,16 @@ export function MurmurabaSuite({
         try {
           await Promise.race([engine.initialize(), initTimeoutPromise]);
         } catch (err) {
-          console.error('⚠️ Engine initialization failed or timed out:', err);
+          logging.error('REACT', 'Engine initialization failed', err as Error);
           // Continue anyway if allowDegraded is true
           if (!allowDegraded) {
             throw err;
           }
-          console.log('⚡ Continuing in degraded mode without engine');
+          logging.warn('REACT', 'Degraded mode - engine unavailable');
         }
 
         // Get container from engine
         const engineContainer = (engine as any).getContainer();
-        console.log('📦 MurmurabaSuite: Engine container obtained:', !!engineContainer);
 
         // Copy bindings from engine container to suite container
         if (engineContainer) {
@@ -96,7 +96,6 @@ export function MurmurabaSuite({
           container.bindValue(TOKENS.Logger, engineContainer.get(TOKENS.Logger));
           container.bindValue(TOKENS.StateManager, engineContainer.get(TOKENS.StateManager));
           container.bindValue(TOKENS.EventEmitter, engineContainer.get(TOKENS.EventEmitter));
-          console.log('🔗 MurmurabaSuite: Core services bound');
         }
 
         // Bind service loader
@@ -132,7 +131,7 @@ export function MurmurabaSuite({
           await Promise.all(servicesToLoad.map(name => serviceLoader.loadModule(name)));
         }
 
-        console.log('✅ MurmurabaSuite: Initialization complete!');
+        logging.lifecycle('REACT', 'start', 'MurmurabaSuite ready');
         setIsReady(true);
 
         // Setup user interaction handler for AudioContext resume
@@ -141,7 +140,7 @@ export function MurmurabaSuite({
             const audioContext = (engine as any).audioContext;
             if (audioContext && audioContext.state === 'suspended') {
               await audioContext.resume();
-              console.log('🔊 AudioContext resumed after user interaction');
+              logging.info('AUDIO', 'AudioContext resumed');
 
               // Call the callback if provided
               if (onUserInteraction) {
@@ -149,7 +148,6 @@ export function MurmurabaSuite({
               }
             }
           } catch (err) {
-            console.warn('Failed to resume AudioContext:', err);
           }
         };
 
@@ -163,7 +161,7 @@ export function MurmurabaSuite({
         }
       } catch (err) {
         setError(err as Error);
-        console.error('❌ MurmurabaSuite initialization failed:', err);
+        logging.error('REACT', 'MurmurabaSuite initialization failed', err as Error);
       }
     };
 
@@ -189,11 +187,10 @@ export function MurmurabaSuite({
 
   const reinitializeEngine = async () => {
     if (isReinitializing) {
-      console.log('⏳ Engine reinitialization already in progress');
       return;
     }
 
-    console.log('🔄 Reinitializing engine...');
+    logging.lifecycle('REACT', 'restart', 'Engine reinitializing');
     setIsReinitializing(true);
     setIsReady(false);
     setError(null);
@@ -208,7 +205,7 @@ export function MurmurabaSuite({
       try {
         await engine.initialize();
       } catch (err) {
-        console.error('⚠️ Engine reinitialization failed:', err);
+        logging.error('REACT', 'Engine reinitialization failed', err as Error);
         if (!allowDegraded) {
           throw err;
         }
@@ -241,10 +238,10 @@ export function MurmurabaSuite({
       // Now reload audio processor service
       await serviceLoader.loadModule('audioProcessor');
 
-      console.log('✅ Engine reinitialized successfully');
+      logging.lifecycle('REACT', 'restart', 'Engine ready');
       setIsReady(true);
     } catch (err) {
-      console.error('❌ Engine reinitialization failed:', err);
+      logging.error('REACT', 'Reinitialization failed', err as Error);
       setError(err as Error);
     } finally {
       setIsReinitializing(false);
