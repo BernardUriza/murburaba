@@ -64,7 +64,14 @@ export default function App() {
 
   const handleStartRecording = async () => {
     if (!isReady) {
-      return notify('warning', 'MurmurabaSuite Not Ready', 'Please wait for the audio engine to initialize')
+      notify('info', 'Initializing audio engine...')
+      // Esperar un momento para que el engine se inicialice
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Si después de esperar sigue sin estar listo, mostrar mensaje
+      if (!isReady) {
+        return notify('warning', 'Audio engine is still initializing. Please try again in a moment.')
+      }
     }
     
     try {

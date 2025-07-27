@@ -34,29 +34,20 @@ export function ControlPanel({
       </div>
       
       <div className="controls-grid">
-        {!isReady ? (
-          <button className="btn btn-primary" onClick={onInit} disabled={isProcessing}>
-            <span className="btn-icon">⚡</span>
-            <span>Waiting for MurmurabaSuite...</span>
+        <button
+          className="btn btn-primary"
+          onClick={onRecord}
+          disabled={isProcessing}
+          style={{ display: isRecording ? 'none' : 'flex' }}
+        >
+          <span className="btn-icon">🎙️</span>
+          <span>{isProcessing ? 'Processing...' : 'Start Recording'}</span>
+        </button>
+        {isRecording && (
+          <button className="btn btn-danger" onClick={onStop}>
+            <span className="btn-icon">⏹️</span>
+            <span>Stop Recording</span>
           </button>
-        ) : (
-          <>
-            <button
-              className="btn btn-primary"
-              onClick={onRecord}
-              disabled={isProcessing}
-              style={{ display: isRecording ? 'none' : 'flex' }}
-            >
-              <span className="btn-icon">🎙️</span>
-              <span>{isProcessing ? 'Processing...' : 'Record Audio'}</span>
-            </button>
-            {isRecording && (
-              <button className="btn btn-danger" onClick={onStop}>
-                <span className="btn-icon">⏹️</span>
-                <span>Stop Recording</span>
-              </button>
-            )}
-          </>
         )}
         
         <div className="control-group" style={{ marginTop: '1rem' }}>

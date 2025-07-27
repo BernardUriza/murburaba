@@ -12,7 +12,12 @@ function MurmurabaReduxBridge({ children }: { children: ReactNode }) {
   const { container, isReady, error } = useMurmurabaSuite();
   
   useEffect(() => {
-    console.log('🔄 MurmurabaSuite status:', { isReady, hasContainer: !!container, error });
+    console.log('🔄 MurmurabaSuite status:', { 
+      isReady, 
+      hasContainer: !!container, 
+      error: error?.message || null,
+      timestamp: new Date().toISOString()
+    });
     
     if (isReady && container) {
       // Connect DI container to Redux middleware
@@ -37,6 +42,7 @@ function MurmurabaReduxBridge({ children }: { children: ReactNode }) {
   
   // Show loading state while initializing
   if (!isReady && !error) {
+    console.log('⏳ MurmurabaSuite: Showing loading state');
     return (
       <div style={{
         display: 'flex',
@@ -57,9 +63,11 @@ function MurmurabaReduxBridge({ children }: { children: ReactNode }) {
   
   // Show error state if initialization failed
   if (error) {
+    console.error('❌ MurmurabaSuite: Showing error state', error);
     return <DebugError error={error} />;
   }
   
+  console.log('✅ MurmurabaSuite: Rendering children');
   return <>{children}</>;
 }
 
@@ -92,10 +100,11 @@ export function MurmurabaReduxProvider({
         noiseReductionLevel={noiseReductionLevel}
         allowDegraded={allowDegraded}
         lazy={false}
+        initTimeout={3000}
         services={{
-          audioProcessor: false,
-          metricsManager: false,
-          workerManager: false
+          audioProcessor: true,
+          metricsManager: true,
+          workerManager: true
         }}
       >
         <MurmurabaReduxBridge>
