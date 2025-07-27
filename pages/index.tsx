@@ -36,6 +36,7 @@ import {
 
 export default function App() {
   const [mounted, setMounted] = useState(false)
+  const [showLiveWaveform, setShowLiveWaveform] = useState(false)
   const dispatch = useAppDispatch()
   const { notify } = useNotifications()
   
@@ -51,10 +52,10 @@ export default function App() {
   const { isInitialized, isProcessing, isRecording } = engineStatus
   const { chunkDuration, enableAGC } = audioConfig
   const { showAudioDemo, showAdvancedMetrics, showSettings, showCopilot } = uiFlags
-  const { processingResults } = useAppSelector(state => state.audio)
+  const { processingResults, currentInputLevel } = useAppSelector(state => state.audio)
   
   // Debug log
-  console.log('🔍 Engine status:', { isInitialized, isProcessing, isRecording })
+  console.log('🔍 Engine status:', { isInitialized, isProcessing, isRecording, currentStream: !!currentStream, currentInputLevel })
   
   // Audio processor hook
   const { isReady, processRecording, cancelProcessing } = useAudioProcessor()
@@ -81,6 +82,7 @@ export default function App() {
     
     try {
       notify('info', 'Starting microphone recording...')
+      setShowLiveWaveform(true) // Show waveform immediately
       
       // Record for 30 seconds total
       const recordingDuration = 30 * 1000; // 30 seconds
@@ -92,6 +94,9 @@ export default function App() {
       if (result) notify('success', 'Recording completed successfully!')
     } catch (error: any) {
       notify('error', 'Recording Failed', error?.message || 'Unknown error')
+    } finally {
+      // Keep waveform visible for a bit after recording stops
+      setTimeout(() => setShowLiveWaveform(false), 2000)
     }
   }
 
@@ -146,7 +151,7 @@ export default function App() {
         />
 
         {/* Live Waveform Display */}
-        {isRecording && currentStream && (
+        {(showLiveWaveform || currentStream) && (
           <section className="live-waveform-section" style={{ marginTop: '1.5rem' }}>
             <div className="live-waveform-container">
               <div className="live-indicator">
@@ -156,7 +161,7 @@ export default function App() {
               <div className="waveform-wrapper">
                 <div className="waveform-glow"></div>
                 <WaveformAnalyzer
-                  stream={currentStream}
+                  stream={currentStream || undefined}
                   width={600}
                   height={180}
                   label=""
@@ -170,7 +175,7 @@ export default function App() {
                 <div className="metric-item">
                   <span className="metric-label">Input Level</span>
                   <div className="metric-bar">
-                    <div className="metric-fill" style={{ width: '0%' }}></div>
+                    <div className="metric-fill" style={{ width: `${currentInputLevel * 100}%` }}></div>
                   </div>
                 </div>
               </div>

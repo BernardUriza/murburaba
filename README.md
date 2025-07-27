@@ -69,9 +69,9 @@ npm run dev
 
 ### Instalación
 ```bash
-npm install murmuraba@2.0.0
+npm install murmuraba@2.3.6
 # o
-yarn add murmuraba@2.0.0
+yarn add murmuraba@2.3.6
 ```
 
 🔥 **¡NUEVO EN v2.0!** Instalación 3x más rápida, bundle 50% más pequeño, 100% más potente.

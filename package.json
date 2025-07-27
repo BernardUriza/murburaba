@@ -1,6 +1,6 @@
 {
   "name": "murmuraba-studio",
-  "version": "2.0.0",
+  "version": "2.3.6",
   "private": true,
   "scripts": {
     "dev": "npx concurrently \"npm run dev:next\" \"npm run dev:package\"",

@@ -109,15 +109,36 @@ export function useAudioProcessor() {
         dispatch(addChunk(chunk))
       })
 
-      const result = await processor.processRecording(duration, options)
+      // Start recording - this is async but we check for stream immediately
+      const recordingPromise = processor.processRecording(duration, options)
       
-      // Get the current stream from processor if available
-      if (processor.getCurrentStream) {
-        const stream = processor.getCurrentStream()
-        if (stream) {
-          setStream(stream)
+      // Get the stream right after starting recording
+      // Check multiple times to ensure we catch the stream
+      const checkForStream = () => {
+        if (processor.getCurrentStream) {
+          const stream = processor.getCurrentStream()
+          if (stream) {
+            console.log('🎤 Setting MediaStream during recording:', stream)
+            setStream(stream)
+            return true
+          }
         }
+        return false
       }
+      
+      // Try immediately
+      if (!checkForStream()) {
+        // Try again after 50ms
+        setTimeout(() => {
+          if (!checkForStream()) {
+            // Final try after 150ms
+            setTimeout(checkForStream, 100)
+          }
+        }, 50)
+      }
+      
+      // Wait for recording to complete
+      const result = await recordingPromise
       
       dispatch(setProcessingResults(result))
       dispatch(addNotification({

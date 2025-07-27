@@ -20,7 +20,8 @@ interface AudioState extends ErrorState {
   // Stream management
   currentStreamId: string | null
   
-  // Metrics are computed via selectors, not stored
+  // Live metrics
+  currentInputLevel: number
   
 }
 
@@ -34,6 +35,7 @@ const initialState: AudioState = {
   chunks: [],
   selectedChunkId: null,
   currentStreamId: null,
+  currentInputLevel: 0,
   hasError: false,
   errorMessage: null
 }
@@ -90,6 +92,14 @@ const audioSlice = createSlice({
       state.errorCode = undefined
       state.errorTimestamp = undefined
     },
+    setInputLevel: (state, action: PayloadAction<number>) => {
+      state.currentInputLevel = Math.max(0, Math.min(1, action.payload))
+    },
+    updateMetrics: (state, action: PayloadAction<{ inputLevel?: number; outputLevel?: number }>) => {
+      if (action.payload.inputLevel !== undefined) {
+        state.currentInputLevel = Math.max(0, Math.min(1, action.payload.inputLevel))
+      }
+    },
   }
 })
 
@@ -104,7 +114,9 @@ export const {
   clearChunks,
   setCurrentStreamId,
   setError,
-  clearError
+  clearError,
+  setInputLevel,
+  updateMetrics
 } = audioSlice.actions
 
 export default audioSlice.reducer

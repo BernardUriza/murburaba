@@ -3,7 +3,7 @@ import { Provider } from 'react-redux';
 import { store } from '../store';
 import { MurmurabaSuite, useMurmurabaSuite, WaveformAnalyzer, SUITE_TOKENS, TOKENS } from 'murmuraba';
 import { setSuiteContainer, MURMURABA_ACTIONS } from '../store/middleware/murmurabaSuiteMiddleware';
-import { setEngineInitialized, setProcessing } from '../store/slices/audioSlice';
+import { setEngineInitialized, setProcessing, updateMetrics } from '../store/slices/audioSlice';
 import { DebugError } from '../components/DebugError';
 import type { ILogger, IMetricsManager, IAudioProcessor } from 'murmuraba';
 
@@ -46,7 +46,7 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
             });
             setAudioLevel(metrics.inputLevel || 0);
             // Also dispatch to Redux if needed
-            store.dispatch({ type: 'audio/updateMetrics', payload: metrics });
+            store.dispatch(updateMetrics(metrics));
           });
           
           // Store reference for cleanup
@@ -58,7 +58,7 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
       if (processor && processor.onMetrics) {
         processor.onMetrics((metrics) => {
           setAudioLevel(metrics.inputLevel || 0);
-          store.dispatch({ type: 'audio/updateMetrics', payload: metrics });
+          store.dispatch(updateMetrics(metrics));
         });
       }
     } catch (error) {
