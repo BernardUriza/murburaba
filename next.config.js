@@ -14,11 +14,6 @@ const nextConfig = {
       'murmuraba': path.resolve(__dirname, 'packages/murmuraba/dist')
     };
     
-    // Handle WASM files
-    config.module.rules.push({
-      test: /\.wasm$/,
-      type: 'asset/resource',
-    });
     
     return config;
   },

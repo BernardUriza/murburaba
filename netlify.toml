@@ -24,9 +24,3 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-[[headers]]
-  for = "/rnnoise/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-    Cross-Origin-Embedder-Policy = "require-corp"
-    Cross-Origin-Opener-Policy = "same-origin"

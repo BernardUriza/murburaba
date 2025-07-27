@@ -199,6 +199,118 @@ const JURAMENTO_DEL_COPILOTO_BRUTAL_V4_1 = `
 
 ---
 
+## 🧪 GUÍA BRUTAL DE TESTING - UN SOLO TEST QUE FUNCIONE
+
+### REGLA #1: UN PUTO TEST. UNO.
+
+**NO** carpetas complejas. **NO** jest. **NO** vitest suites. **NO** coverage reports.
+
+```bash
+# ÚNICO test permitido:
+node test/check-localhost.js
+
+# ¿Qué hace? TRES cosas:
+1. Abre http://localhost:3000
+2. Revisa console.logs
+3. Si hay errores, los reporta y FALLA
+```
+
+### ESTRUCTURA OBLIGATORIA:
+
+```
+/test/
+  check-localhost.js    # EL ÚNICO TEST
+```
+
+**PROHIBIDO:**
+- test-*.js en el root
+- __tests__ folders
+- *.spec.js, *.test.js
+- npm test (tarda minutos en mierda que no importa)
+
+### SNIPPET DEL ÚNICO TEST:
+
+```javascript
+// test/check-localhost.js
+const puppeteer = require('puppeteer');
+const { Window } = require('happy-dom');
+
+async function checkLocalhost() {
+  // 1. Pre-check con happy-dom (rápido)
+  const window = new Window();
+  global.window = window;
+  global.document = window.document;
+  console.log('✅ happy-dom OK');
+  
+  // 2. Test real con Puppeteer
+  const browser = await puppeteer.launch({ headless: true });
+  const page = await browser.newPage();
+  
+  const errors = [];
+  page.on('console', msg => {
+    if (msg.type() === 'error') {
+      errors.push(msg.text());
+    }
+  });
+  
+  page.on('pageerror', err => errors.push(err.toString()));
+  
+  await page.goto('http://localhost:3000');
+  await page.waitForTimeout(2000);
+  
+  await browser.close();
+  
+  if (errors.length > 0) {
+    console.error('❌ ERRORES:', errors);
+    process.exit(1);
+  }
+  
+  console.log('✅ Landing page OK');
+  process.exit(0);
+}
+
+checkLocalhost();
+```
+
+### DEPENDENCIAS REQUERIDAS:
+
+```json
+{
+  "devDependencies": {
+    "puppeteer": "^24.15.0",
+    "happy-dom": "^18.0.1"
+  }
+}
+```
+
+### CÓMO EJECUTAR:
+
+```bash
+# DIRECTO, sin npm scripts:
+node test/check-localhost.js
+
+# NO uses:
+# - npm test
+# - npm run test
+# - vitest
+# - jest
+```
+
+### CUÁNDO CORRER EL TEST:
+
+1. Después de modificar CUALQUIER componente
+2. Antes de commitear
+3. Cuando sospeches que algo está roto
+
+### QUÉ BUSCAR:
+
+- [ ] NO errores en console
+- [ ] Landing page carga
+- [ ] NO referencias a archivos que no existen
+- [ ] NO warnings de React
+
+---
+
 ## 🧪 TEST DE CALIBRACIÓN
 
 Simulación de prompt:
