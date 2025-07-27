@@ -177,7 +177,6 @@ export default function App() {
               <div className="waveform-glow"></div>
               {currentStream ? (
                 <WaveformAnalyzer
-                  key={currentStream.id}
                   stream={currentStream}
                   width={600}
                   height={180}

@@ -47,19 +47,27 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
           let eventCount = 0;
           metricsManager.on('metrics-update', (metrics: any) => {
             eventCount++;
-            console.log(`📊 Metrics event #${eventCount} received:`, {
-              inputLevel: metrics.inputLevel,
-              outputLevel: metrics.outputLevel,
-              timestamp: new Date(metrics.timestamp).toISOString(),
-              frameCount: metrics.frameCount
-            });
+            // Log first 10 events and then every 50th
+            if (eventCount <= 10 || eventCount % 50 === 0) {
+              console.log(`📊 Metrics event #${eventCount} in Redux Provider:`, {
+                inputLevel: metrics.inputLevel,
+                outputLevel: metrics.outputLevel,
+                timestamp: new Date(metrics.timestamp).toISOString(),
+                frameCount: metrics.frameCount
+              });
+            }
+            
+            // Only log non-zero inputs occasionally to reduce spam
+            if (metrics.inputLevel > 0 && Math.random() < 0.05) {
+              console.log('🎯 Audio level:', metrics.inputLevel.toFixed(3));
+            }
+            
             setAudioLevel(metrics.inputLevel || 0);
             // Also dispatch to Redux if needed
             store.dispatch(updateMetrics(metrics));
           });
           
-          // Verify the listener is registered
-          console.log('📌 Listener registered. Event count:', metricsManager.listenerCount('metrics-update'));
+          // Listener is now registered
           
           // Store reference for cleanup
           (window as any).__metricsManager = metricsManager;
@@ -79,12 +87,11 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
   }, [container, isReady]);
   
   useEffect(() => {
-    console.log('🔄 MurmurabaSuite status:', { 
-      isReady, 
-      hasContainer: !!container, 
-      error: error?.message || null,
-      timestamp: new Date().toISOString()
-    });
+    // Log status only on changes
+    if (isReady && container && !window.__murmurabaInitLogged) {
+      console.log('✅ MurmurabaSuite initialized');
+      window.__murmurabaInitLogged = true;
+    }
     
     if (isReady && container) {
       // Connect DI container to Redux middleware

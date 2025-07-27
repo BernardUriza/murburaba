@@ -561,6 +561,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       // Update metrics
       const inputLevel = this.metricsManager.calculateRMS(input);
       const inputPeak = this.metricsManager.calculatePeak(input);
+      
+      
       this.metricsManager.updateInputLevel(inputPeak);
       
       // Log metrics update every 2 seconds

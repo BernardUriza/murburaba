@@ -108,6 +108,7 @@ export class SimpleAGC {
    */
   connect(source: AudioNode, destination: AudioNode): void {
     source.connect(this.analyser);
+    this.analyser.connect(this.gainNode);
     this.gainNode.connect(destination);
   }
 }

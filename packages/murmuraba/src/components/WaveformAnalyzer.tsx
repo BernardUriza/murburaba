@@ -482,7 +482,10 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
       setError(null);
       
       console.log('WaveformAnalyzer: Live stream initialized successfully');
-      drawLiveWaveform(analyserNode);
+      // Start drawing after initialization
+      if (analyserNode) {
+        drawLiveWaveform(analyserNode);
+      }
     } catch (error) {
       console.error('Error initializing live stream:', error);
       if (error instanceof Error) {
@@ -496,7 +499,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
         setError('Failed to initialize live stream');
       }
     }
-  }, [stream, audioContext, disabled, drawLiveWaveform, source, analyser]);
+  }, [stream, audioContext, disabled, source]);
 
   // Effects
   useEffect(() => {
@@ -509,7 +512,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [stream, isActive, isPaused, disabled, initializeLiveStream]);
+  }, [stream, isActive, isPaused, disabled]);
 
   useEffect(() => {
     return () => {
