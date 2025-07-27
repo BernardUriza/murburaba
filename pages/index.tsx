@@ -164,52 +164,54 @@ export default function App() {
         />
 
         {/* Live Waveform Display */}
-        {(showLiveWaveform || currentStream) && (
-          <section className="live-waveform-section" style={{ marginTop: '1.5rem' }}>
-            <div className="live-waveform-container">
-              <div className="live-indicator">
-                <span className="live-dot"></span>
-                <span className="live-text">LIVE</span>
-              </div>
-              <div className="waveform-wrapper">
-                <div className="waveform-glow"></div>
-                {currentStream ? (
-                  <WaveformAnalyzer
-                    stream={currentStream}
-                    width={600}
-                    height={180}
-                    label=""
-                    hideControls={true}
-                    disablePlayback={true}
-                    isActive={true}
-                    isPaused={false}
-                  />
-                ) : (
-                  <div style={{ 
-                    width: '600px', 
-                    height: '180px', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    background: 'rgba(0,0,0,0.5)',
-                    borderRadius: '10px',
-                    color: '#666'
-                  }}>
-                    Waiting for audio stream...
-                  </div>
-                )}
-              </div>
-              <div className="audio-metrics">
-                <div className="metric-item">
-                  <span className="metric-label">Input Level</span>
-                  <div className="metric-bar">
-                    <div className="metric-fill" style={{ width: `${currentInputLevel * 100}%` }}></div>
-                  </div>
+        <section className="live-waveform-section" style={{ 
+          marginTop: '1.5rem',
+          display: (showLiveWaveform || currentStream) ? 'block' : 'none'
+        }}>
+          <div className="live-waveform-container">
+            <div className="live-indicator">
+              <span className="live-dot"></span>
+              <span className="live-text">LIVE</span>
+            </div>
+            <div className="waveform-wrapper">
+              <div className="waveform-glow"></div>
+              {currentStream ? (
+                <WaveformAnalyzer
+                  key={currentStream.id}
+                  stream={currentStream}
+                  width={600}
+                  height={180}
+                  label=""
+                  hideControls={true}
+                  disablePlayback={true}
+                  isActive={true}
+                  isPaused={false}
+                />
+              ) : (
+                <div style={{ 
+                  width: '600px', 
+                  height: '180px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  background: 'rgba(0,0,0,0.5)',
+                  borderRadius: '10px',
+                  color: '#666'
+                }}>
+                  Waiting for audio stream...
+                </div>
+              )}
+            </div>
+            <div className="audio-metrics">
+              <div className="metric-item">
+                <span className="metric-label">Input Level</span>
+                <div className="metric-bar">
+                  <div className="metric-fill" style={{ width: `${currentInputLevel * 100}%` }}></div>
                 </div>
               </div>
             </div>
-          </section>
-        )}
+          </div>
+        </section>
 
         {/* Processing Results */}
         {processingResults && processingResults.chunks.length > 0 && (

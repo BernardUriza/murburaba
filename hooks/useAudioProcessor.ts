@@ -175,8 +175,8 @@ export function useAudioProcessor() {
     } finally {
       dispatch(setProcessing(false))
       dispatch(setRecording(false))
-      // Clean up stream when recording stops
-      setStream(null)
+      // Don't clear stream immediately - let it be cleared when unmounting or starting new recording
+      // setStream(null)
     }
   }, [container, isReady, dispatch, setStream])
 
@@ -192,7 +192,7 @@ export function useAudioProcessor() {
         type: 'info',
         message: 'Processing cancelled'
       }))
-      // Clean up stream when cancelled
+      // Only clear stream when explicitly cancelled
       setStream(null)
     } catch (error) {
       console.error('Failed to cancel processing:', error)

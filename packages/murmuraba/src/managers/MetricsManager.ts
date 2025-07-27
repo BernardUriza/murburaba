@@ -26,9 +26,16 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
   
   startAutoUpdate(intervalMs: number = 100): void {
     this.stopAutoUpdate();
+    console.log(`[MetricsManager] Starting auto-update with interval: ${intervalMs}ms`);
     this.updateInterval = setInterval(() => {
       this.calculateLatency();
-      this.emit('metrics-update', { ...this.metrics });
+      const metricsSnapshot = { ...this.metrics };
+      console.log('[MetricsManager] Emitting metrics update:', {
+        inputLevel: metricsSnapshot.inputLevel,
+        frameCount: metricsSnapshot.frameCount,
+        timestamp: new Date(metricsSnapshot.timestamp).toISOString()
+      });
+      this.emit('metrics-update', metricsSnapshot);
     }, intervalMs);
   }
   

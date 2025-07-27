@@ -38,8 +38,12 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
           console.log('MetricsManager methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(metricsManager)));
           
           console.log('📌 Registering metrics-update listener');
+          
+          // Track if we're getting any events
+          let eventCount = 0;
           metricsManager.on('metrics-update', (metrics: any) => {
-            console.log('📊 Metrics received in Redux:', {
+            eventCount++;
+            console.log(`📊 Metrics event #${eventCount} received:`, {
               inputLevel: metrics.inputLevel,
               outputLevel: metrics.outputLevel,
               timestamp: new Date(metrics.timestamp).toISOString(),
@@ -49,6 +53,9 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
             // Also dispatch to Redux if needed
             store.dispatch(updateMetrics(metrics));
           });
+          
+          // Verify the listener is registered
+          console.log('📌 Listener registered. Event count:', metricsManager.listenerCount('metrics-update'));
           
           // Store reference for cleanup
           (window as any).__metricsManager = metricsManager;

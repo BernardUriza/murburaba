@@ -22,6 +22,14 @@ export class AudioProcessorService implements IAudioProcessor {
     if (container) {
       this.logger = container.get<ILogger>(TOKENS.Logger);
       this.metricsManager = container.get<IMetricsManager>(TOKENS.MetricsManager);
+      
+      // Forward metrics events from MetricsManager to our callbacks
+      if (this.metricsManager && typeof (this.metricsManager as any).on === 'function') {
+        (this.metricsManager as any).on('metrics-update', (metrics: ProcessingMetrics) => {
+          this.logger.debug('AudioProcessorService: Forwarding metrics from MetricsManager');
+          this.notifyMetrics(metrics);
+        });
+      }
     }
   }
   

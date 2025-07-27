@@ -563,6 +563,15 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       const inputPeak = this.metricsManager.calculatePeak(input);
       this.metricsManager.updateInputLevel(inputPeak);
       
+      // Log metrics update every 2 seconds
+      if (debugLogCount % 100 === 0) {
+        this.logger.debug('📊 Metrics updated:', {
+          inputLevel: inputLevel.toFixed(4),
+          inputPeak: inputPeak.toFixed(4),
+          timestamp: new Date().toISOString()
+        });
+      }
+      
       // Update AGC if enabled
       if (agc && !isPaused && !isStopped) {
         agc.updateGain();
