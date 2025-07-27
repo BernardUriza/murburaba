@@ -5,7 +5,6 @@
  */
 
 // Audio Visualization
-export { SimpleWaveformAnalyzer } from './SimpleWaveformAnalyzer';
 export { WaveformAnalyzer } from './WaveformAnalyzer';
 export { SyncedWaveforms } from './SyncedWaveforms';
 
@@ -28,7 +27,6 @@ export {
 } from './BuildInfo';
 
 // Component types
-export type { SimpleWaveformAnalyzerProps } from './SimpleWaveformAnalyzer';
 export type { ChunkProcessingResultsProps } from './ChunkProcessingResults';
 export type { AdvancedMetricsPanelProps } from './AdvancedMetricsPanel';
 export type { AudioPlayerProps } from './AudioPlayer';

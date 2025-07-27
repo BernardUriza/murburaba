@@ -63,7 +63,6 @@ export type { ILogger, IMetricsManager, IStateManager, IEventEmitter } from './c
 
 // UI Components - Export from components directory
 export { 
-  SimpleWaveformAnalyzer,
   WaveformAnalyzer,
   SyncedWaveforms,
   ChunkProcessingResults,
@@ -79,7 +78,6 @@ export {
 
 // Component types
 export type {
-  SimpleWaveformAnalyzerProps,
   ChunkProcessingResultsProps,
   AdvancedMetricsPanelProps,
   AudioPlayerProps,
