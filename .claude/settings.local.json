@@ -124,7 +124,10 @@
       "Bash(./tests/run-integration-test.sh:*)",
       "Bash(npx rollup:*)",
       "Bash(npx ts-node:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(gh issue edit:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr edit:*)"
     ],
     "deny": []
   }
