@@ -8,7 +8,7 @@ export interface AudioEngine {
 }
 
 export interface AudioEngineConfig {
-  engineType: 'rnnoise' | 'speex' | 'custom';
+  engineType: 'rnnoise' | 'speex' | 'custom' | 'audioworklet';
   options?: Record<string, any>;
 }
 

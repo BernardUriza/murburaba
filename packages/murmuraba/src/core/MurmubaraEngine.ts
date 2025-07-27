@@ -487,7 +487,6 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     if (this.agcEnabled) {
       agc = new SimpleAGC(this.audioContext, 0.3);
       this.agc = agc;
-      console.log('🔧 AGC ENABLED');
     }
     
     let isPaused = false;
@@ -537,7 +536,6 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       };
     }
     
-    let debugLogCount = 0;
     processor.onaudioprocess = (event) => {
       if (isStopped || isPaused) {
         event.outputBuffer.getChannelData(0).fill(0);
@@ -547,57 +545,11 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       const input = event.inputBuffer.getChannelData(0);
       const output = event.outputBuffer.getChannelData(0);
       
-      // Debug: Log primeros frames para verificar audio
-      if (debugLogCount < 10) {
-        const maxInput = Math.max(...input.map(Math.abs));
-        const avgInput = input.reduce((sum, val) => sum + Math.abs(val), 0) / input.length;
-        const rmsInput = Math.sqrt(input.reduce((sum, val) => sum + val * val, 0) / input.length);
-        console.log(`🎤 MurmubaraEngine: Mic frame ${debugLogCount}:`, {
-          inputLength: input.length,
-          maxLevel: maxInput.toFixed(6),
-          avgLevel: avgInput.toFixed(6),
-          rmsLevel: rmsInput.toFixed(6),
-          hasAudio: maxInput > 0.0001,
-          isSilent: maxInput < 0.0001,
-          streamId: streamId
-        });
-        debugLogCount++;
-      }
-      
       // Update metrics
       const inputLevel = this.metricsManager.calculateRMS(input);
       const inputPeak = this.metricsManager.calculatePeak(input);
-      
-      // DEBUG: Force log when we have audio
-      if (inputPeak > 0.01 && debugLogCount % 50 === 0) {
-        console.log('🎤 AUDIO DETECTED IN ENGINE:', {
-          inputLevel: inputLevel.toFixed(4),
-          inputPeak: inputPeak.toFixed(4),
-          timestamp: Date.now()
-        });
-      }
-      
       this.metricsManager.updateInputLevel(inputPeak);
       
-      // Log metrics update every 2 seconds
-      if (debugLogCount % 100 === 0) {
-        // Check actual audio values
-        let nonZeroCount = 0;
-        let maxVal = 0;
-        for (let i = 0; i < input.length; i++) {
-          if (Math.abs(input[i]) > 0.0001) nonZeroCount++;
-          maxVal = Math.max(maxVal, Math.abs(input[i]));
-        }
-        
-        this.logger.debug('📊 Metrics updated:', {
-          inputLevel: inputLevel.toFixed(4),
-          inputPeak: inputPeak.toFixed(4),
-          inputLength: input.length,
-          nonZeroSamples: nonZeroCount,
-          maxValue: maxVal.toFixed(6),
-          timestamp: new Date().toISOString()
-        });
-      }
       
       // Update AGC if enabled
       if (agc && !isPaused && !isStopped) {
@@ -627,9 +579,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         const { output: processed, vad } = this.processFrame(frame);
         const frameOutputRMS = this.metricsManager.calculateRMS(processed);
         
-        // Debug: Log frame processing details
         // Commented out for too frequent logging
-        // if (vad > 0.01 || debugLogCount < 20) {
         //   const inputPower = frame.reduce((sum, s) => sum + s * s, 0) / frame.length;
         //   const outputPower = processed.reduce((sum, s) => sum + s * s, 0) / processed.length;
         //   const frameReduction = inputPower > 0 ? (1 - outputPower / inputPower) * 100 : 0;
@@ -654,8 +604,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         }
         
         // Calculate frame-level noise reduction
-        const frameInputPower = frame.reduce((sum, s) => sum + s * s, 0) / frame.length;
-        const frameOutputPower = processed.reduce((sum, s) => sum + s * s, 0) / processed.length;
+        const frameInputPower = frameInputRMS * frameInputRMS;
+        const frameOutputPower = frameOutputRMS * frameOutputRMS;
         
         // Estimate noise removed using spectral comparison
         // RNNoise typically removes 20-40% of noise in real scenarios
@@ -700,17 +650,6 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         }
       }
       
-      // Debug: Log output frames con audio
-      if (debugLogCount < 5 && outputFramesWritten > 0) {
-        const maxOutput = Math.max(...output.map(Math.abs));
-        console.log(`MurmubaraEngine: Output frame ${debugLogCount}:`, {
-          outputLength: output.length,
-          framesWithAudio: outputFramesWritten,
-          maxOutputLevel: maxOutput.toFixed(6),
-          outputBufferSize: outputBuffer.length
-        });
-      }
-      
       // Update output metrics
       const outputLevel = this.metricsManager.calculateRMS(output);
       const outputPeak = this.metricsManager.calculatePeak(output);
@@ -719,23 +658,12 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       // Track AGC gain for metrics if enabled
       if (agc) {
         const currentGain = agc.getCurrentGain();
-        // This gain info will be used for diagnostics - commented out for too frequent logging
-        // this.logger.debug(`AGC gain: ${currentGain.toFixed(2)}x`);
       }
       
       // Calculate actual noise reduction based on power analysis
       if (framesProcessed > 0) {
         const avgNoiseReduction = (totalNoiseRemoved / framesProcessed) * 100;
         
-        // Log for debugging - commented out for too frequent logging
-        // if (debugLogCount < 10 || avgNoiseReduction > 10) {
-        //   console.log(`🔊 Noise Reduction Calculated:`, {
-        //     avgReduction: avgNoiseReduction.toFixed(1) + '%',
-        //     framesProcessed,
-        //     avgInputPower: (totalInputPower / framesProcessed).toFixed(6),
-        //     avgOutputPower: (totalOutputPower / framesProcessed).toFixed(6)
-        //   });
-        // }
         
         this.metricsManager.updateNoiseReduction(avgNoiseReduction);
       }
@@ -788,17 +716,6 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       }
     }, 50); // Update every 50ms
     
-    // Debug: Verificar el stream de destino
-    console.log('MurmubaraEngine: Destination stream created:', {
-      streamId: destination.stream.id,
-      audioTracks: destination.stream.getAudioTracks().map(t => ({
-        id: t.id,
-        label: t.label,
-        enabled: t.enabled,
-        readyState: t.readyState,
-        muted: t.muted
-      }))
-    });
     
     const controller: StreamController = {
       stream: destination.stream,
@@ -1037,7 +954,6 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     // Apply AGC setting if changed
     if ('enableAGC' in newConfig) {
       this.agcEnabled = newConfig.enableAGC ?? true;
-      this.logger.info(`AGC ${this.agcEnabled ? 'enabled' : 'disabled'}`);
     }
     
     // Update worker manager config if applicable
