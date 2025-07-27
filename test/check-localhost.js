@@ -11,10 +11,16 @@ import puppeteer from 'puppeteer';
 import { Window } from 'happy-dom';
 
 async function checkLocalhost() {
+  console.log('🚀 BRUTAL TEST INICIADO 🚀');
+  console.log('='.repeat(60));
+  
   // Detectar puerto automáticamente
   const port = process.env.PORT || 3000;
   const url = `http://localhost:${port}`;
-  console.log(`🔍 Checking ${url}...\n`);
+  console.log(`\n🌐 Target: ${url}`);
+  console.log(`📅 Timestamp: ${new Date().toISOString()}`);
+  console.log(`🖥️  Platform: ${process.platform} ${process.arch}`);
+  console.log(`🟢 Node: ${process.version}\n`);
   
   // Primero: Test rápido con happy-dom
   console.log('1️⃣ Pre-check con happy-dom...');
@@ -36,10 +42,13 @@ async function checkLocalhost() {
   
   // Segundo: Test real con Puppeteer
   console.log('2️⃣ Test completo con Puppeteer...');
+  console.log('🎭 Lanzando browser headless...');
+  const startTime = Date.now();
   const browser = await puppeteer.launch({ 
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
+  console.log(`⏱️  Browser iniciado en ${Date.now() - startTime}ms`);
   
   try {
     const page = await browser.newPage();
@@ -47,6 +56,14 @@ async function checkLocalhost() {
     // Capturar TODOS los errores
     const errors = [];
     const warnings = [];
+    const metrics = {
+      consoleLogs: 0,
+      consoleErrors: 0,
+      consoleWarnings: 0,
+      networkRequests: 0,
+      failedRequests: 0,
+      pageLoadTime: 0
+    };
     
     page.on('console', async msg => {
       const type = msg.type();
@@ -63,6 +80,7 @@ async function checkLocalhost() {
       }
       
       if (type === 'error') {
+        metrics.consoleErrors++;
         // Ignorar el error específico de inicialización del engine (es esperado)
         if (text.includes('Engine initialization failed or timed out')) {
           console.log(`⚠️  Engine timeout (esperado): entrando en modo degradado`);
@@ -71,9 +89,11 @@ async function checkLocalhost() {
           console.error(`❌ Console Error: ${text}`);
         }
       } else if (type === 'warning') {
+        metrics.consoleWarnings++;
         warnings.push(text);
         console.warn(`⚠️  Console Warning: ${text}`);
       } else if (type === 'log' || type === 'info') {
+        metrics.consoleLogs++;
         console.log(`📝 Console ${type}: ${text}`);
       } else if (type === 'debug') {
         console.log(`🔍 Console debug: ${text}`);
@@ -90,8 +110,14 @@ async function checkLocalhost() {
       console.error(`❌ Error: ${err}`);
     });
     
+    // Capturar métricas de red
+    page.on('request', request => {
+      metrics.networkRequests++;
+    });
+    
     // Capturar errores de requests fallidos
     page.on('requestfailed', request => {
+      metrics.failedRequests++;
       const failure = request.failure();
       if (failure) {
         // Ignorar errores de blob URLs (estos son de audio procesado)
@@ -108,11 +134,15 @@ async function checkLocalhost() {
     });
     
     // Navegar a localhost
+    console.log(`\n🌍 Navegando a ${url}...`);
+    const loadStart = Date.now();
     try {
       await page.goto(url, {
         waitUntil: 'networkidle0',
         timeout: 10000
       });
+      metrics.pageLoadTime = Date.now() - loadStart;
+      console.log(`✅ Página cargada en ${metrics.pageLoadTime}ms`);
     } catch {
       console.error(`\n❌ FATAL: No se pudo conectar a ${url}`);
       console.error('   Asegúrate de que el servidor esté corriendo: npm run dev');
@@ -257,29 +287,88 @@ async function checkLocalhost() {
       console.log('✅ "Start Recording" habilitado después del delay');
     }
     
-    // Clickear el botón "Start Recording"
-    await recordBtn.click();
-    console.log('▶️ Click en "Start Recording" hecho');
-    
-    // Simular input de audio mock (voice)
-    console.log('🎤 Mockeando input de voz');
+    // Simular input de audio mock (voice) ANTES de hacer clic
+    console.log('🎤 Instalando mock de getUserMedia ANTES del clic...');
     await page.evaluate(() => {
-      // Sobreescribe getUserMedia y despacha evento de audio
-      window.navigator.mediaDevices.getUserMedia = async () => {
-        // Simula stream vacío/mocked (o usa sinon si tienes)
-        return {
-          getTracks: () => [{ stop: () => {} }],
-          getAudioTracks: () => [{ stop: () => {}, enabled: true, label: 'Mock Audio Track' }],
-          id: 'mock-stream-' + Date.now(),
-          active: true
+      // Create AudioContext mock if needed
+      if (!window.AudioContext) {
+        window.AudioContext = window.webkitAudioContext || class MockAudioContext {
+          constructor() {
+            this.state = 'running';
+            this.sampleRate = 48000;
+          }
+          createMediaStreamSource() {
+            return { connect: () => {} };
+          }
+          createAnalyser() {
+            return {
+              fftSize: 2048,
+              frequencyBinCount: 1024,
+              getByteFrequencyData: () => {},
+              getByteTimeDomainData: (array) => {
+                // Fill with mock waveform data
+                for (let i = 0; i < array.length; i++) {
+                  array[i] = 128 + Math.sin(i * 0.1) * 20;
+                }
+              }
+            };
+          }
         };
+      }
+      
+      // Mock getUserMedia
+      window.navigator.mediaDevices.getUserMedia = async (constraints) => {
+        console.log('🎯 Mock getUserMedia called with constraints:', constraints);
+        
+        // Create mock audio track
+        const mockTrack = {
+          id: 'mock-track-' + Date.now(),
+          kind: 'audio',
+          label: 'Mock Audio Track',
+          enabled: true,
+          readyState: 'live',
+          muted: false,
+          stop: function() {
+            console.log('Mock track stopped');
+            this.readyState = 'ended';
+          },
+          addEventListener: () => {},
+          removeEventListener: () => {},
+          getCapabilities: () => ({}),
+          getSettings: () => ({ sampleRate: 48000 })
+        };
+        
+        // Create mock MediaStream  
+        const mockStream = {
+          id: 'mock-stream-' + Date.now(),
+          active: true,
+          getTracks: () => [mockTrack],
+          getAudioTracks: () => [mockTrack],
+          getVideoTracks: () => [],
+          addTrack: () => {},
+          removeTrack: () => {},
+          getTrackById: () => mockTrack,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+          dispatchEvent: () => true,
+          clone: function() { return this; }
+        };
+        
+        // Make stream available globally for the app
+        window.__mockStream = mockStream;
+        
+        console.log('✅ Mock MediaStream created:', mockStream);
+        return mockStream;
       };
-      // Puedes disparar un evento personalizado aquí si tu app lo soporta
-      const evt = new Event('audioinput');
-      window.dispatchEvent(evt);
+      
+      console.log('✅ getUserMedia mock installed');
     });
     
-    console.log('✅ Mock de input de voz inyectado');
+    console.log('✅ Mock de input de voz instalado');
+    
+    // AHORA clickear el botón "Start Recording"
+    await recordBtn.click();
+    console.log('▶️ Click en "Start Recording" ejecutado');
     
     // Verificar que la app reacciona al audio mockeado
     console.log('\n🔍 Verificando reacción al audio mockeado...');
@@ -327,10 +416,36 @@ async function checkLocalhost() {
     
     await browser.close();
     
+    // Guardar telemetría
+    const telemetryPath = 'test/results/telemetry.json';
+    const telemetry = {
+      timestamp: new Date().toISOString(),
+      url,
+      metrics,
+      errors: errors.length,
+      warnings: warnings.length,
+      success: errors.length === 0,
+      executionTime: Date.now() - startTime
+    };
+    
+    await page.evaluate(t => {
+      console.log('📊 Telemetría:', t);
+    }, telemetry);
+    
     // Reporte final
-    console.log('\n' + '='.repeat(50));
-    console.log('RESULTADO DEL TEST:');
-    console.log('='.repeat(50));
+    console.log('\n' + '='.repeat(60));
+    console.log('📊 MÉTRICAS DEL TEST:');
+    console.log('='.repeat(60));
+    console.log(`⏱️  Tiempo total: ${Date.now() - startTime}ms`);
+    console.log(`🌐 Requests totales: ${metrics.networkRequests}`);
+    console.log(`❌ Requests fallidos: ${metrics.failedRequests}`);
+    console.log(`📝 Console logs: ${metrics.consoleLogs}`);
+    console.log(`⚠️  Console warnings: ${metrics.consoleWarnings}`);
+    console.log(`🔴 Console errors: ${metrics.consoleErrors}`);
+    
+    console.log('\n' + '='.repeat(60));
+    console.log('🎯 RESULTADO FINAL:');
+    console.log('='.repeat(60));
     
     if (errors.length > 0) {
       console.error(`\n❌ FALLÓ - ${errors.length} errores encontrados`);
@@ -345,7 +460,18 @@ async function checkLocalhost() {
       console.warn(`\n⚠️  ${warnings.length} warnings de React`);
     }
     
-    console.log('\n✅ Landing page OK - Sin errores');
+    console.log('\n✅ 🎉 TEST PASÓ - Landing page OK');
+    console.log('\n🚀 BRUTAL TEST COMPLETADO 🚀\n');
+    
+    // Guardar resultado en archivo
+    try {
+      const fs = await import('fs/promises');
+      await fs.writeFile(telemetryPath, JSON.stringify(telemetry, null, 2));
+      console.log(`💾 Telemetría guardada en: ${telemetryPath}`);
+    } catch (e) {
+      console.warn('⚠️  No se pudo guardar telemetría:', e.message);
+    }
+    
     process.exit(0);
     
   } catch (error) {
