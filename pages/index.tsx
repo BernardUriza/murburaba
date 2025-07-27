@@ -94,6 +94,7 @@ export default function App() {
     
     try {
       notify('info', 'Starting microphone recording...')
+      console.log('🎬 Starting recording, setting showLiveWaveform to true')
       setShowLiveWaveform(true) // Show waveform immediately
       
       // Record for 30 seconds total
@@ -172,16 +173,31 @@ export default function App() {
               </div>
               <div className="waveform-wrapper">
                 <div className="waveform-glow"></div>
-                <WaveformAnalyzer
-                  stream={currentStream || undefined}
-                  width={600}
-                  height={180}
-                  label=""
-                  hideControls={true}
-                  disablePlayback={true}
-                  isActive={true}
-                  isPaused={false}
-                />
+                {currentStream ? (
+                  <WaveformAnalyzer
+                    stream={currentStream}
+                    width={600}
+                    height={180}
+                    label=""
+                    hideControls={true}
+                    disablePlayback={true}
+                    isActive={true}
+                    isPaused={false}
+                  />
+                ) : (
+                  <div style={{ 
+                    width: '600px', 
+                    height: '180px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    background: 'rgba(0,0,0,0.5)',
+                    borderRadius: '10px',
+                    color: '#666'
+                  }}>
+                    Waiting for audio stream...
+                  </div>
+                )}
               </div>
               <div className="audio-metrics">
                 <div className="metric-item">

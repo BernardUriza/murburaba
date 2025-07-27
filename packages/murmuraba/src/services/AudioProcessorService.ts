@@ -140,10 +140,19 @@ export class AudioProcessorService implements IAudioProcessor {
           }
         });
         this.currentStream = stream;
+        console.log('🎤 AudioProcessorService: New stream created:', {
+          streamId: stream.id,
+          trackCount: stream.getTracks().length,
+          audioTracks: stream.getAudioTracks().length
+        });
       } else {
         // Reuse existing stream
         stream = this.currentStream!;
         shouldStopStream = false;
+        console.log('🎤 AudioProcessorService: Reusing existing stream:', {
+          streamId: stream.id,
+          trackCount: stream.getTracks().length
+        });
       }
     }
     
@@ -171,7 +180,9 @@ export class AudioProcessorService implements IAudioProcessor {
       });
       
       // Stop recording after specified duration
+      console.log(`⏱️ AudioProcessorService: Recording will stop in ${duration}ms`);
       setTimeout(() => {
+        console.log('⏹️ AudioProcessorService: Stopping recording');
         controller.stop();
       }, duration);
       
@@ -388,6 +399,11 @@ export class AudioProcessorService implements IAudioProcessor {
   
   // Method to clean up resources
   getCurrentStream(): MediaStream | undefined {
+    console.log('🔍 getCurrentStream called:', {
+      hasStream: !!this.currentStream,
+      streamId: this.currentStream?.id,
+      trackCount: this.currentStream?.getTracks()?.length || 0
+    });
     return this.currentStream;
   }
   

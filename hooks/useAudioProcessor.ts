@@ -110,12 +110,14 @@ export function useAudioProcessor() {
         dispatch(addChunk(chunk))
       })
 
-      // Start recording - this is async but we check for stream immediately
+      // Start recording - this is async but we need to wait for stream creation
       const recordingPromise = processor.processRecording(duration, options)
       
-      // Get the stream right after starting recording
-      // Check multiple times to ensure we catch the stream
+      // Get the stream after a delay to ensure it's created
+      // The stream is created asynchronously after getUserMedia completes
       let streamCheckCount = 0
+      const maxChecks = 10
+      
       const checkForStream = () => {
         streamCheckCount++
         if (processor.getCurrentStream) {
@@ -134,19 +136,18 @@ export function useAudioProcessor() {
         } else {
           console.log(`🎤 Stream check #${streamCheckCount}: getCurrentStream method not available`)
         }
+        
+        // Continue checking if we haven't exceeded max attempts
+        if (streamCheckCount < maxChecks) {
+          setTimeout(checkForStream, 200) // Check every 200ms
+        } else {
+          console.error('❌ Failed to get stream after', maxChecks, 'attempts')
+        }
         return false
       }
       
-      // Try immediately
-      if (!checkForStream()) {
-        // Try again after 50ms
-        setTimeout(() => {
-          if (!checkForStream()) {
-            // Final try after 150ms
-            setTimeout(checkForStream, 100)
-          }
-        }, 50)
-      }
+      // Start checking after a small delay to let async operations complete
+      setTimeout(checkForStream, 300)
       
       // Wait for recording to complete
       const result = await recordingPromise
