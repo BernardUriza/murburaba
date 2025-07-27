@@ -64,7 +64,10 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
             
             setAudioLevel(metrics.inputLevel || 0);
             // Also dispatch to Redux if needed
-            store.dispatch(updateMetrics(metrics));
+            store.dispatch(updateMetrics({ 
+              inputLevel: metrics.inputLevel,
+              outputLevel: metrics.outputLevel 
+            }));
           });
           
           // Listener is now registered

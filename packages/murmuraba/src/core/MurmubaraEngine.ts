@@ -738,6 +738,10 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     
     processor.connect(destination);
     
+    // CRITICAL: Connect processor to context.destination to ensure onaudioprocess fires
+    // Without this, the scriptProcessor won't process audio
+    processor.connect(context.destination);
+    
     // Debug: Verificar el stream de destino
     console.log('MurmubaraEngine: Destination stream created:', {
       streamId: destination.stream.id,

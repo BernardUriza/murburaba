@@ -14,6 +14,7 @@ import { FabButtons } from '../components/ui/FabButtons'
 import { BannerHero } from '../components/ui/BannerHero'
 import { useNotifications } from '../hooks/useNotifications'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
+import { store } from '../store'
 import { useAudioProcessor } from '../hooks/useAudioProcessor'
 import { WaveformAnalyzer } from 'murmuraba'
 import {
@@ -57,13 +58,15 @@ export default function App() {
   // Debug log - log every 2 seconds only
   useEffect(() => {
     const interval = setInterval(() => {
+      const reduxState = store.getState()
       console.log('🔍 Engine status:', { 
         isInitialized, 
         isProcessing, 
         isRecording, 
         currentStream: !!currentStream, 
         showLiveWaveform,
-        currentInputLevel 
+        currentInputLevel,
+        reduxInputLevel: reduxState.audio.currentInputLevel 
       })
     }, 2000)
     return () => clearInterval(interval)
