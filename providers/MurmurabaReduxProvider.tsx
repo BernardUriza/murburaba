@@ -28,23 +28,38 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
       
       // MetricsManager might not be available yet, check first
       if (container.has(TOKENS.MetricsManager)) {
-        const metricsManager = container.get<IMetricsManager>(TOKENS.MetricsManager);
+        const metricsManager = container.get<IMetricsManager>(TOKENS.MetricsManager) as any;
         
-        // Subscribe to metrics for audio level
-        if (processor && metricsManager) {
-          processor.onMetrics((metrics) => {
+        // MetricsManager extends EventEmitter, so use 'on' method
+        if (metricsManager && metricsManager.on) {
+          console.log('🎯 Setting up MetricsManager listener in MurmurabaReduxProvider');
+          
+          // Debug what methods are available
+          console.log('MetricsManager methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(metricsManager)));
+          
+          metricsManager.on('metrics-update', (metrics: any) => {
+            console.log('📊 Metrics received in Redux:', {
+              inputLevel: metrics.inputLevel,
+              outputLevel: metrics.outputLevel,
+              timestamp: new Date(metrics.timestamp).toISOString(),
+              frameCount: metrics.frameCount
+            });
             setAudioLevel(metrics.inputLevel || 0);
             // Also dispatch to Redux if needed
             store.dispatch({ type: 'audio/updateMetrics', payload: metrics });
           });
+          
+          // Store reference for cleanup
+          (window as any).__metricsManager = metricsManager;
         }
-      } else {
-        // Just use processor metrics without MetricsManager
-        if (processor) {
-          processor.onMetrics((metrics) => {
-            setAudioLevel(metrics.inputLevel || 0);
-          });
-        }
+      }
+      
+      // Also try processor metrics as fallback
+      if (processor && processor.onMetrics) {
+        processor.onMetrics((metrics) => {
+          setAudioLevel(metrics.inputLevel || 0);
+          store.dispatch({ type: 'audio/updateMetrics', payload: metrics });
+        });
       }
     } catch (error) {
       console.error('Failed to setup audio monitoring:', error);

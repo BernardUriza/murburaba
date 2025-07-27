@@ -28,6 +28,10 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
     this.stopAutoUpdate();
     this.updateInterval = setInterval(() => {
       this.calculateLatency();
+      console.log('📡 MetricsManager emitting metrics-update:', { 
+        inputLevel: this.metrics.inputLevel,
+        frameCount: this.metrics.frameCount 
+      });
       this.emit('metrics-update', { ...this.metrics });
     }, intervalMs);
   }
@@ -41,6 +45,7 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
   
   updateInputLevel(level: number): void {
     this.metrics.inputLevel = Math.max(0, Math.min(1, level));
+    console.log('🎚️ MetricsManager.updateInputLevel:', level, '→', this.metrics.inputLevel);
   }
   
   updateOutputLevel(level: number): void {

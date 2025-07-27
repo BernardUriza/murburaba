@@ -44,18 +44,26 @@ export function useSuiteServices() {
   
   const recordMetric = useCallback((name: string, value: number) => {
     if (!services.metricsManager) return
-    // Create a ProcessingMetrics object with the custom metric
-    services.metricsManager.recordMetrics({
-      noiseReductionLevel: 0,
-      processingLatency: 0,
-      inputLevel: 0,
-      outputLevel: 0,
-      timestamp: Date.now(),
-      frameCount: 0,
-      droppedFrames: 0,
-      [name]: value // Add custom metric
-    } as any)
-  }, [services.metricsManager])
+    
+    // MetricsManager doesn't have recordMetrics method, use individual update methods
+    const metricsManager = services.metricsManager as any
+    
+    if (name === 'inputLevel' && metricsManager.updateInputLevel) {
+      metricsManager.updateInputLevel(value)
+    } else if (name === 'outputLevel' && metricsManager.updateOutputLevel) {
+      metricsManager.updateOutputLevel(value)
+    } else if (name === 'noiseReduction' && metricsManager.updateNoiseReduction) {
+      metricsManager.updateNoiseReduction(value)
+    } else if (metricsManager.recordFrame) {
+      // For generic metrics, just record a frame with current timestamp
+      metricsManager.recordFrame()
+    }
+    
+    // Log the metric
+    if (services.logger) {
+      services.logger.debug(`Metric recorded: ${name} = ${value}`)
+    }
+  }, [services.metricsManager, services.logger])
   
   const emit = useCallback((event: string, data: any) => {
     if (!services.eventEmitter) return

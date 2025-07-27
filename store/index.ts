@@ -25,7 +25,9 @@ export const store = configureStore({
         ],
         ignoredPaths: [
           'audio.processingResults.processedBuffer', // ArrayBuffer in state
-          'audio.chunks.*.blob' // Blobs in chunks
+          'audio.processingResults.chunks', // All chunks with blobs
+          'audio.chunks.*.blob', // Blobs in chunks
+          'audio.chunks' // All chunks array
         ]
       }
     }).concat(murmurabaSuiteMiddleware)

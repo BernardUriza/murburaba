@@ -26,6 +26,7 @@ export function GlobalAudioMonitor() {
       
       // Subscribe to metrics updates
       const unsubscribe = processor.onMetrics((newMetrics) => {
+        console.log('🎯 GlobalAudioMonitor received metrics:', newMetrics)
         setMetrics(newMetrics)
         
         // Calculate average VAD from chunks
@@ -41,7 +42,20 @@ export function GlobalAudioMonitor() {
         console.log('Current metrics:', currentMetrics)
       }
       
-      return unsubscribe
+      // Also subscribe directly to MetricsManager
+      let metricsUnsubscribe: (() => void) | null = null
+      if (metricsManager && 'on' in metricsManager) {
+        (metricsManager as any).on('metrics-update', (metrics: ProcessingMetrics) => {
+          console.log('🎯 GlobalAudioMonitor received metrics from MetricsManager:', metrics)
+          setMetrics(metrics)
+        })
+        metricsUnsubscribe = () => (metricsManager as any).off('metrics-update')
+      }
+      
+      return () => {
+        unsubscribe()
+        if (metricsUnsubscribe) metricsUnsubscribe()
+      }
     } catch (error) {
       console.error('Failed to setup audio monitoring:', error)
     }

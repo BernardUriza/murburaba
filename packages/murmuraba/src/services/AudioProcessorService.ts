@@ -77,7 +77,7 @@ export class AudioProcessorService implements IAudioProcessor {
       const engine = engineRegistry.getEngine();
       
       const controller = await engine.processStream(stream, {
-        chunkDuration: options?.chunkDuration || 8,
+        chunkDuration: (options?.chunkDuration || 8) * 1000, // Convert seconds to milliseconds
         onChunkProcessed: (chunk: any) => {
           const processedChunk = this.normalizeChunk(chunk);
           chunks.push(processedChunk);
@@ -162,7 +162,7 @@ export class AudioProcessorService implements IAudioProcessor {
       const engine = engineRegistry.getEngine();
       
       const controller = await engine.processStream(stream, {
-        chunkDuration: recordingOptions.chunkDuration,
+        chunkDuration: recordingOptions.chunkDuration * 1000, // Convert seconds to milliseconds
         onChunkProcessed: (chunk: any) => {
           const processedChunk = this.normalizeChunk(chunk);
           chunks.push(processedChunk);
