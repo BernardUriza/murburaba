@@ -58,6 +58,8 @@ export default function AudioDemo({
   const dispatch = useAppDispatch()
   const { isProcessing, enableAGC, chunkDuration } = useAppSelector(s => s.audio)
   const { isReady, processFile } = useAudioProcessor()
+  const [engineChecked, setEngineChecked] = useState(false)
+  const [engineError, setEngineError] = useState<string | null>(null)
 
   const [urls, setUrls] = useState<Urls>({ original: null, processedChunks: [] })
   const [error, setError] = useState<string | null>(null)
@@ -98,6 +100,35 @@ export default function AudioDemo({
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [logs])
+  
+  // Engine status check
+  useEffect(() => {
+    if (isReady && !engineChecked) {
+      const checkEngine = async () => {
+        try {
+          // Try a simple file process to test engine
+          const testFile = new File([new ArrayBuffer(1024)], 'test.wav', { type: 'audio/wav' })
+          log('debug', 'Testing engine availability...')
+          
+          // Just check if we can call it, don't actually process
+          if (typeof processFile === 'function') {
+            log('info', 'Engine appears to be ready for processing')
+            setEngineError(null)
+          } else {
+            throw new Error('processFile is not available - the Murmuraba engine may need manual initialization')
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Engine test failed'
+          log('error', 'Engine test failed', err)
+          setEngineError(msg)
+        } finally {
+          setEngineChecked(true)
+        }
+      }
+      
+      checkEngine()
+    }
+  }, [isReady, engineChecked, processFile, log])
 
   // Cleanup URLs on unmount
   useEffect(() => {
@@ -310,8 +341,13 @@ export default function AudioDemo({
       <div className={styles.header}>
         <h3>🎧 Audio Demo - Advanced</h3>
         <div className={styles.headerActions}>
-          <span className={isReady ? styles.ready : styles.notReady}>
-            {isReady ? 'ready' : 'initializing'}
+          <span className={isReady && !engineError ? styles.ready : styles.notReady}>
+            {!isReady 
+              ? 'initializing' 
+              : engineError 
+                ? 'engine error' 
+                : 'ready'
+            }
           </span>
           <button 
             onClick={exportLogs} 
@@ -333,13 +369,20 @@ export default function AudioDemo({
       </div>
 
       {error && <div className={styles.error}>{error}</div>}
+      {engineError && (
+        <div className={styles.error}>
+          Engine Error: {engineError}
+          <br />
+          <small>The audio processing engine may not be properly initialized. Try refreshing the page or check if you need to click "Initialize Audio Engine" first.</small>
+        </div>
+      )}
 
       <div className={styles.mainGrid}>
         {/* Left Panel - Controls & Metrics */}
         <div className={styles.controlPanel}>
           <button
             onClick={handleProcess}
-            disabled={isProcessing || !isReady}
+            disabled={isProcessing || !isReady || !!engineError}
             className={styles.processButton}
           >
             {isProcessing ? '⏳ Processing...' : '🎵 Process Demo'}
