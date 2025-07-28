@@ -80,26 +80,11 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
         // MetricsManager extends EventEmitter, so use 'on' method
         if (metricsManager && metricsManager.on) {
           console.log('🎯 Setting up MetricsManager listener in MurmurabaReduxProvider');
-          console.log('🔥DEBUG🔥 MetricsManager instance ID:', metricsManager.constructor.name, metricsManager);
           
-          // Debug what methods are available
-          console.log('MetricsManager methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(metricsManager)));
-          
-          console.log('🔥DEBUG🔥 Registering metrics-update listener');
-          
-          // Track if we're getting any events
-          let eventCount = 0;
+          // Register metrics event listener
           metricsManager.on('metrics-update', (metrics: any) => {
-            eventCount++;
-            console.log(`🔥DEBUG🔥 📊 METRICS EVENT RECEIVED IN PROVIDER #${eventCount}:`, {
-              inputLevel: metrics.inputLevel,
-              outputLevel: metrics.outputLevel,
-              timestamp: new Date(metrics.timestamp).toISOString(),
-              frameCount: metrics.frameCount
-            });
-            
             setAudioLevel(metrics.inputLevel || 0);
-            // Also dispatch to Redux if needed
+            // Dispatch to Redux for global state
             store.dispatch(updateMetrics({ 
               inputLevel: metrics.inputLevel,
               outputLevel: metrics.outputLevel 

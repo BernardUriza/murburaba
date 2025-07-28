@@ -56,6 +56,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       allowDegraded: config.allowDegraded ?? false,
     } as Required<MurmubaraConfig>;
 
+    // CRITICAL: These should be injected, not created directly
+    // TODO: Remove after DI refactoring is complete
     this.logger = new Logger('[Murmuraba]');
     this.logger.setLevel(this.config.logLevel);
     if (this.config.onLog) {
@@ -602,7 +604,6 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
           // Update metrics from worklet
           const { inputLevel, outputLevel, vad, noiseReduction } = event.data.data || event.data;
           if (Math.random() < 0.01) console.log('🔥DEBUG🔥 MurmubaraEngine received worklet metrics:', { inputLevel, outputLevel, vad });
-          if (Math.random() < 0.01) console.log('🔥DEBUG🔥 MurmubaraEngine MetricsManager instance:', this.metricsManager.constructor.name, this.metricsManager);
           this.metricsManager.updateInputLevel(inputLevel || 0);
           this.metricsManager.updateOutputLevel(outputLevel || 0);
           this.metricsManager.updateVAD(vad || 0);
