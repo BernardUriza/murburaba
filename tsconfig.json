@@ -20,6 +20,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["pages/**/*.ts", "pages/**/*.tsx", "components/**/*.ts", "components/**/*.tsx", "next-env.d.ts"],
+  "include": ["pages/**/*.ts", "pages/**/*.tsx", "components/**/*.ts", "components/**/*.tsx", "next-env.d.ts", "types/globals.d.ts"],
   "exclude": ["node_modules", "**/*.test.*", "**/__tests__/**/*"]
 }

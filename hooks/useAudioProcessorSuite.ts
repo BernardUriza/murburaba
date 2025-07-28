@@ -33,7 +33,7 @@ export function useAudioProcessorSuite() {
     }
     
     dispatch(processFileAction(file, {
-      chunkDuration: chunkDuration * 1000,
+      chunkDuration: chunkDuration, // Pass in seconds
       outputFormat: 'wav',
       enableAGC,
       enableVAD: true
@@ -66,7 +66,7 @@ export function useAudioProcessorSuite() {
     }
     
     dispatch(processRecordingAction(duration, {
-      chunkDuration: options?.chunkDuration || chunkDuration * 1000,
+      chunkDuration: options?.chunkDuration || chunkDuration, // Don't multiply here, it's already in seconds
       outputFormat: options?.outputFormat || 'wav',
       enableAGC,
       enableVAD: true

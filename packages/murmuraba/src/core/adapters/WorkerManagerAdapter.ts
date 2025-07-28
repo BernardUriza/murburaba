@@ -36,7 +36,7 @@ export class WorkerManagerAdapter implements IWorkerManager {
       const messageHandler = (event: MessageEvent<WorkerResult<R>>) => {
         if (event.data.id === task.id) {
           worker.removeEventListener('message', messageHandler);
-          
+
           if (event.data.error) {
             reject(event.data.error);
           } else {

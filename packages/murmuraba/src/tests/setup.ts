@@ -75,11 +75,14 @@ export const generateSilentAudioData = (length: number = 1024): Float32Array => 
   return new Float32Array(length);
 };
 
-export const generateNoisyAudioData = (length: number = 1024, noiseLevel: number = 0.1): Float32Array => {
+export const generateNoisyAudioData = (
+  length: number = 1024,
+  noiseLevel: number = 0.1
+): Float32Array => {
   const data = new Float32Array(length);
   for (let i = 0; i < length; i++) {
     // Sine wave with noise
-    const signal = Math.sin(2 * Math.PI * 440 * i / 48000);
+    const signal = Math.sin((2 * Math.PI * 440 * i) / 48000);
     const noise = (Math.random() - 0.5) * noiseLevel;
     data[i] = signal + noise;
   }

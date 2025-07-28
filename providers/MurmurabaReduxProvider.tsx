@@ -9,6 +9,47 @@ import { setEngineInitialized, setProcessing, updateMetrics } from '../store/sli
 import { DebugError } from '../components/DebugError';
 import type { ILogger, IMetricsManager, IAudioProcessor } from 'murmuraba';
 
+// Wrapper component to show loading state
+function MurmurabaSuiteWrapper({ children, isInitializing, showAudioLevel }: { children: ReactNode; isInitializing: boolean; showAudioLevel?: boolean }) {
+  const { isReady } = useMurmurabaSuite();
+  
+  // Show loading screen while initializing
+  if (isInitializing && !isReady) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        padding: '2rem',
+        textAlign: 'center'
+      }}>
+        <h2 style={{ marginBottom: '1rem' }}>Initializing MurmurabaSuite...</h2>
+        <div style={{ marginBottom: '2rem', opacity: 0.8 }}>
+          Loading audio processing engine
+        </div>
+        <div style={{
+          width: '50px',
+          height: '50px',
+          border: '4px solid rgba(255,255,255,0.2)',
+          borderTopColor: '#fff',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }} />
+        <style jsx>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+  
+  return <MurmurabaReduxBridge showAudioLevel={showAudioLevel}>{children}</MurmurabaReduxBridge>;
+}
+
 // Inner component that has access to MurmurabaSuite context
 function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNode; showAudioLevel?: boolean }) {
   const { container, isReady, error } = useMurmurabaSuite();
@@ -40,32 +81,10 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
         if (metricsManager && metricsManager.on) {
           console.log('🎯 Setting up MetricsManager listener in MurmurabaReduxProvider');
           
-          // Debug what methods are available
-          console.log('MetricsManager methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(metricsManager)));
-          
-          console.log('📌 Registering metrics-update listener');
-          
-          // Track if we're getting any events
-          let eventCount = 0;
+          // Register metrics event listener
           metricsManager.on('metrics-update', (metrics: any) => {
-            eventCount++;
-            // Log first 10 events and then every 50th
-            if (eventCount <= 10 || eventCount % 50 === 0) {
-              console.log(`📊 Metrics event #${eventCount} in Redux Provider:`, {
-                inputLevel: metrics.inputLevel,
-                outputLevel: metrics.outputLevel,
-                timestamp: new Date(metrics.timestamp).toISOString(),
-                frameCount: metrics.frameCount
-              });
-            }
-            
-            // Only log non-zero inputs occasionally to reduce spam
-            if (metrics.inputLevel > 0 && Math.random() < 0.05) {
-              console.log('🎯 Audio level:', metrics.inputLevel.toFixed(3));
-            }
-            
             setAudioLevel(metrics.inputLevel || 0);
-            // Also dispatch to Redux if needed
+            // Dispatch to Redux for global state
             store.dispatch(updateMetrics({ 
               inputLevel: metrics.inputLevel,
               outputLevel: metrics.outputLevel 
@@ -243,7 +262,7 @@ export function MurmurabaReduxProvider({
   showAudioMonitoring = process.env.NODE_ENV === 'development'
 }: MurmurabaReduxProviderProps & { showAudioMonitoring?: boolean }) {
   const [shouldInitialize, setShouldInitialize] = useState(false);
-  const [, setIsInitializing] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
 
   const handleManualInit = () => {
     setShouldInitialize(true);
@@ -293,9 +312,10 @@ export function MurmurabaReduxProvider({
         algorithm={algorithm}
         enableAGC={enableAGC}
         noiseReductionLevel={noiseReductionLevel}
-        allowDegraded={allowDegraded}
+        allowDegraded={true}
         lazy={false}
         initTimeout={15000}
+        useWorker={false}
         services={{
           audioProcessor: true,
           metricsManager: true,
@@ -303,9 +323,9 @@ export function MurmurabaReduxProvider({
         }}
         onUserInteraction={() => setIsInitializing(false)}
       >
-        <MurmurabaReduxBridge showAudioLevel={showAudioMonitoring}>
+        <MurmurabaSuiteWrapper isInitializing={isInitializing} showAudioLevel={showAudioMonitoring}>
           {children}
-        </MurmurabaReduxBridge>
+        </MurmurabaSuiteWrapper>
       </MurmurabaSuite>
     </Provider>
   );

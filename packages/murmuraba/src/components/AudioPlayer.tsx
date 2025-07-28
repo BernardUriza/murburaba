@@ -47,7 +47,7 @@ export function AudioPlayer({
   const audioRef = useRef<HTMLAudioElement>(null);
   const seekTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
-  
+
   const [state, setState] = useState<AudioState>({
     isPlaying: false,
     currentTime: 0,
@@ -66,7 +66,7 @@ export function AudioPlayer({
   // Format time with proper validation and edge case handling
   const formatTime = useCallback((time: number): string => {
     if (!isFinite(time) || time < 0) return '0:00';
-    
+
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -87,39 +87,42 @@ export function AudioPlayer({
   const handleLoadedMetadata = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    
+
     const duration = isFinite(audio.duration) ? audio.duration : 0;
-    safeSetState({ 
-      duration, 
+    safeSetState({
+      duration,
       isLoading: false,
-      hasError: false 
+      hasError: false,
     });
   }, [safeSetState]);
 
   const handleTimeUpdate = useCallback(() => {
     const audio = audioRef.current;
     if (!audio || !mountedRef.current) return;
-    
+
     safeSetState({ currentTime: audio.currentTime });
   }, [safeSetState]);
 
   const handleEnded = useCallback(() => {
-    safeSetState({ 
-      isPlaying: false, 
-      currentTime: 0 
+    safeSetState({
+      isPlaying: false,
+      currentTime: 0,
     });
     onPlayStateChange?.(false);
   }, [onPlayStateChange, safeSetState]);
 
-  const handleError = useCallback((event: Event) => {
-    console.error('Audio playback error:', event);
-    safeSetState({ 
-      isLoading: false, 
-      isPlaying: false, 
-      hasError: true 
-    });
-    onPlayStateChange?.(false);
-  }, [onPlayStateChange, safeSetState]);
+  const handleError = useCallback(
+    (event: Event) => {
+      console.error('Audio playback error:', event);
+      safeSetState({
+        isLoading: false,
+        isPlaying: false,
+        hasError: true,
+      });
+      onPlayStateChange?.(false);
+    },
+    [onPlayStateChange, safeSetState]
+  );
 
   // Setup audio event listeners with proper cleanup
   useEffect(() => {
@@ -149,7 +152,15 @@ export function AudioPlayer({
         audio.removeEventListener(event, handler);
       });
     };
-  }, [src, handleLoadStart, handleLoadedMetadata, handleTimeUpdate, handleEnded, handleError, safeSetState]);
+  }, [
+    src,
+    handleLoadStart,
+    handleLoadedMetadata,
+    handleTimeUpdate,
+    handleEnded,
+    handleError,
+    safeSetState,
+  ]);
 
   // Handle volume and muted state changes
   useEffect(() => {
@@ -202,47 +213,55 @@ export function AudioPlayer({
   }, [state.isPlaying, state.isLoading, src, disabled, onPlayStateChange, safeSetState]);
 
   // Handle seeking with debouncing for performance
-  const handleSeek = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    const audio = audioRef.current;
-    if (!audio || state.duration <= 0 || disabled) return;
+  const handleSeek = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      const audio = audioRef.current;
+      if (!audio || state.duration <= 0 || disabled) return;
 
-    const rect = event.currentTarget.getBoundingClientRect();
-    const clickX = event.clientX - rect.left;
-    const percentage = Math.max(0, Math.min(1, clickX / rect.width));
-    const newTime = percentage * state.duration;
+      const rect = event.currentTarget.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+      const newTime = percentage * state.duration;
 
-    // Clear existing timeout
-    if (seekTimeoutRef.current) {
-      clearTimeout(seekTimeoutRef.current);
-    }
-
-    // Debounce seek operations
-    seekTimeoutRef.current = setTimeout(() => {
-      if (audio && mountedRef.current) {
-        audio.currentTime = newTime;
-        safeSetState({ currentTime: newTime });
+      // Clear existing timeout
+      if (seekTimeoutRef.current) {
+        clearTimeout(seekTimeoutRef.current);
       }
-    }, 50);
-  }, [state.duration, disabled, safeSetState]);
+
+      // Debounce seek operations
+      seekTimeoutRef.current = setTimeout(() => {
+        if (audio && mountedRef.current) {
+          audio.currentTime = newTime;
+          safeSetState({ currentTime: newTime });
+        }
+      }, 50);
+    },
+    [state.duration, disabled, safeSetState]
+  );
 
   // Keyboard event handling for accessibility
-  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      togglePlayPause();
-    }
-  }, [togglePlayPause]);
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        togglePlayPause();
+      }
+    },
+    [togglePlayPause]
+  );
 
   // Render disabled state
   if (!src) {
     return (
       <div className={`audio-player audio-player--disabled ${className}`.trim()}>
-        <button 
-          className="audio-player__button" 
+        <button
+          className="audio-player__button"
           disabled
           aria-label={ariaLabel || `${label} - No audio available`}
         >
-          <span className="audio-player__icon" aria-hidden="true">▶️</span>
+          <span className="audio-player__icon" aria-hidden="true">
+            ▶️
+          </span>
         </button>
         <span className="audio-player__label">{label} - No audio</span>
       </div>
@@ -253,19 +272,14 @@ export function AudioPlayer({
   const effectiveAriaLabel = ariaLabel || `${label} - ${state.isPlaying ? 'Pause' : 'Play'} audio`;
 
   return (
-    <div 
+    <div
       className={`audio-player ${state.isPlaying ? 'audio-player--playing' : ''} ${state.hasError ? 'audio-player--error' : ''} ${className}`.trim()}
       role="region"
       aria-label={`Audio player for ${label}`}
     >
-      <audio 
-        ref={audioRef} 
-        src={src} 
-        preload="metadata"
-        aria-hidden="true"
-      />
-      
-      <button 
+      <audio ref={audioRef} src={src} preload="metadata" aria-hidden="true" />
+
+      <button
         className="audio-player__button"
         onClick={togglePlayPause}
         onKeyDown={handleKeyDown}
@@ -274,20 +288,28 @@ export function AudioPlayer({
         type="button"
       >
         {state.isLoading ? (
-          <span className="audio-player__icon audio-player__icon--loading" aria-hidden="true">⏳</span>
+          <span className="audio-player__icon audio-player__icon--loading" aria-hidden="true">
+            ⏳
+          </span>
         ) : state.hasError ? (
-          <span className="audio-player__icon audio-player__icon--error" aria-hidden="true">❌</span>
+          <span className="audio-player__icon audio-player__icon--error" aria-hidden="true">
+            ❌
+          </span>
         ) : state.isPlaying ? (
-          <span className="audio-player__icon audio-player__icon--pause" aria-hidden="true">⏸️</span>
+          <span className="audio-player__icon audio-player__icon--pause" aria-hidden="true">
+            ⏸️
+          </span>
         ) : (
-          <span className="audio-player__icon audio-player__icon--play" aria-hidden="true">▶️</span>
+          <span className="audio-player__icon audio-player__icon--play" aria-hidden="true">
+            ▶️
+          </span>
         )}
       </button>
-      
+
       <div className="audio-player__info">
         <span className="audio-player__label">{label}</span>
         <div className="audio-player__progress-container">
-          <div 
+          <div
             className="audio-player__progress-bar"
             onClick={handleSeek}
             role="slider"
@@ -296,20 +318,20 @@ export function AudioPlayer({
             aria-valuenow={state.currentTime}
             aria-label="Seek position"
             tabIndex={disabled ? -1 : 0}
-            onKeyDown={(e) => {
+            onKeyDown={e => {
               // TODO: Add arrow key support for seeking
               if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
                 // Implement arrow key seeking
               }
             }}
           >
-            <div 
-              className="audio-player__progress-fill" 
+            <div
+              className="audio-player__progress-fill"
               style={{ width: `${progress}%` }}
               aria-hidden="true"
             />
           </div>
-          <span 
+          <span
             className="audio-player__time"
             aria-label={`Current time: ${formatTime(state.currentTime)}, Duration: ${formatTime(state.duration)}`}
           >

@@ -18,12 +18,12 @@ export function ControlPanel({
   isReady,
   isProcessing,
   isRecording,
-  enableAGC,
+  // enableAGC,
   chunkDuration,
-  onInit,
+  // onInit,
   onRecord,
   onStop,
-  onSetAGC,
+  // onSetAGC,
   onSetDuration
 }: ControlPanelProps) {
   const durations = [5, 8, 10, 15]
@@ -40,6 +40,7 @@ export function ControlPanel({
       
       <div className={styles.controlsGrid}>
         <button
+          id="start-recording"
           className={`${styles.actionButton} ${styles.recordButton} ${(isProcessing || !isReady) ? styles.disabled : ''}`}
           onClick={onRecord}
           disabled={isProcessing || !isReady}

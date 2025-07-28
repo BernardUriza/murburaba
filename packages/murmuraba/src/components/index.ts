@@ -1,6 +1,6 @@
 /**
  * Murmuraba UI Components
- * 
+ *
  * Component exports separated from core API
  */
 
@@ -17,13 +17,13 @@ export { AdvancedMetricsPanel } from './AdvancedMetricsPanel';
 
 // Utilities
 export { ErrorBoundary, withErrorBoundary } from './ErrorBoundary';
-export { 
-  BuildInfo, 
-  BuildInfoBadge, 
-  BuildInfoBlock, 
+export {
+  BuildInfo,
+  BuildInfoBadge,
+  BuildInfoBlock,
   BuildInfoInline,
   getPackageVersion,
-  formatBuildDate 
+  formatBuildDate,
 } from './BuildInfo';
 
 // Component types

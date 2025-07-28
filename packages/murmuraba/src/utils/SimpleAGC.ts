@@ -1,7 +1,7 @@
 /**
  * Simple Automatic Gain Control - REFACTORED
  * Based on WebSearch results for Web Audio API AGC
- * 
+ *
  * Key findings from WebSearch:
  * - Use DynamicsCompressorNode for reducing dynamics range
  * - Use AnalyserNode + GainNode for manual AGC
@@ -18,58 +18,58 @@ export class SimpleAGC {
   private readonly releaseTime: number;
   private readonly maxGain: number;
   private readonly audioContext: AudioContext;
-  
+
   constructor(audioContext: AudioContext, targetLevel = 0.3) {
     this.audioContext = audioContext;
     this.targetLevel = targetLevel;
-    this.attackTime = 0.1;  // 100ms attack
+    this.attackTime = 0.1; // 100ms attack
     this.releaseTime = 0.5; // 500ms release (from WebSearch)
-    this.maxGain = 10.0;    // Safety limit
-    
+    this.maxGain = 10.0; // Safety limit
+
     // Create nodes as per WebSearch recommendation
     this.analyser = audioContext.createAnalyser();
     this.gainNode = audioContext.createGain();
-    
+
     // Configure analyser for time-domain analysis
     this.analyser.fftSize = 256;
     this.bufferLength = this.analyser.frequencyBinCount;
     this.dataArray = new Uint8Array(this.bufferLength);
-    
+
     // Connect nodes
     this.analyser.connect(this.gainNode);
   }
-  
+
   /**
    * Update gain based on current audio level
    * Implements attack/release timing as recommended by WebSearch
    */
   updateGain(): void {
     const currentRMS = this.calculateRMS();
-    
+
     // Only adjust if we have signal (avoid divide by zero)
     if (currentRMS > 0) {
       const targetGain = this.calculateTargetGain(currentRMS);
       this.applyGainSmoothing(targetGain);
     }
   }
-  
+
   /**
    * Calculate RMS (Root Mean Square) level
    * Formula from WebSearch MDN examples
    */
   private calculateRMS(): number {
     this.analyser.getByteTimeDomainData(this.dataArray);
-    
+
     let sum = 0;
     for (let i = 0; i < this.bufferLength; i++) {
       // Convert from 0-255 to -1 to 1
       const normalized = (this.dataArray[i] - 128) / 128;
       sum += normalized * normalized;
     }
-    
+
     return Math.sqrt(sum / this.bufferLength);
   }
-  
+
   /**
    * Calculate target gain with safety limits
    */
@@ -77,7 +77,7 @@ export class SimpleAGC {
     const rawGain = this.targetLevel / currentRMS;
     return Math.min(rawGain, this.maxGain);
   }
-  
+
   /**
    * Apply gain with proper timing to prevent clicks
    * Uses exponential ramp as per WebSearch recommendation
@@ -85,24 +85,20 @@ export class SimpleAGC {
   private applyGainSmoothing(targetGain: number): void {
     const currentGain = this.gainNode.gain.value;
     const isIncreasing = targetGain > currentGain;
-    
+
     // Use attack time when increasing, release time when decreasing
     const timeConstant = isIncreasing ? this.attackTime : this.releaseTime;
-    
-    this.gainNode.gain.setTargetAtTime(
-      targetGain,
-      this.audioContext.currentTime,
-      timeConstant
-    );
+
+    this.gainNode.gain.setTargetAtTime(targetGain, this.audioContext.currentTime, timeConstant);
   }
-  
+
   /**
    * Get current gain value for monitoring
    */
   getCurrentGain(): number {
     return this.gainNode.gain.value;
   }
-  
+
   /**
    * Connect source -> analyser -> gain -> destination
    */

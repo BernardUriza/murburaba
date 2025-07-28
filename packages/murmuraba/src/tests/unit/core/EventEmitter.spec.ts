@@ -95,7 +95,7 @@ describe('EventEmitter', () => {
       // Act
       emitter.once('test-event', onceCallback);
       emitter.on('test-event', regularCallback);
-      
+
       emitter.emit('test-event', 'first');
       emitter.emit('test-event', 'second');
 
@@ -193,7 +193,7 @@ describe('EventEmitter', () => {
         throw new Error('Test error');
       });
       const callback3 = vi.fn();
-      
+
       // Spy on console.error to suppress error output in tests
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -207,7 +207,7 @@ describe('EventEmitter', () => {
       expect(callback1).toHaveBeenCalledWith('data');
       expect(callback2).toHaveBeenCalledWith('data');
       expect(callback3).toHaveBeenCalledWith('data');
-      
+
       // Restore console.error
       consoleErrorSpy.mockRestore();
     });

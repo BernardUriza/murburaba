@@ -25,24 +25,24 @@ export interface IAudioProcessor {
     file: File | ArrayBuffer,
     options?: AudioProcessingOptions
   ): Promise<AudioProcessingResult>;
-  
+
   processStream(
     stream: MediaStream,
     options?: AudioProcessingOptions
   ): Promise<AudioProcessingResult>;
-  
+
   processRecording(
     duration: number,
     options?: AudioProcessingOptions
   ): Promise<AudioProcessingResult>;
-  
+
   onProgress(callback: (progress: number) => void): () => void;
   onMetrics(callback: (metrics: ProcessingMetrics) => void): () => void;
   onChunk(callback: (chunk: ProcessedChunk) => void): () => void;
-  
+
   cancel(): void;
   isProcessing(): boolean;
-  
+
   // Optional cleanup methods
   cleanup?(): void;
   destroyEngine?(): Promise<void>;

@@ -13,6 +13,7 @@ export interface ProcessingResults {
   chunks: ProcessedChunk[]
   processedBuffer: ArrayBuffer
   averageVad: number
+  averageNoiseReduction?: number
   totalDuration: number
   metadata: {
     sampleRate: number

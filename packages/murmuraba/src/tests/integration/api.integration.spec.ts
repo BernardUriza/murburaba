@@ -4,13 +4,13 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { 
-  initializeAudioEngine, 
-  getEngineStatus, 
+import {
+  initializeAudioEngine,
+  getEngineStatus,
   getDiagnostics,
   destroyEngine,
   processStream,
-  getEngine
+  getEngine,
 } from '../../api';
 import { createTestMediaStream } from '../utils/test-builders';
 
@@ -50,8 +50,10 @@ describe('Murmuraba API Integration', () => {
 
       // Act
       await initializeAudioEngine(config);
-      await expect(initializeAudioEngine(config)).rejects.toThrow('Audio engine is already initialized');
-      
+      await expect(initializeAudioEngine(config)).rejects.toThrow(
+        'Audio engine is already initialized'
+      );
+
       // Assert
       expect(getEngineStatus()).toBe('ready');
     });
@@ -59,10 +61,10 @@ describe('Murmuraba API Integration', () => {
     it('should properly clean up on stop', async () => {
       // Arrange
       await initializeAudioEngine({ algorithm: 'rnnoise' });
-      
+
       // Act
       await destroyEngine();
-      
+
       // Assert
       expect(getEngineStatus()).toBe('uninitialized');
       expect(() => getDiagnostics()).toThrow('Audio engine not initialized');
@@ -74,11 +76,11 @@ describe('Murmuraba API Integration', () => {
       // Arrange
       await initializeAudioEngine({ algorithm: 'rnnoise' });
       const mockStream = createTestMediaStream();
-      
+
       // Act
       const processedStream = await processStream(mockStream);
       const status = getEngineStatus();
-      
+
       // Assert
       expect(processedStream).toBeDefined();
       expect(status).toBe('processing');
@@ -89,13 +91,13 @@ describe('Murmuraba API Integration', () => {
       await initializeAudioEngine({ algorithm: 'rnnoise' });
       const mockStream = createTestMediaStream();
       await processStream(mockStream);
-      
+
       // Act
       // Stop processing by destroying and reinitializing
       await destroyEngine();
       await initializeAudioEngine({ algorithm: 'rnnoise' });
       const status = getEngineStatus();
-      
+
       // Assert
       expect(status).toBe('ready');
     });
@@ -104,7 +106,7 @@ describe('Murmuraba API Integration', () => {
       // Arrange
       await initializeAudioEngine({ algorithm: 'rnnoise' });
       const invalidStream = {} as MediaStream; // Invalid stream
-      
+
       // Act & Assert
       await expect(processStream(invalidStream)).rejects.toThrow();
       expect(getEngineStatus()).toBe('ready'); // Should recover to ready
@@ -114,16 +116,16 @@ describe('Murmuraba API Integration', () => {
   describe('Diagnostics integration', () => {
     it('should update diagnostics during processing', async () => {
       // Arrange
-      await initializeAudioEngine({ 
-        algorithm: 'rnnoise'
+      await initializeAudioEngine({
+        algorithm: 'rnnoise',
       });
       const mockStream = createTestMediaStream();
-      
+
       // Act
       const diagnosticsBefore = getDiagnostics();
       await processStream(mockStream);
       const diagnosticsDuring = getDiagnostics();
-      
+
       // Assert
       expect(diagnosticsBefore.engineState).toBe('ready');
       expect(diagnosticsDuring.engineState).toBe('processing');
@@ -132,13 +134,13 @@ describe('Murmuraba API Integration', () => {
 
     it('should report degraded mode correctly', async () => {
       // Arrange & Act
-      await initializeAudioEngine({ 
+      await initializeAudioEngine({
         algorithm: 'rnnoise',
-        allowDegraded: true
+        allowDegraded: true,
       });
-      
+
       const diagnostics = getDiagnostics();
-      
+
       // Assert
       expect(diagnostics.engineState).toBe('ready');
       expect(diagnostics.wasmLoaded).toBe(false);
@@ -150,13 +152,12 @@ describe('Murmuraba API Integration', () => {
       // Arrange - Mock WebAssembly not supported
       const originalWebAssembly = (global as any).WebAssembly;
       (global as any).WebAssembly = undefined;
-      
+
       // Act & Assert
-      await expect(initializeAudioEngine({ algorithm: 'rnnoise' }))
-        .rejects.toThrow();
-      
+      await expect(initializeAudioEngine({ algorithm: 'rnnoise' })).rejects.toThrow();
+
       expect(getEngineStatus()).toBe('uninitialized');
-      
+
       // Cleanup
       (global as any).WebAssembly = originalWebAssembly;
     });
@@ -165,9 +166,8 @@ describe('Murmuraba API Integration', () => {
       // Act & Assert
       expect(getEngineStatus()).toBe('uninitialized');
       expect(() => getDiagnostics()).toThrow('Audio engine not initialized');
-      
-      await expect(processStream(createTestMediaStream()))
-        .rejects.toThrow();
+
+      await expect(processStream(createTestMediaStream())).rejects.toThrow();
     });
   });
 
@@ -178,11 +178,11 @@ describe('Murmuraba API Integration', () => {
         algorithm: 'rnnoise' as const,
         logLevel: 'debug' as const,
       };
-      
+
       // Act
       await initializeAudioEngine(config);
       const diagnostics = getDiagnostics();
-      
+
       // Assert
       // Verify engine config was applied
       expect(diagnostics.engineState).toBe('ready');

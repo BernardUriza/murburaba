@@ -4,7 +4,7 @@ import { useAppSelector } from '../store/hooks'
 import { selectEngineStatus } from '../store/selectors'
 
 export function MurmurabaSuiteStatus() {
-  const { container, isReady, error } = useMurmurabaSuite()
+  const { isReady, error } = useMurmurabaSuite()
   const engineStatus = useAppSelector(selectEngineStatus)
   const [wasmInfo, setWasmInfo] = useState<{ loaded: boolean; size?: number; path?: string }>({
     loaded: false

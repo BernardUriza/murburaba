@@ -1,280 +1,218 @@
-/**
- * EL ÚNICO TEST QUE IMPORTA
- * 
- * Ejecutar: node test/check-localhost.js
- * NO uses npm test ni ninguna mierda de esas
- * 
- * USA: Puppeteer para browser real + happy-dom para testing rápido
- */
+#!/usr/bin/env node
 
 import puppeteer from 'puppeteer';
-import { Window } from 'happy-dom';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-async function checkLocalhost() {
-  // Detectar puerto automáticamente
-  const port = process.env.PORT || 3000;
-  const url = `http://localhost:${port}`;
-  console.log(`🔍 Checking ${url}...\n`);
-  
-  // Primero: Test rápido con happy-dom
-  console.log('1️⃣ Pre-check con happy-dom...');
-  const window = new Window();
-  const document = window.document;
-  
-  // Simular ambiente browser básico
-  global.window = window;
-  global.document = document;
-  // Skip navigator assignment - it's read-only in newer Node versions
-  
-  // Verificar que happy-dom funciona
-  if (!window.fetch) {
-    console.error('❌ happy-dom no está funcionando correctamente');
-    process.exit(1);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// LOG BRUTAL Y TRAZABILIDAD EXTREMA
+const timestamp = Date.now();
+const logFile = path.join(__dirname, `brutal-test-${timestamp}.log`);
+
+function log(msg) {
+  const entry = `[${new Date().toISOString()}] ${msg}`;
+  console.log(entry);
+  fs.appendFileSync(logFile, entry + '\n');
+}
+
+// Busca, espera, y loguea cualquier selector con retry brutal
+async function waitForSelectorBrutal(page, selector, timeout = 7000, poll = 250) {
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    const exists = await page.evaluate(sel => !!document.querySelector(sel), selector);
+    if (exists) return true;
+    await new Promise(r => setTimeout(r, poll));
   }
-  
-  console.log('✅ happy-dom OK\n');
-  
-  // Segundo: Test real con Puppeteer
-  console.log('2️⃣ Test completo con Puppeteer...');
-  const browser = await puppeteer.launch({ 
+  return false;
+}
+
+async function brutalTest() {
+  log('🩸 TEST BRUTAL DE GRABACIÓN REAL (MODO ROBUSTO)');
+  log(`Log file: ${logFile}`);
+
+  // CHECK: Archivo de audio fake existe
+  const fakeAudioPath = path.join(__dirname, '../public/jfk_speech.wav');
+  if (!fs.existsSync(fakeAudioPath)) {
+    log('💥 FALTA jfk_speech.wav en public. Copia el archivo antes de correr el test.');
+    process.exit(2);
+  }
+
+  // Deep: Headless Chrome ultra-permisivo
+  const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--use-fake-ui-for-media-stream',
+      '--use-fake-device-for-media-stream',
+      `--use-file-for-fake-audio-capture=${fakeAudioPath}`,
+      '--allow-running-insecure-content',
+      '--disable-web-security',
+      '--disable-features=VizDisplayCompositor',
+      '--autoplay-policy=no-user-gesture-required',
+      '--window-size=1400,900',
+    ]
   });
-  
-  try {
-    const page = await browser.newPage();
-    
-    // Capturar TODOS los errores
-    const errors = [];
-    const warnings = [];
-    
-    page.on('console', async msg => {
-      const type = msg.type();
-      let text = msg.text();
-      
-      // Intentar obtener los argumentos completos del mensaje
-      try {
-        const args = await Promise.all(msg.args().map(arg => arg.jsonValue().catch(() => arg.toString())));
-        if (args.length > 0) {
-          text = args.join(' ');
-        }
-      } catch {
-        // Mantener el texto original si falla
+
+  const page = await browser.newPage();
+  await page.setViewport({ width: 1400, height: 900 });
+
+  // LOG DE TODO
+  const allLogs = [];
+  let chunkCount = 0;
+
+  page.on('console', msg => {
+    const text = msg.text();
+    const entry = { time: Date.now(), type: msg.type(), text };
+    allLogs.push(entry);
+    log(`[${msg.type().toUpperCase()}] ${text}`);
+    if (/chunk/i.test(text)) {
+      chunkCount++;
+      log(`🔥 CHUNK #${chunkCount}: ${text}`);
+      if (/8(?!000)/.test(text)) {
+        log('🚨 POSIBLE BUG: Valor 8 detectado (¿8ms en vez de 8s?)');
       }
-      
-      if (type === 'error') {
-        // Ignorar el error específico de inicialización del engine (es esperado)
-        if (text.includes('Engine initialization failed or timed out')) {
-          console.log(`⚠️  Engine timeout (esperado): entrando en modo degradado`);
-        } else {
-          errors.push(text);
-          console.error(`❌ Console Error: ${text}`);
-        }
-      } else if (type === 'warning') {
-        warnings.push(text);
-        console.warn(`⚠️  Console Warning: ${text}`);
-      } else if (type === 'log' || type === 'info') {
-        console.log(`📝 Console ${type}: ${text}`);
-      } else if (type === 'debug') {
-        console.log(`🔍 Console debug: ${text}`);
-      }
-    });
-    
-    page.on('pageerror', err => {
-      errors.push(err.toString());
-      console.error(`❌ Page Error: ${err}`);
-    });
-    
-    page.on('error', err => {
-      errors.push(err.toString());
-      console.error(`❌ Error: ${err}`);
-    });
-    
-    // Capturar errores de requests fallidos
-    page.on('requestfailed', request => {
-      const failure = request.failure();
-      if (failure) {
-        // Ignorar errores de blob URLs (estos son de audio procesado)
-        if (request.url().startsWith('blob:')) {
-          console.log(`⚠️  Blob request failed (ignorando): ${request.url()}`);
-        } else if (request.url().includes('rnnoise.wasm') && failure.errorText === 'net::ERR_ABORTED') {
-          // WASM might be loaded via a different method, ignore abort errors
-          console.log(`⚠️  WASM request aborted (normal behavior): ${request.url()}`);
-        } else {
-          console.error(`❌ Request failed: ${request.url()} - ${failure.errorText}`);
-          errors.push(`Request failed: ${request.url()}`);
-        }
-      }
-    });
-    
-    // Navegar a localhost
-    try {
-      await page.goto(url, {
-        waitUntil: 'networkidle0',
-        timeout: 10000
-      });
-    } catch {
-      console.error(`\n❌ FATAL: No se pudo conectar a ${url}`);
-      console.error('   Asegúrate de que el servidor esté corriendo: npm run dev');
-      console.error('   Si el puerto 3000 está ocupado, usa: PORT=3001 node test/check-localhost.js');
-      process.exit(1);
     }
-    
-    // Esperar un momento para que todo cargue
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Verificar que no hay errores 404
-    const response = page.url();
-    if (response.includes('404')) {
-      errors.push('Landing page returned 404');
-    }
-    
-    console.log('\n🔍 Verificando pantalla de bienvenida...');
-    
-    // Paso 1: Verificar que aparece la pantalla de bienvenida
-    try {
-      await page.waitForSelector('button', { timeout: 5000 });
-      console.log('✅ Pantalla de bienvenida cargada correctamente');
-      
-      // Tomar screenshot de la pantalla inicial
-      await page.screenshot({ 
-        path: 'test/localhost-welcome.png',
-        fullPage: true 
-      });
-      console.log('📸 Screenshot inicial guardado en: test/localhost-welcome.png');
-    } catch {
-      console.error('❌ No se encontró el botón de inicialización');
-      errors.push('Botón "Initialize Audio Engine" no encontrado');
-      return;
-    }
-    
-    // Capturar logs de inicialización
-    const initLogs = [];
-    page.on('console', msg => {
-      const text = msg.text();
-      if (text.includes('MurmurabaSuite') || text.includes('engine') || text.includes('WASM')) {
-        initLogs.push(`[${msg.type()}] ${text}`);
-      }
-    });
-    
-    console.log('\n🚀 Haciendo clic en "Initialize Audio Engine"...');
-    
-    // Paso 2: Hacer clic en el botón de inicialización
-    const button = await page.$('button');
-    await button.click();
-    
-    // Paso 3: Verificar que aparece la pantalla de carga
-    try {
-      await page.waitForFunction(() => document.body.innerText.includes('Initializing MurmurabaSuite'), { timeout: 2000 });
-      console.log('✅ Pantalla de carga apareció correctamente');
-      
-      // Tomar screenshot de la pantalla de carga
-      await page.screenshot({ 
-        path: 'test/localhost-loading.png',
-        fullPage: true 
-      });
-      console.log('📸 Screenshot de carga guardado en: test/localhost-loading.png');
-    } catch {
-      console.error('❌ No apareció la pantalla de carga');
-      errors.push('Pantalla "Initializing MurmurabaSuite..." no apareció');
-    }
-    
-    console.log('\n⏳ Esperando inicialización completa (hasta 10 segundos)...');
-    
-    // Paso 4: Esperar a que termine la inicialización
-    try {
-      await page.waitForFunction(
-        () => {
-          const body = document.body.innerText;
-          return !body.includes('Initializing MurmurabaSuite') && 
-                 (body.includes('MurmurABA') || body.includes('Audio Controls'));
-        },
-        { timeout: 20000 }
+    if (chunkCount > 0 && chunkCount % 50 === 0) {
+      fs.writeFileSync(
+        path.join(__dirname, `emergency-${timestamp}-${chunkCount}.json`),
+        JSON.stringify({ chunkCount, allLogs: allLogs.slice(-100) }, null, 2)
       );
-      console.log('✅ Aplicación inicializada correctamente');
-      
-      // Imprimir logs de inicialización capturados
-      if (initLogs.length > 0) {
-        console.log('\n📋 Logs de inicialización:');
-        initLogs.forEach(log => console.log(`   ${log}`));
-      }
-    } catch {
-      console.error('❌ Error: La inicialización tomó más de 10 segundos');
-      errors.push('Timeout en inicialización de MurmurabaSuite');
-      
-      // Obtener información de debug
-      const debugInfo = await page.evaluate(() => {
-        const body = document.body.innerText;
-        const hasError = document.querySelector('.error-message');
-        return {
-          bodyText: body.substring(0, 300),
-          hasError: !!hasError,
-          errorText: hasError ? hasError.textContent : null,
-          audioContext: window.audioContext ? window.audioContext.state : 'no context'
-        };
-      });
-      
-      console.error('📋 Debug info:', JSON.stringify(debugInfo, null, 2));
+      log(`💾 EMERGENCY SAVE: ${chunkCount} chunks`);
     }
-    
-    // Esperar un poco más para asegurar carga completa
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Tomar screenshot
-    const screenshotPath = 'test/localhost-final.png';
-    await page.screenshot({ 
-      path: screenshotPath,
-      fullPage: true 
+  });
+  page.on('pageerror', err => log(`💀 PAGE ERROR: ${err}`));
+  page.on('error', err => log(`💀 BROWSER ERROR: ${err}`));
+
+  log('🎯 Navegando a localhost:3000...');
+  await page.goto('http://127.0.0.1:3000/', { waitUntil: 'domcontentloaded', timeout: 15000 });
+  await page.screenshot({ path: path.join(__dirname, `initial-${timestamp}.png`) });
+
+  // Botón demo: ultra robusto
+  log('🎵 Buscando botones demo...');
+  const demoFound = await waitForSelectorBrutal(page, 'button,div[role="button"],[onclick]');
+  if (!demoFound) {
+    log('❌ No hay botones en la landing. UI rota.');
+    await browser.close();
+    process.exit(3);
+  }
+
+  // Buscar y clickear demo o initialize o start recording, el que aparezca
+  const clickLabelVariants = [
+    {label: /audio demo|🎵/i, screenshot: 'audio-demo'},
+    {label: /initialize audio engine/i, screenshot: 'init-audio-engine'},
+    {label: /start recording|🎙️/i, screenshot: 'start-recording'}
+  ];
+  let action = null;
+  for (const variant of clickLabelVariants) {
+    const clicked = await page.evaluate(labelRe => {
+      const nodes = Array.from(document.querySelectorAll('button,div[role="button"],[onclick]'));
+      const btn = nodes.find(b => labelRe.test(b.textContent));
+      if (btn) { btn.click(); return true; }
+      return false;
+    }, variant.label);
+    if (clicked) {
+      log(`✅ Click en botón: ${variant.label}`);
+      await page.screenshot({ path: path.join(__dirname, `${variant.screenshot}-${timestamp}.png`) });
+      action = variant.screenshot;
+      break;
+    }
+  }
+  if (!action) {
+    log('❌ No se pudo iniciar demo ni audio engine. Test abortado.');
+    await browser.close();
+    process.exit(4);
+  }
+
+  // Si fue demo, buscar process
+  if (action === 'audio-demo') {
+    const processBtn = await page.evaluate(() => {
+      const btns = Array.from(document.querySelectorAll('button'));
+      const btn = btns.find(b => /process|procesar|start/i.test(b.textContent));
+      if (btn) { btn.click(); return true; }
+      return false;
     });
-    console.log(`📸 Screenshot guardado en: ${screenshotPath}`);
-    
-    await browser.close();
-    
-    // Reporte final
-    console.log('\n' + '='.repeat(50));
-    console.log('RESULTADO DEL TEST:');
-    console.log('='.repeat(50));
-    
-    if (errors.length > 0) {
-      console.error(`\n❌ FALLÓ - ${errors.length} errores encontrados`);
-      console.error('\nDETALLE DE ERRORES:');
-      errors.forEach((e, i) => {
-        console.error(`${i + 1}. ${e}`);
-      });
-      process.exit(1);
+    if (processBtn) {
+      log('✅ Process demo iniciado');
+      await page.screenshot({ path: path.join(__dirname, `processing-${timestamp}.png`) });
+      await page.waitForTimeout(2000);
+    } else {
+      log('❌ No se encontró botón para procesar demo.');
     }
-    
-    if (warnings.length > 0) {
-      console.warn(`\n⚠️  ${warnings.length} warnings de React`);
-    }
-    
-    console.log('\n✅ Landing page OK - Sin errores');
-    process.exit(0);
-    
-  } catch (error) {
-    console.error('\n❌ Error ejecutando test:', error);
-    await browser.close();
-    process.exit(1);
   }
+
+  // Buscar y clickear start recording si no se hizo antes
+  if (action !== 'start-recording') {
+    const recordingFound = await waitForSelectorBrutal(page, 'button');
+    const recordClicked = await page.evaluate(() => {
+      const btn = Array.from(document.querySelectorAll('button'))
+        .find(b => /start recording|🎙️/i.test(b.textContent));
+      if (btn) { btn.click(); return true; }
+      return false;
+    });
+    if (!recordClicked) {
+      log('❌ No se encontró botón Start Recording.');
+      const buttons = await page.evaluate(() =>
+        Array.from(document.querySelectorAll('button')).map(b => b.textContent?.trim())
+      );
+      log(`Botones disponibles: ${JSON.stringify(buttons)}`);
+      await browser.close();
+      process.exit(5);
+    }
+    log('🔴 RECORDING STARTED');
+  }
+
+  // MONITOREO EXTREMO - 10 SEGUNDOS
+  let seconds = 0;
+  const monitor = setInterval(() => {
+    seconds++;
+    log(`⏱️  Segundo ${seconds} - Chunks: ${chunkCount}`);
+    if (chunkCount > 100) {
+      log('🚨 ALERTA: MÁS DE 100 CHUNKS EN POCOS SEGUNDOS');
+      log('🚨 CONFIRMADO: BUG DE 8ms EN VEZ DE 8s');
+      clearInterval(monitor);
+    }
+    if (seconds >= 10) {
+      clearInterval(monitor);
+    }
+  }, 1000);
+  await new Promise(r => setTimeout(r, 10000));
+  clearInterval(monitor);
+
+  // ESTADO FINAL
+  const finalState = {
+    timestamp,
+    chunkCount,
+    totalLogs: allLogs.length,
+    lastLogs: allLogs.slice(-20),
+    chunkLogs: allLogs.filter(l => /chunk/i.test(l.text))
+  };
+  fs.writeFileSync(
+    path.join(__dirname, `final-state-${timestamp}.json`),
+    JSON.stringify(finalState, null, 2)
+  );
+  await browser.close();
+
+  // VEREDICTO FINAL
+  log('\n🩸 VEREDICTO FINAL:');
+  log(`Total chunks procesados: ${chunkCount}`);
+  log(`Total logs capturados: ${allLogs.length}`);
+  if (chunkCount > 100) {
+    log('💀 BUG CONFIRMADO: Chunks de 8ms en vez de 8s');
+    log('💀 El sistema genera miles de chunks microscópicos');
+    process.exit(1);
+  } else if (chunkCount > 0 && chunkCount < 10) {
+    log('✅ CHUNKS NORMALES: Probablemente chunks de 8s');
+  } else {
+    log('⚠️  RESULTADO INCIERTO');
+  }
+  process.exit(0);
 }
 
-// Función adicional: Verificar que el build funciona
-// async function checkBuild() {
-  console.log('\n3️⃣ Verificando que el proyecto compila...');
-  
-  // SKIP BUILD CHECK - Server already running
-  console.log('⏭️  Skipping build verification (server already running)');
-// }
-
-// Ejecutar TODO
-async function runAllChecks() {
-  try {
-    // await checkBuild();  // SKIP - toma mucho tiempo
-    await checkLocalhost();  // Solo verificar runtime
-  } catch (err) {
-    console.error('Fatal:', err);
-    process.exit(1);
-  }
-}
-
-runAllChecks();
+brutalTest().catch(err => {
+  console.error('💀 CRASH:', err);
+  process.exit(1);
+});

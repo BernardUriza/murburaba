@@ -5,7 +5,12 @@ import { ProcessingMetrics } from './chunk-results/ProcessingMetrics';
 import { FileInfo } from './chunk-results/FileInfo';
 import { VadTimeline } from './chunk-results/VadTimeline';
 import { AudioControls } from './chunk-results/AudioControls';
-import { formatTime, formatPercentage, formatFileSize, calculateChunkStats } from './chunk-results/formatters';
+import {
+  formatTime,
+  formatPercentage,
+  formatFileSize,
+  calculateChunkStats,
+} from './chunk-results/formatters';
 import styles from './ChunkProcessingResults.module.css';
 
 export interface ChunkProcessingResultsProps {
@@ -20,7 +25,11 @@ export interface ChunkProcessingResultsProps {
   /** Callback to clear all recordings */
   onClearAll: () => void;
   /** Callback to download chunk */
-  onDownloadChunk: (chunkId: string, format: 'webm' | 'wav' | 'mp3', audioType: 'processed' | 'original') => Promise<void>;
+  onDownloadChunk: (
+    chunkId: string,
+    format: 'webm' | 'wav' | 'mp3',
+    audioType: 'processed' | 'original'
+  ) => Promise<void>;
   /** Additional CSS classes */
   className?: string;
 }
@@ -38,46 +47,50 @@ export function ChunkProcessingResults({
   onDownloadChunk,
   className = '',
 }: ChunkProcessingResultsProps) {
-  
   const chunkStats = calculateChunkStats(chunks);
 
   // Handle clear all with confirmation
   const handleClearAll = useCallback(() => {
     if (chunks.length === 0) return;
-    
+
     const confirmed = window.confirm(
       `Are you sure you want to delete all ${chunks.length} recorded chunks? This action cannot be undone.`
     );
-    
+
     if (confirmed) {
       onClearAll();
     }
   }, [chunks.length, onClearAll]);
 
-
   // Handle download with error handling
-  const handleDownload = useCallback(async (
-    chunkId: string, 
-    format: 'webm' | 'wav' | 'mp3',
-    audioType: 'processed' | 'original'
-  ) => {
-    try {
-      await onDownloadChunk(chunkId, format, audioType);
-    } catch (error) {
-      console.error(`Failed to download ${format.toUpperCase()}:`, error);
-      // Could add toast notification here
-    }
-  }, [onDownloadChunk]);
+  const handleDownload = useCallback(
+    async (
+      chunkId: string,
+      format: 'webm' | 'wav' | 'mp3',
+      audioType: 'processed' | 'original'
+    ) => {
+      try {
+        await onDownloadChunk(chunkId, format, audioType);
+      } catch (error) {
+        console.error(`Failed to download ${format.toUpperCase()}:`, error);
+        // Could add toast notification here
+      }
+    },
+    [onDownloadChunk]
+  );
 
   // Handle playback toggle with error handling
-  const handlePlaybackToggle = useCallback(async (chunkId: string, audioType: 'processed' | 'original') => {
-    try {
-      await onTogglePlayback(chunkId, audioType);
-    } catch (error) {
-      console.error('Failed to toggle playback:', error);
-      // Could add toast notification here
-    }
-  }, [onTogglePlayback]);
+  const handlePlaybackToggle = useCallback(
+    async (chunkId: string, audioType: 'processed' | 'original') => {
+      try {
+        await onTogglePlayback(chunkId, audioType);
+      } catch (error) {
+        console.error('Failed to toggle playback:', error);
+        // Could add toast notification here
+      }
+    },
+    [onTogglePlayback]
+  );
 
   // Handle keyboard events for accessibility
   const handleKeyDown = useCallback((event: React.KeyboardEvent, action: () => void) => {
@@ -92,11 +105,13 @@ export function ChunkProcessingResults({
     return (
       <section className={`${styles.chunkResults} ${styles.chunkResultsEmpty} ${className}`.trim()}>
         <div className={styles.emptyState}>
-          <div className={styles.emptyIcon} aria-hidden="true">🎵</div>
+          <div className={styles.emptyIcon} aria-hidden="true">
+            🎵
+          </div>
           <h2 className={styles.emptyTitle}>No recordings yet</h2>
           <p className={styles.emptySubtitle}>
-            Start recording to see processed chunks here. Each chunk will show detailed metrics
-            and allow you to play, compare, and export the audio.
+            Start recording to see processed chunks here. Each chunk will show detailed metrics and
+            allow you to play, compare, and export the audio.
           </p>
         </div>
       </section>
@@ -104,7 +119,11 @@ export function ChunkProcessingResults({
   }
 
   return (
-    <section className={`${styles.chunkResults} ${className}`.trim()} role="region" aria-label="Processing Results">
+    <section
+      className={`${styles.chunkResults} ${className}`.trim()}
+      role="region"
+      aria-label="Processing Results"
+    >
       {/* Header with stats */}
       <div className={styles.header}>
         <div className={styles.headerContent}>
@@ -122,37 +141,52 @@ export function ChunkProcessingResults({
               </span>
             </div>
           </div>
-          
+
           {/* VAD Summary en paralelo */}
           <div className={styles.vadSummary}>
             <div className={styles.vadSummaryTitle}>🎤 Voice Activity</div>
             <div className={styles.vadSummaryValue}>
               <span className={styles.vadBigNumber}>
-                {(chunks.reduce((sum, chunk) => sum + (chunk.averageVad || 0), 0) / chunks.length * 100).toFixed(1)}%
+                {(
+                  (chunks.reduce((sum, chunk) => sum + (chunk.averageVad || 0), 0) /
+                    chunks.length) *
+                  100
+                ).toFixed(1)}
+                %
               </span>
               <div className={styles.vadBar}>
-                <div 
+                <div
                   className={styles.vadBarFill}
-                  style={{ 
-                    width: `${(chunks.reduce((sum, chunk) => sum + (chunk.averageVad || 0), 0) / chunks.length * 100)}%`,
-                    backgroundColor: chunks.reduce((sum, chunk) => sum + (chunk.averageVad || 0), 0) / chunks.length > 0.7 ? '#10b981' : 
-                                     chunks.reduce((sum, chunk) => sum + (chunk.averageVad || 0), 0) / chunks.length > 0.3 ? '#f59e0b' : '#ef4444'
+                  style={{
+                    width: `${(chunks.reduce((sum, chunk) => sum + (chunk.averageVad || 0), 0) / chunks.length) * 100}%`,
+                    backgroundColor:
+                      chunks.reduce((sum, chunk) => sum + (chunk.averageVad || 0), 0) /
+                        chunks.length >
+                      0.7
+                        ? '#10b981'
+                        : chunks.reduce((sum, chunk) => sum + (chunk.averageVad || 0), 0) /
+                              chunks.length >
+                            0.3
+                          ? '#f59e0b'
+                          : '#ef4444',
                   }}
                 />
               </div>
             </div>
           </div>
         </div>
-        
+
         {chunks.length > 0 && (
           <button
             className={`${styles.btn} ${styles.btnGhost} ${styles.btnDestructive}`}
             onClick={handleClearAll}
-            onKeyDown={(e) => handleKeyDown(e, handleClearAll)}
+            onKeyDown={e => handleKeyDown(e, handleClearAll)}
             aria-label={`Clear all ${chunks.length} chunks`}
             type="button"
           >
-            <span className={styles.btnIcon} aria-hidden="true">🗑️</span>
+            <span className={styles.btnIcon} aria-hidden="true">
+              🗑️
+            </span>
             <span>Clear All</span>
           </button>
         )}
@@ -195,16 +229,15 @@ export function ChunkProcessingResults({
               {/* Error message for invalid chunks */}
               {!isValid && chunk.errorMessage && (
                 <div className={styles.chunkError} role="alert">
-                  <span className={styles.errorIcon} aria-hidden="true">⚠️</span>
+                  <span className={styles.errorIcon} aria-hidden="true">
+                    ⚠️
+                  </span>
                   <span className={styles.errorMessage}>{chunk.errorMessage}</span>
                 </div>
               )}
 
               {/* Expanded content - keep mounted but toggle visibility */}
-              <div 
-                className={styles.chunkDetails} 
-                aria-label="Chunk details"
-              >
+              <div className={styles.chunkDetails} aria-label="Chunk details">
                 <ProcessingMetrics
                   inputLevel={chunk.metrics.inputLevel}
                   outputLevel={chunk.metrics.outputLevel}
@@ -219,18 +252,24 @@ export function ChunkProcessingResults({
                 />
 
                 {chunk.vadData && chunk.vadData.length > 0 ? (
-                  <VadTimeline 
+                  <VadTimeline
                     key={`vad-${chunk.id}-${chunk.vadData.length}`}
-                    vadData={chunk.vadData} 
-                    chunkId={chunk.id} 
+                    vadData={chunk.vadData}
+                    chunkId={chunk.id}
                   />
                 ) : (
                   <div className={styles.detailsSection}>
-                    <h4 className={styles.sectionTitle}>📈 Voice Activity Detection (VAD) Timeline</h4>
+                    <h4 className={styles.sectionTitle}>
+                      📈 Voice Activity Detection (VAD) Timeline
+                    </h4>
                     <div style={{ padding: '2rem', textAlign: 'center', color: '#a0a0a0' }}>
                       <span style={{ fontSize: '2rem' }}>⚠️</span>
                       <p>No VAD data available for this chunk</p>
-                      {!chunk.isValid && <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>Chunk processing failed</p>}
+                      {!chunk.isValid && (
+                        <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                          Chunk processing failed
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -242,7 +281,7 @@ export function ChunkProcessingResults({
                   hasProcessedAudio={hasProcessedAudio}
                   hasOriginalAudio={hasOriginalAudio}
                   isValid={isValid}
-                  onTogglePlayback={(audioType) => handlePlaybackToggle(chunk.id, audioType)}
+                  onTogglePlayback={audioType => handlePlaybackToggle(chunk.id, audioType)}
                   onDownload={(format, audioType) => handleDownload(chunk.id, format, audioType)}
                   processedAudioUrl={chunk.processedAudioUrl}
                   originalAudioUrl={chunk.originalAudioUrl}

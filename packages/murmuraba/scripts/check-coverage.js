@@ -2,11 +2,11 @@
 
 /**
  * 🔥 COVERAGE GATE ENFORCER
- * 
+ *
  * Siguiendo las reglas del Agents.md:
  * "Si coverage < 90% = SHAME"
  * "VIOLACIÓN = DESTIERRO INMEDIATO"
- * 
+ *
  * Este script bloquea el build si el coverage no cumple con el 90% mínimo.
  */
 
@@ -24,7 +24,7 @@ const COVERAGE_THRESHOLDS = {
   statements: MINIMUM_COVERAGE,
   branches: 85, // Slightly lower for branches as per config
   functions: MINIMUM_COVERAGE,
-  lines: MINIMUM_COVERAGE
+  lines: MINIMUM_COVERAGE,
 };
 
 console.log('🔍 ========================================');
@@ -39,15 +39,15 @@ try {
     cwd: packageRoot,
     encoding: 'utf8',
     stdio: 'inherit',
-    timeout: 120000 // 2 minutos máximo
+    timeout: 120000, // 2 minutos máximo
   });
 
   // Buscar archivos de coverage
   const coverageSummaryPath = join(packageRoot, 'coverage', 'coverage-summary.json');
   const coverageFinalPath = join(packageRoot, 'coverage', 'coverage-final.json');
-  
+
   let totals;
-  
+
   if (existsSync(coverageSummaryPath)) {
     // Usar coverage-summary.json si existe
     const coverageSummary = JSON.parse(readFileSync(coverageSummaryPath, 'utf8'));
@@ -55,38 +55,59 @@ try {
   } else if (existsSync(coverageFinalPath)) {
     // Parsear coverage-final.json para obtener totales
     const coverageFinal = JSON.parse(readFileSync(coverageFinalPath, 'utf8'));
-    
+
     // Calcular totales de coverage-final.json
-    let totalStatements = 0, coveredStatements = 0;
-    let totalBranches = 0, coveredBranches = 0;
-    let totalFunctions = 0, coveredFunctions = 0;
-    let totalLines = 0, coveredLines = 0;
-    
+    let totalStatements = 0,
+      coveredStatements = 0;
+    let totalBranches = 0,
+      coveredBranches = 0;
+    let totalFunctions = 0,
+      coveredFunctions = 0;
+    let totalLines = 0,
+      coveredLines = 0;
+
     for (const [filePath, fileData] of Object.entries(coverageFinal)) {
       const { s, b, f, l } = fileData;
-      
+
       // Statements
       totalStatements += Object.keys(s).length;
       coveredStatements += Object.values(s).filter(count => count > 0).length;
-      
+
       // Branches
       totalBranches += Object.keys(b).length * 2; // Cada branch tiene 2 rutas
-      coveredBranches += Object.values(b).flat().filter(count => count > 0).length;
-      
+      coveredBranches += Object.values(b)
+        .flat()
+        .filter(count => count > 0).length;
+
       // Functions
       totalFunctions += Object.keys(f).length;
       coveredFunctions += Object.values(f).filter(count => count > 0).length;
-      
+
       // Lines
       totalLines += Object.keys(l).length;
       coveredLines += Object.values(l).filter(count => count > 0).length;
     }
-    
+
     totals = {
-      statements: { pct: totalStatements > 0 ? Math.round((coveredStatements / totalStatements) * 100 * 100) / 100 : 0 },
-      branches: { pct: totalBranches > 0 ? Math.round((coveredBranches / totalBranches) * 100 * 100) / 100 : 0 },
-      functions: { pct: totalFunctions > 0 ? Math.round((coveredFunctions / totalFunctions) * 100 * 100) / 100 : 0 },
-      lines: { pct: totalLines > 0 ? Math.round((coveredLines / totalLines) * 100 * 100) / 100 : 0 }
+      statements: {
+        pct:
+          totalStatements > 0
+            ? Math.round((coveredStatements / totalStatements) * 100 * 100) / 100
+            : 0,
+      },
+      branches: {
+        pct:
+          totalBranches > 0 ? Math.round((coveredBranches / totalBranches) * 100 * 100) / 100 : 0,
+      },
+      functions: {
+        pct:
+          totalFunctions > 0
+            ? Math.round((coveredFunctions / totalFunctions) * 100 * 100) / 100
+            : 0,
+      },
+      lines: {
+        pct: totalLines > 0 ? Math.round((coveredLines / totalLines) * 100 * 100) / 100 : 0,
+      },
     };
   } else {
     console.error('❌ ERROR: No se encontraron archivos de coverage');
@@ -105,19 +126,19 @@ try {
 
   // Validar cada métrica
   const failures = [];
-  
+
   if (totals.statements.pct < COVERAGE_THRESHOLDS.statements) {
     failures.push(`Statements: ${totals.statements.pct}% < ${COVERAGE_THRESHOLDS.statements}%`);
   }
-  
+
   if (totals.branches.pct < COVERAGE_THRESHOLDS.branches) {
     failures.push(`Branches: ${totals.branches.pct}% < ${COVERAGE_THRESHOLDS.branches}%`);
   }
-  
+
   if (totals.functions.pct < COVERAGE_THRESHOLDS.functions) {
     failures.push(`Functions: ${totals.functions.pct}% < ${COVERAGE_THRESHOLDS.functions}%`);
   }
-  
+
   if (totals.lines.pct < COVERAGE_THRESHOLDS.lines) {
     failures.push(`Lines: ${totals.lines.pct}% < ${COVERAGE_THRESHOLDS.lines}%`);
   }
@@ -148,7 +169,6 @@ try {
   console.log('🏆 ¡Coverage cumple con los estándares de calidad!');
   console.log('🚀 Procediendo con el build...');
   console.log('');
-
 } catch (error) {
   console.error('💥 ========================================');
   console.error('❌ ERROR AL EJECUTAR COVERAGE CHECK');

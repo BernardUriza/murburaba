@@ -9,7 +9,9 @@
   padding: 1.5rem;
   background: var(--color-background, #1a1b26);
   border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .chunkResultsEmpty {
@@ -56,18 +58,18 @@
   transition: all 0.3s ease;
 }
 
-.vad-display[data-vad-level="high"] {
+.vad-display[data-vad-level='high'] {
   background: rgba(126, 211, 33, 0.15);
   border-color: rgba(126, 211, 33, 0.5);
   box-shadow: 0 0 10px rgba(126, 211, 33, 0.2);
 }
 
-.vad-display[data-vad-level="medium"] {
+.vad-display[data-vad-level='medium'] {
   background: rgba(255, 193, 7, 0.1);
   border-color: rgba(255, 193, 7, 0.3);
 }
 
-.vad-display[data-vad-level="low"] {
+.vad-display[data-vad-level='low'] {
   background: rgba(244, 67, 54, 0.1);
   border-color: rgba(244, 67, 54, 0.3);
 }
@@ -122,7 +124,7 @@
 .vad-metric__value--large {
   font-size: 2rem;
   font-weight: 700;
-  color: #7ED321;
+  color: #7ed321;
 }
 
 .vad-metric__bar {
@@ -141,15 +143,15 @@
 }
 
 .vad-metric__fill--high {
-  background: linear-gradient(90deg, #7ED321, #5FB829);
+  background: linear-gradient(90deg, #7ed321, #5fb829);
 }
 
 .vad-metric__fill--medium {
-  background: linear-gradient(90deg, #FFC107, #FF9800);
+  background: linear-gradient(90deg, #ffc107, #ff9800);
 }
 
 .vad-metric__fill--low {
-  background: linear-gradient(90deg, #F44336, #D32F2F);
+  background: linear-gradient(90deg, #f44336, #d32f2f);
 }
 
 .vad-display__secondary {
@@ -180,17 +182,17 @@
 
 .vad-status--high {
   background: rgba(126, 211, 33, 0.2);
-  color: #7ED321;
+  color: #7ed321;
 }
 
 .vad-status--medium {
   background: rgba(255, 193, 7, 0.2);
-  color: #FFC107;
+  color: #ffc107;
 }
 
 .vad-status--low {
   background: rgba(244, 67, 54, 0.2);
-  color: #F44336;
+  color: #f44336;
 }
 
 /* Header */
@@ -674,13 +676,13 @@
     align-items: flex-start;
     padding: 1rem;
   }
-  
+
   .headerContent {
     flex-direction: column;
     gap: 1rem;
     width: 100%;
   }
-  
+
   .vadSummary {
     width: 100%;
     min-width: unset;
@@ -790,7 +792,7 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #7ED321;
+  background: #7ed321;
   animation: vadLoadingPulse 1.4s ease-in-out infinite;
 }
 
@@ -803,7 +805,9 @@
 }
 
 @keyframes vadLoadingPulse {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     transform: scale(0.8);
     opacity: 0.5;
   }
@@ -822,14 +826,14 @@
 }
 
 @keyframes fadeInOut {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.6;
   }
   50% {
     opacity: 1;
   }
 }
-
 
 /* Settings Panel Styles */
 .settings-overlay {
@@ -857,7 +861,9 @@
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(10px);
   border-radius: 20px;
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 20px 40px -10px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
   transform: translateY(calc(100% + 2rem)) scale(0.95);
   opacity: 0;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -955,7 +961,7 @@
   color: #333;
 }
 
-.setting-item input[type="range"] {
+.setting-item input[type='range'] {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
@@ -967,7 +973,7 @@
   margin: 0.5rem 0;
 }
 
-.setting-item input[type="range"]::-webkit-slider-thumb {
+.setting-item input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 16px;
@@ -978,12 +984,12 @@
   transition: all 0.2s ease;
 }
 
-.setting-item input[type="range"]::-webkit-slider-thumb:hover {
+.setting-item input[type='range']::-webkit-slider-thumb:hover {
   transform: scale(1.2);
   background: #4f46e5;
 }
 
-.setting-item input[type="range"]::-moz-range-thumb {
+.setting-item input[type='range']::-moz-range-thumb {
   width: 16px;
   height: 16px;
   background: #6366f1;
@@ -1012,7 +1018,7 @@
   line-height: 1.4;
 }
 
-.setting-item input[type="checkbox"] {
+.setting-item input[type='checkbox'] {
   -webkit-appearance: none;
   appearance: none;
   width: 40px;
@@ -1025,8 +1031,8 @@
   margin: 0;
 }
 
-.setting-item input[type="checkbox"]::before {
-  content: "";
+.setting-item input[type='checkbox']::before {
+  content: '';
   position: absolute;
   width: 18px;
   height: 18px;
@@ -1038,11 +1044,11 @@
   transition: all 0.2s ease;
 }
 
-.setting-item input[type="checkbox"]:checked {
+.setting-item input[type='checkbox']:checked {
   background: #6366f1;
 }
 
-.setting-item input[type="checkbox"]:checked::before {
+.setting-item input[type='checkbox']:checked::before {
   transform: translateX(18px);
 }
 
@@ -1104,72 +1110,74 @@
 @media (prefers-color-scheme: dark) {
   .settings-panel {
     background: rgba(30, 30, 30, 0.98);
-    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    box-shadow:
+      0 20px 40px -10px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(255, 255, 255, 0.1);
   }
-  
+
   .settings-header {
     border-bottom-color: rgba(255, 255, 255, 0.1);
   }
-  
+
   .settings-header h3 {
     color: #e0e0e0;
   }
-  
+
   .settings-header .close-btn {
     color: #a0a0a0;
   }
-  
+
   .settings-header .close-btn:hover {
     background: rgba(255, 255, 255, 0.1);
     color: #e0e0e0;
   }
-  
+
   .settings-section h4 {
     color: #a0a0a0;
   }
-  
+
   .setting-item label {
     color: #e0e0e0;
   }
-  
-  .setting-item input[type="range"] {
+
+  .setting-item input[type='range'] {
     background: rgba(255, 255, 255, 0.1);
   }
-  
+
   .setting-value {
     background: rgba(255, 255, 255, 0.1);
     color: #e0e0e0;
   }
-  
+
   .setting-hint {
     color: #888;
   }
-  
-  .setting-item input[type="checkbox"] {
+
+  .setting-item input[type='checkbox'] {
     background: rgba(255, 255, 255, 0.1);
   }
-  
-  .setting-item input[type="checkbox"]::before {
+
+  .setting-item input[type='checkbox']::before {
     background: #2a2a2a;
   }
-  
+
   .setting-item label[for] {
     background: rgba(255, 255, 255, 0.05);
   }
-  
+
   .setting-item label[for]:hover {
     background: rgba(255, 255, 255, 0.08);
   }
-  
+
   .settings-actions {
     border-top-color: rgba(255, 255, 255, 0.1);
   }
-  
+
   .settings-actions .btn-secondary {
     background: rgba(255, 255, 255, 0.1);
     color: #a0a0a0;
   }
-  
+
   .settings-actions .btn-secondary:hover {
     background: rgba(255, 255, 255, 0.15);
     color: #e0e0e0;

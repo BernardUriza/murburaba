@@ -17,7 +17,7 @@ import type { IAudioProcessor, AudioProcessingOptions } from 'murmuraba'
 
 export function useAudioProcessor() {
   const dispatch = useAppDispatch()
-  const { container, isReady } = useMurmurabaSuite()
+  const { container, isReady, reinitializeEngine } = useMurmurabaSuite()
   const { setStream } = useMediaStream()
   const isProcessing = useAppSelector(state => state.audio.isProcessing)
   const isRecording = useAppSelector(state => state.audio.isRecording)
@@ -26,47 +26,70 @@ export function useAudioProcessor() {
     file: File,
     options?: AudioProcessingOptions
   ) => {
+    
     if (!isReady || !container) {
+      const errorMsg = `MurmurabaSuite not ready - isReady: ${isReady}, hasContainer: ${!!container}`
       dispatch(setError({
-        message: 'MurmurabaSuite not ready',
+        message: errorMsg,
         code: 'SUITE_NOT_READY'
       }))
       return null
     }
 
     try {
-      console.log('[useAudioProcessor] Starting processFile for:', file.name)
       dispatch(setProcessing(true))
       dispatch(clearError())
       dispatch(clearChunks())
 
-      const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor)
-      console.log('[useAudioProcessor] Got processor:', !!processor)
-      
-      if (!processor) {
-        throw new Error('AudioProcessor not found in container')
+      try {
+        const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor)
+        
+        if (!processor) {
+          throw new Error('AudioProcessor not found in container')
+        }
+        
+        
+        // Check if it's the right type
+        
+        // Check engine initialization status before processing
+        try {
+          const { engineRegistry } = await import('murmuraba')
+          if (engineRegistry && engineRegistry.hasEngine()) {
+            const engine = engineRegistry.getEngine()
+            
+            // If engine exists but is not initialized, try to initialize it
+            if (engine && !engine.isInitialized) {
+              try {
+                await engine.initialize()
+              } catch {
+                await reinitializeEngine()
+              }
+            }
+          } else {
+            await reinitializeEngine()
+          }
+        } catch (engineError) {
+          throw new Error(`Engine initialization failed: ${engineError instanceof Error ? engineError.message : String(engineError)}`)
+        }
+        
+        // Set up chunk tracking
+        const unsubscribeChunk = processor.onChunk((chunk) => {
+          dispatch(addChunk(chunk))
+        })
+
+        const result = await processor.processFile(file, options)
+        
+        dispatch(setProcessingResults(result))
+        dispatch(addNotification({
+          type: 'success',
+          message: `Successfully processed ${file.name}`
+        }))
+
+        unsubscribeChunk()
+        return result
+      } catch (processingError) {
+        throw processingError
       }
-      
-      // Set up chunk tracking
-      const unsubscribeChunk = processor.onChunk((chunk) => {
-        console.log('[useAudioProcessor] Chunk received:', chunk)
-        dispatch(addChunk(chunk))
-      })
-
-      console.log('[useAudioProcessor] Calling processor.processFile...')
-      const result = await processor.processFile(file, options)
-      console.log('[useAudioProcessor] Process result:', result)
-      console.log('[useAudioProcessor] Result chunks:', result?.chunks?.length)
-      console.log('[useAudioProcessor] Result buffer:', !!result?.processedBuffer)
-      
-      dispatch(setProcessingResults(result))
-      dispatch(addNotification({
-        type: 'success',
-        message: `Successfully processed ${file.name}`
-      }))
-
-      unsubscribeChunk()
-      return result
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Processing failed'
@@ -82,18 +105,29 @@ export function useAudioProcessor() {
     } finally {
       dispatch(setProcessing(false))
     }
-  }, [container, isReady, dispatch])
+  }, [container, isReady, dispatch, reinitializeEngine])
 
   const processRecording = useCallback(async (
     duration: number,
     options?: AudioProcessingOptions & { stream?: MediaStream }
   ) => {
+    
     if (!isReady || !container) {
+      const errorMsg = `MurmurabaSuite not ready for recording - isReady: ${isReady}, hasContainer: ${!!container}`
       dispatch(setError({
-        message: 'MurmurabaSuite not ready',
+        message: errorMsg,
         code: 'SUITE_NOT_READY'
       }))
       return null
+    }
+
+    // Define cleanup function and timeoutId outside try/catch
+    let timeoutId: NodeJS.Timeout | null = null
+    const cleanup = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+        timeoutId = null
+      }
     }
 
     try {
@@ -103,7 +137,31 @@ export function useAudioProcessor() {
       dispatch(clearChunks())
 
       const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor)
-      console.log('🔍 Processor obtained:', !!processor, 'has getCurrentStream:', !!processor.getCurrentStream)
+      
+      if (!processor) {
+        throw new Error('AudioProcessor not found in container')
+      }
+      
+      // Check engine initialization status before recording
+      try {
+        const { engineRegistry } = await import('murmuraba')
+        if (engineRegistry && engineRegistry.hasEngine()) {
+          const engine = engineRegistry.getEngine()
+          
+          // If engine exists but is not initialized, try to initialize it
+          if (engine && !engine.isInitialized) {
+            try {
+              await engine.initialize()
+            } catch {
+              await reinitializeEngine()
+            }
+          }
+        } else {
+          await reinitializeEngine()
+        }
+      } catch (engineError) {
+        throw new Error(`Recording engine initialization failed: ${engineError instanceof Error ? engineError.message : String(engineError)}`)
+      }
       
       // Set up chunk tracking
       const unsubscribeChunk = processor.onChunk((chunk) => {
@@ -122,35 +180,27 @@ export function useAudioProcessor() {
         streamCheckCount++
         if (processor.getCurrentStream) {
           const stream = processor.getCurrentStream()
-          console.log(`🎤 Stream check #${streamCheckCount}:`, {
-            hasGetCurrentStream: true,
-            stream: !!stream,
-            streamId: stream?.id,
-            trackCount: stream?.getTracks()?.length || 0
-          })
           if (stream) {
-            console.log('🎤 Setting MediaStream during recording:', stream)
             setStream(stream)
             return true
           }
-        } else {
-          console.log(`🎤 Stream check #${streamCheckCount}: getCurrentStream method not available`)
         }
         
         // Continue checking if we haven't exceeded max attempts
         if (streamCheckCount < maxChecks) {
-          setTimeout(checkForStream, 200) // Check every 200ms
-        } else {
-          console.error('❌ Failed to get stream after', maxChecks, 'attempts')
+          timeoutId = setTimeout(checkForStream, 200) // Check every 200ms
         }
         return false
       }
       
       // Start checking after a small delay to let async operations complete
-      setTimeout(checkForStream, 300)
+      timeoutId = setTimeout(checkForStream, 300)
       
       // Wait for recording to complete
       const result = await recordingPromise
+      
+      // Clear any pending timeouts
+      cleanup()
       
       dispatch(setProcessingResults(result))
       dispatch(addNotification({
@@ -162,15 +212,32 @@ export function useAudioProcessor() {
       return result
 
     } catch (error) {
+      // Clear any pending timeouts on error
+      cleanup()
+      
       const errorMessage = error instanceof Error ? error.message : 'Recording failed'
-      dispatch(setError({
-        message: errorMessage,
-        code: 'RECORDING_ERROR'
-      }))
-      dispatch(addNotification({
-        type: 'error',
-        message: errorMessage
-      }))
+      
+      // Check if it's the specific state error
+      if (errorMessage.includes('Operation requires state to be one of: ready, processing')) {
+        const stateErrorMsg = 'Engine is in error state and needs to be reset. Please try resetting the engine.'
+        dispatch(setError({
+          message: stateErrorMsg,
+          code: 'ENGINE_ERROR_STATE'
+        }))
+        dispatch(addNotification({
+          type: 'error',
+          message: stateErrorMsg
+        }))
+      } else {
+        dispatch(setError({
+          message: errorMessage,
+          code: 'RECORDING_ERROR'
+        }))
+        dispatch(addNotification({
+          type: 'error',
+          message: errorMessage
+        }))
+      }
       return null
     } finally {
       dispatch(setProcessing(false))
@@ -178,7 +245,7 @@ export function useAudioProcessor() {
       // Don't clear stream immediately - let it be cleared when unmounting or starting new recording
       // setStream(null)
     }
-  }, [container, isReady, dispatch, setStream])
+  }, [container, isReady, dispatch, setStream, reinitializeEngine])
 
   const cancelProcessing = useCallback(() => {
     if (!container || !isReady) return
@@ -215,12 +282,22 @@ export function useAudioProcessor() {
     }
   }, [container, isReady])
 
+  const resetEngine = useCallback(async () => {
+    try {
+      await reinitializeEngine()
+      return true
+    } catch {
+      return false
+    }
+  }, [reinitializeEngine])
+
   return {
     isReady,
     isProcessing,
     isRecording,
     processFile,
     processRecording,
-    cancelProcessing
+    cancelProcessing,
+    resetEngine
   }
 }

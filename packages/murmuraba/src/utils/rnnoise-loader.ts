@@ -12,36 +12,44 @@ let modulePromise: Promise<RNNoiseModule> | null = null;
 
 export async function loadRNNoiseModule(): Promise<RNNoiseModule> {
   if (!modulePromise) {
-    modulePromise = (async () => {
-      try {
-        // Import the base64 encoded WASM
-        const { decodeWasmBase64 } = await import('./wasm-data');
-        const wasmBuffer = await decodeWasmBase64();
-        
-        console.log('[RNNoise Loader] Loading WASM from base64 bundle');
-        
-        // Import the RNNoise module
-        const rnnoiseModule = await import('@jitsi/rnnoise-wasm');
-        const { createRNNWasmModule } = rnnoiseModule as any;
-        
-        // Create the module with the decoded WASM buffer
-        const module = await createRNNWasmModule({
-          wasmBinary: new Uint8Array(wasmBuffer),
-          locateFile: (filename: string) => {
-            if (filename.endsWith('.wasm')) {
-              // Return empty string to prevent additional fetch
-              return '';
+    // Dynamic import to avoid TypeScript issues
+    modulePromise = import('@jitsi/rnnoise-wasm').then(async (rnnoiseModule) => {
+      const { createRNNWasmModule } = rnnoiseModule as any;
+      
+      // Configure the module to load WASM from the correct path
+      const module = await createRNNWasmModule({
+        locateFile: (filename: string) => {
+          if (filename.endsWith('.wasm')) {
+            // In production, the WASM file should be in the same directory as the bundle
+            // In development, it might be served from node_modules
+            if (typeof window !== 'undefined' && window.location) {
+              // Try multiple possible locations
+              const paths = [
+                `/node_modules/@jitsi/rnnoise-wasm/dist/${filename}`,
+                `/node_modules/.vite/deps/${filename}`,
+                `/${filename}`,
+                `/dist/${filename}`,
+                filename
+              ];
+              
+              // In development with Vite, the WASM should be in public
+              if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                const devPath = `/${filename}`;
+                console.log('[RNNoise Loader] Development mode, trying:', devPath);
+                return devPath;
+              }
+              
+              // In production, assume the file is in the root or dist
+              console.log('[RNNoise Loader] Production mode, trying:', paths[3]);
+              return paths[3];
             }
-            return filename;
           }
-        });
-        
-        return module as unknown as RNNoiseModule;
-      } catch (error) {
-        console.error('[RNNoise Loader] Failed to load WASM from base64:', error);
-        throw error;
-      }
-    })();
+          return filename;
+        }
+      });
+      
+      return module as unknown as RNNoiseModule;
+    });
   }
   return modulePromise;
 }

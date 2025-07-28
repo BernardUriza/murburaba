@@ -49,7 +49,7 @@ describe('StateManager', () => {
       // Act & Assert
       expect(stateManager.transitionTo('processing')).toBe(false);
       expect(stateManager.getState()).toBe('uninitialized');
-      
+
       stateManager.transitionTo('initializing');
       expect(stateManager.transitionTo('destroyed')).toBe(false);
       expect(stateManager.getState()).toBe('initializing');
@@ -65,7 +65,7 @@ describe('StateManager', () => {
       // Assert
       expect(result).toBe(true);
       expect(stateManager.getState()).toBe('error');
-      
+
       // Can transition from error to cleanup
       expect(stateManager.canTransitionTo('destroying')).toBe(true);
     });
@@ -73,7 +73,7 @@ describe('StateManager', () => {
     it('should allow force transitions', () => {
       // Arrange
       stateManager.transitionTo('processing');
-      
+
       // Act - Force transition to destroyed
       const result = stateManager.transitionTo('destroyed');
 
@@ -103,16 +103,18 @@ describe('StateManager', () => {
       Object.entries(stateTransitions).forEach(([fromState, allowedStates]) => {
         // Force transition to test state
         stateManager['currentState'] = fromState as any;
-        
+
         // Check allowed transitions
         allowedStates.forEach(toState => {
           expect(stateManager.canTransitionTo(toState as any)).toBe(true);
         });
-        
+
         // Check some disallowed transitions
         const allStates = Object.keys(stateTransitions);
-        const disallowedStates = allStates.filter(s => !(allowedStates as string[]).includes(s) && s !== fromState);
-        
+        const disallowedStates = allStates.filter(
+          s => !(allowedStates as string[]).includes(s) && s !== fromState
+        );
+
         disallowedStates.forEach(toState => {
           expect(stateManager.canTransitionTo(toState as any)).toBe(false);
         });
@@ -156,7 +158,7 @@ describe('StateManager', () => {
       expect(stateManager.canTransitionTo('uninitialized')).toBe(false);
       expect(stateManager.canTransitionTo('ready')).toBe(false);
       expect(stateManager.canTransitionTo('error')).toBe(false);
-      
+
       // Even force transitions should not work
       expect(stateManager.transitionTo('ready')).toBe(false);
     });

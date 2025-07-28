@@ -8,11 +8,11 @@ export function isReact19OrHigher(): boolean {
   try {
     // Evitar acceso directo a React si no está disponible (SSR)
     if (typeof window === 'undefined') return false;
-    
+
     const React = (window as any).React || require('react');
     const version = React.version;
     if (!version) return false;
-    
+
     const major = parseInt(version.split('.')[0], 10);
     return major >= 19;
   } catch {
@@ -29,7 +29,9 @@ export function safeReactImport() {
     }
     return require('react');
   } catch {
-    throw new Error('[Murmuraba] React is required but not found. Please ensure React is properly installed.');
+    throw new Error(
+      '[Murmuraba] React is required but not found. Please ensure React is properly installed.'
+    );
   }
 }
 
@@ -41,5 +43,5 @@ export function isNextJs(): boolean {
 // Configuración para importación dinámica en Next.js
 export const NEXT_JS_DYNAMIC_CONFIG = {
   ssr: false,
-  loading: () => null
+  loading: () => null,
 };

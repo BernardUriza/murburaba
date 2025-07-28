@@ -25,7 +25,7 @@ export function AudioPlayButton({
   isEnabled,
   isPrimary = false,
   onTogglePlayback,
-  className = ''
+  className = '',
 }: AudioPlayButtonProps) {
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter' || event.key === ' ') {

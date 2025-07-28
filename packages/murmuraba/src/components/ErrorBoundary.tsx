@@ -21,22 +21,22 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   public state: ErrorBoundaryState = {
     hasError: false,
     error: null,
-    errorInfo: null
+    errorInfo: null,
   };
 
   public static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
-    return { 
-      hasError: true, 
-      error 
+    return {
+      hasError: true,
+      error,
     };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({ errorInfo });
-    
+
     // Call custom error handler if provided
     this.props.onError?.(error, errorInfo);
-    
+
     // Log error for debugging
     console.error('🚨 Murmuraba ErrorBoundary caught an error:', error, errorInfo);
   }
@@ -44,7 +44,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   public componentDidUpdate(prevProps: ErrorBoundaryProps) {
     const { resetOnPropsChange } = this.props;
     const { hasError } = this.state;
-    
+
     // Reset error state if props change and resetOnPropsChange is enabled
     if (resetOnPropsChange && hasError && prevProps.children !== this.props.children) {
       this.resetErrorBoundary();
@@ -61,13 +61,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     this.setState({
       hasError: false,
       error: null,
-      errorInfo: null
+      errorInfo: null,
     });
   };
 
   private handleReload = () => {
     this.resetErrorBoundary();
-    
+
     // If still erroring after reset, reload the page
     this.resetTimeoutId = window.setTimeout(() => {
       window.location.reload();
@@ -83,12 +83,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   public render() {
     const { hasError, error, errorInfo } = this.state;
-    const { 
-      children, 
-      fallback, 
-      className = '', 
-      'aria-label': ariaLabel 
-    } = this.props;
+    const { children, fallback, className = '', 'aria-label': ariaLabel } = this.props;
 
     if (hasError && error) {
       // Use custom fallback if provided
@@ -98,7 +93,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
       // Default error UI
       return (
-        <div 
+        <div
           className={`murmuraba-error-boundary ${className}`}
           role="alert"
           aria-label={ariaLabel || 'Application error occurred'}
@@ -108,53 +103,45 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             <div style={defaultStyles.icon} aria-hidden="true">
               🌾
             </div>
-            
-            <h1 style={defaultStyles.title}>
-              Oops! Something went wrong
-            </h1>
-            
+
+            <h1 style={defaultStyles.title}>Oops! Something went wrong</h1>
+
             <p style={defaultStyles.message}>
-              The audio processing application encountered an unexpected error. 
-              This might be due to browser compatibility or a temporary issue.
+              The audio processing application encountered an unexpected error. This might be due to
+              browser compatibility or a temporary issue.
             </p>
-            
-            <button 
+
+            <button
               onClick={this.handleReload}
               onKeyDown={this.handleKeyDown}
               style={defaultStyles.button}
               aria-label="Reload application to recover from error"
             >
-              <span style={defaultStyles.buttonIcon} aria-hidden="true">🔄</span>
+              <span style={defaultStyles.buttonIcon} aria-hidden="true">
+                🔄
+              </span>
               <span>Reload Application</span>
             </button>
 
             {/* Development error details */}
             {process.env.NODE_ENV === 'development' && error && (
               <details style={defaultStyles.details}>
-                <summary style={defaultStyles.summary}>
-                  🔍 Error Details (Development)
-                </summary>
+                <summary style={defaultStyles.summary}>🔍 Error Details (Development)</summary>
                 <div style={defaultStyles.errorContent}>
                   <h4 style={defaultStyles.errorTitle}>Error:</h4>
-                  <pre style={defaultStyles.errorText}>
-                    {error.toString()}
-                  </pre>
-                  
+                  <pre style={defaultStyles.errorText}>{error.toString()}</pre>
+
                   {error.stack && (
                     <>
                       <h4 style={defaultStyles.errorTitle}>Stack Trace:</h4>
-                      <pre style={defaultStyles.errorText}>
-                        {error.stack}
-                      </pre>
+                      <pre style={defaultStyles.errorText}>{error.stack}</pre>
                     </>
                   )}
-                  
+
                   {errorInfo?.componentStack && (
                     <>
                       <h4 style={defaultStyles.errorTitle}>Component Stack:</h4>
-                      <pre style={defaultStyles.errorText}>
-                        {errorInfo.componentStack}
-                      </pre>
+                      <pre style={defaultStyles.errorText}>{errorInfo.componentStack}</pre>
                     </>
                   )}
                 </div>
@@ -291,6 +278,6 @@ export function withErrorBoundary<P extends object>(
   );
 
   WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
-  
+
   return WrappedComponent;
 }

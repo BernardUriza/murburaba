@@ -1,5 +1,10 @@
 import { AudioEngine } from './types';
 
+export interface RNNoiseConfig {
+  wasmPath?: string;
+  scriptPath?: string;
+}
+
 export class RNNoiseEngine implements AudioEngine {
   name = 'RNNoise';
   description = 'Neural network-based noise suppression';
@@ -10,9 +15,13 @@ export class RNNoiseEngine implements AudioEngine {
   private inputPtr: number = 0;
   private outputPtr: number = 0;
   private lastVad: number = 0;
+  private config: RNNoiseConfig;
   
-  constructor() {
-    // No config needed - WASM is embedded
+  constructor(config?: RNNoiseConfig) {
+    this.config = {
+      wasmPath: config?.wasmPath || '',
+      scriptPath: config?.scriptPath || ''
+    };
   }
 
   async initialize(): Promise<void> {
@@ -28,9 +37,9 @@ export class RNNoiseEngine implements AudioEngine {
     const errors: string[] = [];
     
     try {
-      // Use the unified WASM loader
-      const { loadRNNoiseWASM } = await import('./wasm-loader-unified');
-      this.module = await loadRNNoiseWASM();
+      // Use the bundled RNNoise loader
+      const { loadRNNoiseModule } = await import('../utils/rnnoise-loader');
+      this.module = await loadRNNoiseModule();
     } catch (error: any) {
       const errorMsg = error?.message || String(error);
       console.error('[RNNoiseEngine] Failed to load RNNoise:', errorMsg);

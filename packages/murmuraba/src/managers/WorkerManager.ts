@@ -9,19 +9,16 @@ interface WorkerMessage {
 export class WorkerManager {
   private workers: Map<string, Worker> = new Map();
   private logger: Logger;
-  
+
   constructor(logger: Logger) {
     this.logger = logger;
   }
-  
+
   createWorker(id: string, workerPath: string): Worker {
     if (this.workers.has(id)) {
-      throw new MurmubaraError(
-        ErrorCodes.WORKER_ERROR,
-        `Worker with id ${id} already exists`
-      );
+      throw new MurmubaraError(ErrorCodes.WORKER_ERROR, `Worker with id ${id} already exists`);
     }
-    
+
     try {
       const worker = new Worker(workerPath);
       this.workers.set(id, worker);
@@ -35,24 +32,21 @@ export class WorkerManager {
       );
     }
   }
-  
+
   getWorker(id: string): Worker | undefined {
     return this.workers.get(id);
   }
-  
+
   sendMessage(id: string, message: WorkerMessage): void {
     const worker = this.workers.get(id);
     if (!worker) {
-      throw new MurmubaraError(
-        ErrorCodes.WORKER_ERROR,
-        `Worker ${id} not found`
-      );
+      throw new MurmubaraError(ErrorCodes.WORKER_ERROR, `Worker ${id} not found`);
     }
-    
+
     worker.postMessage(message);
     this.logger.debug(`Message sent to worker ${id}:`, message);
   }
-  
+
   terminateWorker(id: string): void {
     const worker = this.workers.get(id);
     if (worker) {
@@ -61,7 +55,7 @@ export class WorkerManager {
       this.logger.debug(`Worker terminated: ${id}`);
     }
   }
-  
+
   terminateAll(): void {
     this.logger.info(`Terminating all ${this.workers.size} workers`);
     for (const [id, worker] of this.workers) {
@@ -70,19 +64,19 @@ export class WorkerManager {
     }
     this.workers.clear();
   }
-  
+
   getActiveWorkerCount(): number {
     return this.workers.size;
   }
-  
+
   getWorkerCount(): number {
     return this.workers.size;
   }
-  
+
   hasWorker(id: string): boolean {
     return this.workers.has(id);
   }
-  
+
   getWorkerIds(): string[] {
     return Array.from(this.workers.keys());
   }

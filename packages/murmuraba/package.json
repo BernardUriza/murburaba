@@ -11,11 +11,45 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     },
+    "./modern": {
+      "types": "./dist/index.modern.d.ts",
+      "import": "./dist/index.modern.js",
+      "require": "./dist/index.modern.js"
+    },
+    "./features/configuration": {
+      "types": "./dist/features/configuration/index.d.ts",
+      "import": "./dist/features/configuration/index.js",
+      "require": "./dist/features/configuration/index.js"
+    },
+    "./features/audio-processing": {
+      "types": "./dist/features/audio-processing/index.d.ts",
+      "import": "./dist/features/audio-processing/index.js",
+      "require": "./dist/features/audio-processing/index.js"
+    },
+    "./shared/types": {
+      "types": "./dist/shared/types/index.d.ts",
+      "import": "./dist/shared/types/index.js",
+      "require": "./dist/shared/types/index.js"
+    },
+    "./shared/utils": {
+      "types": "./dist/shared/utils/index.d.ts",
+      "import": "./dist/shared/utils/index.js",
+      "require": "./dist/shared/utils/index.js"
+    },
     "./components": {
       "types": "./dist/components/index.d.ts",
-      "import": "./dist/components/index.esm.js",
-      "require": "./dist/components/index.js",
-      "default": "./dist/components/index.esm.js"
+      "import": "./dist/components/index.js",
+      "require": "./dist/components/index.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js",
+      "require": "./dist/core/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js",
+      "require": "./dist/react/index.js"
     },
     "./rnnoise.wasm": "./dist/rnnoise.wasm",
     "./package.json": "./package.json"
@@ -24,6 +58,11 @@
     "dist",
     "README.md",
     "LICENSE"
+  ],
+  "sideEffects": [
+    "**/*.css",
+    "**/*.wasm",
+    "**/wasm-data.ts"
   ],
   "keywords": [
     "audio",
@@ -37,7 +76,15 @@
     "chunks",
     "streaming",
     "voice",
-    "noise-suppression"
+    "noise-suppression",
+    "vad",
+    "voice-activity-detection",
+    "modular-architecture",
+    "dependency-injection",
+    "wasm",
+    "neural-network",
+    "agc",
+    "automatic-gain-control"
   ],
   "author": "Bernard",
   "license": "MIT",
@@ -48,18 +95,24 @@
   "scripts": {
     "build": "npm run clean && npm run generate:wasm && npm run build:ts && npm run copy:css",
     "build:simple": "node scripts/build-simple.mjs",
+    "build:fast": "npm run build:ts && npm run copy:css",
     "generate:wasm": "node scripts/encode-wasm.mjs",
-    "build:ts": "tsc",
+    "build:ts": "tsc -p tsconfig.build.json",
     "copy:css": "node scripts/copy-css.mjs",
     "clean": "rimraf dist",
-    "quality:gate": "node scripts/check-coverage.js",
-    "prepublishOnly": "npm run build",
+    "quality:gate": "npm run lint && npm run test:coverage && node scripts/check-coverage.js",
+    "prepublishOnly": "npm run quality:gate && npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint src --ext .ts,.tsx",
-    "watch": "npm run copy:css && tsc --watch"
+    "test:unit": "vitest run src/tests/unit",
+    "test:integration": "vitest run src/tests/integration",
+    "lint": "eslint src --ext .ts,.tsx --fix",
+    "lint:check": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "watch": "npm run copy:css && tsc --watch",
+    "dev": "npm run watch"
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
@@ -75,13 +128,16 @@
   },
   "devDependencies": {
     "@types/glob": "^7.2.0",
-    "@typescript-eslint/eslint-plugin": "^6.13.0",
-    "@typescript-eslint/parser": "^6.13.0",
+    "@typescript-eslint/eslint-plugin": "6.21.0",
+    "@typescript-eslint/parser": "6.21.0",
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",
     "eslint": "^8.54.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-prettier": "5.5.3",
     "glob": "^11.0.3",
     "happy-dom": "^18.0.1",
+    "prettier": "3.6.2",
     "puppeteer": "24.15.0",
     "rimraf": "^5.0.5",
     "tslib": "^2.6.2",
@@ -93,6 +149,7 @@
   },
   "dependencies": {
     "@jitsi/rnnoise-wasm": "^0.2.1",
-    "lamejs": "^1.2.1"
+    "lamejs": "^1.2.1",
+    "zod": "4.0.10"
   }
 }

@@ -9,11 +9,11 @@ interface ProcessingMetricsProps {
   droppedFrames: number;
 }
 
-export function ProcessingMetrics({ 
-  inputLevel, 
-  outputLevel, 
-  frameCount, 
-  droppedFrames 
+export function ProcessingMetrics({
+  inputLevel,
+  outputLevel,
+  frameCount,
+  droppedFrames,
 }: ProcessingMetricsProps) {
   return (
     <div className={styles.detailsSection}>
@@ -21,11 +21,9 @@ export function ProcessingMetrics({
       <div className={styles.metricsGrid}>
         <div className={styles.metricItem}>
           <span className={styles.metricLabel}>Input Level</span>
-          <span className={styles.metricValue}>
-            {formatPercentage(inputLevel * 100)}
-          </span>
+          <span className={styles.metricValue}>{formatPercentage(inputLevel * 100)}</span>
           <div className={styles.metricBar}>
-            <div 
+            <div
               className={`${styles.metricFill} ${styles.metricFillInput}`}
               style={{ width: `${inputLevel * 100}%` }}
               aria-hidden="true"
@@ -35,11 +33,9 @@ export function ProcessingMetrics({
 
         <div className={styles.metricItem}>
           <span className={styles.metricLabel}>Output Level</span>
-          <span className={styles.metricValue}>
-            {formatPercentage(outputLevel * 100)}
-          </span>
+          <span className={styles.metricValue}>{formatPercentage(outputLevel * 100)}</span>
           <div className={styles.metricBar}>
-            <div 
+            <div
               className={`${styles.metricFill} ${styles.metricFillOutput}`}
               style={{ width: `${outputLevel * 100}%` }}
               aria-hidden="true"
@@ -49,9 +45,7 @@ export function ProcessingMetrics({
 
         <div className={styles.metricItem}>
           <span className={styles.metricLabel}>Frames Processed</span>
-          <span className={styles.metricValue}>
-            {frameCount?.toLocaleString() || '0'}
-          </span>
+          <span className={styles.metricValue}>{frameCount?.toLocaleString() || '0'}</span>
         </div>
 
         <div className={styles.metricItem}>

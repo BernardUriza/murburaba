@@ -2,8 +2,9 @@ import { EngineState } from '../../types';
 
 export interface IStateManager {
   getState(): EngineState;
-  setState(newState: EngineState): void;
-  canTransition(from: EngineState, to: EngineState): boolean;
-  reset(): void;
-  onStateChange(callback: (oldState: EngineState, newState: EngineState) => void): () => void;
+  canTransitionTo(to: EngineState): boolean;
+  transitionTo(newState: EngineState): boolean;
+  requireState(...states: EngineState[]): void;
+  isInState(state: EngineState): boolean;
+  on(event: 'state-change', callback: (oldState: EngineState, newState: EngineState) => void): void;
 }

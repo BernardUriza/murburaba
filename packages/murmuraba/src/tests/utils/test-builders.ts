@@ -67,7 +67,7 @@ export class MediaStreamBuilder {
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
     } as unknown as MediaStreamTrack;
-    
+
     this.tracks.push(track);
     return this;
   }
