@@ -82,7 +82,7 @@ export const SERVICE_MODULES = {
   audioEngine: {
     name: 'audioEngine',
     token: TOKENS.AudioEngine,
-    load: async (container: DIContainer) => {
+    load: async (_container: DIContainer) => {
       const { RNNoiseEngine } = await import('../engines/RNNoiseEngine');
       return new RNNoiseEngine();
     },
@@ -91,7 +91,7 @@ export const SERVICE_MODULES = {
   metricsManager: {
     name: 'metricsManager',
     token: TOKENS.MetricsManager,
-    load: async (container: DIContainer) => {
+    load: async (_container: DIContainer) => {
       const { MetricsManager } = await import('../managers/MetricsManager');
       return new MetricsManager();
     },

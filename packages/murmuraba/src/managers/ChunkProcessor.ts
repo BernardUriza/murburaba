@@ -1,6 +1,6 @@
 import { EventEmitter } from '../core/EventEmitter';
 import { Logger } from '../core/Logger';
-import { ChunkMetrics, ChunkConfig, ProcessingMetrics } from '../types';
+import { ChunkMetrics, ChunkConfig } from '../types';
 import { MetricsManager } from './MetricsManager';
 
 interface ChunkEvents {
