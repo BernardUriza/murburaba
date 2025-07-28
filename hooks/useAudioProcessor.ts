@@ -17,7 +17,7 @@ import type { IAudioProcessor, AudioProcessingOptions } from 'murmuraba'
 
 export function useAudioProcessor() {
   const dispatch = useAppDispatch()
-  const { container, isReady } = useMurmurabaSuite()
+  const { container, isReady, reinitializeEngine } = useMurmurabaSuite()
   const { setStream } = useMediaStream()
   const isProcessing = useAppSelector(state => state.audio.isProcessing)
   const isRecording = useAppSelector(state => state.audio.isRecording)
@@ -61,6 +61,39 @@ export function useAudioProcessor() {
         // Check if it's the right type
         console.log('[useAudioProcessor] Processor has processFile:', typeof processor.processFile)
         console.log('[useAudioProcessor] Processor isProcessing:', typeof processor.isProcessing)
+        
+        // Check engine initialization status before processing
+        try {
+          const { engineRegistry } = await import('murmuraba')
+          if (engineRegistry && engineRegistry.hasEngine()) {
+            const engine = engineRegistry.getEngine()
+            console.log('[useAudioProcessor] Engine state:', {
+              hasEngine: !!engine,
+              isInitialized: engine?.isInitialized,
+              state: (engine as any)?.stateManager?.getState?.()
+            })
+            
+            // If engine exists but is not initialized, try to initialize it
+            if (engine && !engine.isInitialized) {
+              console.log('[useAudioProcessor] Engine not initialized, attempting to initialize...')
+              try {
+                await engine.initialize()
+                console.log('[useAudioProcessor] Engine initialization completed')
+              } catch (initError) {
+                console.warn('[useAudioProcessor] Direct initialization failed, trying full reinitialize...')
+                await reinitializeEngine()
+                console.log('[useAudioProcessor] Engine reinitialized successfully')
+              }
+            }
+          } else {
+            console.warn('[useAudioProcessor] No engine found in registry, reinitializing...')
+            await reinitializeEngine()
+            console.log('[useAudioProcessor] Engine created and initialized')
+          }
+        } catch (engineError) {
+          console.error('[useAudioProcessor] Engine check/initialization failed:', engineError)
+          throw new Error(`Engine initialization failed: ${engineError instanceof Error ? engineError.message : String(engineError)}`)
+        }
         
         // Set up chunk tracking
         const unsubscribeChunk = processor.onChunk((chunk) => {
@@ -136,6 +169,39 @@ export function useAudioProcessor() {
       
       if (!processor) {
         throw new Error('AudioProcessor not found in container')
+      }
+      
+      // Check engine initialization status before recording
+      try {
+        const { engineRegistry } = await import('murmuraba')
+        if (engineRegistry && engineRegistry.hasEngine()) {
+          const engine = engineRegistry.getEngine()
+          console.log('[useAudioProcessor] Recording - Engine state:', {
+            hasEngine: !!engine,
+            isInitialized: engine?.isInitialized,
+            state: (engine as any)?.stateManager?.getState?.()
+          })
+          
+          // If engine exists but is not initialized, try to initialize it
+          if (engine && !engine.isInitialized) {
+            console.log('[useAudioProcessor] Recording - Engine not initialized, attempting to initialize...')
+            try {
+              await engine.initialize()
+              console.log('[useAudioProcessor] Recording - Engine initialization completed')
+            } catch (initError) {
+              console.warn('[useAudioProcessor] Recording - Direct initialization failed, trying full reinitialize...')
+              await reinitializeEngine()
+              console.log('[useAudioProcessor] Recording - Engine reinitialized successfully')
+            }
+          }
+        } else {
+          console.warn('[useAudioProcessor] Recording - No engine found in registry, reinitializing...')
+          await reinitializeEngine()
+          console.log('[useAudioProcessor] Recording - Engine created and initialized')
+        }
+      } catch (engineError) {
+        console.error('[useAudioProcessor] Recording - Engine check/initialization failed:', engineError)
+        throw new Error(`Recording engine initialization failed: ${engineError instanceof Error ? engineError.message : String(engineError)}`)
       }
       
       // Set up chunk tracking
@@ -265,29 +331,16 @@ export function useAudioProcessor() {
   }, [container, isReady])
 
   const resetEngine = useCallback(async () => {
-    if (!container) {
-      console.warn('[useAudioProcessor] No container available for reset')
-      return false
-    }
-
     try {
-      console.log('[useAudioProcessor] Attempting to reset engine...')
-      
-      // Try to get the engine registry and destroy current engine
-      const { engineRegistry } = await import('murmuraba')
-      if (engineRegistry && engineRegistry.hasEngine()) {
-        await engineRegistry.destroyEngine()
-        console.log('[useAudioProcessor] Engine destroyed')
-      }
-      
-      // The MurmurabaSuite should automatically recreate the engine
-      console.log('[useAudioProcessor] Engine reset completed')
+      console.log('[useAudioProcessor] Attempting to reset engine using reinitializeEngine...')
+      await reinitializeEngine()
+      console.log('[useAudioProcessor] Engine reset completed successfully')
       return true
     } catch (error) {
       console.error('[useAudioProcessor] Failed to reset engine:', error)
       return false
     }
-  }, [container])
+  }, [reinitializeEngine])
 
   return {
     isReady,

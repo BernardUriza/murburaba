@@ -339,9 +339,18 @@ export default function AudioDemo({
       log('info', '✅ Processing complete!')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Processing failed'
-      setError(msg)
+      
+      // Provide specific guidance for initialization errors
+      let userFriendlyMsg = msg
+      if (msg.includes('Engine not initialized') || msg.includes('Engine initialization failed')) {
+        userFriendlyMsg = 'Audio engine is not properly initialized. Please try resetting the engine or refreshing the page.'
+      } else if (msg.includes('Operation requires state to be one of')) {
+        userFriendlyMsg = 'Audio engine is in an error state. Please reset the engine to continue.'
+      }
+      
+      setError(userFriendlyMsg)
       log('error', msg, err)
-      dispatch(addNotification({ type: 'error', message: msg }))
+      dispatch(addNotification({ type: 'error', message: userFriendlyMsg }))
       onError?.(err instanceof Error ? err : new Error(msg))
     } finally {
       processLockRef.current = false
