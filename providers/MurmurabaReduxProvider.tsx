@@ -101,8 +101,8 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
             }
             
             // Only log non-zero inputs occasionally to reduce spam
-            if (metrics.inputLevel > 0 && Math.random() < 0.05) {
-              console.log('🎯 Audio level:', metrics.inputLevel.toFixed(3));
+            if (metrics.inputLevel > 0 && eventCount % 50 === 0) {
+              console.log('🎯 Audio level:', metrics.inputLevel.toFixed(3), 'Source: MetricsManager');
             }
             
             setAudioLevel(metrics.inputLevel || 0);

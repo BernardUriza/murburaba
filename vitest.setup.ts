@@ -59,7 +59,13 @@ global.Worker = vi.fn().mockImplementation(() => ({
 })) as any;
 
 // Setup all Web Audio mocks from the package
-setupAllAudioMocks();
+// Only run mocks during actual test execution, not in VSCode test explorer discovery
+if (process.env.VITEST_WORKER_ID || process.env.NODE_ENV === 'test') {
+  setupAllAudioMocks();
+  console.log('✅ Audio mocks loaded for test environment');
+} else {
+  console.log('⏭️ Skipping audio mocks (not in test environment)');
+}
 
 // Mock lamejs for MP3 encoding
 vi.mock('lamejs', () => ({

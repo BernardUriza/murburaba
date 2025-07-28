@@ -234,10 +234,10 @@ export const setupAllAudioMocks = () => {
               mockNode.port.onmessage({
                 data: {
                   type: 'metrics',
-                  inputLevel: Math.random() * 0.5,
-                  outputLevel: Math.random() * 0.4,
-                  vad: Math.random() * 0.8,
-                  noiseReduction: Math.random() * 30,
+                  inputLevel: 0.25, // Fixed value instead of random
+                  outputLevel: 0.20, // Fixed value instead of random
+                  vad: 0.40, // Fixed value instead of random
+                  noiseReduction: 15, // Fixed value instead of random
                 },
               } as any);
             }

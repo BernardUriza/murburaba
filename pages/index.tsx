@@ -15,7 +15,7 @@ import { useNotifications } from '../hooks/useNotifications'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { store } from '../store'
 import { useAudioProcessor } from '../hooks/useAudioProcessor'
-import { WaveformAnalyzer, ChunkProcessingResults } from 'murmuraba'
+import { WaveformAnalyzer, ChunkProcessingResults, AdvancedMetricsPanel, getDiagnostics } from 'murmuraba'
 import {
   setChunkDuration,
   setEnableAGC
@@ -52,7 +52,7 @@ export default function App() {
   const { isInitialized, isProcessing, isRecording } = engineStatus
   const { chunkDuration, enableAGC } = audioConfig
   const { showAudioDemo, showAdvancedMetrics, showSettings, showCopilot } = uiFlags
-  const { processingResults, currentInputLevel } = useAppSelector(state => state.audio)
+  const { processingResults, currentInputLevel, totalDuration, averageNoiseReduction } = useAppSelector(state => state.audio)
   
   // Debug log - log every 2 seconds only
   useEffect(() => {
@@ -217,12 +217,20 @@ export default function App() {
                 </div>
               )}
             </div>
+            {/* Always show audio metrics */}
             <div className="audio-metrics">
               <div className="metric-item">
                 <span className="metric-label">Input Level</span>
                 <div className="metric-bar">
-                  <div className="metric-fill" style={{ width: `${currentInputLevel * 100}%` }}></div>
+                  <div className="metric-fill" style={{ 
+                    width: `${currentInputLevel * 100}%`,
+                    backgroundColor: currentInputLevel > 0.8 ? '#ff4444' : currentInputLevel > 0.4 ? '#ffaa00' : '#44ff44',
+                    transition: 'width 0.1s ease-out'
+                  }}></div>
                 </div>
+                <span style={{ fontSize: '0.75rem', color: '#888', marginTop: '0.25rem' }}>
+                  {(currentInputLevel * 100).toFixed(1)}%
+                </span>
               </div>
             </div>
           </div>
@@ -240,6 +248,14 @@ export default function App() {
             className="glass-card"
           />
         )}
+
+        {/* Advanced Metrics Panel - Professional Component */}
+        <AdvancedMetricsPanel
+          isVisible={showAdvancedMetrics}
+          diagnostics={isInitialized ? getDiagnostics() : null}
+          onClose={() => dispatch(toggleAdvancedMetrics())}
+          className="glass-card"
+        />
 
         {/* Floating Action Buttons */}
         <FabButtons
