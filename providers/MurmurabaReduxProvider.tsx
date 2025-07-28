@@ -84,6 +84,17 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
           // Register metrics event listener
           metricsManager.on('metrics-update', (metrics: any) => {
             setAudioLevel(metrics.inputLevel || 0);
+            
+            // Debug metrics
+            if (Math.random() < 0.05) {
+              console.log('🎯 MurmurabaReduxProvider metrics:', {
+                input: metrics.inputLevel,
+                vad: metrics.vadProbability,
+                noise: metrics.noiseReductionLevel,
+                hasVad: 'vadProbability' in metrics
+              });
+            }
+            
             // Dispatch to Redux for global state
             store.dispatch(updateMetrics({ 
               inputLevel: metrics.inputLevel,

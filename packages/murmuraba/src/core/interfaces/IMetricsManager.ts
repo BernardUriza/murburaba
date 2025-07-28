@@ -37,4 +37,5 @@ export interface IMetricsManager {
   startAutoUpdate(interval: number): void;
   stopAutoUpdate(): void;
   on(event: 'metrics-update', callback: (metrics: ProcessingMetrics) => void): void;
+  emitMetricsUpdate?(): void;
 }

@@ -477,7 +477,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         this.stateManager.transitionTo('processing');
         this.emit('processing-start');
         // Start metrics updates only during recording
-        this.metricsManager.startAutoUpdate(100);
+        this.metricsManager.startAutoUpdate(50); // Update more frequently
       }
 
       return controller;
@@ -625,6 +625,21 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
           this.metricsManager.updateOutputLevel(outputLevel || 0);
           this.metricsManager.updateVAD(vad || 0);
           this.metricsManager.updateNoiseReduction(noiseReduction || 0);
+          
+          // Debug: Check metrics state
+          if (Math.random() < 0.05) {
+            const metrics = this.metricsManager.getMetrics();
+            console.log('📊 MetricsManager state:', {
+              vad: metrics.vadProbability,
+              noise: metrics.noiseReductionLevel,
+              input: metrics.inputLevel
+            });
+          }
+          
+          // Emit all metrics together
+          if (this.metricsManager.emitMetricsUpdate) {
+            this.metricsManager.emitMetricsUpdate();
+          }
         } else if (event.data.type === 'samples' && chunkProcessor && !isPaused && !isStopped) {
           // Forward samples to chunk processor
           const samples = new Float32Array(event.data.data);
