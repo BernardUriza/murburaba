@@ -4,16 +4,17 @@ import puppeteer from 'puppeteer';
 
 console.log('🚀 TEST DE FLUJO DE GRABACIÓN COMPLETO');
 
-// Timeout general de 20 segundos
+// Timeout general de 15 segundos
 let timeoutHandle = setTimeout(() => {
-  console.error('\n⏰ TIMEOUT 20s - TEST FINALIZADO');
+  console.error('\n⏰ TIMEOUT 15s - TEST FINALIZADO');
+  console.error('Logs capturados hasta ahora:', global.logs?.length || 0);
   // NO usar process.exit - solo cerrar el browser si existe
   if (global.browser) {
     global.browser.close().then(() => {
-      throw new Error('Test timeout after 20s');
+      throw new Error('Test timeout after 15s');
     });
   }
-}, 20000);
+}, 15000);
 
 (async () => {
   let browser;
@@ -31,41 +32,48 @@ let timeoutHandle = setTimeout(() => {
     
     // Guardar referencia global para el timeout handler
     global.browser = browser;
-    console.log('\n1️⃣ Abriendo página...');
+    console.log('\n1️⃣ Configurando página...');
     const page = await browser.newPage();
     
-    // Capturar todos los logs
+    // CAPTURAR TODO INMEDIATAMENTE
     const logs = [];
+    global.logs = logs; // Para el timeout handler
     page.on('console', msg => {
       const text = msg.text();
       logs.push(text);
-      
-      // Mostrar logs importantes
-      if (text.includes('[MurmubaraEngine]') || 
-          text.includes('[ChunkProcessor]') ||
-          text.includes('[RNNoiseProcessor]') ||
-          text.includes('AudioProcessorService') ||
-          text.includes('useAudioProcessor')) {
-        console.log(`  📝 ${text}`);
+      // Solo mostrar logs relevantes para no saturar
+      if (text.includes('Engine') || text.includes('Chunk') || text.includes('Recording') || 
+          text.includes('Error') || text.includes('RNNoise')) {
+        console.log(`[LOG]: ${text}`);
       }
     });
     
-    // Capturar errores
     page.on('pageerror', err => {
+      console.error('  ❌ PAGE ERROR:', err.toString());
+    });
+    
+    page.on('error', err => {
       console.error('  ❌ ERROR:', err.toString());
     });
     
-    await page.goto('http://127.0.0.1:3000', { 
-      waitUntil: 'domcontentloaded',
-      timeout: 10000 
-    });
-    console.log('✅ Página cargada');
+    console.log('2️⃣ Navegando a http://127.0.0.1:3000...');
+    try {
+      await page.goto('http://127.0.0.1:3000', { 
+        waitUntil: 'networkidle0',
+        timeout: 5000 
+      });
+      console.log('✅ Página cargada');
+    } catch (e) {
+      console.error('❌ Error al cargar página:', e.message);
+      throw e;
+    }
     
-    // Esperar a que React se inicialice
-    await new Promise(r => setTimeout(r, 3000));
+    // Esperar un momento para React
+    console.log('3️⃣ Esperando React...');
+    await new Promise(r => setTimeout(r, 2000));
     
     // Verificar estado inicial
-    console.log('\n2️⃣ Verificando estado inicial...');
+    console.log('\n4️⃣ Verificando estado inicial...');
     const initialState = await page.evaluate(() => {
       const buttons = Array.from(document.querySelectorAll('button'));
       return {
@@ -79,7 +87,7 @@ let timeoutHandle = setTimeout(() => {
     console.log('  Controles de grabación:', initialState.hasRecordingControls ? '✅' : '❌');
     
     // Inicializar el audio engine
-    console.log('\n3️⃣ Inicializando Audio Engine...');
+    console.log('\n5️⃣ Inicializando Audio Engine...');
     const initResult = await page.evaluate(() => {
       const buttons = Array.from(document.querySelectorAll('button'));
       const initBtn = buttons.find(b => 

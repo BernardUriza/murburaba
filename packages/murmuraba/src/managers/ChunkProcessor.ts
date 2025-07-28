@@ -80,7 +80,7 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
       overlap: config.overlap || 0,
     } as Required<ChunkConfig>;
 
-    // Calculate samples per chunk
+    // Calculate samples per chunk (chunkDuration is in milliseconds)
     this.samplesPerChunk = Math.floor((this.config.chunkDuration / 1000) * this.sampleRate);
 
     this.logger.info(`ChunkProcessor initialized:`, {
