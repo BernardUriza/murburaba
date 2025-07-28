@@ -38,29 +38,24 @@ export class MurmubaraEngineFactory {
     // Bind audio engine
     container.bindSingleton(TOKENS.AudioEngine, () => new RNNoiseEngine());
 
+    // Get dependencies from container
+    const logger = container.get<ILogger>(TOKENS.Logger);
+    const stateManager = container.get<IStateManager>(TOKENS.StateManager);
+    const workerManager = container.get(TOKENS.WorkerManager);
+    const metricsManager = container.get(TOKENS.MetricsManager);
+    
     // Create engine with injected dependencies
-    return new MurmubaraEngineWithDI(container);
-  }
-}
+    const engine = new MurmubaraEngine(
+      logger,
+      stateManager,
+      workerManager,
+      metricsManager,
+      config || {}
+    );
 
-// Extended engine that uses DI
-class MurmubaraEngineWithDI extends MurmubaraEngine {
-  private container: DIContainer;
+    // Store container reference for testing purposes
+    (engine as any).getContainer = () => container;
 
-  constructor(container: DIContainer) {
-    const config = container.get<MurmubaraConfig>(TOKENS.Config);
-    super(config);
-    this.container = container;
-
-    // Replace internal services with DI versions
-    (this as any).logger = container.get<ILogger>(TOKENS.Logger);
-    (this as any).stateManager = container.get<IStateManager>(TOKENS.StateManager);
-    (this as any).events = container.get<IEventEmitter<EngineEvents>>(TOKENS.EventEmitter);
-    (this as any).metricsManager = container.get(TOKENS.MetricsManager);
-    (this as any).workerManager = container.get(TOKENS.WorkerManager);
-  }
-
-  getContainer(): DIContainer {
-    return this.container;
+    return engine;
   }
 }

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { MurmubaraEngine } from '../../../core/MurmubaraEngine';
+import { MurmubaraEngineFactory } from '../../../core/MurmubaraEngineFactory';
 import { EventEmitter } from '../../../core/EventEmitter';
 import { MockAudioContext, MockMediaStream } from '../../mocks/global-mocks';
 
@@ -9,7 +10,7 @@ describe('MurmubaraEngine', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    engine = new MurmubaraEngine();
+    engine = MurmubaraEngineFactory.create();
     mockAudioContext = new MockAudioContext();
   });
 
@@ -50,7 +51,7 @@ describe('MurmubaraEngine', () => {
     });
 
     it('should initialize in degraded mode when configured and WASM fails', async () => {
-      const degradedEngine = new MurmubaraEngine({ allowDegraded: true });
+      const degradedEngine = MurmubaraEngineFactory.create({ allowDegraded: true });
 
       // Mock loadRNNoiseModule to fail
       const { loadRNNoiseModule } = await import('../../../utils/rnnoise-loader');
@@ -276,7 +277,7 @@ describe('MurmubaraEngine', () => {
         () => new Promise(resolve => setTimeout(resolve, 10000))
       );
 
-      const fastEngine = new MurmubaraEngine();
+      const fastEngine = MurmubaraEngineFactory.create();
 
       // Mock the timeout to be very short for testing
       const engineAny = fastEngine as any;

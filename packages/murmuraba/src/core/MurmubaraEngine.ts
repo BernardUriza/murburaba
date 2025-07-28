@@ -7,6 +7,7 @@ import { MetricsManager } from '../managers/MetricsManager';
 import { ChunkProcessor } from '../managers/ChunkProcessor';
 import { SimpleAGC } from '../utils/SimpleAGC';
 import { logging } from '../managers/LoggingManager';
+import { ILogger, IStateManager, IMetricsManager } from './interfaces';
 import {
   MurmubaraConfig,
   EngineEvents,
@@ -23,10 +24,10 @@ import {
 export class MurmubaraEngine extends EventEmitter<EngineEvents> {
   private _isInitialized: boolean = false;
   private config: Required<MurmubaraConfig>;
-  private stateManager: StateManager;
-  private logger: Logger;
+  private stateManager: IStateManager;
+  private logger: ILogger;
   private workerManager: WorkerManager;
-  private metricsManager: MetricsManager;
+  private metricsManager: IMetricsManager;
   private audioContext?: AudioContext;
   private activeStreams: Map<string, StreamController> = new Map();
   private wasmModule?: any;
@@ -40,7 +41,13 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
   private agc?: SimpleAGC;
   private supportsAudioWorklet: boolean = false;
 
-  constructor(config: MurmubaraConfig = {}) {
+  constructor(
+    logger: ILogger,
+    stateManager: IStateManager,
+    workerManager: WorkerManager,
+    metricsManager: IMetricsManager,
+    config: MurmubaraConfig = {}
+  ) {
     super();
 
     this.config = {
@@ -56,17 +63,16 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       allowDegraded: config.allowDegraded ?? false,
     } as Required<MurmubaraConfig>;
 
-    // CRITICAL: These should be injected, not created directly
-    // TODO: Remove after DI refactoring is complete
-    this.logger = new Logger('[Murmuraba]');
+    // Use injected dependencies
+    this.logger = logger;
     this.logger.setLevel(this.config.logLevel);
     if (this.config.onLog) {
       this.logger.setLogHandler(this.config.onLog);
     }
 
-    this.stateManager = new StateManager();
-    this.workerManager = new WorkerManager(this.logger);
-    this.metricsManager = new MetricsManager();
+    this.stateManager = stateManager;
+    this.workerManager = workerManager;
+    this.metricsManager = metricsManager;
 
     this.setupEventForwarding();
     this.setupAutoCleanup();
