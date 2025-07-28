@@ -80,6 +80,7 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
         // MetricsManager extends EventEmitter, so use 'on' method
         if (metricsManager && metricsManager.on) {
           console.log('🎯 Setting up MetricsManager listener in MurmurabaReduxProvider');
+          console.log('🔥DEBUG🔥 MetricsManager instance ID:', metricsManager.constructor.name, metricsManager);
           
           // Debug what methods are available
           console.log('MetricsManager methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(metricsManager)));
@@ -90,20 +91,12 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
           let eventCount = 0;
           metricsManager.on('metrics-update', (metrics: any) => {
             eventCount++;
-            // Log first 10 events and then every 50th
-            if (eventCount <= 10 || eventCount % 50 === 0) {
-              console.log(`📊 Metrics event #${eventCount} in Redux Provider:`, {
-                inputLevel: metrics.inputLevel,
-                outputLevel: metrics.outputLevel,
-                timestamp: new Date(metrics.timestamp).toISOString(),
-                frameCount: metrics.frameCount
-              });
-            }
-            
-            // Only log non-zero inputs occasionally to reduce spam
-            if (metrics.inputLevel > 0 && eventCount % 50 === 0) {
-              console.log('🔥DEBUG🔥 Audio level:', metrics.inputLevel.toFixed(3), 'Source: MetricsManager');
-            }
+            console.log(`🔥DEBUG🔥 📊 METRICS EVENT RECEIVED IN PROVIDER #${eventCount}:`, {
+              inputLevel: metrics.inputLevel,
+              outputLevel: metrics.outputLevel,
+              timestamp: new Date(metrics.timestamp).toISOString(),
+              frameCount: metrics.frameCount
+            });
             
             setAudioLevel(metrics.inputLevel || 0);
             // Also dispatch to Redux if needed
