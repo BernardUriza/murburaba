@@ -114,7 +114,7 @@ export default function App() {
       const recordingDuration = 30 * 1000; // 30 seconds
       const result = await processRecording(recordingDuration, {
         enableAGC,
-        chunkDuration: chunkDuration * 1000 // Convert seconds to milliseconds
+        chunkDuration // Pass in seconds, conversion happens in service
       })
       
       if (result) notify('success', 'Recording completed successfully!')

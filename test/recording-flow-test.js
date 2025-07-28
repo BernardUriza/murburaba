@@ -4,11 +4,11 @@ import puppeteer from 'puppeteer';
 
 console.log('🚀 TEST DE FLUJO DE GRABACIÓN COMPLETO');
 
-// Timeout general de 30 segundos
+// Timeout general de 20 segundos
 setTimeout(() => {
-  console.error('\n⏰ TIMEOUT 30s - TEST FINALIZADO');
+  console.error('\n⏰ TIMEOUT 20s - TEST FINALIZADO');
   process.exit(1);
-}, 30000);
+}, 20000);
 
 (async () => {
   const browser = await puppeteer.launch({ 
@@ -17,7 +17,8 @@ setTimeout(() => {
       '--no-sandbox', 
       '--disable-setuid-sandbox',
       '--use-fake-ui-for-media-stream',
-      '--use-fake-device-for-media-stream'
+      '--use-fake-device-for-media-stream',
+      '--use-file-for-fake-audio-capture=/workspaces/murburaba/public/jfk_speech.wav'
     ]
   });
   
@@ -48,7 +49,7 @@ setTimeout(() => {
     
     await page.goto('http://localhost:3000', { 
       waitUntil: 'domcontentloaded',
-      timeout: 5000 
+      timeout: 10000 
     });
     console.log('✅ Página cargada');
     
@@ -117,9 +118,9 @@ setTimeout(() => {
     
     console.log('✅ Grabación iniciada');
     
-    // Esperar 5 segundos de grabación
-    console.log('\n5️⃣ Grabando por 5 segundos...');
-    await new Promise(r => setTimeout(r, 5000));
+    // Esperar 3 segundos de grabación
+    console.log('\n5️⃣ Grabando por 3 segundos...');
+    await new Promise(r => setTimeout(r, 3000));
     
     // Verificar estado durante la grabación
     const recordingState = await page.evaluate(() => {
@@ -169,6 +170,23 @@ setTimeout(() => {
     if (inputLevels.length > 0) {
       console.log(`  Primer nivel: ${inputLevels[0]}`);
       console.log(`  Último nivel: ${inputLevels[inputLevels.length - 1]}`);
+      
+      // Extraer valores numéricos para verificar variación
+      const levelValues = inputLevels.map(log => {
+        const match = log.match(/Input level: ([\d.]+)/);
+        return match ? parseFloat(match[1]) : 0;
+      });
+      
+      const avgLevel = levelValues.reduce((a, b) => a + b, 0) / levelValues.length;
+      const maxLevel = Math.max(...levelValues);
+      const minLevel = Math.min(...levelValues);
+      
+      console.log(`  Nivel promedio: ${avgLevel.toFixed(6)}`);
+      console.log(`  Rango: ${minLevel.toFixed(6)} - ${maxLevel.toFixed(6)}`);
+      
+      // Verificar si hay variación real (no solo ruido blanco)
+      const hasRealAudio = maxLevel > 0.001 && (maxLevel - minLevel) > 0.0001;
+      console.log(`  Audio real detectado: ${hasRealAudio ? '✅' : '❌'}`);
     }
     
     await browser.close();
