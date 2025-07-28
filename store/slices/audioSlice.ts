@@ -24,6 +24,8 @@ interface AudioState extends ErrorState {
   currentInputLevel: number
   currentVadLevel: number
   currentOutputLevel: number
+  vadLevel: number
+  noiseReductionLevel: number
   
 }
 
@@ -40,6 +42,8 @@ const initialState: AudioState = {
   currentInputLevel: 0,
   currentVadLevel: 0,
   currentOutputLevel: 0,
+  vadLevel: 0,
+  noiseReductionLevel: 0,
   hasError: false,
   errorMessage: null
 }
@@ -102,7 +106,7 @@ const audioSlice = createSlice({
     setVadLevel: (state, action: PayloadAction<number>) => {
       state.currentVadLevel = Math.max(0, Math.min(1, action.payload))
     },
-    updateMetrics: (state, action: PayloadAction<{ inputLevel?: number; outputLevel?: number }>) => {
+    updateMetrics: (state, action: PayloadAction<{ inputLevel?: number; outputLevel?: number; vad?: number; noiseReduction?: number }>) => {
       if (action.payload.inputLevel !== undefined) {
         state.currentInputLevel = Math.max(0, Math.min(1, action.payload.inputLevel))
         if (Math.random() < 0.01) {
@@ -111,6 +115,12 @@ const audioSlice = createSlice({
       }
       if (action.payload.outputLevel !== undefined) {
         state.currentOutputLevel = Math.max(0, Math.min(1, action.payload.outputLevel))
+      }
+      if (action.payload.vad !== undefined) {
+        state.vadLevel = Math.max(0, Math.min(1, action.payload.vad))
+      }
+      if (action.payload.noiseReduction !== undefined) {
+        state.noiseReductionLevel = Math.max(0, Math.min(1, action.payload.noiseReduction))
       }
     },
   }

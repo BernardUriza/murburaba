@@ -87,7 +87,9 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
             // Dispatch to Redux for global state
             store.dispatch(updateMetrics({ 
               inputLevel: metrics.inputLevel,
-              outputLevel: metrics.outputLevel 
+              outputLevel: metrics.outputLevel,
+              vad: metrics.vadProbability || 0,
+              noiseReduction: metrics.noiseReductionLevel || 0
             }));
           });
           

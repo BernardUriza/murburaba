@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useMurmurabaSuite, TOKENS } from 'murmuraba'
-import type { IMetricsManager, ProcessingMetrics } from 'murmuraba'
+import type { IMetricsManager } from 'murmuraba'
 import { useAppSelector, useAppDispatch } from '../store/hooks'
 import { setVadLevel as setReduxVadLevel } from '../store/slices/audioSlice'
 import { useMediaStream } from '../context/MediaStreamContext'
@@ -9,10 +9,29 @@ import styles from './GlobalAudioMonitor.module.css'
 export function GlobalAudioMonitor() {
   const dispatch = useAppDispatch()
   const { container, isReady } = useMurmurabaSuite()
-  const { isProcessing, isRecording, chunks, currentInputLevel } = useAppSelector(state => state.audio)
+  const { 
+    isProcessing, 
+    isRecording, 
+    chunks, 
+    currentInputLevel,
+    currentOutputLevel,
+    noiseReductionLevel,
+    vadLevel
+  } = useAppSelector(state => state.audio)
+  
+  // Debug log
+  useEffect(() => {
+    if (Math.random() < 0.05) {
+      console.log('🎨 GlobalAudioMonitor levels:', {
+        input: currentInputLevel,
+        output: currentOutputLevel,
+        vad: vadLevel,
+        noise: noiseReductionLevel
+      })
+    }
+  }, [currentInputLevel, currentOutputLevel, vadLevel, noiseReductionLevel])
   const { currentStream } = useMediaStream()
-  const [metrics] = useState<ProcessingMetrics | null>(null)
-  const [vadLevel, setVadLevel] = useState(0)
+  const [localVadLevel, setLocalVadLevel] = useState(0)
   const [streamInfo, setStreamInfo] = useState<{id: string, tracks: number} | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
   
@@ -32,7 +51,7 @@ export function GlobalAudioMonitor() {
         // Update VAD from metrics
         if ('getAverageVAD' in metricsManager) {
           const averageVAD = (metricsManager as any).getAverageVAD()
-          setVadLevel(averageVAD)
+          setLocalVadLevel(averageVAD)
           dispatch(setReduxVadLevel(averageVAD))
         }
       })
@@ -108,12 +127,12 @@ export function GlobalAudioMonitor() {
             <div 
               className={styles.fill}
               style={{ 
-                width: `${(metrics?.outputLevel || 0) * 100}%`,
+                width: `${currentOutputLevel * 100}%`,
                 backgroundColor: '#4444ff'
               }}
             />
           </div>
-          <span>{((metrics?.outputLevel || 0) * 100).toFixed(0)}%</span>
+          <span>{(currentOutputLevel * 100).toFixed(0)}%</span>
         </div>
         
         <div className={styles.metric}>
@@ -122,12 +141,12 @@ export function GlobalAudioMonitor() {
             <div 
               className={styles.fill}
               style={{ 
-                width: `${(metrics?.noiseReductionLevel || 0) * 100}%`,
+                width: `${noiseReductionLevel * 100}%`,
                 backgroundColor: '#ff44ff'
               }}
             />
           </div>
-          <span>{((metrics?.noiseReductionLevel || 0) * 100).toFixed(0)}%</span>
+          <span>{(noiseReductionLevel * 100).toFixed(0)}%</span>
         </div>
         
         <div className={styles.metric}>
@@ -146,9 +165,9 @@ export function GlobalAudioMonitor() {
           </div>
           
           <div className={styles.stats}>
-            <div>Latency: {(metrics?.processingLatency || 0).toFixed(1)}ms</div>
-            <div>Frames: {metrics?.frameCount || 0}</div>
-            <div>Dropped: {metrics?.droppedFrames || 0}</div>
+            <div>Latency: 0.0ms</div>
+            <div>Frames: 0</div>
+            <div>Dropped: 0</div>
             <div>Chunks: {chunks.length}</div>
           </div>
           
@@ -157,7 +176,8 @@ export function GlobalAudioMonitor() {
             <div>🐛 Debug Info:</div>
             <div>- isProcessing: {isProcessing ? 'true' : 'false'}</div>
             <div>- isRecording: {isRecording ? 'true' : 'false'}</div>
-            <div>- hasMetrics: {metrics ? 'true' : 'false'}</div>
+            <div>- vadLevel: {(vadLevel * 100).toFixed(1)}%</div>
+            <div>- outputLevel: {(currentOutputLevel * 100).toFixed(1)}%</div>
             <div>- Redux inputLevel: {(currentInputLevel * 100).toFixed(1)}%</div>
           </div>
         </>

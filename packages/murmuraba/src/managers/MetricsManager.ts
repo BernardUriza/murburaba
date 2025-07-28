@@ -101,6 +101,7 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
 
   updateVAD(vad: number): void {
     this.currentVAD = vad;
+    this.metrics.vadProbability = vad; // Update metrics object
     this.vadHistory.push(vad);
     if (this.vadHistory.length > this.maxFrameHistory) {
       this.vadHistory.shift();
