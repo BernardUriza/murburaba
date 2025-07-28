@@ -26,6 +26,17 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
 
     this.updateInterval = setInterval(() => {
       this.calculateLatency();
+      // Log every ~2 seconds for debugging
+      if (Math.random() < 0.04) {
+        console.log('📡 MetricsManager emitting:', {
+          vad: this.metrics.vadProbability,
+          noise: this.metrics.noiseReductionLevel,
+          input: this.metrics.inputLevel,
+          hasListeners: this.listenerCount('metrics-update'),
+          // Check if we have actual handlers
+          hasHandlers: this.events['metrics-update']?.size || 0
+        });
+      }
       this.emit('metrics-update', { ...this.metrics });
     }, intervalMs);
   }
@@ -47,8 +58,7 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
 
   updateNoiseReduction(level: number): void {
     this.metrics.noiseReductionLevel = Math.max(0, Math.min(1, level));
-    // Emit update immediately when noise reduction changes
-    this.emit('metrics-update', { ...this.metrics });
+    // Don't emit here - let startAutoUpdate handle it
   }
   
   // Emit all metrics together after updates
@@ -111,8 +121,7 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
     if (this.vadHistory.length > this.maxFrameHistory) {
       this.vadHistory.shift();
     }
-    // Emit update immediately when VAD changes
-    this.emit('metrics-update', { ...this.metrics });
+    // Don't emit here - let startAutoUpdate handle it
   }
 
   getAverageVAD(): number {
@@ -126,6 +135,7 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
   }
 
   onMetricsUpdate(callback: (metrics: ProcessingMetrics) => void): () => void {
+    console.log('📌 MetricsManager.onMetricsUpdate called, registering callback');
     this.on('metrics-update', callback);
     return () => this.off('metrics-update', callback);
   }

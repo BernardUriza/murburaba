@@ -71,29 +71,40 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
         return;
       }
       
-      const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor);
+      // Get the engine to access its MetricsManager
+      let metricsManager = null;
       
-      // MetricsManager might not be available yet, check first
+      // First try to get it from the container
       if (container.has(TOKENS.MetricsManager)) {
-        const metricsManager = container.get<IMetricsManager>(TOKENS.MetricsManager) as any;
+        metricsManager = container.get<IMetricsManager>(TOKENS.MetricsManager) as any;
+      }
+      
+      // If not found, try to get it from the AudioProcessor (which has the engine)
+      if (!metricsManager && container.has(SUITE_TOKENS.AudioProcessor)) {
+        const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor);
+        // Access the engine's metricsManager through the processor
+        if ((processor as any).engine?.metricsManager) {
+          metricsManager = (processor as any).engine.metricsManager;
+          console.log('📍 Got MetricsManager from AudioProcessor.engine');
+        }
+      }
         
-        // MetricsManager extends EventEmitter, so use 'on' method
-        if (metricsManager && metricsManager.on) {
+        // Use onMetricsUpdate method instead of direct 'on'
+        if (metricsManager && metricsManager.onMetricsUpdate) {
           console.log('🎯 Setting up MetricsManager listener in MurmurabaReduxProvider');
           
           // Register metrics event listener
-          metricsManager.on('metrics-update', (metrics: any) => {
+          const unsubscribe = metricsManager.onMetricsUpdate((metrics: any) => {
             setAudioLevel(metrics.inputLevel || 0);
             
-            // Debug metrics
-            if (Math.random() < 0.05) {
-              console.log('🎯 MurmurabaReduxProvider metrics:', {
-                input: metrics.inputLevel,
-                vad: metrics.vadProbability,
-                noise: metrics.noiseReductionLevel,
-                hasVad: 'vadProbability' in metrics
-              });
-            }
+            // Debug metrics - always log for now
+            console.log('🎯 MurmurabaReduxProvider received metrics:', {
+              input: metrics.inputLevel,
+              vad: metrics.vadProbability,
+              noise: metrics.noiseReductionLevel,
+              hasVad: 'vadProbability' in metrics,
+              metricsKeys: Object.keys(metrics)
+            });
             
             // Dispatch to Redux for global state
             store.dispatch(updateMetrics({ 
@@ -104,10 +115,17 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
             }));
           });
           
-          // Listener is now registered
+          // Force an initial metrics emit to test the connection
+          const currentMetrics = metricsManager.getMetrics();
+          console.log('🔍 Initial metrics from MetricsManager:', currentMetrics);
           
-          // Store reference for cleanup
+          // Test emit to verify the connection
+          console.log('🧪 Testing manual emit...');
+          metricsManager.emit('metrics-update', currentMetrics);
+          
+          // Store reference and unsubscribe function for cleanup
           (window as any).__metricsManager = metricsManager;
+          (window as any).__metricsUnsubscribe = unsubscribe;
         }
       }
       

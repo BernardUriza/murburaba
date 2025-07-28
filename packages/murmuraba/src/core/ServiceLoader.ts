@@ -91,9 +91,14 @@ export const SERVICE_MODULES = {
   metricsManager: {
     name: 'metricsManager',
     token: TOKENS.MetricsManager,
-    load: async (_container: DIContainer) => {
-      const { MetricsManager } = await import('../managers/MetricsManager');
-      return new MetricsManager();
+    load: async (container: DIContainer) => {
+      // DO NOT CREATE NEW INSTANCE - reuse the one from MurmubaraEngineFactory
+      // This prevents having two different MetricsManager instances
+      if (container.has(TOKENS.MetricsManager)) {
+        return container.get(TOKENS.MetricsManager);
+      }
+      // If not found, it means we're in an invalid state
+      throw new Error('MetricsManager must be created by MurmubaraEngineFactory, not ServiceLoader');
     },
   },
 

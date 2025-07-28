@@ -1,7 +1,7 @@
 export type EventHandler = (...args: any[]) => void;
 
 export class EventEmitter<T extends Record<string, EventHandler>> {
-  private events: Record<string, Set<EventHandler>> = {};
+  protected events: Record<string, Set<EventHandler>> = {};
 
   constructor() {
     // Initialize as plain object instead of Map

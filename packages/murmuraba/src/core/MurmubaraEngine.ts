@@ -305,34 +305,6 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     this.logger.warn('Engine running in degraded mode - noise reduction disabled');
   }
 
-  private async getWasmBuffer(): Promise<ArrayBuffer | null> {
-    try {
-      // Try to fetch the WASM file directly
-      const wasmPaths = [
-        '/rnnoise-processor.wasm',
-        '/node_modules/@jitsi/rnnoise-wasm/dist/rnnoise-processor.wasm',
-        '/dist/rnnoise-processor.wasm'
-      ];
-      
-      for (const path of wasmPaths) {
-        try {
-          const response = await fetch(path);
-          if (response.ok) {
-            this.logger.info(`✅ Loaded WASM from ${path}`);
-            return await response.arrayBuffer();
-          }
-        } catch (e) {
-          // Continue to next path
-        }
-      }
-      
-      this.logger.warn('Could not load WASM buffer for worklet');
-      return null;
-    } catch (error) {
-      this.logger.error('Failed to get WASM buffer:', error);
-      return null;
-    }
-  }
 
   private async loadWasmModule(): Promise<void> {
     this.logger.debug('Loading WASM module...');
@@ -634,17 +606,13 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
 
     // Setup processing handler based on node type
     if (useWorklet && processor instanceof AudioWorkletNode) {
-      // For AudioWorklet, send configuration with WASM buffer
-      // First, we need to get the WASM buffer
-      const wasmBuffer = await this.getWasmBuffer();
-      
+      // For AudioWorklet, send configuration
       processor.port.postMessage({
         type: 'initialize',
         data: {
           enableRNNoise: true,
           enableAGC: this.agcEnabled,
           targetLevel: 0.3,
-          wasmBuffer: wasmBuffer,
         },
       });
 
@@ -658,6 +626,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
           this.metricsManager.updateOutputLevel(outputLevel || 0);
           this.metricsManager.updateVAD(vad || 0);
           this.metricsManager.updateNoiseReduction(noiseReduction || 0);
+          // No need to force emit - startAutoUpdate handles it
           
           // Debug: Check metrics state
           if (Math.random() < 0.05) {

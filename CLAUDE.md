@@ -613,6 +613,55 @@ Estados en `pages/index.tsx` que DEBEN migrar a Redux:
 
 ---
 
+## 🔥 DUPLICACIÓN DE CLASES - PROHIBIDO
+
+### VIOLACIÓN CRÍTICA: MetricsManager vs OptimizedMetricsManager
+
+**FECHA:** 26-01-2025  
+**SEVERIDAD:** CRÍTICA  
+**ESTADO:** CORREGIDO
+
+**PROBLEMA:**
+Existían dos implementaciones de MetricsManager:
+1. `MetricsManager.ts` - La implementación original
+2. `OptimizedMetricsManager.ts` - Una "optimización" que nunca se usó
+
+**LECCIÓN:**
+- NUNCA crear variantes "optimizadas" sin eliminar la original
+- Si necesitas optimizar, REFACTORIZA la existente
+- Dos clases haciendo lo mismo = DEUDA TÉCNICA INSTANTÁNEA
+
+**ACCIÓN TOMADA:**
+- ✅ Eliminado `OptimizedMetricsManager.ts`
+- ✅ Mantenido solo `MetricsManager.ts`
+
+### VIOLACIÓN CRÍTICA: Doble instanciación de MetricsManager
+
+**FECHA:** 28-01-2025  
+**SEVERIDAD:** CRÍTICA  
+**ESTADO:** CORREGIDO
+
+**PROBLEMA:**
+MetricsManager se está creando en DOS lugares diferentes:
+1. `MurmubaraEngineFactory.ts:36` - Crea instancia para MurmubaraEngine
+2. `ServiceLoader.ts:96` - Crea OTRA instancia diferente
+
+**CONSECUENCIA:**
+- Los eventos emitidos por una instancia NO llegan a los listeners de la otra
+- Redux no recibe actualizaciones de VAD/noise porque escucha la instancia equivocada
+- Desperdicio de memoria y procesamiento
+
+**LECCIÓN:**
+- Un servicio singleton debe tener UNA SOLA fuente de creación
+- Si hay un DI Container, ÚSALO SIEMPRE
+- NUNCA crear instancias manuales cuando hay un sistema de inyección
+
+**ACCIÓN REQUERIDA:**
+- ✅ Eliminar la creación en ServiceLoader
+- ✅ Usar solo la instancia del DIContainer creada por MurmubaraEngineFactory
+
+---
+
 **FIN DEL MÓDULO 1.**
 
 Si aún estás procesando, no estás listo.

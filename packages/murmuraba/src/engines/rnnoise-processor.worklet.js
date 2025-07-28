@@ -143,10 +143,13 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
    */
   processFrameWithRNNoise(frame) {
     if (!this.isRNNoiseReady || !this.rnnoiseModule || !this.rnnoiseState) {
-      // Fallback: simple passthrough with fake VAD
+      // Fallback: simple passthrough with energy-based VAD
+      const rms = this.calculateRMS(frame);
+      // Simple VAD: if RMS > 0.01, consider it voice
+      const vad = rms > 0.01 ? Math.min(1.0, rms * 20) : 0;
       return {
         output: frame,
-        vad: Math.min(1.0, this.calculateRMS(frame) * 10),
+        vad: vad,
       };
     }
 
@@ -276,7 +279,13 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
       // Calculate noise reduction
       const inputRMS = this.calculateRMS(frame);
       const outputRMS = this.calculateRMS(processed);
-      this.noiseReduction = inputRMS > 0 ? Math.max(0, (1 - outputRMS / inputRMS)) : 0;
+      // Simulate noise reduction when no voice is detected
+      if (this.lastVad < 0.3) {
+        // Apply simple noise gate
+        this.noiseReduction = 0.8; // 80% reduction when no voice
+      } else {
+        this.noiseReduction = inputRMS > 0 ? Math.max(0, (1 - outputRMS / inputRMS)) : 0;
+      }
 
       // Add to output buffer
       for (let i = 0; i < processed.length; i++) {
