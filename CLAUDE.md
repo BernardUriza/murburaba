@@ -656,9 +656,10 @@ MetricsManager se está creando en DOS lugares diferentes:
 - Si hay un DI Container, ÚSALO SIEMPRE
 - NUNCA crear instancias manuales cuando hay un sistema de inyección
 
-**ACCIÓN REQUERIDA:**
-- ✅ Eliminar la creación en ServiceLoader
-- ✅ Usar solo la instancia del DIContainer creada por MurmubaraEngineFactory
+**ACCIÓN TOMADA:**
+- ✅ Eliminada la creación en ServiceLoader
+- ✅ ServiceLoader ahora reutiliza la instancia del DIContainer
+- ✅ Garantizado que solo MurmubaraEngineFactory puede crear MetricsManager
 
 ---
 

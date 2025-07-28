@@ -3,11 +3,11 @@
 import React, { useEffect, ReactNode, useState, useCallback } from 'react';
 import { Provider } from 'react-redux';
 import { store } from '../store';
-import { MurmurabaSuite, useMurmurabaSuite, WaveformAnalyzer, SUITE_TOKENS, TOKENS } from 'murmuraba';
+import { MurmurabaSuite, useMurmurabaSuite, WaveformAnalyzer, SUITE_TOKENS, TOKENS } from '../packages/murmuraba';
 import { setSuiteContainer, MURMURABA_ACTIONS } from '../store/middleware/murmurabaSuiteMiddleware';
 import { setEngineInitialized, setProcessing, updateMetrics } from '../store/slices/audioSlice';
 import { DebugError } from '../components/DebugError';
-import type { ILogger, IMetricsManager, IAudioProcessor } from 'murmuraba';
+import type { ILogger, IMetricsManager, IAudioProcessor } from '../packages/murmuraba';
 
 // Wrapper component to show loading state
 function MurmurabaSuiteWrapper({ children, isInitializing, showAudioLevel }: { children: ReactNode; isInitializing: boolean; showAudioLevel?: boolean }) {
@@ -51,11 +51,73 @@ function MurmurabaSuiteWrapper({ children, isInitializing, showAudioLevel }: { c
 }
 
 // Inner component that has access to MurmurabaSuite context
-function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNode; showAudioLevel?: boolean }) {
+function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNode; showAudioLevel?: boolean }): JSX.Element {
   const { container, isReady, error } = useMurmurabaSuite();
-  const [currentStream, setCurrentStream] = useState<MediaStream | null>(null);
+  const [currentStream] = useState<MediaStream | null>(null);
   const [audioLevel, setAudioLevel] = useState(0);
   
+  // Helper to get MetricsManager from container or processor
+  const getMetricsManager = useCallback((): any | null => {
+    if (!container) return null;
+    
+    // First try to get it from the container
+    if (container.has(TOKENS.MetricsManager)) {
+      return container.get<IMetricsManager>(TOKENS.MetricsManager) as any;
+    }
+    
+    // If not found, try to get it from the AudioProcessor
+    if (container.has(SUITE_TOKENS.AudioProcessor)) {
+      const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor);
+      if ((processor as any).engine?.metricsManager) {
+        console.log('📍 Got MetricsManager from AudioProcessor.engine');
+        return (processor as any).engine.metricsManager;
+      }
+    }
+    
+    return null;
+  }, [container]);
+
+  // Helper to setup metrics listener
+  const setupMetricsListener = useCallback((metricsManager: any): (() => void) | null => {
+    if (!metricsManager || !metricsManager.onMetricsUpdate) return null;
+    
+    console.log('🎯 Setting up MetricsManager listener in MurmurabaReduxProvider');
+    
+    // Register metrics event listener
+    const unsubscribe = metricsManager.onMetricsUpdate((metrics: any) => {
+      setAudioLevel(metrics.inputLevel || 0);
+      
+      // Debug metrics
+      console.log('🎯 MurmurabaReduxProvider received metrics:', {
+        input: metrics.inputLevel,
+        vad: metrics.vadProbability,
+        noise: metrics.noiseReductionLevel,
+        hasVad: 'vadProbability' in metrics,
+        metricsKeys: Object.keys(metrics)
+      });
+      
+      // Dispatch to Redux for global state
+      store.dispatch(updateMetrics({ 
+        inputLevel: metrics.inputLevel,
+        outputLevel: metrics.outputLevel,
+        vad: metrics.vadProbability || 0,
+        noiseReduction: metrics.noiseReductionLevel || 0
+      }));
+    });
+    
+    // Test the connection
+    const currentMetrics = metricsManager.getMetrics();
+    console.log('🔍 Initial metrics from MetricsManager:', currentMetrics);
+    console.log('🧪 Testing manual emit...');
+    metricsManager.emit('metrics-update', currentMetrics);
+    
+    // Store reference for debugging
+    (window as any).__metricsManager = metricsManager;
+    (window as any).__metricsUnsubscribe = unsubscribe;
+    
+    return unsubscribe;
+  }, []);
+
   // Setup audio level monitoring
   const setupAudioLevelMonitoring = useCallback(async () => {
     console.log('🔧 setupAudioLevelMonitoring called:', { isReady, hasContainer: !!container });
@@ -71,67 +133,18 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
         return;
       }
       
-      // Get the engine to access its MetricsManager
-      let metricsManager = null;
-      
-      // First try to get it from the container
-      if (container.has(TOKENS.MetricsManager)) {
-        metricsManager = container.get<IMetricsManager>(TOKENS.MetricsManager) as any;
-      }
-      
-      // If not found, try to get it from the AudioProcessor (which has the engine)
-      if (!metricsManager && container.has(SUITE_TOKENS.AudioProcessor)) {
-        const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor);
-        // Access the engine's metricsManager through the processor
-        if ((processor as any).engine?.metricsManager) {
-          metricsManager = (processor as any).engine.metricsManager;
-          console.log('📍 Got MetricsManager from AudioProcessor.engine');
-        }
-      }
-        
-        // Use onMetricsUpdate method instead of direct 'on'
-        if (metricsManager && metricsManager.onMetricsUpdate) {
-          console.log('🎯 Setting up MetricsManager listener in MurmurabaReduxProvider');
-          
-          // Register metrics event listener
-          const unsubscribe = metricsManager.onMetricsUpdate((metrics: any) => {
-            setAudioLevel(metrics.inputLevel || 0);
-            
-            // Debug metrics - always log for now
-            console.log('🎯 MurmurabaReduxProvider received metrics:', {
-              input: metrics.inputLevel,
-              vad: metrics.vadProbability,
-              noise: metrics.noiseReductionLevel,
-              hasVad: 'vadProbability' in metrics,
-              metricsKeys: Object.keys(metrics)
-            });
-            
-            // Dispatch to Redux for global state
-            store.dispatch(updateMetrics({ 
-              inputLevel: metrics.inputLevel,
-              outputLevel: metrics.outputLevel,
-              vad: metrics.vadProbability || 0,
-              noiseReduction: metrics.noiseReductionLevel || 0
-            }));
-          });
-          
-          // Force an initial metrics emit to test the connection
-          const currentMetrics = metricsManager.getMetrics();
-          console.log('🔍 Initial metrics from MetricsManager:', currentMetrics);
-          
-          // Test emit to verify the connection
-          console.log('🧪 Testing manual emit...');
-          metricsManager.emit('metrics-update', currentMetrics);
-          
-          // Store reference and unsubscribe function for cleanup
-          (window as any).__metricsManager = metricsManager;
-          (window as any).__metricsUnsubscribe = unsubscribe;
-        }
+      // Get metrics manager and setup listener
+      const metricsManager = getMetricsManager();
+      if (metricsManager) {
+        setupMetricsListener(metricsManager);
       }
       
       // Also try processor metrics as fallback
-      if (processor && processor.onMetrics) {
-        processor.onMetrics((metrics) => {
+      const processor = container.has(SUITE_TOKENS.AudioProcessor) ? 
+        container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor) : null;
+      
+      if (processor && (processor as any).onMetrics) {
+        (processor as any).onMetrics((metrics: any) => {
           setAudioLevel(metrics.inputLevel || 0);
           store.dispatch(updateMetrics(metrics));
         });
@@ -139,55 +152,77 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
     } catch (error) {
       console.error('Failed to setup audio monitoring:', error);
     }
-  }, [container, isReady]);
+  }, [container, isReady, getMetricsManager, setupMetricsListener]);
   
+  // Helper to initialize Redux connection
+  const initializeReduxConnection = useCallback((): void => {
+    if (!container) return;
+    
+    setSuiteContainer(container as any);
+    store.dispatch({ type: MURMURABA_ACTIONS.SET_CONTAINER, payload: container as any });
+    store.dispatch(setEngineInitialized(true));
+  }, [container]);
+
+  // Helper to setup processing state monitoring
+  const setupProcessingStateMonitoring = useCallback((): (() => void) | null => {
+    if (!container || !container.has(SUITE_TOKENS.AudioProcessor)) return null;
+    
+    const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor);
+    const interval = setInterval(() => {
+      const isProcessing = processor.isProcessing();
+      store.dispatch(setProcessing(isProcessing));
+    }, 100);
+    
+    return () => clearInterval(interval);
+  }, [container]);
+
+  // Helper to log service availability
+  const logServiceAvailability = useCallback((): void => {
+    if (!container || !container.has(TOKENS.Logger)) return;
+    
+    const logger = container.get<ILogger>(TOKENS.Logger);
+    logger.info('✅ MurmurabaSuite connected to Redux');
+    logger.debug('Available services:', {
+      audioProcessor: container.has(SUITE_TOKENS.AudioProcessor),
+      logger: container.has(TOKENS.Logger),
+      metricsManager: container.has(TOKENS.MetricsManager),
+      stateManager: container.has(TOKENS.StateManager),
+      eventEmitter: container.has(TOKENS.EventEmitter)
+    });
+  }, [container]);
+
+  // Main initialization effect
   useEffect(() => {
     // Log status only on changes
-    if (isReady && container && !window.__murmurabaInitLogged) {
+    if (isReady && container && !(window as any).__murmurabaInitLogged) {
       console.log('✅ MurmurabaSuite initialized');
-      window.__murmurabaInitLogged = true;
+      (window as any).__murmurabaInitLogged = true;
     }
     
     if (isReady && container) {
-      // Connect DI container to Redux middleware
-      setSuiteContainer(container as any);
-      store.dispatch({ type: MURMURABA_ACTIONS.SET_CONTAINER, payload: container as any });
-      store.dispatch(setEngineInitialized(true));
+      // Initialize Redux connection
+      initializeReduxConnection();
       
-      // Setup additional monitoring
-      console.log('🚀 Calling setupAudioLevelMonitoring from useEffect');
-      setupAudioLevelMonitoring();
-      
-      // Get services for enhanced functionality (with checks)
-      const logger = container.has(TOKENS.Logger) ? container.get<ILogger>(TOKENS.Logger) : null;
-      const processor = container.has(SUITE_TOKENS.AudioProcessor) ? container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor) : null;
-      
-      // Subscribe to processing state
-      if (processor) {
-        const interval = setInterval(() => {
-          const isProcessing = processor.isProcessing();
-          store.dispatch(setProcessing(isProcessing));
-        }, 100);
-        
-        return () => clearInterval(interval);
+      // Setup monitoring if requested
+      if (showAudioLevel) {
+        console.log('🚀 Calling setupAudioLevelMonitoring from useEffect');
+        setupAudioLevelMonitoring();
       }
       
-      // Log successful connection
-      logger?.info('✅ MurmurabaSuite connected to Redux');
-      logger?.debug('Available services:', {
-        audioProcessor: container.has(SUITE_TOKENS.AudioProcessor),
-        logger: container.has(TOKENS.Logger),
-        metricsManager: container.has(TOKENS.MetricsManager),
-        stateManager: container.has(TOKENS.StateManager),
-        eventEmitter: container.has(TOKENS.EventEmitter)
-      });
+      // Setup processing state monitoring
+      const cleanup = setupProcessingStateMonitoring();
+      
+      // Log service availability
+      logServiceAvailability();
+      
+      return cleanup || undefined;
     }
     
     if (error) {
       store.dispatch(setEngineInitialized(false));
       console.error('❌ MurmurabaSuite initialization error:', error);
     }
-  }, [isReady, container, error, setupAudioLevelMonitoring]);
+  }, [isReady, container, error, showAudioLevel, setupAudioLevelMonitoring, initializeReduxConnection, setupProcessingStateMonitoring, logServiceAvailability]);
   
   // Listen for stream changes from Redux
   useEffect(() => {
@@ -288,7 +323,7 @@ export function MurmurabaReduxProvider({
   algorithm = 'rnnoise',
   enableAGC = false,
   noiseReductionLevel = 'medium',
-  allowDegraded = true,
+  _allowDegraded = true,
   lazy: _lazy = false,
   showAudioMonitoring = process.env.NODE_ENV === 'development'
 }: MurmurabaReduxProviderProps & { showAudioMonitoring?: boolean }) {
