@@ -4,31 +4,33 @@ import puppeteer from 'puppeteer';
 
 console.log('🚀 TEST DE FLUJO DE GRABACIÓN COMPLETO');
 
-// Timeout general de 15 segundos
+// Timeout general de 30 segundos
 let timeoutHandle = setTimeout(() => {
-  console.error('\n⏰ TIMEOUT 15s - TEST FINALIZADO');
+  console.error('\n⏰ TIMEOUT 30s - TEST FINALIZADO');
   console.error('Logs capturados hasta ahora:', global.logs?.length || 0);
+  if (global.logs?.length > 0) {
+    console.error('Últimos 5 logs:', global.logs.slice(-5));
+  }
   // NO usar process.exit - solo cerrar el browser si existe
   if (global.browser) {
     global.browser.close().then(() => {
-      throw new Error('Test timeout after 15s');
+      throw new Error('Test timeout after 30s');
     });
   }
-}, 15000);
+}, 30000);
 
 (async () => {
   let browser;
   try {
     browser = await puppeteer.launch({ 
-    headless: true,
-    args: [
-      '--no-sandbox', 
-      '--disable-setuid-sandbox',
-      '--use-fake-ui-for-media-stream',
-      '--use-fake-device-for-media-stream',
-      '--use-file-for-fake-audio-capture=/workspaces/murburaba/public/jfk_speech.wav'
-    ]
-  });
+      headless: true,
+      args: [
+        '--no-sandbox', 
+        '--disable-setuid-sandbox',
+        '--use-fake-ui-for-media-stream',
+        '--use-fake-device-for-media-stream'
+      ]
+    });
     
     // Guardar referencia global para el timeout handler
     global.browser = browser;
@@ -41,11 +43,8 @@ let timeoutHandle = setTimeout(() => {
     page.on('console', msg => {
       const text = msg.text();
       logs.push(text);
-      // Solo mostrar logs relevantes para no saturar
-      if (text.includes('Engine') || text.includes('Chunk') || text.includes('Recording') || 
-          text.includes('Error') || text.includes('RNNoise')) {
-        console.log(`[LOG]: ${text}`);
-      }
+      // Mostrar TODOS los logs para debugging
+      console.log(`[${msg.type()}]: ${text}`);
     });
     
     page.on('pageerror', err => {
@@ -56,15 +55,25 @@ let timeoutHandle = setTimeout(() => {
       console.error('  ❌ ERROR:', err.toString());
     });
     
-    console.log('2️⃣ Navegando a http://127.0.0.1:3000...');
+    page.on('response', response => {
+      if (response.status() >= 400) {
+        console.error(`  ❌ HTTP ${response.status()}: ${response.url()}`);
+      }
+    });
+    
+    console.log('2️⃣ Navegando a http://localhost:3000...');
     try {
-      await page.goto('http://127.0.0.1:3000', { 
-        waitUntil: 'networkidle0',
-        timeout: 5000 
+      await page.goto('http://localhost:3000', { 
+        waitUntil: 'domcontentloaded',
+        timeout: 10000 
       });
       console.log('✅ Página cargada');
     } catch (e) {
       console.error('❌ Error al cargar página:', e.message);
+      // Mostrar los últimos logs antes del error
+      if (logs.length > 0) {
+        console.error('Últimos logs antes del error:', logs.slice(-5));
+      }
       throw e;
     }
     

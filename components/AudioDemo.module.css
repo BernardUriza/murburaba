@@ -231,3 +231,308 @@
 .container {
   animation: fadeIn 0.3s ease-out;
 }
+
+/* Advanced Container - Multi-panel Layout */
+.advancedContainer {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 1.5rem;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+  min-height: 600px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Main Grid - 3 column layout */
+.mainGrid {
+  display: grid;
+  grid-template-columns: 300px 1fr 400px;
+  gap: 1.5rem;
+  height: 100%;
+  min-height: 500px;
+}
+
+/* Header with Actions */
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Icon Buttons */
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.iconButton:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.iconButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Control Panel */
+.controlPanel {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 1.5rem;
+}
+
+/* Metrics Card */
+.metricsCard {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+}
+
+.metricsCard h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* Metrics Grid */
+.metricsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+/* Metric Item */
+.metricItem {
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.metricLabel {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metricValue {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* Chunk Metrics Card */
+.chunkMetricsCard {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.chunkMetricsCard h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* Chunk List */
+.chunkList {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.chunkItem {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.chunkItem span:first-child {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* Audio Panel */
+.audioPanel {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+/* Audio Metrics */
+.audioMetrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.audioMetrics span {
+  text-align: center;
+}
+
+/* Logs Panel */
+.logsPanel {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  overflow: hidden;
+}
+
+.logsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logsHeader h4 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.logCount {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Logs Container */
+.logsContainer {
+  overflow-y: auto;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  padding-right: 0.5rem;
+}
+
+/* Log Entry */
+.logEntry {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  animation: logSlideIn 0.2s ease-out;
+}
+
+@keyframes logSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.logTime {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.logIcon {
+  font-size: 0.875rem;
+}
+
+.logMessage {
+  word-break: break-word;
+}
+
+.logData {
+  grid-column: 1 / -1;
+  margin: 0.5rem 0 0 0;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 0.25rem;
+  font-size: 0.7rem;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* Custom Scrollbar for Logs */
+.logsContainer::-webkit-scrollbar,
+.chunkMetricsCard::-webkit-scrollbar {
+  width: 6px;
+}
+
+.logsContainer::-webkit-scrollbar-track,
+.chunkMetricsCard::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.logsContainer::-webkit-scrollbar-thumb,
+.chunkMetricsCard::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.logsContainer::-webkit-scrollbar-thumb:hover,
+.chunkMetricsCard::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+  .mainGrid {
+    grid-template-columns: 250px 1fr 350px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .mainGrid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+  
+  .controlPanel,
+  .audioPanel,
+  .logsPanel {
+    max-height: none;
+  }
+  
+  .logsContainer {
+    max-height: 300px;
+  }
+}
