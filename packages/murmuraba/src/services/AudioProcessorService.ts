@@ -8,6 +8,7 @@ import { ILogger, IMetricsManager } from '../core/interfaces';
 import { ProcessedChunk, ProcessingMetrics } from '../types';
 import { engineRegistry } from '../core/EngineRegistry';
 import { AudioConverter } from '../utils/audioConverter';
+import { createDefaultMetrics } from '../utils/defaultMetrics';
 
 export class AudioProcessorService implements IAudioProcessor {
   private logger!: ILogger;
@@ -370,15 +371,7 @@ export class AudioProcessorService implements IAudioProcessor {
   }
 
   private createDefaultMetrics(): ProcessedChunk['metrics'] {
-    return {
-      noiseReductionLevel: 0,
-      processingLatency: 0,
-      inputLevel: 0,
-      outputLevel: 0,
-      timestamp: Date.now(),
-      frameCount: 0,
-      droppedFrames: 0,
-    };
+    return createDefaultMetrics();
   }
 
   private createResult(

@@ -8,8 +8,13 @@ import { WorkerManager } from '../managers/WorkerManager';
 import { RNNoiseEngine } from '../engines/RNNoiseEngine';
 import { MurmubaraConfig, EngineEvents } from '../types';
 import { ILogger, IStateManager, IEventEmitter, IAudioEngine, IMetricsManager } from './interfaces';
+import { getConfigValidator } from '../services/ConfigValidationService';
+import { ConfigPresets } from '../config/configSchema';
 
 export class MurmubaraEngineFactory {
+  /**
+   * Create engine with custom configuration
+   */
   static create(config?: MurmubaraConfig): MurmubaraEngine {
     const container = new DIContainer();
 
@@ -57,5 +62,30 @@ export class MurmubaraEngineFactory {
     (engine as any).getContainer = () => container;
 
     return engine;
+  }
+
+  /**
+   * Create engine with preset configuration
+   */
+  static createWithPreset(
+    preset: keyof typeof ConfigPresets,
+    overrides?: Partial<MurmubaraConfig>
+  ): MurmubaraEngine {
+    const validator = getConfigValidator();
+    const presetConfig = validator.getPreset(preset);
+    const finalConfig = {
+      ...presetConfig.core,
+      ...overrides
+    };
+    return this.create(finalConfig);
+  }
+
+  /**
+   * Validate configuration without creating engine
+   */
+  static validateConfig(config: MurmubaraConfig): boolean {
+    const validator = getConfigValidator();
+    const result = validator.validateAndMerge(config);
+    return result.ok;
   }
 }

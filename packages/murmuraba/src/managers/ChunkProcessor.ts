@@ -2,6 +2,7 @@ import { EventEmitter } from '../core/EventEmitter';
 import { Logger } from '../core/Logger';
 import { ChunkMetrics, ChunkConfig } from '../types';
 import { MetricsManager } from './MetricsManager';
+import { createDefaultMetrics } from '../utils/defaultMetrics';
 
 interface ChunkEvents {
   'chunk-ready': (chunk: AudioChunk) => void;
@@ -225,7 +226,7 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
       originalSize: originalSamples.length * 4, // Float32 = 4 bytes
       processedSize: processedSamples.length * 4,
       noiseRemoved: Math.max(0, Math.min(100, noiseRemoved)),
-      metrics: {
+      metrics: createDefaultMetrics({
         noiseReductionLevel: noiseRemoved,
         processingLatency: chunk.endTime - chunk.startTime,
         inputLevel: originalPeak,
@@ -233,7 +234,7 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
         timestamp: chunk.endTime,
         frameCount: Math.floor(processedSamples.length / 480), // RNNoise frame size
         droppedFrames: 0,
-      },
+      }),
       duration: this.config.chunkDuration,
       startTime: chunk.startTime,
       endTime: chunk.endTime,

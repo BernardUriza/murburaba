@@ -1,6 +1,7 @@
 import { ProcessingMetrics, ChunkMetrics } from '../types';
 import { EventEmitter } from '../core/EventEmitter';
 import { logging } from './LoggingManager';
+import { createDefaultMetrics } from '../utils/defaultMetrics';
 
 interface MetricsEvents {
   'metrics-update': (metrics: ProcessingMetrics) => void;
@@ -9,15 +10,7 @@ interface MetricsEvents {
 }
 
 export class MetricsManager extends EventEmitter<MetricsEvents> {
-  private metrics: ProcessingMetrics = {
-    noiseReductionLevel: 0,
-    processingLatency: 0,
-    inputLevel: 0,
-    outputLevel: 0,
-    timestamp: Date.now(),
-    frameCount: 0,
-    droppedFrames: 0,
-  };
+  private metrics: ProcessingMetrics = createDefaultMetrics();
 
   private updateInterval?: NodeJS.Timeout;
   private frameTimestamps: number[] = [];
@@ -111,15 +104,7 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
   }
 
   reset(): void {
-    this.metrics = {
-      noiseReductionLevel: 0,
-      processingLatency: 0,
-      inputLevel: 0,
-      outputLevel: 0,
-      timestamp: Date.now(),
-      frameCount: 0,
-      droppedFrames: 0,
-    };
+    this.metrics = createDefaultMetrics();
     this.frameTimestamps = [];
   }
 

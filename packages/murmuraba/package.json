@@ -129,6 +129,7 @@
   },
   "dependencies": {
     "@jitsi/rnnoise-wasm": "^0.2.1",
-    "lamejs": "^1.2.1"
+    "lamejs": "^1.2.1",
+    "zod": "4.0.10"
   }
 }

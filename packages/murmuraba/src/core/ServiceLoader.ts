@@ -1,5 +1,5 @@
 import { DIContainer, TOKENS } from './DIContainer';
-import { ILogger } from './interfaces';
+import type { ILogger } from './interfaces';
 
 interface ServiceModule {
   name: string;

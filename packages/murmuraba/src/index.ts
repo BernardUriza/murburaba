@@ -5,6 +5,7 @@
 
 // Core exports
 export { MurmubaraEngine } from './core/MurmubaraEngine';
+export { MurmubaraEngineFactory } from './core/MurmubaraEngineFactory';
 export { EventEmitter } from './core/EventEmitter';
 export { StateManager } from './core/StateManager';
 export { Logger } from './core/Logger';
@@ -89,3 +90,38 @@ export type {
   AudioPlayerProps,
   BuildInfoProps,
 } from './components';
+
+// Configuration validation exports
+export {
+  ConfigValidationService,
+  getConfigValidator,
+} from './services/ConfigValidationService';
+export {
+  MurmubaraConfigSchema,
+  ChunkConfigSchema,
+  validateConfig,
+  safeValidateConfig,
+  ConfigBuilder,
+  ConfigPresets,
+} from './config/configSchema';
+export type {
+  ValidatedMurmubaraConfig,
+  ValidatedChunkConfig,
+  ValidatedAudioConstraints,
+  ValidatedWorkerConfig,
+  ValidatedPerformanceConfig,
+  ValidatedCompleteConfig,
+} from './config/configSchema';
+export type { ValidationError } from './services/ConfigValidationService';
+
+// Additional type-safe exports
+export * from './types/branded';
+export * from './types/result';
+export { TypedEventEmitter } from './core/TypedEventEmitter';
+export type { EventMap, EventKey, EventReceiver, TypedEmitter } from './core/TypedEventEmitter';
+
+// Performance utilities
+export { CircularBuffer, MetricsBuffer } from './utils/CircularBuffer';
+export { retry, retryWithTimeout, withRetry, CircuitBreaker } from './utils/retry';
+export type { RetryOptions, RetryError } from './utils/retry';
+export { OptimizedMetricsManager } from './managers/OptimizedMetricsManager';

@@ -19,10 +19,12 @@ import {
   ChunkConfig,
   EngineState,
 } from '../types';
+import { getConfigValidator } from '../services/ConfigValidationService';
+import type { ValidatedMurmubaraConfig } from '../config/configSchema';
 
 export class MurmubaraEngine extends EventEmitter<EngineEvents> {
   private _isInitialized: boolean = false;
-  private config: Required<MurmubaraConfig>;
+  private config: ValidatedMurmubaraConfig;
   private stateManager: IStateManager;
   private logger: ILogger;
   private workerManager: WorkerManager;
@@ -49,22 +51,32 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
   ) {
     super();
 
-    this.config = {
-      logLevel: config.logLevel || 'info',
-      onLog: config.onLog || undefined,
-      noiseReductionLevel: config.noiseReductionLevel || 'medium',
-      bufferSize: config.bufferSize || 4096,
-      algorithm: config.algorithm || 'rnnoise',
-      autoCleanup: config.autoCleanup ?? true,
-      cleanupDelay: config.cleanupDelay || 30000,
-      useWorker: config.useWorker ?? false,
-      workerPath: config.workerPath || '/murmuraba.worker.js',
-      allowDegraded: config.allowDegraded ?? false,
-    } as Required<MurmubaraConfig>;
+    // Validate and merge configuration with defaults
+    const validator = getConfigValidator(logger);
+    const validationResult = validator.validateAndMerge(config);
+    
+    if (!validationResult.ok) {
+      const errorMessages = validator.getErrorMessages(validationResult.error);
+      const suggestions = validator.suggestFixes(validationResult.error);
+      
+      logger.error('Invalid configuration provided', {
+        errors: errorMessages,
+        suggestions
+      });
+      
+      throw new Error(
+        `Configuration validation failed:\n${errorMessages.join('\n')}` +
+        (suggestions.length > 0 ? `\n\nSuggestions:\n${suggestions.join('\n')}` : '')
+      );
+    }
+    
+    this.config = validationResult.value;
 
     // Use injected dependencies
     this.logger = logger;
-    this.logger.setLevel(this.config.logLevel);
+    if (this.config.logLevel) {
+      this.logger.setLevel(this.config.logLevel);
+    }
     if (this.config.onLog) {
       this.logger.setLogHandler(this.config.onLog);
     }

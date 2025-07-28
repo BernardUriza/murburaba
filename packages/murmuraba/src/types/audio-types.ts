@@ -52,9 +52,14 @@ export interface ProcessingMetrics {
   processingLatency: number;
   inputLevel: number;
   outputLevel: number;
+  vadProbability: number;
+  framesProcessed: number;
+  chunksProcessed: number;
+  totalDuration: number;
+  droppedFrames: number;
+  audioQuality: number;
   timestamp: number;
   frameCount: number;
-  droppedFrames: number;
 }
 
 export interface ChunkMetrics {
