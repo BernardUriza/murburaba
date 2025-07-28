@@ -66,7 +66,7 @@ export function ServiceMonitor() {
           availableServices: serviceList.filter(s => s.available).map(s => s.name)
         })
       }
-    } catch (error) {
+    } catch {
       // Logger might not be available yet
     }
   }, [container, isReady])

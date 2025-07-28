@@ -61,7 +61,7 @@ export function useAudioProcessor() {
             if (engine && !engine.isInitialized) {
               try {
                 await engine.initialize()
-              } catch (initError) {
+              } catch {
                 await reinitializeEngine()
               }
             }
@@ -105,7 +105,7 @@ export function useAudioProcessor() {
     } finally {
       dispatch(setProcessing(false))
     }
-  }, [container, isReady, dispatch])
+  }, [container, isReady, dispatch, reinitializeEngine])
 
   const processRecording = useCallback(async (
     duration: number,
@@ -119,6 +119,15 @@ export function useAudioProcessor() {
         code: 'SUITE_NOT_READY'
       }))
       return null
+    }
+
+    // Define cleanup function and timeoutId outside try/catch
+    let timeoutId: NodeJS.Timeout | null = null
+    const cleanup = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+        timeoutId = null
+      }
     }
 
     try {
@@ -143,7 +152,7 @@ export function useAudioProcessor() {
           if (engine && !engine.isInitialized) {
             try {
               await engine.initialize()
-            } catch (initError) {
+            } catch {
               await reinitializeEngine()
             }
           }
@@ -166,7 +175,6 @@ export function useAudioProcessor() {
       // The stream is created asynchronously after getUserMedia completes
       let streamCheckCount = 0
       const maxChecks = 10
-      let timeoutId: NodeJS.Timeout | null = null
       
       const checkForStream = () => {
         streamCheckCount++
@@ -187,14 +195,6 @@ export function useAudioProcessor() {
       
       // Start checking after a small delay to let async operations complete
       timeoutId = setTimeout(checkForStream, 300)
-      
-      // Cleanup function to clear timeout if component unmounts
-      const cleanup = () => {
-        if (timeoutId) {
-          clearTimeout(timeoutId)
-          timeoutId = null
-        }
-      }
       
       // Wait for recording to complete
       const result = await recordingPromise
@@ -245,7 +245,7 @@ export function useAudioProcessor() {
       // Don't clear stream immediately - let it be cleared when unmounting or starting new recording
       // setStream(null)
     }
-  }, [container, isReady, dispatch, setStream])
+  }, [container, isReady, dispatch, setStream, reinitializeEngine])
 
   const cancelProcessing = useCallback(() => {
     if (!container || !isReady) return
@@ -286,7 +286,7 @@ export function useAudioProcessor() {
     try {
       await reinitializeEngine()
       return true
-    } catch (error) {
+    } catch {
       return false
     }
   }, [reinitializeEngine])

@@ -7,7 +7,7 @@ import {
   safeValidateConfig,
   ConfigBuilder,
   ConfigPresets
-} from '@features/configuration/schemas/configSchema';
+} from '../../../features/configuration/schemas/configSchema';
 
 describe('Configuration Validation', () => {
   describe('MurmubaraConfigSchema', () => {

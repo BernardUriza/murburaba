@@ -97,7 +97,7 @@
     "build:simple": "node scripts/build-simple.mjs",
     "build:fast": "npm run build:ts && npm run copy:css",
     "generate:wasm": "node scripts/encode-wasm.mjs",
-    "build:ts": "tsc",
+    "build:ts": "tsc -p tsconfig.build.json",
     "copy:css": "node scripts/copy-css.mjs",
     "clean": "rimraf dist",
     "quality:gate": "npm run lint && npm run test:coverage && node scripts/check-coverage.js",

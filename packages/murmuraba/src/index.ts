@@ -42,7 +42,7 @@ export {
 // Legacy hooks have been removed in favor of the DI-based MurmurabaSuite
 
 // Utils
-export { AudioConverter, getAudioConverter } from '@utils/audioConverter';
+export { AudioConverter, getAudioConverter } from './utils/audioConverter';
 
 // Version
 export const VERSION = '2.3.6';
@@ -95,7 +95,7 @@ export type {
 export {
   ConfigValidationService,
   getConfigValidator,
-} from '@features/configuration/services/ConfigValidationService';
+} from './features/configuration/services/ConfigValidationService';
 export {
   MurmubaraConfigSchema,
   ChunkConfigSchema,
@@ -103,7 +103,7 @@ export {
   safeValidateConfig,
   ConfigBuilder,
   ConfigPresets,
-} from '@features/configuration/schemas/configSchema';
+} from './features/configuration/schemas/configSchema';
 export type {
   ValidatedMurmubaraConfig,
   ValidatedChunkConfig,
@@ -111,8 +111,8 @@ export type {
   ValidatedWorkerConfig,
   ValidatedPerformanceConfig,
   ValidatedCompleteConfig,
-} from '@features/configuration/schemas/configSchema';
-export type { ValidationError } from '@features/configuration/services/ConfigValidationService';
+} from './features/configuration/schemas/configSchema';
+export type { ValidationError } from './features/configuration/services/ConfigValidationService';
 
 // Additional type-safe exports
 export * from './types/branded';
@@ -121,7 +121,7 @@ export { TypedEventEmitter } from './core/TypedEventEmitter';
 export type { EventMap, EventKey, EventReceiver, TypedEmitter } from './core/TypedEventEmitter';
 
 // Performance utilities
-export { CircularBuffer, MetricsBuffer } from '@utils/CircularBuffer';
-export { retry, retryWithTimeout, withRetry, CircuitBreaker } from '@utils/retry';
-export type { RetryOptions, RetryError } from '@utils/retry';
+export { CircularBuffer, MetricsBuffer } from './utils/CircularBuffer';
+export { retry, retryWithTimeout, withRetry, CircuitBreaker } from './utils/retry';
+export type { RetryOptions, RetryError } from './utils/retry';
 export { OptimizedMetricsManager } from './managers/OptimizedMetricsManager';

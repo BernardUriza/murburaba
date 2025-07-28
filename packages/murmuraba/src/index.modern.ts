@@ -14,13 +14,13 @@
  * Configuration Feature
  * Provides validation, presets, and builder patterns
  */
-export * from '@features/configuration';
+export * from './features/configuration';
 
 /**
  * Audio Processing Feature  
  * Modern hooks and services for audio processing
  */
-export * from '@features/audio-processing';
+export * from './features/audio-processing';
 
 // ============================================
 // Shared Utilities
@@ -30,13 +30,13 @@ export * from '@features/audio-processing';
  * Shared Types
  * Common type definitions and utilities
  */
-export * from '@shared/types';
+export * from './shared/types';
 
 /**
  * Functional Programming Utilities
  * Modern FP helpers for cleaner code
  */
-export * from '@shared/utils/functional';
+export * from './shared/utils/functional';
 
 // ============================================
 // Core Exports (for advanced usage)
@@ -83,9 +83,9 @@ export async function createMurmuraba(options?: {
   preset?: 'highQuality' | 'lowLatency' | 'balanced';
   features?: string[];
 }) {
-  const { MurmubaraEngineFactory } = await import('@core/MurmubaraEngineFactory');
-  const { getConfigurationFeature } = await import('@features/configuration');
-  const { getAudioProcessingFeature } = await import('@features/audio-processing');
+  const { MurmubaraEngineFactory } = await import('./core/MurmubaraEngineFactory');
+  const { getConfigurationFeature } = await import('./features/configuration');
+  const { getAudioProcessingFeature } = await import('./features/audio-processing');
   
   // Initialize configuration
   const config = getConfigurationFeature();

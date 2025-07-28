@@ -8,8 +8,8 @@ import { WorkerManager } from '../managers/WorkerManager';
 import { RNNoiseEngine } from '../engines/RNNoiseEngine';
 import { MurmubaraConfig, EngineEvents } from '../types';
 import { ILogger, IStateManager, IMetricsManager } from './interfaces';
-import { getConfigValidator } from '@features/configuration/services/ConfigValidationService';
-import { ConfigPresets } from '@features/configuration/schemas/configSchema';
+import { getConfigValidator } from '../features/configuration/services/ConfigValidationService';
+import { ConfigPresets } from '../features/configuration/schemas/configSchema';
 
 export class MurmubaraEngineFactory {
   /**

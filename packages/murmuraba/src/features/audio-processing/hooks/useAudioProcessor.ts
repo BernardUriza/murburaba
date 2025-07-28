@@ -5,15 +5,15 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MurmubaraEngine } from '@core/MurmubaraEngine';
-import { MurmubaraEngineFactory } from '@core/MurmubaraEngineFactory';
+import { MurmubaraEngine } from '../../../core/MurmubaraEngine';
+import { MurmubaraEngineFactory } from '../../../core/MurmubaraEngineFactory';
 import type { 
   MurmubaraConfig, 
   ProcessedChunk, 
   StreamController,
   DiagnosticInfo,
   ProcessingMetrics 
-} from '@shared/types';
+} from '../../../types';
 import { Result, Ok, Err } from '../../../types/result';
 import type { StreamId, ChunkId } from '../../../types/branded';
 

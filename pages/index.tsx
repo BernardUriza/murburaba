@@ -13,7 +13,7 @@ import { FabButtons } from '../components/ui/FabButtons'
 import { BannerHero } from '../components/ui/BannerHero'
 import { useNotifications } from '../hooks/useNotifications'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
-import { store } from '../store'
+// import { store } from '../store'
 import { useAudioProcessor } from '../hooks/useAudioProcessor'
 import { WaveformAnalyzer, ChunkProcessingResults, AdvancedMetricsPanel, getDiagnostics } from 'murmuraba'
 import {
@@ -52,7 +52,8 @@ export default function App() {
   const { isInitialized, isProcessing, isRecording } = engineStatus
   const { chunkDuration, enableAGC } = audioConfig
   const { showAudioDemo, showAdvancedMetrics, showSettings, showCopilot } = uiFlags
-  const { processingResults, currentInputLevel, totalDuration, averageNoiseReduction } = useAppSelector(state => state.audio)
+  const { processingResults, currentInputLevel } = useAppSelector(state => state.audio)
+  // const { totalDuration, averageNoiseReduction } = useAppSelector(state => state.audio)
   
   
   // Audio processor hook
@@ -259,8 +260,8 @@ export default function App() {
           onClose={() => dispatch(toggleSettings())}
           vadThresholds={{ silence: 0.3, voice: 0.5, clearVoice: 0.7 }}
           displaySettings={{ showVadValues: true, showVadTimeline: true }}
-          onThresholdChange={t => {}}
-          onDisplayChange={s => {}}
+          onThresholdChange={_t => {}}
+          onDisplayChange={_s => {}}
         />
 
         {/* Copilot Chat Modal */}

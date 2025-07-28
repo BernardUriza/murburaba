@@ -4,11 +4,11 @@
  * @module features/audio-processing/services
  */
 
-import { EventEmitter, type EventHandler } from '@core/EventEmitter';
-import type { ILogger } from '@core/interfaces';
+import { EventEmitter, type EventHandler } from '../../../core/EventEmitter';
+import type { ILogger } from '../../../core/interfaces';
 import { Result, Ok, Err, tryCatchAsync } from '../../../types/result';
 import type { StreamId, ChunkId, SessionId } from '../../../types/branded';
-import type { ProcessedChunk, ProcessingMetrics } from '@shared/types';
+import type { ProcessedChunk, ProcessingMetrics } from '../../../types';
 import { retry, withRetry, CircuitBreaker, RetryError } from '../../../utils/retry';
 
 // Modern event types with strict typing

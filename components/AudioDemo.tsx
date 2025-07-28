@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { addNotification } from '../store/slices/uiSlice'
 import { useAudioProcessor } from '../hooks/useAudioProcessor'
@@ -107,7 +107,7 @@ export default function AudioDemo({
       const checkEngine = async () => {
         try {
           // Try a simple file process to test engine
-          const testFile = new File([new ArrayBuffer(1024)], 'test.wav', { type: 'audio/wav' })
+          // const testFile = new File([new ArrayBuffer(1024)], 'test.wav', { type: 'audio/wav' })
           log('debug', 'Testing engine availability...')
           
           // Just check if we can call it, don't actually process
@@ -133,8 +133,11 @@ export default function AudioDemo({
   // Cleanup URLs on unmount
   useEffect(() => {
     return () => {
-      urlCleanupRef.current.forEach(url => URL.revokeObjectURL(url))
-      urlCleanupRef.current.clear()
+      // Copy ref to local variable to avoid cleanup warning
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const urlsToCleanup = urlCleanupRef.current
+      urlsToCleanup.forEach(url => URL.revokeObjectURL(url))
+      urlsToCleanup.clear()
     }
   }, [])
 
@@ -270,7 +273,7 @@ export default function AudioDemo({
           log('debug', `Processing chunk ${index + 1}`)
           setMetrics(prev => ({ ...prev, processedChunks: index }))
         },
-        onChunkComplete: (index: number, chunkData: any) => {
+        onChunkComplete: (index: number, _chunkData: any) => {
           const chunkTime = performance.now() - startTimeRef.current
           const metric: ChunkMetrics = {
             index,
@@ -355,7 +358,7 @@ export default function AudioDemo({
     } finally {
       processLockRef.current = false
     }
-  }, [processFile, dispatch, onProcessComplete, onError, onChunkProcessed, onMetricsUpdate, chunkDuration, enableAGC, log, cleanupUrls])
+  }, [processFile, dispatch, onProcessComplete, onError, onChunkProcessed, onMetricsUpdate, chunkDuration, enableAGC, log, cleanupUrls, isReady])
 
   useEffect(() => {
     if (autoProcess && isReady && !started) {

@@ -10,11 +10,11 @@
 export * from './functional';
 
 // Re-export existing utilities
-export { AudioResampler } from '@utils/AudioResampler';
-export { AudioConverter, getAudioConverter } from '@utils/audioConverter';
-export { SimpleAGC } from '@utils/SimpleAGC';
-export { CircularBuffer, MetricsBuffer } from '@utils/CircularBuffer';
-export { createDefaultMetrics } from '@utils/defaultMetrics';
+export { AudioResampler } from '../../utils/AudioResampler';
+export { AudioConverter, getAudioConverter } from '../../utils/audioConverter';
+export { SimpleAGC } from '../../utils/SimpleAGC';
+export { CircularBuffer, MetricsBuffer } from '../../utils/CircularBuffer';
+export { createDefaultMetrics } from '../../utils/defaultMetrics';
 export {
   retry,
   retryWithTimeout,
@@ -22,7 +22,7 @@ export {
   CircuitBreaker,
   type RetryOptions,
   RetryError,
-} from '@utils/retry';
+} from '../../utils/retry';
 
 // Performance utilities
 export {
@@ -39,4 +39,4 @@ export {
   calculateAverageTime,
   formatBytes,
   formatDuration,
-} from '@utils/performance';
+} from '../../utils/performance';

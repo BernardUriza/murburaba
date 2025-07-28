@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { useMurmurabaSuite, SUITE_TOKENS, TOKENS } from 'murmuraba'
-import type { IAudioProcessor, IMetricsManager, ProcessingMetrics } from 'murmuraba'
+import { useMurmurabaSuite, TOKENS } from 'murmuraba'
+import type { IMetricsManager, ProcessingMetrics } from 'murmuraba'
 import { useAppSelector, useAppDispatch } from '../store/hooks'
 import { setVadLevel as setReduxVadLevel } from '../store/slices/audioSlice'
 import { useMediaStream } from '../context/MediaStreamContext'
@@ -11,7 +11,7 @@ export function GlobalAudioMonitor() {
   const { container, isReady } = useMurmurabaSuite()
   const { isProcessing, isRecording, chunks, currentInputLevel } = useAppSelector(state => state.audio)
   const { currentStream } = useMediaStream()
-  const [metrics, setMetrics] = useState<ProcessingMetrics | null>(null)
+  const [metrics] = useState<ProcessingMetrics | null>(null)
   const [vadLevel, setVadLevel] = useState(0)
   const [streamInfo, setStreamInfo] = useState<{id: string, tracks: number} | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
