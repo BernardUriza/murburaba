@@ -96,6 +96,7 @@ export function MurmurabaSuite({
           container.bindValue(TOKENS.Logger, engineContainer.get(TOKENS.Logger));
           container.bindValue(TOKENS.StateManager, engineContainer.get(TOKENS.StateManager));
           container.bindValue(TOKENS.EventEmitter, engineContainer.get(TOKENS.EventEmitter));
+          container.bindValue(TOKENS.MetricsManager, engineContainer.get(TOKENS.MetricsManager));
         }
 
         // Bind service loader

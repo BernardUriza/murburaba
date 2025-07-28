@@ -3,7 +3,9 @@
 import React, { useEffect, useCallback, useState, ReactNode } from 'react';
 import { Provider } from 'react-redux';
 import { store } from '../store';
-import { MurmurabaSuite, useMurmurabaSuite, WaveformAnalyzer, SUITE_TOKENS, TOKENS } from '../packages/murmuraba';
+import { MurmurabaSuite, useMurmurabaSuite, SUITE_TOKENS, TOKENS } from '../packages/murmuraba';
+import type { IMetricsManager } from '../packages/murmuraba/src/core/interfaces/IMetricsManager';
+import type { IAudioProcessor } from '../packages/murmuraba/src/core/interfaces/IAudioProcessor';
 import { setSuiteContainer, MURMURABA_ACTIONS } from '../store/middleware/murmurabaSuiteMiddleware';
 import { setEngineInitialized, setProcessing, updateMetrics } from '../store/slices/audioSlice';
 import { DebugError } from '../components/DebugError';
@@ -43,7 +45,7 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
 
   const syncMetrics = useCallback(() => {
     if (!container?.has(TOKENS.MetricsManager)) return;
-    const metricsManager = container.get(TOKENS.MetricsManager);
+    const metricsManager = container.get(TOKENS.MetricsManager) as IMetricsManager;
     if (!metricsManager?.onMetricsUpdate) return;
     return metricsManager.onMetricsUpdate((metrics: any) => {
       setAudioLevel(metrics.inputLevel || 0);
@@ -53,7 +55,7 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
 
   const monitorProcessing = useCallback(() => {
     if (!container?.has(SUITE_TOKENS.AudioProcessor)) return;
-    const processor = container.get(SUITE_TOKENS.AudioProcessor);
+    const processor = container.get(SUITE_TOKENS.AudioProcessor) as IAudioProcessor;
     const i = setInterval(() => store.dispatch(setProcessing(processor.isProcessing())), 150);
     return () => clearInterval(i);
   }, [container]);
