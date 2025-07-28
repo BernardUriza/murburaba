@@ -5,13 +5,20 @@ import puppeteer from 'puppeteer';
 console.log('🚀 TEST DE FLUJO DE GRABACIÓN COMPLETO');
 
 // Timeout general de 20 segundos
-setTimeout(() => {
+let timeoutHandle = setTimeout(() => {
   console.error('\n⏰ TIMEOUT 20s - TEST FINALIZADO');
-  process.exit(1);
+  // NO usar process.exit - solo cerrar el browser si existe
+  if (global.browser) {
+    global.browser.close().then(() => {
+      throw new Error('Test timeout after 20s');
+    });
+  }
 }, 20000);
 
 (async () => {
-  const browser = await puppeteer.launch({ 
+  let browser;
+  try {
+    browser = await puppeteer.launch({ 
     headless: true,
     args: [
       '--no-sandbox', 
@@ -21,8 +28,9 @@ setTimeout(() => {
       '--use-file-for-fake-audio-capture=/workspaces/murburaba/public/jfk_speech.wav'
     ]
   });
-  
-  try {
+    
+    // Guardar referencia global para el timeout handler
+    global.browser = browser;
     console.log('\n1️⃣ Abriendo página...');
     const page = await browser.newPage();
     
@@ -47,7 +55,7 @@ setTimeout(() => {
       console.error('  ❌ ERROR:', err.toString());
     });
     
-    await page.goto('http://localhost:3000', { 
+    await page.goto('http://127.0.0.1:3000', { 
       waitUntil: 'domcontentloaded',
       timeout: 10000 
     });
@@ -113,7 +121,7 @@ setTimeout(() => {
       console.log('  Botones disponibles:', await page.evaluate(() => 
         Array.from(document.querySelectorAll('button')).map(b => b.textContent?.trim())
       ));
-      process.exit(1);
+      throw new Error('No se encontró botón Start Recording');
     }
     
     console.log('✅ Grabación iniciada');
@@ -189,7 +197,7 @@ setTimeout(() => {
       console.log(`  Audio real detectado: ${hasRealAudio ? '✅' : '❌'}`);
     }
     
-    await browser.close();
+    if (browser) await browser.close();
     
     // Evaluación final
     console.log('\n7️⃣ RESULTADO FINAL:');
@@ -198,24 +206,29 @@ setTimeout(() => {
       console.log('✅ GRABACIÓN FUNCIONANDO CORRECTAMENTE');
       console.log(`   - ${samplesAdded.length} muestras procesadas`);
       console.log(`   - ${chunksReady.length} chunks completados`);
-      process.exit(0);
+      // Test exitoso - solo cerrar y terminar normalmente
     } else if (engineInitialized && chunkProcessorCreated && samplesAdded.length === 0) {
       console.log('⚠️  PROBLEMA: ChunkProcessor creado pero no recibe audio');
       console.log('   Posible problema con la comunicación worklet->main thread');
-      process.exit(1);
+      throw new Error('No se encontró botón Start Recording');
     } else if (engineInitialized && !chunkProcessorCreated) {
       console.log('⚠️  PROBLEMA: Engine inicializado pero no se crea ChunkProcessor');
       console.log('   Verificar que chunkDuration se esté pasando correctamente');
-      process.exit(1);
+      throw new Error('No se encontró botón Start Recording');
     } else {
       console.log('❌ GRABACIÓN NO FUNCIONA');
       console.log('   El engine no se inicializó correctamente');
-      process.exit(1);
+      throw new Error('No se encontró botón Start Recording');
     }
     
   } catch (e) {
     console.error('❌ Error en el test:', e.message);
-    await browser.close();
-    process.exit(1);
+    if (browser) await browser.close();
+    clearTimeout(timeoutHandle);
+    // NO usar process.exit - dejar que el proceso termine naturalmente
+    throw e;
   }
-})();
+})().catch(e => {
+  console.error('Test failed:', e.message);
+  // El proceso terminará naturalmente sin matar el servidor
+});
