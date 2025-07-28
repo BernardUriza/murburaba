@@ -26,9 +26,17 @@ export function useAudioProcessor() {
     file: File,
     options?: AudioProcessingOptions
   ) => {
+    console.log('[useAudioProcessor] processFile called with:', { 
+      isReady, 
+      hasContainer: !!container,
+      fileName: file.name 
+    })
+    
     if (!isReady || !container) {
+      const errorMsg = `MurmurabaSuite not ready - isReady: ${isReady}, hasContainer: ${!!container}`
+      console.error('[useAudioProcessor]', errorMsg)
       dispatch(setError({
-        message: 'MurmurabaSuite not ready',
+        message: errorMsg,
         code: 'SUITE_NOT_READY'
       }))
       return null
@@ -40,33 +48,44 @@ export function useAudioProcessor() {
       dispatch(clearError())
       dispatch(clearChunks())
 
-      const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor)
-      console.log('[useAudioProcessor] Got processor:', !!processor)
-      
-      if (!processor) {
-        throw new Error('AudioProcessor not found in container')
+      try {
+        const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor)
+        console.log('[useAudioProcessor] Got processor:', !!processor)
+        
+        if (!processor) {
+          throw new Error('AudioProcessor not found in container')
+        }
+        
+        console.log('[useAudioProcessor] Processor methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(processor)))
+        
+        // Check if it's the right type
+        console.log('[useAudioProcessor] Processor has processFile:', typeof processor.processFile)
+        console.log('[useAudioProcessor] Processor isProcessing:', typeof processor.isProcessing)
+        
+        // Set up chunk tracking
+        const unsubscribeChunk = processor.onChunk((chunk) => {
+          console.log('[useAudioProcessor] Chunk received:', chunk)
+          dispatch(addChunk(chunk))
+        })
+
+        console.log('[useAudioProcessor] Calling processor.processFile...')
+        const result = await processor.processFile(file, options)
+        console.log('[useAudioProcessor] Process result:', result)
+        console.log('[useAudioProcessor] Result chunks:', result?.chunks?.length)
+        console.log('[useAudioProcessor] Result buffer:', !!result?.processedBuffer)
+        
+        dispatch(setProcessingResults(result))
+        dispatch(addNotification({
+          type: 'success',
+          message: `Successfully processed ${file.name}`
+        }))
+
+        unsubscribeChunk()
+        return result
+      } catch (processingError) {
+        console.error('[useAudioProcessor] Processing error details:', processingError)
+        throw processingError
       }
-      
-      // Set up chunk tracking
-      const unsubscribeChunk = processor.onChunk((chunk) => {
-        console.log('[useAudioProcessor] Chunk received:', chunk)
-        dispatch(addChunk(chunk))
-      })
-
-      console.log('[useAudioProcessor] Calling processor.processFile...')
-      const result = await processor.processFile(file, options)
-      console.log('[useAudioProcessor] Process result:', result)
-      console.log('[useAudioProcessor] Result chunks:', result?.chunks?.length)
-      console.log('[useAudioProcessor] Result buffer:', !!result?.processedBuffer)
-      
-      dispatch(setProcessingResults(result))
-      dispatch(addNotification({
-        type: 'success',
-        message: `Successfully processed ${file.name}`
-      }))
-
-      unsubscribeChunk()
-      return result
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Processing failed'

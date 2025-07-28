@@ -171,6 +171,15 @@ export default function AudioDemo({
       return
     }
     processLockRef.current = true
+    
+    // Check if engine is actually ready
+    if (!isReady) {
+      log('error', 'Engine is not ready yet. Try initializing the audio engine first.')
+      setError('Engine is not ready yet. Try initializing the audio engine first.')
+      processLockRef.current = false
+      return
+    }
+    
     setError(null)
     cleanupUrls()
     setChunkMetrics([])
@@ -194,8 +203,12 @@ export default function AudioDemo({
         fileName: file.name, 
         size: file.size,
         chunkDuration,
-        enableAGC 
+        enableAGC,
+        isReady 
       })
+      
+      // Log engine state before processing
+      log('debug', 'Engine state check', { isReady })
       
       const processingCallbacks = {
         onChunkStart: (index: number) => {
