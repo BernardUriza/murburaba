@@ -107,9 +107,17 @@ export function useAudioProcessor() {
     duration: number,
     options?: AudioProcessingOptions & { stream?: MediaStream }
   ) => {
+    console.log('[useAudioProcessor] processRecording called with:', { 
+      isReady, 
+      hasContainer: !!container,
+      duration 
+    })
+    
     if (!isReady || !container) {
+      const errorMsg = `MurmurabaSuite not ready for recording - isReady: ${isReady}, hasContainer: ${!!container}`
+      console.error('[useAudioProcessor]', errorMsg)
       dispatch(setError({
-        message: 'MurmurabaSuite not ready',
+        message: errorMsg,
         code: 'SUITE_NOT_READY'
       }))
       return null
@@ -125,6 +133,10 @@ export function useAudioProcessor() {
 
       const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor)
       console.log('🔍 Processor obtained:', !!processor, 'has getCurrentStream:', !!processor.getCurrentStream)
+      
+      if (!processor) {
+        throw new Error('AudioProcessor not found in container')
+      }
       
       // Set up chunk tracking
       const unsubscribeChunk = processor.onChunk((chunk) => {
@@ -185,14 +197,28 @@ export function useAudioProcessor() {
     } catch (error) {
       console.error('❌ useAudioProcessor: Recording failed', error)
       const errorMessage = error instanceof Error ? error.message : 'Recording failed'
-      dispatch(setError({
-        message: errorMessage,
-        code: 'RECORDING_ERROR'
-      }))
-      dispatch(addNotification({
-        type: 'error',
-        message: errorMessage
-      }))
+      
+      // Check if it's the specific state error
+      if (errorMessage.includes('Operation requires state to be one of: ready, processing')) {
+        const stateErrorMsg = 'Engine is in error state and needs to be reset. Please try resetting the engine.'
+        dispatch(setError({
+          message: stateErrorMsg,
+          code: 'ENGINE_ERROR_STATE'
+        }))
+        dispatch(addNotification({
+          type: 'error',
+          message: stateErrorMsg
+        }))
+      } else {
+        dispatch(setError({
+          message: errorMessage,
+          code: 'RECORDING_ERROR'
+        }))
+        dispatch(addNotification({
+          type: 'error',
+          message: errorMessage
+        }))
+      }
       return null
     } finally {
       console.log('🏁 useAudioProcessor: Recording finished, resetting states')
@@ -238,12 +264,38 @@ export function useAudioProcessor() {
     }
   }, [container, isReady])
 
+  const resetEngine = useCallback(async () => {
+    if (!container) {
+      console.warn('[useAudioProcessor] No container available for reset')
+      return false
+    }
+
+    try {
+      console.log('[useAudioProcessor] Attempting to reset engine...')
+      
+      // Try to get the engine registry and destroy current engine
+      const { engineRegistry } = await import('murmuraba')
+      if (engineRegistry && engineRegistry.hasEngine()) {
+        await engineRegistry.destroyEngine()
+        console.log('[useAudioProcessor] Engine destroyed')
+      }
+      
+      // The MurmurabaSuite should automatically recreate the engine
+      console.log('[useAudioProcessor] Engine reset completed')
+      return true
+    } catch (error) {
+      console.error('[useAudioProcessor] Failed to reset engine:', error)
+      return false
+    }
+  }, [container])
+
   return {
     isReady,
     isProcessing,
     isRecording,
     processFile,
     processRecording,
-    cancelProcessing
+    cancelProcessing,
+    resetEngine
   }
 }

@@ -57,7 +57,7 @@ export default function AudioDemo({
 }: AudioDemoProps) {
   const dispatch = useAppDispatch()
   const { isProcessing, enableAGC, chunkDuration } = useAppSelector(s => s.audio)
-  const { isReady, processFile } = useAudioProcessor()
+  const { isReady, processFile, resetEngine } = useAudioProcessor()
   const [engineChecked, setEngineChecked] = useState(false)
   const [engineError, setEngineError] = useState<string | null>(null)
 
@@ -194,6 +194,30 @@ export default function AudioDemo({
       setIsExporting(false)
     }
   }, [urls.processedChunks, log])
+
+  const handleResetEngine = useCallback(async () => {
+    log('info', 'Attempting to reset engine...')
+    setEngineError(null)
+    setEngineChecked(false)
+    
+    try {
+      const success = await resetEngine()
+      if (success) {
+        log('info', 'Engine reset successfully')
+        // Reset local state
+        setError(null)
+        cleanupUrls()
+        setChunkMetrics([])
+      } else {
+        log('error', 'Engine reset failed')
+        setEngineError('Engine reset failed')
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Engine reset failed'
+      log('error', msg, err)
+      setEngineError(msg)
+    }
+  }, [resetEngine, log, cleanupUrls])
 
   const handleProcess = useCallback(async () => {
     // Prevent re-entrant calls
@@ -373,7 +397,24 @@ export default function AudioDemo({
         <div className={styles.error}>
           Engine Error: {engineError}
           <br />
-          <small>The audio processing engine may not be properly initialized. Try refreshing the page or check if you need to click "Initialize Audio Engine" first.</small>
+          <small>The audio processing engine may not be properly initialized.</small>
+          <br />
+          <button 
+            onClick={handleResetEngine}
+            className={styles.resetButton}
+            style={{ 
+              marginTop: '10px', 
+              padding: '8px 16px', 
+              backgroundColor: '#f59e0b', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            🔄 Reset Engine
+          </button>
         </div>
       )}
 
