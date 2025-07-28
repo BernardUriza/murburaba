@@ -1,375 +1,123 @@
 'use client'
 
-import React, { useEffect, ReactNode, useState, useCallback } from 'react';
+import React, { useEffect, useCallback, useState, ReactNode } from 'react';
 import { Provider } from 'react-redux';
 import { store } from '../store';
 import { MurmurabaSuite, useMurmurabaSuite, WaveformAnalyzer, SUITE_TOKENS, TOKENS } from '../packages/murmuraba';
 import { setSuiteContainer, MURMURABA_ACTIONS } from '../store/middleware/murmurabaSuiteMiddleware';
 import { setEngineInitialized, setProcessing, updateMetrics } from '../store/slices/audioSlice';
 import { DebugError } from '../components/DebugError';
-import type { ILogger, IMetricsManager, IAudioProcessor } from '../packages/murmuraba';
-
-// Wrapper component to show loading state
-function MurmurabaSuiteWrapper({ children, isInitializing, showAudioLevel }: { children: ReactNode; isInitializing: boolean; showAudioLevel?: boolean }) {
-  const { isReady } = useMurmurabaSuite();
-  
-  // Show loading screen while initializing
-  if (isInitializing && !isReady) {
-    return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        padding: '2rem',
-        textAlign: 'center'
-      }}>
-        <h2 style={{ marginBottom: '1rem' }}>Initializing MurmurabaSuite...</h2>
-        <div style={{ marginBottom: '2rem', opacity: 0.8 }}>
-          Loading audio processing engine
-        </div>
-        <div style={{
-          width: '50px',
-          height: '50px',
-          border: '4px solid rgba(255,255,255,0.2)',
-          borderTopColor: '#fff',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }} />
-        <style jsx>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
-      </div>
-    );
-  }
-  
-  return <MurmurabaReduxBridge showAudioLevel={showAudioLevel}>{children}</MurmurabaReduxBridge>;
-}
-
-// Inner component that has access to MurmurabaSuite context
-function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNode; showAudioLevel?: boolean }): JSX.Element {
-  const { container, isReady, error } = useMurmurabaSuite();
-  const [currentStream] = useState<MediaStream | null>(null);
-  const [audioLevel, setAudioLevel] = useState(0);
-  
-  // Helper to get MetricsManager from container or processor
-  const getMetricsManager = useCallback((): any | null => {
-    if (!container) return null;
-    
-    // First try to get it from the container
-    if (container.has(TOKENS.MetricsManager)) {
-      return container.get<IMetricsManager>(TOKENS.MetricsManager) as any;
-    }
-    
-    // If not found, try to get it from the AudioProcessor
-    if (container.has(SUITE_TOKENS.AudioProcessor)) {
-      const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor);
-      if ((processor as any).engine?.metricsManager) {
-        console.log('📍 Got MetricsManager from AudioProcessor.engine');
-        return (processor as any).engine.metricsManager;
-      }
-    }
-    
-    return null;
-  }, [container]);
-
-  // Helper to setup metrics listener
-  const setupMetricsListener = useCallback((metricsManager: any): (() => void) | null => {
-    if (!metricsManager || !metricsManager.onMetricsUpdate) return null;
-    
-    console.log('🎯 Setting up MetricsManager listener in MurmurabaReduxProvider');
-    
-    // Register metrics event listener
-    const unsubscribe = metricsManager.onMetricsUpdate((metrics: any) => {
-      setAudioLevel(metrics.inputLevel || 0);
-      
-      // Debug metrics
-      console.log('🎯 MurmurabaReduxProvider received metrics:', {
-        input: metrics.inputLevel,
-        vad: metrics.vadProbability,
-        noise: metrics.noiseReductionLevel,
-        hasVad: 'vadProbability' in metrics,
-        metricsKeys: Object.keys(metrics)
-      });
-      
-      // Dispatch to Redux for global state
-      store.dispatch(updateMetrics({ 
-        inputLevel: metrics.inputLevel,
-        outputLevel: metrics.outputLevel,
-        vad: metrics.vadProbability || 0,
-        noiseReduction: metrics.noiseReductionLevel || 0
-      }));
-    });
-    
-    // Test the connection
-    const currentMetrics = metricsManager.getMetrics();
-    console.log('🔍 Initial metrics from MetricsManager:', currentMetrics);
-    console.log('🧪 Testing manual emit...');
-    metricsManager.emit('metrics-update', currentMetrics);
-    
-    // Store reference for debugging
-    (window as any).__metricsManager = metricsManager;
-    (window as any).__metricsUnsubscribe = unsubscribe;
-    
-    return unsubscribe;
-  }, []);
-
-  // Setup audio level monitoring
-  const setupAudioLevelMonitoring = useCallback(async () => {
-    console.log('🔧 setupAudioLevelMonitoring called:', { isReady, hasContainer: !!container });
-    if (!isReady || !container) {
-      console.log('❌ Not ready to setup monitoring');
-      return;
-    }
-    
-    try {
-      // Check if services are available first
-      if (!container.has(SUITE_TOKENS.AudioProcessor)) {
-        console.log('AudioProcessor not yet available');
-        return;
-      }
-      
-      // Get metrics manager and setup listener
-      const metricsManager = getMetricsManager();
-      if (metricsManager) {
-        setupMetricsListener(metricsManager);
-      }
-      
-      // Also try processor metrics as fallback
-      const processor = container.has(SUITE_TOKENS.AudioProcessor) ? 
-        container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor) : null;
-      
-      if (processor && (processor as any).onMetrics) {
-        (processor as any).onMetrics((metrics: any) => {
-          setAudioLevel(metrics.inputLevel || 0);
-          store.dispatch(updateMetrics(metrics));
-        });
-      }
-    } catch (error) {
-      console.error('Failed to setup audio monitoring:', error);
-    }
-  }, [container, isReady, getMetricsManager, setupMetricsListener]);
-  
-  // Helper to initialize Redux connection
-  const initializeReduxConnection = useCallback((): void => {
-    if (!container) return;
-    
-    setSuiteContainer(container as any);
-    store.dispatch({ type: MURMURABA_ACTIONS.SET_CONTAINER, payload: container as any });
-    store.dispatch(setEngineInitialized(true));
-  }, [container]);
-
-  // Helper to setup processing state monitoring
-  const setupProcessingStateMonitoring = useCallback((): (() => void) | null => {
-    if (!container || !container.has(SUITE_TOKENS.AudioProcessor)) return null;
-    
-    const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor);
-    const interval = setInterval(() => {
-      const isProcessing = processor.isProcessing();
-      store.dispatch(setProcessing(isProcessing));
-    }, 100);
-    
-    return () => clearInterval(interval);
-  }, [container]);
-
-  // Helper to log service availability
-  const logServiceAvailability = useCallback((): void => {
-    if (!container || !container.has(TOKENS.Logger)) return;
-    
-    const logger = container.get<ILogger>(TOKENS.Logger);
-    logger.info('✅ MurmurabaSuite connected to Redux');
-    logger.debug('Available services:', {
-      audioProcessor: container.has(SUITE_TOKENS.AudioProcessor),
-      logger: container.has(TOKENS.Logger),
-      metricsManager: container.has(TOKENS.MetricsManager),
-      stateManager: container.has(TOKENS.StateManager),
-      eventEmitter: container.has(TOKENS.EventEmitter)
-    });
-  }, [container]);
-
-  // Main initialization effect
-  useEffect(() => {
-    // Log status only on changes
-    if (isReady && container && !(window as any).__murmurabaInitLogged) {
-      console.log('✅ MurmurabaSuite initialized');
-      (window as any).__murmurabaInitLogged = true;
-    }
-    
-    if (isReady && container) {
-      // Initialize Redux connection
-      initializeReduxConnection();
-      
-      // Setup monitoring if requested
-      if (showAudioLevel) {
-        console.log('🚀 Calling setupAudioLevelMonitoring from useEffect');
-        setupAudioLevelMonitoring();
-      }
-      
-      // Setup processing state monitoring
-      const cleanup = setupProcessingStateMonitoring();
-      
-      // Log service availability
-      logServiceAvailability();
-      
-      return cleanup || undefined;
-    }
-    
-    if (error) {
-      store.dispatch(setEngineInitialized(false));
-      console.error('❌ MurmurabaSuite initialization error:', error);
-    }
-  }, [isReady, container, error, showAudioLevel, setupAudioLevelMonitoring, initializeReduxConnection, setupProcessingStateMonitoring, logServiceAvailability]);
-  
-  // Listen for stream changes from Redux
-  useEffect(() => {
-    const unsubscribe = store.subscribe(() => {
-      const state = store.getState();
-      const streamId = state.audio.currentStreamId;
-      if (streamId && navigator.mediaDevices) {
-        // Get active media streams
-        navigator.mediaDevices.enumerateDevices().then(() => {
-          // Note: We can't directly get stream by ID, this is a limitation
-          // Instead, we'll rely on the MediaStreamContext
-        });
-      }
-    });
-    
-    return unsubscribe;
-  }, []);
-  
-  // Show error state if initialization failed
-  if (error) {
-    console.error('❌ MurmurabaSuite: Showing error state', error);
-    return <DebugError error={error} />;
-  }
-  
-  return (
-    <>
-      {/* Audio Level Indicator */}
-      {showAudioLevel && isReady && (
-        <div style={{
-          position: 'fixed',
-          top: 10,
-          right: 10,
-          zIndex: 1000,
-          background: 'rgba(0,0,0,0.8)',
-          padding: '10px',
-          borderRadius: '8px',
-          minWidth: '200px'
-        }}>
-          <div style={{ color: 'white', fontSize: '12px', marginBottom: '5px' }}>Audio Level</div>
-          <div style={{
-            width: '100%',
-            height: '20px',
-            background: 'rgba(255,255,255,0.2)',
-            borderRadius: '4px',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              width: `${audioLevel * 100}%`,
-              height: '100%',
-              background: audioLevel > 0.7 ? '#ff4444' : audioLevel > 0.4 ? '#ffaa00' : '#44ff44',
-              transition: 'width 0.1s ease-out'
-            }} />
-          </div>
-        </div>
-      )}
-      
-      {/* Waveform Visualizer for current stream */}
-      {currentStream && showAudioLevel && (
-        <div style={{
-          position: 'fixed',
-          bottom: 10,
-          right: 10,
-          zIndex: 1000,
-          background: 'rgba(0,0,0,0.9)',
-          padding: '10px',
-          borderRadius: '8px'
-        }}>
-          <WaveformAnalyzer
-            stream={currentStream}
-            width={300}
-            height={100}
-            label="Live Audio"
-            hideControls={true}
-            disablePlayback={true}
-          />
-        </div>
-      )}
-      
-      {children}
-    </>
-  );
-}
 
 interface MurmurabaReduxProviderProps {
   children: ReactNode;
-  // MurmurabaSuite config
   logLevel?: 'none' | 'error' | 'warn' | 'info' | 'debug';
   algorithm?: 'rnnoise' | 'spectral' | 'adaptive';
   enableAGC?: boolean;
   noiseReductionLevel?: 'low' | 'medium' | 'high' | 'auto';
   allowDegraded?: boolean;
   lazy?: boolean;
+  showAudioMonitoring?: boolean;
 }
 
+// --- WRAPPER ---
+function LoadingScreen() {
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '2rem'
+    }}>
+      <h2>Initializing MurmurabaSuite...</h2>
+      <div style={{
+        width: 50, height: 50, border: '4px solid #333', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite'
+      }} />
+      <style jsx>{`
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      `}</style>
+    </div>
+  );
+}
+
+// --- BRIDGE ---
+function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNode, showAudioLevel?: boolean }) {
+  const { container, isReady, error } = useMurmurabaSuite();
+  const [audioLevel, setAudioLevel] = useState(0);
+
+  const syncMetrics = useCallback(() => {
+    if (!container?.has(TOKENS.MetricsManager)) return;
+    const metricsManager = container.get(TOKENS.MetricsManager);
+    if (!metricsManager?.onMetricsUpdate) return;
+    return metricsManager.onMetricsUpdate((metrics: any) => {
+      setAudioLevel(metrics.inputLevel || 0);
+      store.dispatch(updateMetrics(metrics));
+    });
+  }, [container]);
+
+  const monitorProcessing = useCallback(() => {
+    if (!container?.has(SUITE_TOKENS.AudioProcessor)) return;
+    const processor = container.get(SUITE_TOKENS.AudioProcessor);
+    const i = setInterval(() => store.dispatch(setProcessing(processor.isProcessing())), 150);
+    return () => clearInterval(i);
+  }, [container]);
+
+  useEffect(() => {
+    if (!isReady || !container) return;
+    setSuiteContainer(container as any);
+    store.dispatch({ type: MURMURABA_ACTIONS.SET_CONTAINER, payload: container });
+    store.dispatch(setEngineInitialized(true));
+    const unsubMetrics = syncMetrics();
+    const clearProcessing = monitorProcessing();
+    return () => {
+      if (unsubMetrics) unsubMetrics();
+      if (clearProcessing) clearProcessing();
+    };
+  }, [isReady, container, syncMetrics, monitorProcessing]);
+
+  if (error) return <DebugError error={error} />;
+
+  return (
+    <>
+      {showAudioLevel && isReady &&
+        <div style={{
+          position: 'fixed', top: 12, right: 12, zIndex: 999, background: '#181818cc', padding: 10, borderRadius: 8, minWidth: 160
+        }}>
+          <div style={{ color: 'white', fontSize: 13, marginBottom: 4 }}>Audio Level</div>
+          <div style={{ background: '#fff2', borderRadius: 4, height: 16, overflow: 'hidden' }}>
+            <div style={{
+              width: `${audioLevel * 100}%`, height: '100%',
+              background: audioLevel > 0.7 ? '#ff4444' : audioLevel > 0.4 ? '#ffaa00' : '#44ff44',
+              transition: 'width 0.12s cubic-bezier(.4,2,.6,1)'
+            }} />
+          </div>
+        </div>
+      }
+      {children}
+    </>
+  );
+}
+
+// --- PROVIDER ---
 export function MurmurabaReduxProvider({
   children,
   logLevel = 'debug',
   algorithm = 'rnnoise',
   enableAGC = false,
   noiseReductionLevel = 'medium',
-  _allowDegraded = true,
-  lazy: _lazy = false,
+  allowDegraded = true,
+  lazy = false,
   showAudioMonitoring = process.env.NODE_ENV === 'development'
-}: MurmurabaReduxProviderProps & { showAudioMonitoring?: boolean }) {
-  const [shouldInitialize, setShouldInitialize] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(false);
+}: MurmurabaReduxProviderProps) {
+  const [init, setInit] = useState(false);
 
-  const handleManualInit = () => {
-    setShouldInitialize(true);
-    setIsInitializing(true);
-  };
-
-  // If not initialized yet, show initialization button
-  if (!shouldInitialize) {
+  if (!init)
     return (
       <Provider store={store}>
         <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100vh',
-          padding: '2rem',
-          textAlign: 'center'
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh'
         }}>
-          <h2 style={{ marginBottom: '1rem' }}>Welcome to Murmuraba Audio Engine</h2>
-          <p style={{ marginBottom: '2rem', opacity: 0.8 }}>
-            Click the button below to initialize the audio processing engine
-          </p>
-          <button 
-            onClick={handleManualInit}
-            className="btn btn-primary"
-            style={{ 
-              padding: '1rem 2rem',
-              fontSize: '1.1rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-          >
-            <span>🚀</span>
-            <span>Initialize Audio Engine</span>
-          </button>
+          <h2>Welcome to Murmuraba Audio Engine</h2>
+          <button onClick={() => setInit(true)} style={{ padding: 18, fontSize: 18 }}>🚀 Initialize Audio Engine</button>
         </div>
       </Provider>
     );
-  }
 
   return (
     <Provider store={store}>
@@ -378,20 +126,18 @@ export function MurmurabaReduxProvider({
         algorithm={algorithm}
         enableAGC={enableAGC}
         noiseReductionLevel={noiseReductionLevel}
-        allowDegraded={true}
-        lazy={false}
-        initTimeout={15000}
+        allowDegraded={allowDegraded}
+        lazy={lazy}
         useWorker={false}
-        services={{
-          audioProcessor: true,
-          metricsManager: true,
-          workerManager: true
-        }}
-        onUserInteraction={() => setIsInitializing(false)}
+        initTimeout={12000}
+        services={{ audioProcessor: true, metricsManager: true, workerManager: true }}
+        onUserInteraction={() => {}}
       >
-        <MurmurabaSuiteWrapper isInitializing={isInitializing} showAudioLevel={showAudioMonitoring}>
-          {children}
-        </MurmurabaSuiteWrapper>
+        <React.Suspense fallback={<LoadingScreen />}>
+          <MurmurabaReduxBridge showAudioLevel={showAudioMonitoring}>
+            {children}
+          </MurmurabaReduxBridge>
+        </React.Suspense>
       </MurmurabaSuite>
     </Provider>
   );
