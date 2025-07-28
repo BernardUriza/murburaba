@@ -84,7 +84,7 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
           // Debug what methods are available
           console.log('MetricsManager methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(metricsManager)));
           
-          console.log('📌 Registering metrics-update listener');
+          console.log('🔥DEBUG🔥 Registering metrics-update listener');
           
           // Track if we're getting any events
           let eventCount = 0;
@@ -102,7 +102,7 @@ function MurmurabaReduxBridge({ children, showAudioLevel }: { children: ReactNod
             
             // Only log non-zero inputs occasionally to reduce spam
             if (metrics.inputLevel > 0 && eventCount % 50 === 0) {
-              console.log('🎯 Audio level:', metrics.inputLevel.toFixed(3), 'Source: MetricsManager');
+              console.log('🔥DEBUG🔥 Audio level:', metrics.inputLevel.toFixed(3), 'Source: MetricsManager');
             }
             
             setAudioLevel(metrics.inputLevel || 0);

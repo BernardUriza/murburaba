@@ -151,19 +151,10 @@ export class AudioProcessorService implements IAudioProcessor {
           },
         });
         this.currentStream = stream;
-        console.log('🎤 AudioProcessorService: New stream created:', {
-          streamId: stream.id,
-          trackCount: stream.getTracks().length,
-          audioTracks: stream.getAudioTracks().length,
-        });
       } else {
         // Reuse existing stream
         stream = this.currentStream!;
         shouldStopStream = false;
-        console.log('🎤 AudioProcessorService: Reusing existing stream:', {
-          streamId: stream.id,
-          trackCount: stream.getTracks().length,
-        });
       }
     }
 
@@ -173,7 +164,6 @@ export class AudioProcessorService implements IAudioProcessor {
         ...options,
         chunkDuration: options?.chunkDuration || 8,
       };
-      console.log('📝 AudioProcessorService: Recording options:', recordingOptions);
 
       // Start processing the stream
       this.isProcessingFlag = true;
@@ -182,16 +172,10 @@ export class AudioProcessorService implements IAudioProcessor {
       const chunks: ProcessedChunk[] = [];
       const engine = engineRegistry.getEngine();
       
-      console.log('🚀 AudioProcessorService: Starting stream processing', {
-        engineReady: !!engine,
-        streamActive: stream.active,
-        streamId: stream.id
-      });
 
       // Connect metrics from engine to service
       const metricsManager = (engine as any).metricsManager;
       if (metricsManager && metricsManager.on) {
-        console.log('🔌 Connecting metrics from engine to AudioProcessorService');
         const metricsUnsubscribe = metricsManager.on(
           'metrics-update',
           (metrics: ProcessingMetrics) => {
@@ -204,26 +188,18 @@ export class AudioProcessorService implements IAudioProcessor {
       const chunkConfig = recordingOptions.chunkDuration ? {
         chunkDuration: recordingOptions.chunkDuration * 1000, // Convert seconds to milliseconds
         onChunkProcessed: (chunk: any) => {
-          console.log('📦 AudioProcessorService: Chunk processed', chunk);
           const processedChunk = this.normalizeChunk(chunk);
           chunks.push(processedChunk);
           this.notifyChunk(processedChunk);
         }
       } : undefined;
       
-      console.log('🎯 AudioProcessorService: Calling engine.processStream', {
-        chunkConfig,
-        recordingOptions
-      });
       
       const controller = await engine.processStream(stream, chunkConfig);
       
-      console.log('🎮 AudioProcessorService: Controller obtained', !!controller);
 
       // Stop recording after specified duration
-      console.log(`⏱️ AudioProcessorService: Recording will stop in ${duration}ms`);
       setTimeout(() => {
-        console.log('⏹️ AudioProcessorService: Stopping recording');
         controller.stop();
       }, duration);
 
@@ -440,11 +416,6 @@ export class AudioProcessorService implements IAudioProcessor {
 
   // Method to clean up resources
   getCurrentStream(): MediaStream | undefined {
-    console.log('🔍 getCurrentStream called:', {
-      hasStream: !!this.currentStream,
-      streamId: this.currentStream?.id,
-      trackCount: this.currentStream?.getTracks()?.length || 0,
-    });
     return this.currentStream;
   }
 

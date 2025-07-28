@@ -54,22 +54,6 @@ export default function App() {
   const { showAudioDemo, showAdvancedMetrics, showSettings, showCopilot } = uiFlags
   const { processingResults, currentInputLevel, totalDuration, averageNoiseReduction } = useAppSelector(state => state.audio)
   
-  // Debug log - log every 2 seconds only
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const reduxState = store.getState()
-      console.log('🔍 Engine status:', { 
-        isInitialized, 
-        isProcessing, 
-        isRecording, 
-        currentStream: !!currentStream, 
-        showLiveWaveform,
-        currentInputLevel,
-        reduxInputLevel: reduxState.audio.currentInputLevel 
-      })
-    }, 2000)
-    return () => clearInterval(interval)
-  }, [isInitialized, isProcessing, isRecording, currentStream, showLiveWaveform, currentInputLevel])
   
   // Audio processor hook
   const { isReady, processRecording, cancelProcessing } = useAudioProcessor()
@@ -107,7 +91,6 @@ export default function App() {
     
     try {
       notify('info', 'Starting microphone recording...')
-      console.log('🎬 Starting recording, setting showLiveWaveform to true')
       setShowLiveWaveform(true) // Show waveform immediately
       
       // Record for 30 seconds total
@@ -276,8 +259,8 @@ export default function App() {
           onClose={() => dispatch(toggleSettings())}
           vadThresholds={{ silence: 0.3, voice: 0.5, clearVoice: 0.7 }}
           displaySettings={{ showVadValues: true, showVadTimeline: true }}
-          onThresholdChange={t => console.log('Thresholds changed:', t)}
-          onDisplayChange={s => console.log('Display settings changed:', s)}
+          onThresholdChange={t => {}}
+          onDisplayChange={s => {}}
         />
 
         {/* Copilot Chat Modal */}
@@ -288,7 +271,7 @@ export default function App() {
           setEngineConfig={() => {}}
           isRecording={isRecording}
           isInitialized={isInitialized}
-          onApplyChanges={async () => console.log('Apply changes')}
+          onApplyChanges={async () => {}}
         />
       </main>
     </>

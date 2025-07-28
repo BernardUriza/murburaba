@@ -96,14 +96,12 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     if (source) {
       try {
         source.disconnect();
-        console.log('🧹 WaveformAnalyzer: Audio source disconnected');
       } catch (err) {
-        console.warn('Warning: Could not disconnect audio source:', err);
       }
     }
 
     if (audioContext && audioContext.state !== 'closed') {
-      audioContext.close().catch(console.error);
+      audioContext.close().catch(() => {});
     }
 
     // Reset state
@@ -451,7 +449,6 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
 
     // If we already have a working context with analyser, reuse it
     if (audioContext && audioContext.state !== 'closed' && analyser && source) {
-      console.log('WaveformAnalyzer: Reusing existing audio context');
       return;
     }
 
@@ -474,13 +471,9 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
         sourceNode.connect(analyserNode);
         analyserNode.connect(ctx.destination);
         setSource(sourceNode);
-        console.log('WaveformAnalyzer: Created new MediaElementSource');
       } catch (err) {
         // If element already has a source from another context, close context and continue
         if (err instanceof Error && err.message.includes('already connected')) {
-          console.warn(
-            'WaveformAnalyzer: Audio element already connected, continuing without audio context'
-          );
           await ctx.close();
           setError(null);
           return;
@@ -520,23 +513,10 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     }
 
     try {
-      console.log('WaveformAnalyzer: Initializing live stream visualization...');
-      console.log(
-        'Stream tracks:',
-        stream.getTracks().map(t => ({
-          kind: t.kind,
-          enabled: t.enabled,
-          readyState: t.readyState,
-          label: t.label,
-          id: t.id,
-          muted: t.muted,
-        }))
-      );
 
       // Verificar que el stream tenga audio tracks activos
       const audioTracks = stream.getAudioTracks();
       if (audioTracks.length === 0) {
-        console.error('WaveformAnalyzer: No audio tracks found in stream!');
         setError('No audio tracks found in stream');
         return;
       }
@@ -548,19 +528,12 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
         return;
       }
 
-      console.log('WaveformAnalyzer: Active audio track found:', {
-        label: activeTrack.label,
-        enabled: activeTrack.enabled,
-        readyState: activeTrack.readyState,
-      });
 
       setError(null);
 
-      console.log('WaveformAnalyzer: Live stream verification completed - using engine metrics');
       // Start drawing using engine metrics
       drawLiveWaveform();
     } catch (error) {
-      console.error('Error verifying live stream:', error);
       setError(
         `Failed to verify live stream: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -678,7 +651,6 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   // Cleanup effect - called when component unmounts
   useEffect(() => {
     return () => {
-      console.log('🧹 WaveformAnalyzer: Component unmounting, cleaning up...');
       cleanup();
     };
   }, [cleanup]);

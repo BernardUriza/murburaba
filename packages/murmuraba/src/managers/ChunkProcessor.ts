@@ -95,7 +95,6 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
    * Add samples to the current chunk
    */
   addSamples(samples: Float32Array): void {
-    console.log('[ChunkProcessor] addSamples called with', samples.length, 'samples');
     // Initialize start time on first sample with high-resolution timer
     if (this.chunkStartTime === 0) {
       this.chunkStartTime = performance.now();
@@ -103,11 +102,9 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
 
     this.currentChunk.push(new Float32Array(samples));
     this.currentSampleCount += samples.length;
-    console.log('[ChunkProcessor] Current sample count:', this.currentSampleCount, '/', this.samplesPerChunk);
 
     // Check if we have enough samples for a chunk
     while (this.currentSampleCount >= this.samplesPerChunk) {
-      console.log('[ChunkProcessor] Chunk ready! Processing...');
       this.processCurrentChunk();
     }
   }

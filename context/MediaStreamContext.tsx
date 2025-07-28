@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, PropsWithChildren } from 'react'
+import React, { createContext, useContext, useState, useCallback, useRef, PropsWithChildren } from 'react'
 
 interface MediaStreamContextType {
   currentStream: MediaStream | null
@@ -10,27 +10,37 @@ const MediaStreamContext = createContext<MediaStreamContextType | undefined>(und
 
 export function MediaStreamProvider({ children }: PropsWithChildren) {
   const [currentStream, setCurrentStream] = useState<MediaStream | null>(null)
+  const currentStreamRef = useRef<MediaStream | null>(null)
 
   const setStream = useCallback((stream: MediaStream | null) => {
-    console.log('📡 MediaStreamContext.setStream called:', {
-      newStream: !!stream,
-      streamId: stream?.id,
-      trackCount: stream?.getTracks()?.length || 0,
-      currentStream: !!currentStream
-    })
     // Stop previous stream if exists
-    if (currentStream && currentStream !== stream) {
-      currentStream.getTracks().forEach(track => track.stop())
+    if (currentStreamRef.current && currentStreamRef.current !== stream) {
+      currentStreamRef.current.getTracks().forEach(track => track.stop())
     }
+    currentStreamRef.current = stream
     setCurrentStream(stream)
-  }, [currentStream])
+  }, []) // Empty dependency array - no infinite loops!
 
   const stopStream = useCallback(() => {
-    if (currentStream) {
-      currentStream.getTracks().forEach(track => track.stop())
+    if (currentStreamRef.current) {
+      currentStreamRef.current.getTracks().forEach(track => track.stop())
+      currentStreamRef.current = null
       setCurrentStream(null)
     }
-  }, [currentStream])
+  }, []) // Empty dependency array - no infinite loops!
+
+  // Cleanup on unmount
+  React.useEffect(() => {
+    return () => {
+      // Stop all tracks when the provider unmounts
+      if (currentStreamRef.current) {
+        currentStreamRef.current.getTracks().forEach(track => {
+          track.stop()
+        })
+        currentStreamRef.current = null
+      }
+    }
+  }, [])
 
   return (
     <MediaStreamContext.Provider value={{ currentStream, setStream, stopStream }}>

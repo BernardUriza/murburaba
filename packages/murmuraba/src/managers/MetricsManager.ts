@@ -51,6 +51,8 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
     const oldLevel = this.metrics.inputLevel;
     this.metrics.inputLevel = Math.max(0, Math.min(1, level));
     
+    if (Math.random() < 0.01) console.log('🔥DEBUG🔥 MetricsManager.updateInputLevel called:', { level, oldLevel, newLevel: this.metrics.inputLevel });
+    
     // Only log significant changes (>10%)
     const change = Math.abs(level - oldLevel);
     if (change > 0.1) {
@@ -58,6 +60,7 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
     }
 
     // Emit update immediately for real-time feedback
+    if (Math.random() < 0.01) console.log('🔥DEBUG🔥 MetricsManager emitting metrics-update:', { inputLevel: this.metrics.inputLevel });
     this.emit('metrics-update', { ...this.metrics });
   }
 

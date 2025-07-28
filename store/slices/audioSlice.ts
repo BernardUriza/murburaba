@@ -23,6 +23,7 @@ interface AudioState extends ErrorState {
   // Live metrics
   currentInputLevel: number
   currentVadLevel: number
+  currentOutputLevel: number
   
 }
 
@@ -38,6 +39,7 @@ const initialState: AudioState = {
   currentStreamId: null,
   currentInputLevel: 0,
   currentVadLevel: 0,
+  currentOutputLevel: 0,
   hasError: false,
   errorMessage: null
 }
@@ -103,9 +105,8 @@ const audioSlice = createSlice({
     updateMetrics: (state, action: PayloadAction<{ inputLevel?: number; outputLevel?: number }>) => {
       if (action.payload.inputLevel !== undefined) {
         state.currentInputLevel = Math.max(0, Math.min(1, action.payload.inputLevel))
-        // Debug logging to trace source of random values
-        if (Math.random() < 0.1) {
-          console.log('🔥 Redux updateMetrics:', action.payload.inputLevel.toFixed(3))
+        if (Math.random() < 0.01) {
+          console.log('🔥DEBUG🔥 Redux updateMetrics:', action.payload.inputLevel.toFixed(3))
         }
       }
       if (action.payload.outputLevel !== undefined) {

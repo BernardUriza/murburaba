@@ -54,7 +54,6 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
       this.handleMessage(event.data);
     };
 
-    console.log('[RNNoiseProcessor] Worklet initialized');
   }
 
   handleMessage(message) {
@@ -76,7 +75,6 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
         this.agcTargetLevel = message.data.targetLevel || 0.3;
         break;
       default:
-        console.warn(`[RNNoiseProcessor] Unknown message type: ${message.type}`);
     }
   }
 
@@ -86,7 +84,6 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
    */
   async initializeRNNoise(config) {
     try {
-      console.log('[RNNoiseProcessor] Initializing RNNoise WASM...');
 
       if (!config.wasmBuffer) {
         throw new Error('WASM buffer not provided');
@@ -121,14 +118,12 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
       }
 
       this.isRNNoiseReady = true;
-      console.log('[RNNoiseProcessor] RNNoise initialized successfully');
 
       this.port.postMessage({
         type: 'initialized',
         success: true,
       });
     } catch (error) {
-      console.error('[RNNoiseProcessor] RNNoise initialization failed:', error);
       this.port.postMessage({
         type: 'initialized',
         success: false,
@@ -233,10 +228,6 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
     // Calculate input metrics
     this.inputLevel = this.calculateRMS(inputChannel);
     
-    // Debug input levels
-    if (this.frameCount % 100 === 0) {
-      console.log('[RNNoiseProcessor] Input level:', this.inputLevel, 'Peak:', Math.max(...inputChannel.map(Math.abs)));
-    }
 
     // Update AGC
     this.updateAGC(this.inputLevel);
@@ -319,10 +310,6 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
       });
       this.processingTimeSum = 0;
       
-      // Debug VAD and noise reduction
-      if (this.lastVad > 0.01 || this.noiseReduction > 0.01) {
-        console.log('[RNNoiseProcessor] VAD:', this.lastVad.toFixed(3), 'NR:', (this.noiseReduction * 100).toFixed(1) + '%');
-      }
     }
 
     return this.isActive;
