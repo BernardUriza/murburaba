@@ -20,22 +20,25 @@ export function GlobalAudioMonitor() {
     if (!isReady || !container) return
     
     try {
-      // Only get VAD from MetricsManager, metrics come from Redux
+      // Get MetricsManager and subscribe to metrics updates
       const metricsManager = container.has(TOKENS.MetricsManager) 
         ? container.get<IMetricsManager>(TOKENS.MetricsManager)
         : null
       
-      // Periodic VAD update only
-      const vadInterval = setInterval(() => {
-        if (metricsManager && 'getAverageVAD' in metricsManager) {
+      if (!metricsManager) return
+      
+      // Subscribe to metrics updates instead of polling
+      const unsubscribe = metricsManager.onMetricsUpdate((metrics) => {
+        // Update VAD from metrics
+        if ('getAverageVAD' in metricsManager) {
           const averageVAD = (metricsManager as any).getAverageVAD()
           setVadLevel(averageVAD)
           dispatch(setReduxVadLevel(averageVAD))
         }
-      }, 100) // Update every 100ms
+      })
       
       return () => {
-        clearInterval(vadInterval)
+        unsubscribe()
       }
     } catch (error) {
       console.error('Failed to setup audio monitoring:', error)

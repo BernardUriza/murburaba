@@ -318,6 +318,33 @@ onMetricsUpdate(callback) // Subscribe a cambios
 
 ---
 
+## 🔥 DUPLICACIÓN DE CLASES - PROHIBIDO
+
+### VIOLACIÓN CRÍTICA: MetricsManager vs OptimizedMetricsManager
+
+**CONTEXTO:** Existen DOS implementaciones del mismo servicio
+- `MetricsManager.ts` - Implementación original
+- `OptimizedMetricsManager.ts` - Versión "optimizada"
+
+**POR QUÉ ES UNA VIOLACIÓN:**
+1. **Confusión**: ¿Cuál usar? ¿Por qué hay dos?
+2. **Mantenimiento doble**: Bugs arreglados en uno, olvidados en otro
+3. **Inconsistencia**: Comportamientos ligeramente diferentes
+4. **Deuda técnica**: "Optimizado" implica que el original es malo
+
+**REGLA BRUTAL:**
+> Una sola implementación por servicio. SIEMPRE.
+> Si necesitas optimizar, MEJORA el existente.
+> NO crees ManagerV2, OptimizedManager, NewManager, BetterManager.
+
+**ACCIÓN REQUERIDA:**
+1. Analiza ambas implementaciones
+2. Merge las mejoras en UNA sola clase
+3. Elimina la duplicada
+4. Una interfaz, una implementación
+
+---
+
 ## 🧪 GUÍA BRUTAL DE TESTING - UN SOLO TEST QUE FUNCIONE
 
 ### REGLA #1: UN PUTO TEST. UNO.

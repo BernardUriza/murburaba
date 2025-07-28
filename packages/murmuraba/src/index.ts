@@ -124,4 +124,3 @@ export type { EventMap, EventKey, EventReceiver, TypedEmitter } from './core/Typ
 export { CircularBuffer, MetricsBuffer } from './utils/CircularBuffer';
 export { retry, retryWithTimeout, withRetry, CircuitBreaker } from './utils/retry';
 export type { RetryOptions, RetryError } from './utils/retry';
-export { OptimizedMetricsManager } from './managers/OptimizedMetricsManager';
