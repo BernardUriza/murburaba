@@ -6,6 +6,23 @@ const nextConfig = {
     unoptimized: true
   },
   allowedDevOrigins: ['127.0.0.1', 'localhost'],
+  async headers() {
+    return [
+      {
+        source: '/rnnoise.wasm',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/wasm',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
+  },
   webpack: (config, { isServer }) => {
     const path = require('path');
     config.resolve.alias = {

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// LOG BRUTAL - TODO SE GUARDA
+// LOG BRUTAL Y TRAZABILIDAD EXTREMA
 const timestamp = Date.now();
 const logFile = path.join(__dirname, `brutal-test-${timestamp}.log`);
 
@@ -18,48 +18,64 @@ function log(msg) {
   fs.appendFileSync(logFile, entry + '\n');
 }
 
+// Busca, espera, y loguea cualquier selector con retry brutal
+async function waitForSelectorBrutal(page, selector, timeout = 7000, poll = 250) {
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    const exists = await page.evaluate(sel => !!document.querySelector(sel), selector);
+    if (exists) return true;
+    await new Promise(r => setTimeout(r, poll));
+  }
+  return false;
+}
+
 async function brutalTest() {
-  log('🩸 TEST BRUTAL DE GRABACIÓN REAL');
+  log('🩸 TEST BRUTAL DE GRABACIÓN REAL (MODO ROBUSTO)');
   log(`Log file: ${logFile}`);
-  
-  const browser = await puppeteer.launch({ 
+
+  // CHECK: Archivo de audio fake existe
+  const fakeAudioPath = path.join(__dirname, '../public/jfk_speech.wav');
+  if (!fs.existsSync(fakeAudioPath)) {
+    log('💥 FALTA jfk_speech.wav en public. Copia el archivo antes de correr el test.');
+    process.exit(2);
+  }
+
+  // Deep: Headless Chrome ultra-permisivo
+  const browser = await puppeteer.launch({
     headless: true,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--use-fake-ui-for-media-stream',
       '--use-fake-device-for-media-stream',
+      `--use-file-for-fake-audio-capture=${fakeAudioPath}`,
       '--allow-running-insecure-content',
       '--disable-web-security',
-      '--disable-features=VizDisplayCompositor'
+      '--disable-features=VizDisplayCompositor',
+      '--autoplay-policy=no-user-gesture-required',
+      '--window-size=1400,900',
     ]
   });
-  
+
   const page = await browser.newPage();
-  
-  // CAPTURA TODO - SIN FILTROS
+  await page.setViewport({ width: 1400, height: 900 });
+
+  // LOG DE TODO
   const allLogs = [];
   let chunkCount = 0;
-  
+
   page.on('console', msg => {
     const text = msg.text();
     const entry = { time: Date.now(), type: msg.type(), text };
     allLogs.push(entry);
-    
     log(`[${msg.type().toUpperCase()}] ${text}`);
-    
-    // DETECTAR CHUNKS
-    if (text.includes('Chunk') || text.includes('chunk')) {
+    if (/chunk/i.test(text)) {
       chunkCount++;
       log(`🔥 CHUNK #${chunkCount}: ${text}`);
-      
-      // DETECTAR EL BUG
-      if (text.includes('8') && !text.includes('8000')) {
+      if (/8(?!000)/.test(text)) {
         log('🚨 POSIBLE BUG: Valor 8 detectado (¿8ms en vez de 8s?)');
       }
     }
-    
-    // SALVAVIDAS: Si muchos chunks, guardar estado
     if (chunkCount > 0 && chunkCount % 50 === 0) {
       fs.writeFileSync(
         path.join(__dirname, `emergency-${timestamp}-${chunkCount}.json`),
@@ -68,162 +84,122 @@ async function brutalTest() {
       log(`💾 EMERGENCY SAVE: ${chunkCount} chunks`);
     }
   });
-  
-  page.on('pageerror', err => {
-    log(`💀 PAGE ERROR: ${err}`);
-  });
-  
-  // NAVEGAR
+  page.on('pageerror', err => log(`💀 PAGE ERROR: ${err}`));
+  page.on('error', err => log(`💀 BROWSER ERROR: ${err}`));
+
   log('🎯 Navegando a localhost:3000...');
-  await page.goto('http://localhost:3000');
-  await new Promise(r => setTimeout(r, 3000));
-  
-  // PROBAR AUDIO DEMO PRIMERO
-  log('🎵 Buscando Floating Action Buttons...');
+  await page.goto('http://localhost:3000', { waitUntil: 'domcontentloaded', timeout: 15000 });
   await page.screenshot({ path: path.join(__dirname, `initial-${timestamp}.png`) });
-  
-  const fabButtons = await page.evaluate(() => {
-    // Buscar botones flotantes o elementos que contengan Audio Demo
-    const allButtons = Array.from(document.querySelectorAll('button, div[role="button"], [onclick]'));
-    return allButtons.map(btn => ({
-      text: btn.textContent?.trim() || '',
-      className: btn.className || '',
-      id: btn.id || ''
-    }));
-  });
-  
-  log(`Botones encontrados: ${JSON.stringify(fabButtons)}`);
-  
-  // Buscar Audio Demo
-  const audioDemoClicked = await page.evaluate(() => {
-    const buttons = Array.from(document.querySelectorAll('button, div[role="button"], [onclick]'));
-    const audioBtn = buttons.find(b => 
-      b.textContent?.includes('Audio Demo') || 
-      b.textContent?.includes('🎵') ||
-      b.className?.includes('demo') ||
-      b.title?.includes('demo')
-    );
-    if (audioBtn) {
-      audioBtn.click();
-      return true;
-    }
-    return false;
-  });
-  
-  if (audioDemoClicked) {
-    log('✅ Audio Demo clicked');
-    await new Promise(r => setTimeout(r, 3000));
-    await page.screenshot({ path: path.join(__dirname, `audio-demo-${timestamp}.png`) });
-    
-    // Buscar botón de procesar
-    const processClicked = await page.evaluate(() => {
-      const buttons = Array.from(document.querySelectorAll('button'));
-      const processBtn = buttons.find(b => 
-        b.textContent?.includes('Process') || 
-        b.textContent?.includes('Procesar') ||
-        b.textContent?.includes('Start')
-      );
-      if (processBtn) {
-        processBtn.click();
-        return true;
-      }
-      return false;
-    });
-    
-    if (processClicked) {
-      log('✅ Process button clicked');
-      await new Promise(r => setTimeout(r, 5000));
-      await page.screenshot({ path: path.join(__dirname, `processing-${timestamp}.png`) });
-    } else {
-      log('❌ No se encontró botón de proceso');
-    }
-  } else {
-    log('❌ NO SE ENCONTRÓ AUDIO DEMO');
-    log('🔧 Fallback: Intentando Initialize Audio Engine...');
-    
-    const initClicked = await page.evaluate(() => {
-      const btn = Array.from(document.querySelectorAll('button'))
-        .find(b => b.textContent?.includes('Initialize Audio Engine'));
-      if (btn) {
-        btn.click();
-        return true;
-      }
-      return false;
-    });
-    
-    if (initClicked) {
-      log('✅ Initialize clicked como fallback');
-      await new Promise(r => setTimeout(r, 5000));
-    }
-  }
-  
-  // INTENTAR START RECORDING COMO ÚLTIMO RECURSO
-  log('🎙️ Buscando Start Recording...');
-  const recordClicked = await page.evaluate(() => {
-    const btn = Array.from(document.querySelectorAll('button'))
-      .find(b => b.textContent?.includes('Start Recording') || b.textContent?.includes('🎙️'));
-    if (btn) {
-      btn.click();
-      return true;
-    }
-    return false;
-  });
-  
-  if (!recordClicked) {
-    log('❌ NO SE ENCONTRÓ START RECORDING BUTTON');
-    const buttons = await page.evaluate(() => 
-      Array.from(document.querySelectorAll('button')).map(b => b.textContent?.trim())
-    );
-    log(`Botones disponibles: ${JSON.stringify(buttons)}`);
+
+  // Botón demo: ultra robusto
+  log('🎵 Buscando botones demo...');
+  const demoFound = await waitForSelectorBrutal(page, 'button,div[role="button"],[onclick]');
+  if (!demoFound) {
+    log('❌ No hay botones en la landing. UI rota.');
     await browser.close();
-    process.exit(1);
+    process.exit(3);
   }
-  
-  log('🔴 RECORDING STARTED');
-  
-  // MONITOREO BRUTAL - 10 SEGUNDOS
+
+  // Buscar y clickear demo o initialize o start recording, el que aparezca
+  const clickLabelVariants = [
+    {label: /audio demo|🎵/i, screenshot: 'audio-demo'},
+    {label: /initialize audio engine/i, screenshot: 'init-audio-engine'},
+    {label: /start recording|🎙️/i, screenshot: 'start-recording'}
+  ];
+  let action = null;
+  for (const variant of clickLabelVariants) {
+    const clicked = await page.evaluate(labelRe => {
+      const nodes = Array.from(document.querySelectorAll('button,div[role="button"],[onclick]'));
+      const btn = nodes.find(b => labelRe.test(b.textContent));
+      if (btn) { btn.click(); return true; }
+      return false;
+    }, variant.label);
+    if (clicked) {
+      log(`✅ Click en botón: ${variant.label}`);
+      await page.screenshot({ path: path.join(__dirname, `${variant.screenshot}-${timestamp}.png`) });
+      action = variant.screenshot;
+      break;
+    }
+  }
+  if (!action) {
+    log('❌ No se pudo iniciar demo ni audio engine. Test abortado.');
+    await browser.close();
+    process.exit(4);
+  }
+
+  // Si fue demo, buscar process
+  if (action === 'audio-demo') {
+    const processBtn = await page.evaluate(() => {
+      const btns = Array.from(document.querySelectorAll('button'));
+      const btn = btns.find(b => /process|procesar|start/i.test(b.textContent));
+      if (btn) { btn.click(); return true; }
+      return false;
+    });
+    if (processBtn) {
+      log('✅ Process demo iniciado');
+      await page.screenshot({ path: path.join(__dirname, `processing-${timestamp}.png`) });
+      await page.waitForTimeout(2000);
+    } else {
+      log('❌ No se encontró botón para procesar demo.');
+    }
+  }
+
+  // Buscar y clickear start recording si no se hizo antes
+  if (action !== 'start-recording') {
+    const recordingFound = await waitForSelectorBrutal(page, 'button');
+    const recordClicked = await page.evaluate(() => {
+      const btn = Array.from(document.querySelectorAll('button'))
+        .find(b => /start recording|🎙️/i.test(b.textContent));
+      if (btn) { btn.click(); return true; }
+      return false;
+    });
+    if (!recordClicked) {
+      log('❌ No se encontró botón Start Recording.');
+      const buttons = await page.evaluate(() =>
+        Array.from(document.querySelectorAll('button')).map(b => b.textContent?.trim())
+      );
+      log(`Botones disponibles: ${JSON.stringify(buttons)}`);
+      await browser.close();
+      process.exit(5);
+    }
+    log('🔴 RECORDING STARTED');
+  }
+
+  // MONITOREO EXTREMO - 10 SEGUNDOS
   let seconds = 0;
   const monitor = setInterval(() => {
     seconds++;
     log(`⏱️  Segundo ${seconds} - Chunks: ${chunkCount}`);
-    
-    // DETECTAR PROBLEMA
     if (chunkCount > 100) {
       log('🚨 ALERTA: MÁS DE 100 CHUNKS EN POCOS SEGUNDOS');
       log('🚨 CONFIRMADO: BUG DE 8ms EN VEZ DE 8s');
       clearInterval(monitor);
     }
-    
     if (seconds >= 10) {
       clearInterval(monitor);
     }
   }, 1000);
-  
-  // ESPERAR 10 SEGUNDOS O HASTA DETECTAR PROBLEMA
   await new Promise(r => setTimeout(r, 10000));
   clearInterval(monitor);
-  
-  // GUARDAR ESTADO FINAL
+
+  // ESTADO FINAL
   const finalState = {
     timestamp,
     chunkCount,
     totalLogs: allLogs.length,
     lastLogs: allLogs.slice(-20),
-    chunkLogs: allLogs.filter(l => l.text.includes('chunk') || l.text.includes('Chunk'))
+    chunkLogs: allLogs.filter(l => /chunk/i.test(l.text))
   };
-  
   fs.writeFileSync(
     path.join(__dirname, `final-state-${timestamp}.json`),
     JSON.stringify(finalState, null, 2)
   );
-  
   await browser.close();
-  
+
   // VEREDICTO FINAL
   log('\n🩸 VEREDICTO FINAL:');
   log(`Total chunks procesados: ${chunkCount}`);
   log(`Total logs capturados: ${allLogs.length}`);
-  
   if (chunkCount > 100) {
     log('💀 BUG CONFIRMADO: Chunks de 8ms en vez de 8s');
     log('💀 El sistema genera miles de chunks microscópicos');
@@ -233,7 +209,6 @@ async function brutalTest() {
   } else {
     log('⚠️  RESULTADO INCIERTO');
   }
-  
   process.exit(0);
 }
 
