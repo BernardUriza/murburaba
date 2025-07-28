@@ -8,4 +8,5 @@ export interface ILogger {
   debug(message: string, data?: any): void;
   setLevel(level: LogLevel): void;
   getLevel(): LogLevel;
+  setLogHandler(handler: (level: LogLevel, message: string, data?: any) => void): void;
 }

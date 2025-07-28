@@ -1,13 +1,12 @@
 import { AudioResampler } from '../utils/AudioResampler';
 import { EventEmitter } from './EventEmitter';
-import { StateManager } from './StateManager';
-import { Logger } from './Logger';
 import { WorkerManager } from '../managers/WorkerManager';
-import { MetricsManager } from '../managers/MetricsManager';
 import { ChunkProcessor } from '../managers/ChunkProcessor';
+import { MetricsManager } from '../managers/MetricsManager';
 import { SimpleAGC } from '../utils/SimpleAGC';
 import { logging } from '../managers/LoggingManager';
 import { ILogger, IStateManager, IMetricsManager } from './interfaces';
+import { Logger } from './Logger';
 import {
   MurmubaraConfig,
   EngineEvents,
@@ -554,8 +553,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       chunkProcessor = new ChunkProcessor(
         this.audioContext.sampleRate,
         chunkConfig,
-        this.logger,
-        this.metricsManager
+        this.logger as Logger,
+        this.metricsManager as unknown as MetricsManager
       );
 
       // Forward chunk events
@@ -1289,7 +1288,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     let workingSampleRate = sampleRate;
 
     // Resample to 48kHz if needed (RNNoise requires 48kHz)
-    const resamplingResult = AudioResampler.resampleToRNNoiseRate(pcmData, sampleRate, this.logger);
+    const resamplingResult = AudioResampler.resampleToRNNoiseRate(pcmData, sampleRate, this.logger as Logger);
     pcmData = resamplingResult.resampledData;
     workingSampleRate = resamplingResult.outputSampleRate;
 

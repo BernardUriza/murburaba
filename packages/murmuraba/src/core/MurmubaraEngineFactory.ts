@@ -7,7 +7,7 @@ import { MetricsManager } from '../managers/MetricsManager';
 import { WorkerManager } from '../managers/WorkerManager';
 import { RNNoiseEngine } from '../engines/RNNoiseEngine';
 import { MurmubaraConfig, EngineEvents } from '../types';
-import { ILogger, IStateManager, IEventEmitter, IAudioEngine } from './interfaces';
+import { ILogger, IStateManager, IEventEmitter, IAudioEngine, IMetricsManager } from './interfaces';
 
 export class MurmubaraEngineFactory {
   static create(config?: MurmubaraConfig): MurmubaraEngine {
@@ -41,8 +41,8 @@ export class MurmubaraEngineFactory {
     // Get dependencies from container
     const logger = container.get<ILogger>(TOKENS.Logger);
     const stateManager = container.get<IStateManager>(TOKENS.StateManager);
-    const workerManager = container.get(TOKENS.WorkerManager);
-    const metricsManager = container.get(TOKENS.MetricsManager);
+    const workerManager = container.get<WorkerManager>(TOKENS.WorkerManager);
+    const metricsManager = container.get<IMetricsManager>(TOKENS.MetricsManager);
     
     // Create engine with injected dependencies
     const engine = new MurmubaraEngine(

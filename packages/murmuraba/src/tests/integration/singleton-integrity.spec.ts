@@ -5,6 +5,7 @@ import { MetricsManager } from '../../managers/MetricsManager';
 import { Logger } from '../../core/Logger';
 import { StateManager } from '../../core/StateManager';
 import { WorkerManager } from '../../managers/WorkerManager';
+import { ILogger, IStateManager, IMetricsManager } from '../../core/interfaces';
 
 describe('Singleton Integrity Tests', () => {
   let container: DIContainer;
@@ -96,10 +97,10 @@ describe('Singleton Integrity Tests', () => {
     
     // Create engine with injected dependencies
     const engine = new MurmubaraEngine(
-      customLogger,
-      customStateManager,
+      customLogger as ILogger,
+      customStateManager as IStateManager,
       customWorkerManager,
-      customMetricsManager,
+      customMetricsManager as unknown as IMetricsManager,
       {}
     );
     

@@ -1,4 +1,4 @@
-import { ProcessingMetrics } from '../../types';
+import { ProcessingMetrics, ChunkMetrics } from '../../types';
 
 export interface MetricSnapshot {
   timestamp: number;
@@ -23,4 +23,18 @@ export interface IMetricsManager {
   clearHistory(): void;
   setHistoryLimit(limit: number): void;
   onMetricsUpdate(callback: (metrics: ProcessingMetrics) => void): () => void;
+  
+  // Additional methods used by MurmubaraEngine
+  getMetrics(): ProcessingMetrics;
+  updateInputLevel(level: number): void;
+  updateOutputLevel(level: number): void;
+  updateVAD(vad: number): void;
+  updateNoiseReduction(reduction: number): void;
+  calculatePeak(samples: Float32Array): number;
+  calculateRMS(samples: Float32Array): number;
+  recordFrame(): void;
+  recordChunk(chunk: ChunkMetrics): void;
+  startAutoUpdate(interval: number): void;
+  stopAutoUpdate(): void;
+  on(event: 'metrics-update', callback: (metrics: ProcessingMetrics) => void): void;
 }
