@@ -47,6 +47,8 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
 
   updateNoiseReduction(level: number): void {
     this.metrics.noiseReductionLevel = Math.max(0, Math.min(1, level));
+    // Emit update immediately when noise reduction changes
+    this.emit('metrics-update', { ...this.metrics });
   }
   
   // Emit all metrics together after updates
@@ -109,6 +111,8 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
     if (this.vadHistory.length > this.maxFrameHistory) {
       this.vadHistory.shift();
     }
+    // Emit update immediately when VAD changes
+    this.emit('metrics-update', { ...this.metrics });
   }
 
   getAverageVAD(): number {
