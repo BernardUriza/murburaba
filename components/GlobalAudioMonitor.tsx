@@ -20,43 +20,12 @@ export function GlobalAudioMonitor() {
     if (!isReady || !container) return
     
     try {
-      if (!container.has(SUITE_TOKENS.AudioProcessor)) {
-        return
-      }
-      
-      const processor = container.get<IAudioProcessor>(SUITE_TOKENS.AudioProcessor)
+      // Only get VAD from MetricsManager, metrics come from Redux
       const metricsManager = container.has(TOKENS.MetricsManager) 
         ? container.get<IMetricsManager>(TOKENS.MetricsManager)
         : null
       
-      // Subscribe to metrics updates
-      const unsubscribe = processor.onMetrics((newMetrics) => {
-        setMetrics(newMetrics)
-      })
-      
-      // Get current metrics from manager
-      if (metricsManager && 'getMetrics' in metricsManager) {
-        // Current metrics available but not used directly
-        // const currentMetrics = (metricsManager as any).getMetrics()
-      }
-      
-      // Also subscribe directly to MetricsManager
-      let metricsUnsubscribe: (() => void) | null = null
-      if (metricsManager && 'on' in metricsManager) {
-        (metricsManager as any).on('metrics-update', (metrics: ProcessingMetrics) => {
-          setMetrics(metrics)
-          
-          // Get real VAD from MetricsManager
-          if (metricsManager && 'getAverageVAD' in metricsManager) {
-            const averageVAD = (metricsManager as any).getAverageVAD()
-            setVadLevel(averageVAD)
-            dispatch(setReduxVadLevel(averageVAD))
-          }
-        })
-        metricsUnsubscribe = () => (metricsManager as any).off('metrics-update')
-      }
-      
-      // Periodic VAD update
+      // Periodic VAD update only
       const vadInterval = setInterval(() => {
         if (metricsManager && 'getAverageVAD' in metricsManager) {
           const averageVAD = (metricsManager as any).getAverageVAD()
@@ -66,8 +35,6 @@ export function GlobalAudioMonitor() {
       }, 100) // Update every 100ms
       
       return () => {
-        unsubscribe()
-        if (metricsUnsubscribe) metricsUnsubscribe()
         clearInterval(vadInterval)
       }
     } catch (error) {
@@ -124,12 +91,12 @@ export function GlobalAudioMonitor() {
             <div 
               className={styles.fill}
               style={{ 
-                width: `${(currentInputLevel || (metrics?.inputLevel || 0)) * 100}%`,
-                backgroundColor: (currentInputLevel || (metrics?.inputLevel || 0)) > 0.8 ? '#ff4444' : '#44ff44'
+                width: `${currentInputLevel * 100}%`,
+                backgroundColor: currentInputLevel > 0.8 ? '#ff4444' : '#44ff44'
               }}
             />
           </div>
-          <span>{((currentInputLevel || (metrics?.inputLevel || 0)) * 100).toFixed(0)}%</span>
+          <span>{(currentInputLevel * 100).toFixed(0)}%</span>
         </div>
         
         <div className={styles.metric}>

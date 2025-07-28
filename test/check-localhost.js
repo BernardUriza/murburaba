@@ -88,7 +88,7 @@ async function brutalTest() {
   page.on('error', err => log(`💀 BROWSER ERROR: ${err}`));
 
   log('🎯 Navegando a localhost:3000...');
-  await page.goto('http://localhost:3000', { waitUntil: 'domcontentloaded', timeout: 15000 });
+  await page.goto('http://127.0.0.1:3000/', { waitUntil: 'domcontentloaded', timeout: 15000 });
   await page.screenshot({ path: path.join(__dirname, `initial-${timestamp}.png`) });
 
   // Botón demo: ultra robusto

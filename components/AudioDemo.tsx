@@ -428,7 +428,7 @@ export default function AudioDemo({
       )}
 
       <div className={styles.mainGrid}>
-        {/* Left Panel - Controls & Metrics */}
+        {/* Top Panel - Controls */}
         <div className={styles.controlPanel}>
           <button
             onClick={handleProcess}
@@ -437,36 +437,6 @@ export default function AudioDemo({
           >
             {isProcessing ? '⏳ Processing...' : '🎵 Process Demo'}
           </button>
-
-          {/* Live Metrics */}
-          <div className={styles.metricsCard}>
-            <h4>📊 Live Metrics</h4>
-            <div className={styles.metricsGrid}>
-              <MetricItem label="Total Chunks" value={metrics.totalChunks} />
-              <MetricItem label="Processed" value={metrics.processedChunks} />
-              <MetricItem label="Duration" value={`${metrics.totalDuration.toFixed(1)}s`} />
-              <MetricItem label="Avg Time" value={`${metrics.avgProcessTime.toFixed(0)}ms`} />
-              <MetricItem label="RMS" value={metrics.currentRMS.toFixed(3)} />
-              <MetricItem label="Peak" value={metrics.currentPeak.toFixed(3)} />
-            </div>
-          </div>
-
-          {/* Chunk Metrics */}
-          {chunkMetrics.length > 0 && (
-            <div className={styles.chunkMetricsCard}>
-              <h4>📦 Chunk Analysis</h4>
-              <div className={styles.chunkList}>
-                {chunkMetrics.map(chunk => (
-                  <div key={chunk.index} className={styles.chunkItem}>
-                    <span>Chunk {chunk.index + 1}</span>
-                    <span>RMS: {chunk.rms.toFixed(3)}</span>
-                    <span>Peak: {chunk.peak.toFixed(3)}</span>
-                    <span>{chunk.processTime.toFixed(0)}ms</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           <div className={styles.settings}>
             <strong>AGC:</strong> {enableAGC ? 'ON' : 'OFF'}
@@ -477,8 +447,9 @@ export default function AudioDemo({
           </div>
         </div>
 
-        {/* Center Panel - Audio Players */}
+        {/* Main Panel - Audio Players (CENTER FOCUS) */}
         <div className={styles.audioPanel}>
+          <h3 className={styles.audioPanelTitle}>🎧 Audio Players</h3>
           <div className={styles.audioPlayers}>
             <AudioBlock label="Original" src={urls.original} />
             {urls.processedChunks.length === 0 ? (
@@ -496,31 +467,59 @@ export default function AudioDemo({
           </div>
         </div>
 
-        {/* Right Panel - Logs */}
-        <div className={styles.logsPanel}>
-          <div className={styles.logsHeader}>
-            <h4>📜 Processing Logs</h4>
-            <span className={styles.logCount}>{logs.length} entries</span>
+        {/* Bottom Panel - Compact Metrics & Logs */}
+        <div className={styles.bottomPanel}>
+          {/* Live Metrics */}
+          <div className={styles.metricsCard}>
+            <h4>📊 Live Metrics</h4>
+            <div className={styles.metricsGrid}>
+              <MetricItem label="Total Chunks" value={metrics.totalChunks} />
+              <MetricItem label="Processed" value={metrics.processedChunks} />
+              <MetricItem label="Duration" value={`${metrics.totalDuration.toFixed(1)}s`} />
+              <MetricItem label="Avg Time" value={`${metrics.avgProcessTime.toFixed(0)}ms`} />
+            </div>
           </div>
-          <div className={styles.logsContainer}>
-            {logs.map(log => (
-              <div 
-                key={log.id} 
-                className={styles.logEntry}
-                style={{ color: LOG_LEVELS[log.level].color }}
-              >
-                <span className={styles.logTime}>{formatTime(log.timestamp)}</span>
-                <span className={styles.logIcon}>{LOG_LEVELS[log.level].icon}</span>
-                <span className={styles.logMessage}>{log.message}</span>
-                {log.data && (
-                  <pre className={styles.logData}>
-                    {JSON.stringify(log.data, null, 2)}
-                  </pre>
-                )}
+
+          {/* Chunk Metrics */}
+          {chunkMetrics.length > 0 && (
+            <details className={styles.chunkDetails}>
+              <summary>📦 Chunk Analysis ({chunkMetrics.length})</summary>
+              <div className={styles.chunkList}>
+                {chunkMetrics.map(chunk => (
+                  <div key={chunk.index} className={styles.chunkItem}>
+                    <span>Chunk {chunk.index + 1}</span>
+                    <span>RMS: {chunk.rms.toFixed(3)}</span>
+                    <span>Peak: {chunk.peak.toFixed(3)}</span>
+                    <span>{chunk.processTime.toFixed(0)}ms</span>
+                  </div>
+                ))}
               </div>
-            ))}
-            <div ref={logsEndRef} />
-          </div>
+            </details>
+          )}
+
+          {/* Collapsible Logs */}
+          <details className={styles.logsDetails}>
+            <summary>📜 Processing Logs ({logs.length})</summary>
+            <div className={styles.logsContainer}>
+              {logs.map(log => (
+                <div 
+                  key={log.id} 
+                  className={styles.logEntry}
+                  style={{ color: LOG_LEVELS[log.level].color }}
+                >
+                  <span className={styles.logTime}>{formatTime(log.timestamp)}</span>
+                  <span className={styles.logIcon}>{LOG_LEVELS[log.level].icon}</span>
+                  <span className={styles.logMessage}>{log.message}</span>
+                  {log.data && (
+                    <pre className={styles.logData}>
+                      {JSON.stringify(log.data, null, 2)}
+                    </pre>
+                  )}
+                </div>
+              ))}
+              <div ref={logsEndRef} />
+            </div>
+          </details>
         </div>
       </div>
     </div>
