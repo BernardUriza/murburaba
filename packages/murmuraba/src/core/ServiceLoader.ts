@@ -103,9 +103,9 @@ export const SERVICE_MODULES = {
     dependencies: [TOKENS.Logger],
     load: async (container: DIContainer) => {
       const { WorkerManager } = await import('../managers/WorkerManager');
-      const { Logger } = await import('./Logger');
+      const LoggerModule = await import('./Logger');
       const logger = container.get<ILogger>(TOKENS.Logger);
-      return new WorkerManager(logger as InstanceType<typeof Logger>);
+      return new WorkerManager(logger as InstanceType<typeof LoggerModule.Logger>);
     },
   },
 };

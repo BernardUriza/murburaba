@@ -3,7 +3,7 @@
  */
 
 import { z } from 'zod';
-import type { ILogger } from '../core/interfaces';
+import type { ILogger } from '../../../core/interfaces';
 import { 
   MurmubaraConfigSchema, 
   ChunkConfigSchema,
@@ -13,9 +13,9 @@ import {
   ValidatedMurmubaraConfig,
   ConfigBuilder,
   ConfigPresets
-} from '../config/configSchema';
-import type { MurmubaraConfig, ChunkConfig } from '../types';
-import { Result, Ok, Err } from '../types/result';
+} from '../schemas/configSchema';
+import type { MurmubaraConfig, ChunkConfig } from '../../../types';
+import { Result, Ok, Err } from '../../../types/result';
 
 export interface ValidationError {
   path: string[];

@@ -16,3 +16,9 @@ export type { MurmurabaSuiteConfig, MurmurabaSuiteContextValue } from './Murmura
 
 export { MurmubaraProvider, useMurmuraba } from './MurmubaraProvider';
 export type { MurmubaraProviderProps } from './MurmubaraProvider';
+
+// Re-export components
+export { WaveformAnalyzer } from '../components/WaveformAnalyzer';
+export { AudioPlayer } from '../components/AudioPlayer';
+export { ChunkProcessingResults } from '../components/ChunkProcessingResults';
+export { ErrorBoundary } from '../components/ErrorBoundary';

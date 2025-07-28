@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ConfigValidationService, getConfigValidator } from '../../../services/ConfigValidationService';
-import type { ILogger } from '../../../core/interfaces';
-import { ConfigPresets } from '../../../config/configSchema';
+import { ConfigValidationService, getConfigValidator } from '@features/configuration/services/ConfigValidationService';
+import type { ILogger } from '@core/interfaces';
+import { ConfigPresets } from '@features/configuration/schemas/configSchema';
 
 describe('ConfigValidationService', () => {
   let service: ConfigValidationService;

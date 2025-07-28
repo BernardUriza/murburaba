@@ -19,8 +19,8 @@ import {
   ChunkConfig,
   EngineState,
 } from '../types';
-import { getConfigValidator } from '../services/ConfigValidationService';
-import type { ValidatedMurmubaraConfig } from '../config/configSchema';
+import { getConfigValidator } from '../features/configuration/services/ConfigValidationService';
+import type { ValidatedMurmubaraConfig } from '../features/configuration/schemas/configSchema';
 
 export class MurmubaraEngine extends EventEmitter<EngineEvents> {
   private _isInitialized: boolean = false;

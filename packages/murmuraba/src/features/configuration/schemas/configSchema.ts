@@ -3,7 +3,6 @@
  */
 
 import { z } from 'zod';
-import type { LogLevel, NoiseReductionLevel, Algorithm, BufferSize } from '../types';
 
 // Enum schemas
 export const LogLevelSchema = z.enum(['none', 'error', 'warn', 'info', 'debug']);

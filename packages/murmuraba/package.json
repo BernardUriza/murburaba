@@ -11,25 +11,45 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     },
+    "./modern": {
+      "types": "./dist/index.modern.d.ts",
+      "import": "./dist/index.modern.js",
+      "require": "./dist/index.modern.js"
+    },
+    "./features/configuration": {
+      "types": "./dist/features/configuration/index.d.ts",
+      "import": "./dist/features/configuration/index.js",
+      "require": "./dist/features/configuration/index.js"
+    },
+    "./features/audio-processing": {
+      "types": "./dist/features/audio-processing/index.d.ts",
+      "import": "./dist/features/audio-processing/index.js",
+      "require": "./dist/features/audio-processing/index.js"
+    },
+    "./shared/types": {
+      "types": "./dist/shared/types/index.d.ts",
+      "import": "./dist/shared/types/index.js",
+      "require": "./dist/shared/types/index.js"
+    },
+    "./shared/utils": {
+      "types": "./dist/shared/utils/index.d.ts",
+      "import": "./dist/shared/utils/index.js",
+      "require": "./dist/shared/utils/index.js"
+    },
     "./components": {
       "types": "./dist/components/index.d.ts",
       "import": "./dist/components/index.js",
       "require": "./dist/components/index.js"
-    },
-    "./audio": {
-      "types": "./dist/audio/index.d.ts",
-      "import": "./dist/audio/index.js",
-      "require": "./dist/audio/index.js"
     },
     "./core": {
       "types": "./dist/core/index.d.ts",
       "import": "./dist/core/index.js",
       "require": "./dist/core/index.js"
     },
-    "./types": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/types/index.js",
-      "require": "./dist/types/index.js"
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js",
+      "require": "./dist/react/index.js"
     },
     "./rnnoise.wasm": "./dist/rnnoise.wasm",
     "./package.json": "./package.json"

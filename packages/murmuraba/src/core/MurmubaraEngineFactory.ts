@@ -7,9 +7,9 @@ import { MetricsManager } from '../managers/MetricsManager';
 import { WorkerManager } from '../managers/WorkerManager';
 import { RNNoiseEngine } from '../engines/RNNoiseEngine';
 import { MurmubaraConfig, EngineEvents } from '../types';
-import { ILogger, IStateManager, IEventEmitter, IAudioEngine, IMetricsManager } from './interfaces';
-import { getConfigValidator } from '../services/ConfigValidationService';
-import { ConfigPresets } from '../config/configSchema';
+import { ILogger, IStateManager, IMetricsManager } from './interfaces';
+import { getConfigValidator } from '@features/configuration/services/ConfigValidationService';
+import { ConfigPresets } from '@features/configuration/schemas/configSchema';
 
 export class MurmubaraEngineFactory {
   /**
