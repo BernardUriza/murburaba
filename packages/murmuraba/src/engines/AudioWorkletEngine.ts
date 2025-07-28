@@ -222,9 +222,11 @@ export class AudioWorkletEngine implements AudioEngine {
     // Get user media
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
-        echoCancellation: constraints.echoCancellation ?? true,
+        echoCancellation: constraints.echoCancellation ?? false,
         noiseSuppression: false, // We use RNNoise instead
-        autoGainControl: constraints.autoGainControl ?? true,
+        autoGainControl: false, // We handle AGC ourselves
+        sampleRate: 48000,
+        channelCount: 1,
         ...constraints,
       },
     });

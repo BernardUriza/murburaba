@@ -605,6 +605,10 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
           this.metricsManager.updateOutputLevel(outputLevel || 0);
           this.metricsManager.updateVAD(vad || 0);
           this.metricsManager.updateNoiseReduction(noiseReduction || 0);
+        } else if (event.data.type === 'samples' && chunkProcessor && !isPaused && !isStopped) {
+          // Forward samples to chunk processor
+          const samples = new Float32Array(event.data.data);
+          chunkProcessor.addSamples(samples);
         }
       };
     } else {

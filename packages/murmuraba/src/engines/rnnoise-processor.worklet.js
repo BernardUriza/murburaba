@@ -45,7 +45,7 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
     this.noiseReduction = 0;
 
     // AGC state (reused from MurmubaraEngine)
-    this.agcEnabled = false;
+    this.agcEnabled = true; // Enable AGC by default to handle low input
     this.agcTargetLevel = 0.3;
     this.agcCurrentGain = 1.0;
 
@@ -202,8 +202,8 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
   updateAGC(inputLevel) {
     if (!this.agcEnabled) return;
 
-    const targetGain = this.agcTargetLevel / (inputLevel + 0.001);
-    const limitedGain = Math.min(targetGain, 10); // Max 10x gain
+    const targetGain = this.agcTargetLevel / (inputLevel + 0.0001);
+    const limitedGain = Math.min(targetGain, 50); // Increase max gain to 50x for very low input
 
     // Smooth gain changes
     const rate = limitedGain > this.agcCurrentGain ? 0.1 : 0.5;
@@ -232,6 +232,11 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
 
     // Calculate input metrics
     this.inputLevel = this.calculateRMS(inputChannel);
+    
+    // Debug input levels
+    if (this.frameCount % 100 === 0) {
+      console.log('[RNNoiseProcessor] Input level:', this.inputLevel, 'Peak:', Math.max(...inputChannel.map(Math.abs)));
+    }
 
     // Update AGC
     this.updateAGC(this.inputLevel);
@@ -246,6 +251,14 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
       }
 
       this.inputBuffer.push(sample);
+    }
+    
+    // Send samples to main thread for chunk processing
+    if (this.port && inputChannel.length > 0) {
+      this.port.postMessage({
+        type: 'samples',
+        data: inputChannel.slice() // Copy the array
+      });
     }
 
     // Process buffered frames (480 samples each)
