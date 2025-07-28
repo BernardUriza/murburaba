@@ -173,6 +173,7 @@ export class AudioProcessorService implements IAudioProcessor {
         ...options,
         chunkDuration: options?.chunkDuration || 8,
       };
+      console.log('📝 AudioProcessorService: Recording options:', recordingOptions);
 
       // Start processing the stream
       this.isProcessingFlag = true;
@@ -200,19 +201,22 @@ export class AudioProcessorService implements IAudioProcessor {
         );
       }
 
-      console.log('🎯 AudioProcessorService: Calling engine.processStream', {
-        chunkDuration: recordingOptions.chunkDuration * 1000
-      });
-      
-      const controller = await engine.processStream(stream, {
-        chunkDuration: recordingOptions.chunkDuration * 1000, // Convert seconds to milliseconds
+      const chunkConfig = recordingOptions.chunkDuration ? {
+        chunkDuration: recordingOptions.chunkDuration,
         onChunkProcessed: (chunk: any) => {
           console.log('📦 AudioProcessorService: Chunk processed', chunk);
           const processedChunk = this.normalizeChunk(chunk);
           chunks.push(processedChunk);
           this.notifyChunk(processedChunk);
-        },
+        }
+      } : undefined;
+      
+      console.log('🎯 AudioProcessorService: Calling engine.processStream', {
+        chunkConfig,
+        recordingOptions
       });
+      
+      const controller = await engine.processStream(stream, chunkConfig);
       
       console.log('🎮 AudioProcessorService: Controller obtained', !!controller);
 

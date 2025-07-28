@@ -542,6 +542,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     // Setup chunk processor if configured
     let chunkProcessor: ChunkProcessor | undefined;
     if (chunkConfig) {
+      console.log('[MurmubaraEngine] Creating ChunkProcessor with config:', chunkConfig);
       chunkProcessor = new ChunkProcessor(
         this.audioContext.sampleRate,
         chunkConfig,
@@ -639,6 +640,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
 
         // If using chunk processing, add samples to chunk processor
         if (chunkProcessor && !isPaused && !isStopped) {
+          console.log('[MurmubaraEngine] Adding samples to chunk processor:', input.length);
           chunkProcessor.addSamples(input);
         }
 
