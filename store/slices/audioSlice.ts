@@ -109,9 +109,6 @@ const audioSlice = createSlice({
     updateMetrics: (state, action: PayloadAction<{ inputLevel?: number; outputLevel?: number; vad?: number; noiseReduction?: number }>) => {
       if (action.payload.inputLevel !== undefined) {
         state.currentInputLevel = Math.max(0, Math.min(1, action.payload.inputLevel))
-        if (Math.random() < 0.01) {
-          console.log('🔥DEBUG🔥 Redux updateMetrics:', action.payload.inputLevel.toFixed(3))
-        }
       }
       if (action.payload.outputLevel !== undefined) {
         state.currentOutputLevel = Math.max(0, Math.min(1, action.payload.outputLevel))

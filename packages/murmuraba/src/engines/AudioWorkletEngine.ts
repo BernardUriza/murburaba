@@ -49,7 +49,7 @@ export class AudioWorkletEngine implements AudioEngine {
       }
 
       return supported;
-    } catch (error) {
+    } catch {
       return false;
     }
   }

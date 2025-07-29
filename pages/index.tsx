@@ -16,6 +16,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks'
 // import { store } from '../store'
 import { useAudioProcessor } from '../hooks/useAudioProcessor'
 import { WaveformAnalyzer, ChunkProcessingResults, AdvancedMetricsPanel, getDiagnostics } from 'murmuraba'
+import { SimpleRecorder } from '../components/SimpleRecorder'
 import {
   setChunkDuration,
   setEnableAGC
@@ -140,27 +141,36 @@ export default function App() {
         {/* Banner Hero Section */}
         <BannerHero />
 
-        {/* Studio Header */}
-        <StudioHeader isProcessing={isProcessing} isInitialized={isInitialized} />
+        {/* SIMPLE RECORDER - THE MAIN FEATURE */}
+        <SimpleRecorder />
 
-        {/* Processing Status Bar */}
-        {isProcessing && <ProcessingBar isRecording={isRecording} />}
+        {/* OLD COMPLEX SYSTEM - HIDDEN FOR NOW */}
+        <details style={{ margin: '20px', opacity: 0.5 }}>
+          <summary style={{ cursor: 'pointer', padding: '10px' }}>
+            ⚠️ Old Complex Recording System (click to expand)
+          </summary>
+          
+          {/* Studio Header */}
+          <StudioHeader isProcessing={isProcessing} isInitialized={isInitialized} />
 
-        {/* Control Panel */}
-        <ControlPanel
-          isReady={buttonReady}
-          isProcessing={isProcessing}
-          isRecording={isRecording}
-          enableAGC={enableAGC}
-          chunkDuration={chunkDuration}
-          onInit={handleInitializeEngine}
-          onRecord={handleStartRecording}
-          onStop={handleStopRecording}
-          onSetAGC={v => dispatch(setEnableAGC(v))}
-          onSetDuration={d => dispatch(setChunkDuration(d))}
-        />
+          {/* Processing Status Bar */}
+          {isProcessing && <ProcessingBar isRecording={isRecording} />}
 
-        {/* Live Waveform Display */}
+          {/* Control Panel */}
+          <ControlPanel
+            isReady={buttonReady}
+            isProcessing={isProcessing}
+            isRecording={isRecording}
+            enableAGC={enableAGC}
+            chunkDuration={chunkDuration}
+            onInit={handleInitializeEngine}
+            onRecord={handleStartRecording}
+            onStop={handleStopRecording}
+            onSetAGC={v => dispatch(setEnableAGC(v))}
+            onSetDuration={d => dispatch(setChunkDuration(d))}
+          />
+
+          {/* Live Waveform Display */}
         <section className="live-waveform-section" style={{ 
           marginTop: '1.5rem',
           display: (showLiveWaveform || currentStream) ? 'block' : 'none'
@@ -220,18 +230,19 @@ export default function App() {
           </div>
         </section>
 
-        {/* Processing Results */}
-        {processingResults && processingResults.chunks.length > 0 && (
-          <ChunkProcessingResults 
-            chunks={processingResults.chunks}
-            averageNoiseReduction={processingResults.averageNoiseReduction || 0}
-            selectedChunk={null}
-            onTogglePlayback={async () => {}}
-            onClearAll={() => {}}
-            onDownloadChunk={async () => {}}
-            className="glass-card"
-          />
-        )}
+          {/* Processing Results */}
+          {processingResults && processingResults.chunks.length > 0 && (
+            <ChunkProcessingResults 
+              chunks={processingResults.chunks}
+              averageNoiseReduction={processingResults.averageNoiseReduction || 0}
+              selectedChunk={null}
+              onTogglePlayback={async () => {}}
+              onClearAll={() => {}}
+              onDownloadChunk={async () => {}}
+              className="glass-card"
+            />
+          )}
+        </details>
 
         {/* Advanced Metrics Panel - Professional Component */}
         <AdvancedMetricsPanel

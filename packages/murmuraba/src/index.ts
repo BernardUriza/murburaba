@@ -41,6 +41,10 @@ export {
 // Modern API exports - Use MurmurabaSuite for all functionality
 // Legacy hooks have been removed in favor of the DI-based MurmurabaSuite
 
+// SIMPLIFIED VERSION - NO BULLSHIT
+export { SimplifiedAudioRecorder } from './simple/SimplifiedAudioRecorder';
+export type { SimpleMetrics, SimpleChunk } from './simple/SimplifiedAudioRecorder';
+
 // Utils
 export { AudioConverter, getAudioConverter } from './utils/audioConverter';
 

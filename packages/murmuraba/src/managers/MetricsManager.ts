@@ -20,6 +20,10 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
   private currentVAD = 0;
 
   startAutoUpdate(intervalMs: number = 100): void {
+    console.log('🚀 MetricsManager.startAutoUpdate called with interval:', intervalMs, {
+      hasListeners: this.listenerCount('metrics-update'),
+      currentMetrics: this.metrics
+    });
     this.stopAutoUpdate();
 
     this.emit('metrics-update', { ...this.metrics });
@@ -135,8 +139,18 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
   }
 
   onMetricsUpdate(callback: (metrics: ProcessingMetrics) => void): () => void {
-    console.log('📌 MetricsManager.onMetricsUpdate called, registering callback');
+    console.log('📌 MetricsManager.onMetricsUpdate called, registering callback', {
+      existingListeners: this.listenerCount('metrics-update'),
+      isAutoUpdateRunning: !!this.updateInterval
+    });
     this.on('metrics-update', callback);
+    
+    // If auto-update is not running, emit current metrics immediately
+    if (!this.updateInterval) {
+      console.log('⚡ Auto-update not running, emitting current metrics immediately');
+      callback({ ...this.metrics });
+    }
+    
     return () => this.off('metrics-update', callback);
   }
 

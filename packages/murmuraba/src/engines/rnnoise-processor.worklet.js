@@ -43,6 +43,12 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
     this.outputLevel = 0;
     this.lastVad = 0;
     this.noiseReduction = 0;
+    this.frameCount = 0;
+    
+    // Smoothing for audio levels to avoid fluctuations
+    this.smoothingFactor = 0.7; // Balance between smoothing and responsiveness
+    this.smoothedInputLevel = 0;
+    this.smoothedOutputLevel = 0;
 
     // AGC state (reused from MurmubaraEngine)
     this.agcEnabled = true; // Enable AGC by default to handle low input
@@ -233,13 +239,23 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
     const inputChannel = input[0];
     const outputChannel = output[0];
 
-    // Calculate input metrics
-    this.inputLevel = this.calculateRMS(inputChannel);
+    // Calculate input metrics with smoothing
+    const instantInputLevel = this.calculateRMS(inputChannel);
+    // Only apply smoothing if we have a previous value and it's not too small
+    if (this.smoothedInputLevel > 0.001) {
+      this.smoothedInputLevel = this.smoothingFactor * this.smoothedInputLevel + 
+                                (1 - this.smoothingFactor) * instantInputLevel;
+    } else {
+      // Reset to instant value if previous was too small
+      this.smoothedInputLevel = instantInputLevel;
+    }
+    this.inputLevel = this.smoothedInputLevel;
     
     // Debug input levels
     if (this.frameCount % 100 === 0) {
       console.log('[RNNoiseProcessor] Input level:', this.inputLevel, 'Peak:', Math.max(...inputChannel.map(Math.abs)));
     }
+    this.frameCount++;
 
     // Update AGC
     this.updateAGC(this.inputLevel);
@@ -305,8 +321,17 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
       }
     }
 
-    // Calculate output metrics
-    this.outputLevel = this.calculateRMS(outputChannel);
+    // Calculate output metrics with smoothing
+    const instantOutputLevel = this.calculateRMS(outputChannel);
+    // Only apply smoothing if we have a previous value and it's not too small
+    if (this.smoothedOutputLevel > 0.001) {
+      this.smoothedOutputLevel = this.smoothingFactor * this.smoothedOutputLevel + 
+                                 (1 - this.smoothingFactor) * instantOutputLevel;
+    } else {
+      // Reset to instant value if previous was too small
+      this.smoothedOutputLevel = instantOutputLevel;
+    }
+    this.outputLevel = this.smoothedOutputLevel;
 
     // Track performance
     const processingTime = globalThis.currentTime - startTime;

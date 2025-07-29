@@ -17,6 +17,7 @@ import {
   ErrorCodes,
   ProcessingMetrics,
   ChunkConfig,
+  ChunkMetrics,
   EngineState,
 } from '../types';
 import { getConfigValidator } from '../features/configuration/services/ConfigValidationService';
@@ -511,8 +512,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     const audioContext = this.audioContext; // Type assertion to help TypeScript
 
     // Check if AudioWorklet is available (Safari compatibility)
-    const isAudioWorkletSupported =
-      'audioWorklet' in audioContext && typeof audioContext.audioWorklet.addModule === 'function';
+    // TEMPORARY: Force ScriptProcessor until AudioWorklet WASM loading is fixed
+    const isAudioWorkletSupported = false; // Was: 'audioWorklet' in audioContext && typeof audioContext.audioWorklet.addModule === 'function';
 
     if (isAudioWorkletSupported) {
       try {
@@ -570,10 +571,37 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         this.metricsManager as unknown as MetricsManager
       );
 
-      // Forward chunk events
-      chunkProcessor.on('chunk-processed', metrics => {
+      // Forward chunk events and convert to ProcessedChunk format
+      chunkProcessor.on('chunk-processed', (metrics: ChunkMetrics) => {
         this.logger.debug('Chunk processed:', metrics);
         this.metricsManager.recordChunk(metrics);
+        
+        // NUCLEAR FIX: Convert ChunkMetrics to ProcessedChunk and forward to config callback
+        if (chunkConfig?.onChunkProcessed) {
+          // Create a ProcessedChunk from ChunkMetrics
+          const processedChunk = {
+            id: `chunk-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+            blob: undefined, // Will be created by the processor
+            startTime: metrics.startTime,
+            endTime: metrics.endTime,
+            duration: metrics.duration,
+            vadScore: metrics.averageVad || 0,
+            averageVad: metrics.averageVad || 0,
+            processedAudioUrl: undefined, // Will be created by the processor
+            originalAudioUrl: undefined, // Will be created by the processor
+            vadData: metrics.vadData || [],
+            metrics: metrics.metrics,
+            originalSize: metrics.originalSize,
+            processedSize: metrics.processedSize,
+            noiseRemoved: metrics.noiseRemoved,
+            isPlaying: false,
+            isValid: true,
+            currentlyPlayingType: null,
+          };
+          
+          // Forward to the original callback
+          chunkConfig.onChunkProcessed(processedChunk as any);
+        }
       });
 
       // TDD Integration: Forward period-complete events for RecordingManager integration
@@ -621,12 +649,16 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         if (event.data.type === 'metrics') {
           // Update metrics from worklet
           const { inputLevel, outputLevel, vad, noiseReduction } = event.data.data || event.data;
-          if (Math.random() < 0.01) console.log('🔥DEBUG🔥 MurmubaraEngine received worklet metrics:', { inputLevel, outputLevel, vad });
+          // Removed debug log to reduce spam
           this.metricsManager.updateInputLevel(inputLevel || 0);
           this.metricsManager.updateOutputLevel(outputLevel || 0);
           this.metricsManager.updateVAD(vad || 0);
           this.metricsManager.updateNoiseReduction(noiseReduction || 0);
-          // No need to force emit - startAutoUpdate handles it
+          
+          // NUCLEAR FIX: Force immediate metrics emission for recording
+          if ('emitMetricsUpdate' in this.metricsManager && typeof this.metricsManager.emitMetricsUpdate === 'function') {
+            this.metricsManager.emitMetricsUpdate();
+          }
           
           // Debug: Check metrics state
           if (Math.random() < 0.05) {
@@ -781,6 +813,11 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
           const avgNoiseReduction = totalNoiseRemoved / framesProcessed;
 
           this.metricsManager.updateNoiseReduction(avgNoiseReduction);
+          
+          // NUCLEAR FIX: Force immediate metrics emission for ScriptProcessor path
+          if ('emitMetricsUpdate' in this.metricsManager && typeof this.metricsManager.emitMetricsUpdate === 'function') {
+            this.metricsManager.emitMetricsUpdate();
+          }
         }
       };
     }
@@ -825,6 +862,10 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       // Update metrics manager with analyser data
       if (rms > 0.001) {
         this.metricsManager.updateInputLevel(rms);
+        // NUCLEAR FIX: Force metrics emission in level monitoring
+        if ('emitMetricsUpdate' in this.metricsManager && typeof this.metricsManager.emitMetricsUpdate === 'function') {
+          this.metricsManager.emitMetricsUpdate();
+        }
       }
     }, 50); // Update every 50ms
 
@@ -849,6 +890,11 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
           chunkProcessor.flush();
         }
 
+        // Tell the worklet to stop processing (only for AudioWorkletNode)
+        if (processor instanceof AudioWorkletNode) {
+          processor.port.postMessage({ type: 'stop' });
+        }
+        
         processor.disconnect();
         source.disconnect();
         analyser.disconnect();

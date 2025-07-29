@@ -11,11 +11,9 @@ import type {
   MurmubaraConfig, 
   ProcessedChunk, 
   StreamController,
-  DiagnosticInfo,
-  ProcessingMetrics 
+  DiagnosticInfo
 } from '../../../types';
 import { Result, Ok, Err } from '../../../types/result';
-import type { StreamId, ChunkId } from '../../../types/branded';
 
 export interface AudioProcessorState {
   isInitialized: boolean;
@@ -329,7 +327,7 @@ export function useAudioProcessor(
     return () => {
       destroy();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line
   
   // Actions object
   const actions = useMemo<AudioProcessorActions>(
