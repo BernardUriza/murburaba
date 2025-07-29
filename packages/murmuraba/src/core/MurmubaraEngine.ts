@@ -656,7 +656,9 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
           this.metricsManager.updateNoiseReduction(noiseReduction || 0);
           
           // NUCLEAR FIX: Force immediate metrics emission for recording
-          this.metricsManager.emitMetricsUpdate();
+          if ('emitMetricsUpdate' in this.metricsManager && typeof this.metricsManager.emitMetricsUpdate === 'function') {
+            this.metricsManager.emitMetricsUpdate();
+          }
           
           // Debug: Check metrics state
           if (Math.random() < 0.05) {
@@ -813,7 +815,9 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
           this.metricsManager.updateNoiseReduction(avgNoiseReduction);
           
           // NUCLEAR FIX: Force immediate metrics emission for ScriptProcessor path
-          this.metricsManager.emitMetricsUpdate();
+          if ('emitMetricsUpdate' in this.metricsManager && typeof this.metricsManager.emitMetricsUpdate === 'function') {
+            this.metricsManager.emitMetricsUpdate();
+          }
         }
       };
     }
@@ -859,7 +863,9 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       if (rms > 0.001) {
         this.metricsManager.updateInputLevel(rms);
         // NUCLEAR FIX: Force metrics emission in level monitoring
-        this.metricsManager.emitMetricsUpdate();
+        if ('emitMetricsUpdate' in this.metricsManager && typeof this.metricsManager.emitMetricsUpdate === 'function') {
+          this.metricsManager.emitMetricsUpdate();
+        }
       }
     }, 50); // Update every 50ms
 
@@ -884,8 +890,10 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
           chunkProcessor.flush();
         }
 
-        // Tell the worklet to stop processing
-        processor.port.postMessage({ type: 'stop' });
+        // Tell the worklet to stop processing (only for AudioWorkletNode)
+        if (processor instanceof AudioWorkletNode) {
+          processor.port.postMessage({ type: 'stop' });
+        }
         
         processor.disconnect();
         source.disconnect();
