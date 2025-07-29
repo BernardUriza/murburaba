@@ -9,7 +9,8 @@ import {
   addChunk,
   clearChunks,
   setError,
-  clearError
+  clearError,
+  updateMetrics
 } from '../store/slices/audioSlice'
 import { addNotification } from '../store/slices/uiSlice'
 import { useMediaStream } from '../context/MediaStreamContext'
@@ -167,6 +168,21 @@ export function useAudioProcessor() {
       const unsubscribeChunk = processor.onChunk((chunk) => {
         dispatch(addChunk(chunk))
       })
+      
+      // NUCLEAR FIX: Subscribe to metrics updates during recording
+      const unsubscribeMetrics = processor.onMetrics((metrics) => {
+        console.log('🎯 [useAudioProcessor] Received metrics:', {
+          vad: metrics.vadProbability,
+          input: metrics.inputLevel,
+          noise: metrics.noiseReductionLevel
+        })
+        dispatch(updateMetrics({
+          inputLevel: metrics.inputLevel,
+          outputLevel: metrics.outputLevel,
+          vad: metrics.vadProbability,
+          noiseReduction: metrics.noiseReductionLevel
+        }))
+      })
 
       // Start recording - this is async but we need to wait for stream creation
       const recordingPromise = processor.processRecording(duration, options)
@@ -209,6 +225,7 @@ export function useAudioProcessor() {
       }))
 
       unsubscribeChunk()
+      unsubscribeMetrics()
       return result
 
     } catch (error) {

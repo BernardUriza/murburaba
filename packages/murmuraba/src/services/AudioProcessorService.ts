@@ -177,13 +177,21 @@ export class AudioProcessorService implements IAudioProcessor {
       // Connect metrics from engine to service
       const metricsManager = (engine as any).metricsManager;
       if (metricsManager && metricsManager.on) {
+        console.log('🔌 [AudioProcessorService] Connecting to engine MetricsManager');
         const metricsUnsubscribe = metricsManager.on(
           'metrics-update',
           (metrics: ProcessingMetrics) => {
             // Forward metrics to callbacks
+            console.log('📡 [AudioProcessorService] Forwarding metrics to callbacks:', {
+              callbackCount: this.metricsCallbacks.size,
+              vad: metrics.vadProbability,
+              input: metrics.inputLevel
+            });
             this.metricsCallbacks.forEach(cb => cb(metrics));
           }
         );
+      } else {
+        console.error('❌ [AudioProcessorService] No MetricsManager found on engine!');
       }
 
       const chunkConfig = recordingOptions.chunkDuration ? {

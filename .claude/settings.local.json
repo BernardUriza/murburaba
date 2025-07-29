@@ -127,7 +127,8 @@
       "Bash(npx tsx:*)",
       "Bash(gh issue edit:*)",
       "Bash(gh pr view:*)",
-      "Bash(gh pr edit:*)"
+      "Bash(gh pr edit:*)",
+      "Bash(gh issue create:*)"
     ],
     "deny": []
   }

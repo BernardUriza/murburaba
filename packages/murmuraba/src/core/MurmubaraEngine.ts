@@ -626,7 +626,9 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
           this.metricsManager.updateOutputLevel(outputLevel || 0);
           this.metricsManager.updateVAD(vad || 0);
           this.metricsManager.updateNoiseReduction(noiseReduction || 0);
-          // No need to force emit - startAutoUpdate handles it
+          
+          // NUCLEAR FIX: Force immediate metrics emission for recording
+          this.metricsManager.emitMetricsUpdate();
           
           // Debug: Check metrics state
           if (Math.random() < 0.05) {
@@ -781,6 +783,9 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
           const avgNoiseReduction = totalNoiseRemoved / framesProcessed;
 
           this.metricsManager.updateNoiseReduction(avgNoiseReduction);
+          
+          // NUCLEAR FIX: Force immediate metrics emission for ScriptProcessor path
+          this.metricsManager.emitMetricsUpdate();
         }
       };
     }
@@ -825,6 +830,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       // Update metrics manager with analyser data
       if (rms > 0.001) {
         this.metricsManager.updateInputLevel(rms);
+        // NUCLEAR FIX: Force metrics emission in level monitoring
+        this.metricsManager.emitMetricsUpdate();
       }
     }, 50); // Update every 50ms
 
@@ -849,6 +856,9 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
           chunkProcessor.flush();
         }
 
+        // Tell the worklet to stop processing
+        processor.port.postMessage({ type: 'stop' });
+        
         processor.disconnect();
         source.disconnect();
         analyser.disconnect();
