@@ -512,8 +512,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     const audioContext = this.audioContext; // Type assertion to help TypeScript
 
     // Check if AudioWorklet is available (Safari compatibility)
-    const isAudioWorkletSupported =
-      'audioWorklet' in audioContext && typeof audioContext.audioWorklet.addModule === 'function';
+    // TEMPORARY: Force ScriptProcessor until AudioWorklet WASM loading is fixed
+    const isAudioWorkletSupported = false; // Was: 'audioWorklet' in audioContext && typeof audioContext.audioWorklet.addModule === 'function';
 
     if (isAudioWorkletSupported) {
       try {
