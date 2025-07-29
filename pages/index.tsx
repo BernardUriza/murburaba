@@ -141,30 +141,36 @@ export default function App() {
         {/* Banner Hero Section */}
         <BannerHero />
 
-        {/* SIMPLE RECORDER - NO BULLSHIT */}
+        {/* SIMPLE RECORDER - THE MAIN FEATURE */}
         <SimpleRecorder />
 
-        {/* Studio Header */}
-        <StudioHeader isProcessing={isProcessing} isInitialized={isInitialized} />
+        {/* OLD COMPLEX SYSTEM - HIDDEN FOR NOW */}
+        <details style={{ margin: '20px', opacity: 0.5 }}>
+          <summary style={{ cursor: 'pointer', padding: '10px' }}>
+            ⚠️ Old Complex Recording System (click to expand)
+          </summary>
+          
+          {/* Studio Header */}
+          <StudioHeader isProcessing={isProcessing} isInitialized={isInitialized} />
 
-        {/* Processing Status Bar */}
-        {isProcessing && <ProcessingBar isRecording={isRecording} />}
+          {/* Processing Status Bar */}
+          {isProcessing && <ProcessingBar isRecording={isRecording} />}
 
-        {/* Control Panel */}
-        <ControlPanel
-          isReady={buttonReady}
-          isProcessing={isProcessing}
-          isRecording={isRecording}
-          enableAGC={enableAGC}
-          chunkDuration={chunkDuration}
-          onInit={handleInitializeEngine}
-          onRecord={handleStartRecording}
-          onStop={handleStopRecording}
-          onSetAGC={v => dispatch(setEnableAGC(v))}
-          onSetDuration={d => dispatch(setChunkDuration(d))}
-        />
+          {/* Control Panel */}
+          <ControlPanel
+            isReady={buttonReady}
+            isProcessing={isProcessing}
+            isRecording={isRecording}
+            enableAGC={enableAGC}
+            chunkDuration={chunkDuration}
+            onInit={handleInitializeEngine}
+            onRecord={handleStartRecording}
+            onStop={handleStopRecording}
+            onSetAGC={v => dispatch(setEnableAGC(v))}
+            onSetDuration={d => dispatch(setChunkDuration(d))}
+          />
 
-        {/* Live Waveform Display */}
+          {/* Live Waveform Display */}
         <section className="live-waveform-section" style={{ 
           marginTop: '1.5rem',
           display: (showLiveWaveform || currentStream) ? 'block' : 'none'
@@ -224,18 +230,19 @@ export default function App() {
           </div>
         </section>
 
-        {/* Processing Results */}
-        {processingResults && processingResults.chunks.length > 0 && (
-          <ChunkProcessingResults 
-            chunks={processingResults.chunks}
-            averageNoiseReduction={processingResults.averageNoiseReduction || 0}
-            selectedChunk={null}
-            onTogglePlayback={async () => {}}
-            onClearAll={() => {}}
-            onDownloadChunk={async () => {}}
-            className="glass-card"
-          />
-        )}
+          {/* Processing Results */}
+          {processingResults && processingResults.chunks.length > 0 && (
+            <ChunkProcessingResults 
+              chunks={processingResults.chunks}
+              averageNoiseReduction={processingResults.averageNoiseReduction || 0}
+              selectedChunk={null}
+              onTogglePlayback={async () => {}}
+              onClearAll={() => {}}
+              onDownloadChunk={async () => {}}
+              className="glass-card"
+            />
+          )}
+        </details>
 
         {/* Advanced Metrics Panel - Professional Component */}
         <AdvancedMetricsPanel

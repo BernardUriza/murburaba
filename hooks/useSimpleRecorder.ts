@@ -66,6 +66,7 @@ export function useSimpleRecorder() {
     chunks,
     error,
     startRecording,
-    stopRecording
+    stopRecording,
+    setChunks // Export this so we can clear chunks
   }
 }

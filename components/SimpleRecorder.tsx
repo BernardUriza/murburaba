@@ -3,22 +3,34 @@ import { useSimpleRecorder } from '../hooks/useSimpleRecorder'
 import styles from './SimpleRecorder.module.css'
 
 export function SimpleRecorder() {
-  const { isRecording, metrics, chunks, error, startRecording, stopRecording } = useSimpleRecorder()
+  const { isRecording, metrics, chunks, error, startRecording, stopRecording, setChunks } = useSimpleRecorder()
   
   return (
     <div className={styles.container}>
-      <h2>🎤 Simple Recorder (NO BULLSHIT)</h2>
+      <h2 style={{ fontSize: '28px', marginBottom: '20px', textAlign: 'center' }}>
+        🎤 Simple Recorder
+        <span style={{ fontSize: '16px', color: '#ff4444', display: 'block', marginTop: '5px' }}>
+          Direct Audio → Processing → UI (No Redux, No DI, No BS)
+        </span>
+      </h2>
       
       {error && (
         <div className={styles.error}>❌ {error}</div>
       )}
       
-      <button 
-        onClick={isRecording ? stopRecording : startRecording}
-        className={styles.recordButton}
-      >
-        {isRecording ? '⏹️ Stop' : '🔴 Record'}
-      </button>
+      <div style={{ textAlign: 'center' }}>
+        <button 
+          onClick={isRecording ? stopRecording : startRecording}
+          className={`${styles.recordButton} ${isRecording ? styles.recording : ''}`}
+        >
+          {isRecording ? '⏹️ Stop Recording' : '🔴 Start Recording'}
+        </button>
+        {isRecording && (
+          <div style={{ marginTop: '10px', fontSize: '14px', color: '#ff4444' }}>
+            Recording... {chunks.length * 8}s
+          </div>
+        )}
+      </div>
       
       <div className={styles.metrics}>
         <div className={styles.metric}>
@@ -65,7 +77,25 @@ export function SimpleRecorder() {
       </div>
       
       <div className={styles.chunks}>
-        <h3>Chunks: {chunks.length}</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3>Processed Chunks: {chunks.length}</h3>
+          {chunks.length > 0 && (
+            <button 
+              onClick={() => setChunks([])}
+              style={{
+                background: '#ff4444',
+                color: 'white',
+                border: 'none',
+                padding: '5px 15px',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              🗑️ Clear All
+            </button>
+          )}
+        </div>
         {chunks.map(chunk => (
           <div key={chunk.id} className={styles.chunk}>
             <span>Duration: {chunk.duration.toFixed(1)}s</span>
