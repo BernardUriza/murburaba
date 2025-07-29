@@ -16,6 +16,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks'
 // import { store } from '../store'
 import { useAudioProcessor } from '../hooks/useAudioProcessor'
 import { WaveformAnalyzer, ChunkProcessingResults, AdvancedMetricsPanel, getDiagnostics } from 'murmuraba'
+import { SimpleRecorder } from '../components/SimpleRecorder'
 import {
   setChunkDuration,
   setEnableAGC
@@ -139,6 +140,9 @@ export default function App() {
 
         {/* Banner Hero Section */}
         <BannerHero />
+
+        {/* SIMPLE RECORDER - NO BULLSHIT */}
+        <SimpleRecorder />
 
         {/* Studio Header */}
         <StudioHeader isProcessing={isProcessing} isInitialized={isInitialized} />
