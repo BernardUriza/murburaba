@@ -1,32 +1,13 @@
-import React, { useEffect, useState } from 'react'
-import { useMurmurabaSuite, TOKENS } from 'murmuraba'
-import type { IMetricsManager } from 'murmuraba'
+import React from 'react'
+import { useAppSelector } from '../../store/hooks'
 
 interface ProcessingBarProps {
   isRecording: boolean
 }
 
 export function ProcessingBar({ isRecording }: ProcessingBarProps) {
-  const [audioLevel, setAudioLevel] = useState(0)
-  const { container, isReady } = useMurmurabaSuite()
-  
-  useEffect(() => {
-    if (!isReady || !container) return
-    
-    try {
-      const metricsManager = container.has(TOKENS.MetricsManager) 
-        ? container.get<IMetricsManager>(TOKENS.MetricsManager) as any
-        : null
-        
-      if (metricsManager && metricsManager.on) {
-        metricsManager.on('metrics-update', (metrics: any) => {
-          setAudioLevel(metrics.inputLevel || 0)
-        })
-      }
-    } catch (error) {
-      console.error('Failed to setup audio monitoring in ProcessingBar:', error)
-    }
-  }, [container, isReady])
+  // Use Redux state instead of direct listener to avoid duplicate updates
+  const audioLevel = useAppSelector(state => state.audio.currentInputLevel || 0)
   
   return (
     <div className="recording-status-bar">

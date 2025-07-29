@@ -31,7 +31,7 @@ export function GlobalAudioMonitor() {
     }
   }, [currentInputLevel, currentOutputLevel, vadLevel, noiseReductionLevel])
   const { currentStream } = useMediaStream()
-  const [localVadLevel, setLocalVadLevel] = useState(0)
+  // Removed localVadLevel - using Redux state directly
   const [streamInfo, setStreamInfo] = useState<{id: string, tracks: number} | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
   
@@ -47,11 +47,10 @@ export function GlobalAudioMonitor() {
       if (!metricsManager) return
       
       // Subscribe to metrics updates instead of polling
-      const unsubscribe = metricsManager.onMetricsUpdate((metrics) => {
+      const unsubscribe = metricsManager.onMetricsUpdate(() => {
         // Update VAD from metrics
         if ('getAverageVAD' in metricsManager) {
           const averageVAD = (metricsManager as any).getAverageVAD()
-          setLocalVadLevel(averageVAD)
           dispatch(setReduxVadLevel(averageVAD))
         }
       })

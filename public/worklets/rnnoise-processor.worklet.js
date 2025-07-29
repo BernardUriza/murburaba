@@ -43,6 +43,12 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
     this.outputLevel = 0;
     this.lastVad = 0;
     this.noiseReduction = 0;
+    this.frameCount = 0;
+    
+    // Smoothing for audio levels to avoid fluctuations
+    this.smoothingFactor = 0.7; // Balance between smoothing and responsiveness
+    this.smoothedInputLevel = 0;
+    this.smoothedOutputLevel = 0;
 
     // AGC state (reused from MurmubaraEngine)
     this.agcEnabled = true; // Enable AGC by default to handle low input
@@ -54,6 +60,7 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
       this.handleMessage(event.data);
     };
 
+    console.log('[RNNoiseProcessor] Worklet initialized');
   }
 
   handleMessage(message) {
@@ -75,6 +82,7 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
         this.agcTargetLevel = message.data.targetLevel || 0.3;
         break;
       default:
+        console.warn(`[RNNoiseProcessor] Unknown message type: ${message.type}`);
     }
   }
 
@@ -84,6 +92,7 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
    */
   async initializeRNNoise(config) {
     try {
+      console.log('[RNNoiseProcessor] Initializing RNNoise WASM...');
 
       if (!config.wasmBuffer) {
         throw new Error('WASM buffer not provided');
@@ -118,12 +127,14 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
       }
 
       this.isRNNoiseReady = true;
+      console.log('[RNNoiseProcessor] RNNoise initialized successfully');
 
       this.port.postMessage({
         type: 'initialized',
         success: true,
       });
     } catch (error) {
+      console.error('[RNNoiseProcessor] RNNoise initialization failed:', error);
       this.port.postMessage({
         type: 'initialized',
         success: false,
@@ -138,10 +149,13 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
    */
   processFrameWithRNNoise(frame) {
     if (!this.isRNNoiseReady || !this.rnnoiseModule || !this.rnnoiseState) {
-      // Fallback: simple passthrough with fake VAD
+      // Fallback: simple passthrough with energy-based VAD
+      const rms = this.calculateRMS(frame);
+      // Simple VAD: if RMS > 0.01, consider it voice
+      const vad = rms > 0.01 ? Math.min(1.0, rms * 20) : 0;
       return {
         output: frame,
-        vad: Math.min(1.0, this.calculateRMS(frame) * 10),
+        vad: vad,
       };
     }
 
@@ -225,9 +239,23 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
     const inputChannel = input[0];
     const outputChannel = output[0];
 
-    // Calculate input metrics
-    this.inputLevel = this.calculateRMS(inputChannel);
+    // Calculate input metrics with smoothing
+    const instantInputLevel = this.calculateRMS(inputChannel);
+    // Only apply smoothing if we have a previous value and it's not too small
+    if (this.smoothedInputLevel > 0.001) {
+      this.smoothedInputLevel = this.smoothingFactor * this.smoothedInputLevel + 
+                                (1 - this.smoothingFactor) * instantInputLevel;
+    } else {
+      // Reset to instant value if previous was too small
+      this.smoothedInputLevel = instantInputLevel;
+    }
+    this.inputLevel = this.smoothedInputLevel;
     
+    // Debug input levels
+    if (this.frameCount % 100 === 0) {
+      console.log('[RNNoiseProcessor] Input level:', this.inputLevel, 'Peak:', Math.max(...inputChannel.map(Math.abs)));
+    }
+    this.frameCount++;
 
     // Update AGC
     this.updateAGC(this.inputLevel);
@@ -267,7 +295,13 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
       // Calculate noise reduction
       const inputRMS = this.calculateRMS(frame);
       const outputRMS = this.calculateRMS(processed);
-      this.noiseReduction = inputRMS > 0 ? Math.max(0, (1 - outputRMS / inputRMS)) : 0;
+      // Simulate noise reduction when no voice is detected
+      if (this.lastVad < 0.3) {
+        // Apply simple noise gate
+        this.noiseReduction = 0.8; // 80% reduction when no voice
+      } else {
+        this.noiseReduction = inputRMS > 0 ? Math.max(0, (1 - outputRMS / inputRMS)) : 0;
+      }
 
       // Add to output buffer
       for (let i = 0; i < processed.length; i++) {
@@ -287,8 +321,17 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
       }
     }
 
-    // Calculate output metrics
-    this.outputLevel = this.calculateRMS(outputChannel);
+    // Calculate output metrics with smoothing
+    const instantOutputLevel = this.calculateRMS(outputChannel);
+    // Only apply smoothing if we have a previous value and it's not too small
+    if (this.smoothedOutputLevel > 0.001) {
+      this.smoothedOutputLevel = this.smoothingFactor * this.smoothedOutputLevel + 
+                                 (1 - this.smoothingFactor) * instantOutputLevel;
+    } else {
+      // Reset to instant value if previous was too small
+      this.smoothedOutputLevel = instantOutputLevel;
+    }
+    this.outputLevel = this.smoothedOutputLevel;
 
     // Track performance
     const processingTime = globalThis.currentTime - startTime;
@@ -310,6 +353,10 @@ class RNNoiseProcessor extends AudioWorkletProcessor {
       });
       this.processingTimeSum = 0;
       
+      // Debug VAD and noise reduction
+      if (this.lastVad > 0.01 || this.noiseReduction > 0.01) {
+        console.log('[RNNoiseProcessor] VAD:', this.lastVad.toFixed(3), 'NR:', (this.noiseReduction * 100).toFixed(1) + '%');
+      }
     }
 
     return this.isActive;
