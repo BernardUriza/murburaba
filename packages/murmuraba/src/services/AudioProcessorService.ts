@@ -97,7 +97,7 @@ export class AudioProcessorService implements IAudioProcessor {
       });
 
       // Wait for processing to complete or abort
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         this.abortController?.signal.addEventListener('abort', () => {
           controller.stop();
           resolve();
@@ -124,7 +124,6 @@ export class AudioProcessorService implements IAudioProcessor {
     options?: AudioProcessingOptions & { stream?: MediaStream }
   ): Promise<AudioProcessingResult> {
     let stream: MediaStream;
-    let shouldStopStream = false;
 
     if (options?.stream) {
       // Use provided stream
@@ -142,7 +141,6 @@ export class AudioProcessorService implements IAudioProcessor {
         }
 
         // Get new stream with updated settings
-        shouldStopStream = true;
         this.currentAGCSetting = options?.enableAGC ?? false;
         stream = await navigator.mediaDevices.getUserMedia({
           audio: {
@@ -155,7 +153,6 @@ export class AudioProcessorService implements IAudioProcessor {
       } else {
         // Reuse existing stream
         stream = this.currentStream!;
-        shouldStopStream = false;
       }
     }
 
@@ -178,7 +175,7 @@ export class AudioProcessorService implements IAudioProcessor {
       const metricsManager = (engine as any).metricsManager;
       if (metricsManager && metricsManager.on) {
         console.log('🔌 [AudioProcessorService] Connecting to engine MetricsManager');
-        const metricsUnsubscribe = metricsManager.on(
+        metricsManager.on(
           'metrics-update',
           (metrics: ProcessingMetrics) => {
             // Forward metrics to callbacks
@@ -256,7 +253,7 @@ export class AudioProcessorService implements IAudioProcessor {
       if (engine) {
         (engine as any).stopProcessing?.();
       }
-    } catch (error) {
+    } catch {
       // Engine might not exist, ignore
     }
   }
