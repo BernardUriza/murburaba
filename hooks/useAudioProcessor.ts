@@ -171,11 +171,7 @@ export function useAudioProcessor() {
       
       // NUCLEAR FIX: Subscribe to metrics updates during recording
       const unsubscribeMetrics = processor.onMetrics((metrics) => {
-        console.log('🎯 [useAudioProcessor] Received metrics:', {
-          vad: metrics.vadProbability,
-          input: metrics.inputLevel,
-          noise: metrics.noiseReductionLevel
-        })
+        // Removed log to reduce noise - metrics are working
         dispatch(updateMetrics({
           inputLevel: metrics.inputLevel,
           outputLevel: metrics.outputLevel,

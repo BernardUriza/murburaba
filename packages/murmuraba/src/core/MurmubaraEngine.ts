@@ -649,7 +649,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         if (event.data.type === 'metrics') {
           // Update metrics from worklet
           const { inputLevel, outputLevel, vad, noiseReduction } = event.data.data || event.data;
-          if (Math.random() < 0.01) console.log('🔥DEBUG🔥 MurmubaraEngine received worklet metrics:', { inputLevel, outputLevel, vad });
+          // Removed debug log to reduce spam
           this.metricsManager.updateInputLevel(inputLevel || 0);
           this.metricsManager.updateOutputLevel(outputLevel || 0);
           this.metricsManager.updateVAD(vad || 0);

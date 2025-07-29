@@ -31,7 +31,10 @@ export class AudioProcessorService implements IAudioProcessor {
       // Forward metrics events from MetricsManager to our callbacks
       if (this.metricsManager && typeof (this.metricsManager as any).on === 'function') {
         (this.metricsManager as any).on('metrics-update', (metrics: ProcessingMetrics) => {
-          this.logger.debug('AudioProcessorService: Forwarding metrics from MetricsManager');
+          // Only log occasionally to avoid spam
+          if (Math.random() < 0.02) {
+            this.logger.debug('AudioProcessorService: Forwarding metrics from MetricsManager');
+          }
           this.notifyMetrics(metrics);
         });
       }
@@ -171,25 +174,8 @@ export class AudioProcessorService implements IAudioProcessor {
       const engine = engineRegistry.getEngine();
       
 
-      // Connect metrics from engine to service
-      const metricsManager = (engine as any).metricsManager;
-      if (metricsManager && metricsManager.on) {
-        console.log('🔌 [AudioProcessorService] Connecting to engine MetricsManager');
-        metricsManager.on(
-          'metrics-update',
-          (metrics: ProcessingMetrics) => {
-            // Forward metrics to callbacks
-            console.log('📡 [AudioProcessorService] Forwarding metrics to callbacks:', {
-              callbackCount: this.metricsCallbacks.size,
-              vad: metrics.vadProbability,
-              input: metrics.inputLevel
-            });
-            this.metricsCallbacks.forEach(cb => cb(metrics));
-          }
-        );
-      } else {
-        console.error('❌ [AudioProcessorService] No MetricsManager found on engine!');
-      }
+      // Don't create duplicate subscription - we already have one in constructor
+      console.log('🔌 [AudioProcessorService] Metrics are forwarded via constructor subscription');
 
       const chunkConfig = recordingOptions.chunkDuration ? {
         chunkDuration: recordingOptions.chunkDuration * 1000, // Convert seconds to milliseconds
@@ -235,8 +221,14 @@ export class AudioProcessorService implements IAudioProcessor {
   }
 
   onMetrics(callback: (metrics: ProcessingMetrics) => void): () => void {
+    console.log('✅ [AudioProcessorService] Registering metrics callback');
     this.metricsCallbacks.add(callback);
-    return () => this.metricsCallbacks.delete(callback);
+    console.log('📊 [AudioProcessorService] Total callbacks after registration:', this.metricsCallbacks.size);
+    return () => {
+      console.log('❌ [AudioProcessorService] Unregistering metrics callback');
+      this.metricsCallbacks.delete(callback);
+      console.log('📊 [AudioProcessorService] Total callbacks after unregistration:', this.metricsCallbacks.size);
+    };
   }
 
   onChunk(callback: (chunk: ProcessedChunk) => void): () => void {
@@ -404,6 +396,13 @@ export class AudioProcessorService implements IAudioProcessor {
   }
 
   private notifyMetrics(metrics: ProcessingMetrics): void {
+    // Log callback status occasionally
+    if (Math.random() < 0.02) {
+      console.log('📊 [AudioProcessorService] notifyMetrics:', {
+        callbackCount: this.metricsCallbacks.size,
+        callbacks: Array.from(this.metricsCallbacks).length
+      });
+    }
     this.metricsCallbacks.forEach(cb => cb(metrics));
     this.metricsManager?.recordMetrics(metrics);
   }
