@@ -17,6 +17,7 @@ import {
   ErrorCodes,
   ProcessingMetrics,
   ChunkConfig,
+  ChunkMetrics,
   EngineState,
 } from '../types';
 import { getConfigValidator } from '../features/configuration/services/ConfigValidationService';
@@ -570,10 +571,37 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         this.metricsManager as unknown as MetricsManager
       );
 
-      // Forward chunk events
-      chunkProcessor.on('chunk-processed', metrics => {
+      // Forward chunk events and convert to ProcessedChunk format
+      chunkProcessor.on('chunk-processed', (metrics: ChunkMetrics) => {
         this.logger.debug('Chunk processed:', metrics);
         this.metricsManager.recordChunk(metrics);
+        
+        // NUCLEAR FIX: Convert ChunkMetrics to ProcessedChunk and forward to config callback
+        if (chunkConfig?.onChunkProcessed) {
+          // Create a ProcessedChunk from ChunkMetrics
+          const processedChunk = {
+            id: `chunk-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+            blob: undefined, // Will be created by the processor
+            startTime: metrics.startTime,
+            endTime: metrics.endTime,
+            duration: metrics.duration,
+            vadScore: metrics.averageVad || 0,
+            averageVad: metrics.averageVad || 0,
+            processedAudioUrl: undefined, // Will be created by the processor
+            originalAudioUrl: undefined, // Will be created by the processor
+            vadData: metrics.vadData || [],
+            metrics: metrics.metrics,
+            originalSize: metrics.originalSize,
+            processedSize: metrics.processedSize,
+            noiseRemoved: metrics.noiseRemoved,
+            isPlaying: false,
+            isValid: true,
+            currentlyPlayingType: null,
+          };
+          
+          // Forward to the original callback
+          chunkConfig.onChunkProcessed(processedChunk as any);
+        }
       });
 
       // TDD Integration: Forward period-complete events for RecordingManager integration
