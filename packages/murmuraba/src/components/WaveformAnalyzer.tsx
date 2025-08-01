@@ -39,7 +39,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number>(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
@@ -64,7 +64,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
   const cleanup = useCallback(() => {
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
-      animationRef.current = undefined;
+      animationRef.current = 0;
     }
     
     // Disconnect audio source node to release MediaStream reference
@@ -593,7 +593,7 @@ export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
-        animationRef.current = undefined;
+        animationRef.current = 0;
       }
     };
   }, [analyser, stream, disabled, audioUrl, draw]);

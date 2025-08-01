@@ -37,6 +37,8 @@ export interface ProcessingMetrics {
     timestamp: number;
     frameCount: number;
     droppedFrames: number;
+    vadLevel?: number;
+    isVoiceActive?: boolean;
 }
 export interface ChunkMetrics {
     originalSize: number;

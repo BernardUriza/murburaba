@@ -455,7 +455,27 @@ export default function App() {
                     <div className="stat-value">{metrics.frameCount}</div>
                     <div className="stat-label">Frames Processed</div>
                   </div>
-              </div>
+                </div>
+                
+                {/* VAD Real-time Display */}
+                <div className="stat-card">
+                  <div className="stat-icon">🎤</div>
+                  <div className="stat-content">
+                    <div className="stat-value">
+                      {metrics.vadLevel !== undefined ? (metrics.vadLevel * 100).toFixed(0) : 0}%
+                    </div>
+                    <div className="stat-label">Voice Activity</div>
+                  </div>
+                  <div className="metric-bar">
+                    <div 
+                      className={`metric-fill ${metrics.isVoiceActive ? 'voice-active' : 'voice-inactive'}`}
+                      style={{
+                        width: `${(metrics.vadLevel || 0) * 100}%`,
+                        backgroundColor: metrics.isVoiceActive ? '#52A32F' : '#666'
+                      }}
+                    ></div>
+                  </div>
+                </div>
             </div>
             </div>
           </section>

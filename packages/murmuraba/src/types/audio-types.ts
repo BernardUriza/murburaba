@@ -53,6 +53,8 @@ export interface ProcessingMetrics {
   timestamp: number;
   frameCount: number;
   droppedFrames: number;
+  vadLevel?: number; // Voice Activity Detection level 0-1
+  isVoiceActive?: boolean; // Whether voice is currently detected
 }
 
 export interface ChunkMetrics {

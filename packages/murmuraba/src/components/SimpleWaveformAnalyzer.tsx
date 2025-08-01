@@ -19,7 +19,7 @@ export const SimpleWaveformAnalyzer: React.FC<SimpleWaveformAnalyzerProps> = ({
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number>(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {

@@ -16,6 +16,8 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
     timestamp: Date.now(),
     frameCount: 0,
     droppedFrames: 0,
+    vadLevel: 0,
+    isVoiceActive: false,
   };
   
   private updateInterval?: NodeJS.Timeout;
@@ -49,6 +51,16 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
   
   updateNoiseReduction(level: number): void {
     this.metrics.noiseReductionLevel = Math.max(0, Math.min(100, level));
+  }
+  
+  updateVAD(vadLevel: number): void {
+    this.metrics.vadLevel = Math.max(0, Math.min(1, vadLevel));
+    this.metrics.isVoiceActive = vadLevel > 0.3; // Threshold for voice detection
+    this.currentVAD = vadLevel;
+    this.vadHistory.push(vadLevel);
+    if (this.vadHistory.length > this.maxFrameHistory) {
+      this.vadHistory.shift();
+    }
   }
   
   recordFrame(timestamp: number = Date.now()): void {
@@ -96,6 +108,8 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
       timestamp: Date.now(),
       frameCount: 0,
       droppedFrames: 0,
+      vadLevel: 0,
+      isVoiceActive: false,
     };
     this.frameTimestamps = [];
   }
@@ -116,13 +130,6 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
     return peak;
   }
   
-  updateVAD(vad: number): void {
-    this.currentVAD = vad;
-    this.vadHistory.push(vad);
-    if (this.vadHistory.length > this.maxFrameHistory) {
-      this.vadHistory.shift();
-    }
-  }
   
   getAverageVAD(): number {
     if (this.vadHistory.length === 0) return 0;

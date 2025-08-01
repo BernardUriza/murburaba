@@ -17,6 +17,7 @@ export declare class MetricsManager extends EventEmitter<MetricsEvents> {
     updateInputLevel(level: number): void;
     updateOutputLevel(level: number): void;
     updateNoiseReduction(level: number): void;
+    updateVAD(vadLevel: number): void;
     recordFrame(timestamp?: number): void;
     recordDroppedFrame(): void;
     recordChunk(chunk: ChunkMetrics): void;
@@ -25,7 +26,6 @@ export declare class MetricsManager extends EventEmitter<MetricsEvents> {
     reset(): void;
     calculateRMS(samples: Float32Array): number;
     calculatePeak(samples: Float32Array): number;
-    updateVAD(vad: number): void;
     getAverageVAD(): number;
     getVoiceActivityPercentage(): number;
 }
