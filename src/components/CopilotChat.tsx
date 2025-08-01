@@ -44,11 +44,11 @@ function formatMessageContent(content: string): string {
 export function CopilotChat({ 
   isOpen, 
   onClose, 
-  engineConfig, 
-  setEngineConfig, 
+  engineConfig: _engineConfig, 
+  setEngineConfig: _setEngineConfig, 
   isRecording,
   isInitialized,
-  onApplyChanges 
+  onApplyChanges: _onApplyChanges 
 }: CopilotChatProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -105,11 +105,12 @@ export function CopilotChat({
     const [cmd, ...args] = command.toLowerCase().split(' ')
     
     switch (cmd) {
-      case '/help':
+      case '/help': {
         const helpText = '📚 **Comandos disponibles:**\n\n' +
           Object.entries(COPILOT_COMMANDS).map(([cmd, desc]) => `• ${cmd} - ${desc}`).join('\n')
         await simulateTyping(helpText)
         break
+      }
         
       case '/vad':
         if (args[0] === 'help') {
@@ -137,7 +138,7 @@ export function CopilotChat({
         }
         break
         
-      case '/status':
+      case '/status': {
         const status = `**📊 Estado del sistema:**\n\n` +
           `**Motor de audio:**\n` +
           `• Estado: ${isInitialized ? '✅ Inicializado' : '❌ No inicializado'}\n` +
@@ -148,6 +149,7 @@ export function CopilotChat({
           `• Umbrales: Por defecto`
         await simulateTyping(status)
         break
+      }
         
       default:
         await simulateTyping(`❓ Comando no reconocido: ${cmd}. Escribe /help para ver los comandos disponibles.`)

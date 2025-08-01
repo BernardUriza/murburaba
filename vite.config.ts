@@ -26,8 +26,9 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['audio-resampler'],
-    exclude: ['@jitsi/rnnoise-wasm']
+    exclude: ['@jitsi/rnnoise-wasm', 'rnnoise.wasm']
   },
+  assetsInclude: ['**/*.wasm'],
   server: {
     port: 3000,
     open: true,

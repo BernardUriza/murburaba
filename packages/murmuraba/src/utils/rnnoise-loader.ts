@@ -12,44 +12,78 @@ let modulePromise: Promise<RNNoiseModule> | null = null;
 
 export async function loadRNNoiseModule(): Promise<RNNoiseModule> {
   if (!modulePromise) {
-    // Dynamic import to avoid TypeScript issues
-    modulePromise = import('@jitsi/rnnoise-wasm').then(async (rnnoiseModule) => {
-      const { createRNNWasmModule } = rnnoiseModule as any;
-      
-      // Configure the module to load WASM from the correct path
-      const module = await createRNNWasmModule({
-        locateFile: (filename: string) => {
-          if (filename.endsWith('.wasm')) {
-            // In production, the WASM file should be in the same directory as the bundle
-            // In development, it might be served from node_modules
-            if (typeof window !== 'undefined' && window.location) {
-              // Try multiple possible locations
-              const paths = [
-                `/node_modules/@jitsi/rnnoise-wasm/dist/${filename}`,
-                `/node_modules/.vite/deps/${filename}`,
-                `/${filename}`,
-                `/dist/${filename}`,
-                filename
-              ];
-              
-              // In development with Vite, the WASM should be in public
-              if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                const devPath = `/${filename}`;
-                console.log('[RNNoise Loader] Development mode, trying:', devPath);
-                return devPath;
-              }
-              
-              // In production, assume the file is in the root or dist
-              console.log('[RNNoise Loader] Production mode, trying:', paths[3]);
-              return paths[3];
-            }
-          }
-          return filename;
-        }
-      });
-      
-      return module as unknown as RNNoiseModule;
-    });
+    modulePromise = loadWASMOptimized();
   }
   return modulePromise;
+}
+
+// Optimized WASM loading with streaming instantiation (2025 best practices)
+async function loadWASMOptimized(): Promise<RNNoiseModule> {
+  // Dynamic import for code splitting
+  const rnnoiseModule = await import('@jitsi/rnnoise-wasm');
+  const { createRNNWasmModule } = rnnoiseModule as any;
+  
+  // Use streaming instantiation when available
+  if ('instantiateStreaming' in WebAssembly) {
+    console.log('[RNNoise Loader] Using optimized streaming instantiation');
+  }
+  
+  // Configure module with optimized loading strategy
+  const module = await createRNNWasmModule({
+    locateFile: (filename: string) => {
+      if (filename.endsWith('.wasm')) {
+        // Centralized WASM location strategy
+        const wasmPath = getOptimizedWASMPath(filename);
+        console.log('[RNNoise Loader] Loading WASM from:', wasmPath);
+        return wasmPath;
+      }
+      return filename;
+    },
+    // Enable streaming compilation when supported
+    instantiateWasm: async (imports: any, successCallback: any) => {
+      try {
+        const wasmPath = getOptimizedWASMPath('rnnoise.wasm');
+        const response = await fetch(wasmPath);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch WASM: ${response.status}`);
+        }
+        
+        // Use streaming instantiation for better performance
+        if ('instantiateStreaming' in WebAssembly) {
+          const result = await WebAssembly.instantiateStreaming(response, imports);
+          successCallback(result.instance, result.module);
+        } else {
+          // Fallback for older browsers
+          const buffer = await response.arrayBuffer();
+          const result = await WebAssembly.instantiate(buffer, imports);
+          successCallback(result.instance, result.module);
+        }
+      } catch (error) {
+        console.error('[RNNoise Loader] WASM instantiation failed:', error);
+        throw error;
+      }
+    }
+  });
+  
+  return module as unknown as RNNoiseModule;
+}
+
+// Centralized WASM path resolution
+function getOptimizedWASMPath(filename: string): string {
+  if (typeof window === 'undefined') {
+    return filename;
+  }
+  
+  const isDevelopment = window.location.hostname === 'localhost' || 
+                       window.location.hostname === '127.0.0.1';
+  
+  // Use centralized /wasm directory as per optimization recommendations
+  if (isDevelopment) {
+    // In development, serve from public/wasm/
+    return `/wasm/${filename}`;
+  } else {
+    // In production, serve from optimized CDN or dist/wasm/
+    return `/dist/wasm/${filename}`;
+  }
 }
