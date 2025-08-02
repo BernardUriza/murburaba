@@ -26,9 +26,29 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['audio-resampler'],
-    exclude: ['@jitsi/rnnoise-wasm', 'rnnoise.wasm']
+    exclude: ['@jitsi/rnnoise-wasm', 'rnnoise.wasm'],
+    // Explicitly configure WASM handling
+    esbuildOptions: {
+      target: 'es2020', // Modern browser support
+    }
   },
   assetsInclude: ['**/*.wasm'],
+  build: {
+    ...defineConfig().build,
+    rollupOptions: {
+      ...defineConfig().build?.rollupOptions,
+      output: {
+        manualChunks(id) {
+          // Separate WASM into its own chunk
+          if (id.includes('rnnoise.wasm')) {
+            return 'rnnoise-wasm';
+          }
+        }
+      }
+    },
+    // Reduce chunk size
+    chunkSizeWarningLimit: 500,
+  },
   server: {
     port: 3000,
     open: true,

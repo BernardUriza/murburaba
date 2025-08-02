@@ -13,89 +13,134 @@ export interface RNNoiseModule {
 let modulePromise: Promise<RNNoiseModule> | null = null;
 // Direct WASM loading implementation
 
-export async function loadRNNoiseModule(): Promise<RNNoiseModule> {
+export async function loadRNNoiseModule({
+  fallbackImplementation,
+  retryCount = 2
+}: {
+  fallbackImplementation?: () => Promise<RNNoiseModule>,
+  retryCount?: number
+} = {}): Promise<RNNoiseModule> {
   if (!modulePromise) {
-    modulePromise = loadWASMOptimized();
+    modulePromise = loadWASMOptimized(retryCount);
   }
-  return modulePromise;
-}
 
-// Optimized WASM loading with streaming instantiation (2025 best practices)
-async function loadWASMOptimized(): Promise<RNNoiseModule> {
-  // Dynamic import for code splitting
-  const rnnoiseModule = await import('@jitsi/rnnoise-wasm');
-  const { createRNNWasmModule } = rnnoiseModule as any;
-  
-  // Use streaming instantiation when available
-  if ('instantiateStreaming' in WebAssembly) {
-    console.log('[RNNoise Loader] Using optimized streaming instantiation');
-  }
-  
-  // Configure module with optimized loading strategy
-  const module = await createRNNWasmModule({
-    locateFile: (filename: string) => {
-      if (filename.endsWith('.wasm')) {
-        // Centralized WASM location strategy
-        const wasmPath = getOptimizedWASMPath(filename);
-        console.log('[RNNoise Loader] Loading WASM from:', wasmPath);
-        return wasmPath;
-      }
-      return filename;
-    },
-    // Enable streaming compilation when supported
-    instantiateWasm: async (imports: any, successCallback: any) => {
-      try {
-        const wasmPath = getOptimizedWASMPath('rnnoise.wasm');
-        const response = await fetch(wasmPath);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch WASM: ${response.status}`);
-        }
-        
-        // Use streaming instantiation for better performance
-        if ('instantiateStreaming' in WebAssembly) {
-          const result = await WebAssembly.instantiateStreaming(response, imports);
-          successCallback(result.instance, result.module);
-        } else {
-          // Fallback for older browsers
-          const buffer = await response.arrayBuffer();
-          const result = await WebAssembly.instantiate(buffer, imports);
-          successCallback(result.instance, result.module);
-        }
-      } catch (error) {
-        console.error('[RNNoise Loader] WASM instantiation failed:', error);
-        throw error;
-      }
+  try {
+    return await modulePromise;
+  } catch (error) {
+    console.error('[RNNoise] Primary WASM load failed:', error);
+    
+    if (fallbackImplementation) {
+      console.warn('[RNNoise] Attempting fallback implementation');
+      return fallbackImplementation();
     }
-  });
-  
-  return module as unknown as RNNoiseModule;
+    
+    throw error;
+  }
 }
 
-// Centralized WASM path resolution
+// Modified to support retry mechanism
+async function loadWASMOptimized(retriesLeft = 2): Promise<RNNoiseModule> {
+  try {
+    const rnnoiseModule = await import('@jitsi/rnnoise-wasm');
+    const { createRNNWasmModule } = rnnoiseModule as any;
+    
+    const module = await createRNNWasmModule({
+      locateFile: (filename: string) => {
+        if (filename.endsWith('.wasm')) {
+          const wasmPath = getOptimizedWASMPath(filename);
+          console.log('[RNNoise Loader] Loading WASM from:', wasmPath);
+          return wasmPath;
+        }
+        return filename;
+      },
+      instantiateWasm: async (imports: any, successCallback: any) => {
+        try {
+          const wasmPath = getOptimizedWASMPath('rnnoise.wasm');
+          const response = await fetch(wasmPath);
+          
+          if (!response.ok) {
+            throw new Error(`Failed to fetch WASM: ${response.status}`);
+          }
+          
+          if ('instantiateStreaming' in WebAssembly) {
+            const result = await WebAssembly.instantiateStreaming(response, imports);
+            successCallback(result.instance, result.module);
+          } else {
+            const buffer = await response.arrayBuffer();
+            const result = await WebAssembly.instantiate(buffer, imports);
+            successCallback(result.instance, result.module);
+          }
+        } catch (error) {
+          if (retriesLeft > 0) {
+            console.warn(`[RNNoise] WASM load failed, retrying... (${retriesLeft} attempts left)`);
+            return loadWASMOptimized(retriesLeft - 1);
+          }
+          console.error('[RNNoise Loader] WASM instantiation failed:', error);
+          throw error;
+        }
+      }
+    });
+    
+    return module as unknown as RNNoiseModule;
+  } catch (error) {
+    console.error('[RNNoise] Complete WASM module load failed:', error);
+    throw error;
+  }
+}
+
+
+// Centralized WASM path resolution - SINGLE SOURCE OF TRUTH
 function getOptimizedWASMPath(filename: string): string {
   if (typeof window === 'undefined') {
     return filename;
   }
   
-  const isDevelopment = window.location.hostname === 'localhost' || 
-                       window.location.hostname === '127.0.0.1';
-  
-  // Use centralized /wasm directory as per optimization recommendations
-  if (isDevelopment) {
-    // In development, serve from public/wasm/
-    return `/wasm/${filename}`;
-  } else {
-    // In production, serve from optimized CDN or dist/wasm/
-    return `/dist/wasm/${filename}`;
-  }
+  // ONE location for ALL environments - no duplication
+  return `/wasm/${filename}`;
 }
 
 // Lazy loader for RNNoise module
 export const lazyLoadRNNoise = () => loadRNNoiseModule();
 
 // Preload WASM for better performance
-export async function preloadRNNoiseWASM(): Promise<void> {
-  // Preloading is now handled internally by loadRNNoiseModule
-  await loadRNNoiseModule();
+// Performance tracking for WASM loading
+const WASM_SIZE_THRESHOLD_KB = 200; // Adjust based on actual file size
+const WASM_LOAD_TIMEOUT_MS = 5000;
+
+export async function preloadRNNoiseWASM(options: { 
+  force?: boolean, 
+  timeout?: number 
+} = {}): Promise<void> {
+  const { force = false, timeout = WASM_LOAD_TIMEOUT_MS } = options;
+
+  // Only preload if file is larger than threshold or force is true
+  const shouldPreload = force || (await isWASMSizeLarge());
+
+  if (shouldPreload) {
+    const preloadStart = performance.now();
+    try {
+      // Use Promise.race to prevent indefinite loading
+      await Promise.race([
+        loadRNNoiseModule(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('WASM load timeout')), timeout)
+        )
+      ]);
+      
+      const loadTime = performance.now() - preloadStart;
+      console.log(`[RNNoise] WASM preloaded in ${loadTime.toFixed(2)}ms`);
+    } catch (error) {
+      console.warn('[RNNoise] Preload failed:', error);
+    }
+  }
+}
+
+async function isWASMSizeLarge(): Promise<boolean> {
+  try {
+    const response = await fetch('/wasm/rnnoise.wasm', { method: 'HEAD' });
+    const size = Number(response.headers.get('Content-Length') || 0) / 1024;
+    return size > WASM_SIZE_THRESHOLD_KB;
+  } catch {
+    return false;
+  }
 }

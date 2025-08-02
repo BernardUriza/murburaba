@@ -104,11 +104,13 @@ global.fetch = vi.fn().mockImplementation((url) => {
     });
   }
   // Mock for RNNoise WASM file
-  if (url.includes('rnnoise-fixed.js') || url.includes('localhost:3000')) {
+  if (url.includes('/wasm/rnnoise.wasm')) {
+    const mockWasm = new ArrayBuffer(8);
+    new Uint8Array(mockWasm).set([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]);
     return Promise.resolve({
       ok: true,
-      text: vi.fn().mockResolvedValue('// Mock RNNoise WASM module'),
-      arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(1024)),
+      arrayBuffer: vi.fn().mockResolvedValue(mockWasm),
+      headers: new Map([['Content-Length', '8']]),
     });
   }
   return Promise.reject(new Error('Not found'));
