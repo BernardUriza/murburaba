@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatPercentage } from './formatters';
+import { formatPercentage } from '../formatters';
 
 interface IProcessingMetricsProps {
   inputLevel: number;

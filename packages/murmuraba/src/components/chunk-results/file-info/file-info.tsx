@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatFileSize } from './formatters';
+import { formatFileSize } from '../formatters';
 
 interface IFileInfoProps {
   originalSize: number;

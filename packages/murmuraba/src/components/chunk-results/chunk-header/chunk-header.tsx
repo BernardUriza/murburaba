@@ -1,5 +1,5 @@
 import React from 'react';
-import { VadDisplay } from './VadDisplay';
+import { VadDisplay } from '../vad-display/vad-display';
 
 interface IChunkHeaderProps {
   index: number;
