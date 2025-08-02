@@ -4,7 +4,7 @@
  */
 
 // Core exports
-export { MurmubaraEngine } from './core/murmubara-engine';
+export { MurmubaraEngine } from './core/murmuraba-engine';
 export { EventEmitter } from './core/event-emitter';
 export { StateManager } from './core/state-manager';
 export { Logger } from './core/logger';
@@ -87,7 +87,7 @@ export type {
 // Import for default export
 import { useMurmubaraEngine } from './hooks/use-murmubara-engine';
 import { useAudioEngine } from './hooks/use-audio-engine';
-import { MurmubaraEngine } from './core/murmubara-engine';
+import { MurmubaraEngine } from './core/murmuraba-engine';
 
 // Default export for easier usage
 const murmurabaExports = {

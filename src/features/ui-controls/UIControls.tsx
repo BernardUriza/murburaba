@@ -1,11 +1,11 @@
-import React from 'react';
-import { useAppStore } from '../../core/store/useAppStore';
+import React, { memo } from 'react';
+import { useUIState } from '../../core/store/useAppStore';
 
 interface UIControlsProps {
   className?: string;
 }
 
-export const UIControls: React.FC<UIControlsProps> = ({ className = '' }) => {
+export const UIControls: React.FC<UIControlsProps> = memo(({ className = '' }) => {
   const {
     selectedTab,
     setSelectedTab,
@@ -13,7 +13,7 @@ export const UIControls: React.FC<UIControlsProps> = ({ className = '' }) => {
     toggleDarkMode,
     toggleChat,
     toggleSettings
-  } = useAppStore();
+  } = useUIState();
 
   return (
     <div className={`ui-controls ${className}`}>
@@ -70,4 +70,4 @@ export const UIControls: React.FC<UIControlsProps> = ({ className = '' }) => {
       </div>
     </div>
   );
-};
+});

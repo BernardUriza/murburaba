@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   initializeAudioEngine,
   destroyEngine,
@@ -113,8 +113,26 @@ export function useMurmubaraEngine(
   }, [isInitialized, diagnostics, updateDiagnostics]);
   
   // Initialize engine
+  // CRITICAL FIX: Memoize config to prevent re-initialization loops
+  // Only memoize based on properties that actually exist in the config type
+  const memoizedConfig = useMemo(() => config, [
+    config?.bufferSize,
+    config?.algorithm,
+    config?.noiseReductionLevel,
+    config?.logLevel,
+    config?.autoCleanup,
+    config?.cleanupDelay,
+    config?.useWorker,
+    config?.allowDegraded
+  ]);
+
   const initialize = useCallback(async () => {
     console.log(`🚀 ${LOG_PREFIX.LIFECYCLE} Initializing MurmubaraEngine...`);
+    
+    // Use refs to get current values without creating dependencies
+    const currentConfig = memoizedConfig;
+    const currentOnInitError = onInitError;
+    
     if (initializePromiseRef.current) {
       console.log(`⏳ ${LOG_PREFIX.LIFECYCLE} Already initializing, returning existing promise`);
       return initializePromiseRef.current;
@@ -130,8 +148,8 @@ export function useMurmubaraEngine(
     
     initializePromiseRef.current = (async () => {
       try {
-        console.log(`🔧 ${LOG_PREFIX.LIFECYCLE} Calling initializeAudioEngine with config:`, config);
-        await initializeAudioEngine(config);
+        console.log(`🔧 ${LOG_PREFIX.LIFECYCLE} Calling initializeAudioEngine with config:`, currentConfig);
+        await initializeAudioEngine(currentConfig);
         
         // Set up metrics listener
         onMetricsUpdate((newMetrics: ProcessingMetrics) => {
@@ -152,8 +170,8 @@ export function useMurmubaraEngine(
         setError(errorMessage);
         setEngineState('error');
         
-        if (onInitError) {
-          onInitError(err instanceof Error ? err : new Error(errorMessage));
+        if (currentOnInitError) {
+          currentOnInitError(err instanceof Error ? err : new Error(errorMessage));
         }
         
         throw err;
@@ -164,7 +182,7 @@ export function useMurmubaraEngine(
     })();
     
     return initializePromiseRef.current;
-  }, [config, isInitialized, onInitError]);
+  }, []); // CRITICAL FIX: Empty dependency array - use refs for current values
   
   // Destroy engine
   const destroy = useCallback(async (force: boolean = false) => {

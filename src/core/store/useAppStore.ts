@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
+import { shallow } from 'zustand/shallow';
 import { BufferSize } from 'murmuraba';
 
 interface EngineConfig {
@@ -36,6 +37,7 @@ interface EngineConfig {
   transientThreshold: number;
   enablePsychoacousticModel: boolean;
   psychoacousticMaskingCurve: 'fletcher-munson' | 'equal-loudness' | 'custom';
+  workerInitializationTimeout: number;
 }
 
 interface DisplaySettings {
@@ -117,8 +119,79 @@ const defaultEngineConfig: EngineConfig = {
   enableTransientPreservation: true,
   transientThreshold: 0.7,
   enablePsychoacousticModel: true,
-  psychoacousticMaskingCurve: 'fletcher-munson'
+  psychoacousticMaskingCurve: 'fletcher-munson',
+  workerInitializationTimeout: 30000
 };
+
+// Create memoized selector cache to prevent getSnapshot infinite loops
+const selectorCache = new WeakMap<AppState, Record<string, any>>();
+
+// Helper function to create cached selectors
+function createCachedSelector<T>(
+  selectorKey: string,
+  selectorFn: (state: AppState) => T
+): (state: AppState) => T {
+  return (state: AppState): T => {
+    if (!selectorCache.has(state)) {
+      selectorCache.set(state, {});
+    }
+    
+    const cache = selectorCache.get(state)!;
+    
+    if (!(selectorKey in cache)) {
+      cache[selectorKey] = selectorFn(state);
+    }
+    
+    return cache[selectorKey];
+  };
+}
+
+// Stable selectors to prevent getSnapshot caching issues
+export const selectUIState = createCachedSelector('uiState', (state: AppState) => ({
+  isDarkMode: state.isDarkMode,
+  isChatOpen: state.isChatOpen,
+  isSettingsOpen: state.isSettingsOpen,
+  selectedTab: state.selectedTab,
+  toggleDarkMode: state.toggleDarkMode,
+  toggleChat: state.toggleChat,
+  toggleSettings: state.toggleSettings,
+  setSelectedTab: state.setSelectedTab
+}));
+
+export const selectEngineConfig = createCachedSelector('engineConfig', (state: AppState) => ({
+  engineConfig: state.engineConfig,
+  updateEngineConfig: state.updateEngineConfig
+}));
+
+export const selectDisplaySettings = createCachedSelector('displaySettings', (state: AppState) => ({
+  displaySettings: state.displaySettings,
+  updateDisplaySettings: state.updateDisplaySettings
+}));
+
+export const selectVadThresholds = createCachedSelector('vadThresholds', (state: AppState) => ({
+  vadThresholds: state.vadThresholds,
+  updateVadThresholds: state.updateVadThresholds
+}));
+
+export const selectFileState = createCachedSelector('fileState', (state: AppState) => ({
+  processedFileResult: state.processedFileResult,
+  setProcessedFileResult: state.setProcessedFileResult,
+  isProcessingAudio: state.isProcessingAudio,
+  setIsProcessingAudio: state.setIsProcessingAudio
+}));
+
+// Individual property selectors for even more granular control
+export const selectIsDarkMode = (state: AppState) => state.isDarkMode;
+export const selectSelectedTab = (state: AppState) => state.selectedTab;
+export const selectEngineConfigOnly = (state: AppState) => state.engineConfig;
+export const selectIsProcessingAudio = (state: AppState) => state.isProcessingAudio;
+
+// Utility hooks for common usage patterns
+export const useUIState = () => useAppStore(selectUIState);
+export const useEngineConfig = () => useAppStore(selectEngineConfig);
+export const useDisplaySettings = () => useAppStore(selectDisplaySettings);
+export const useVadThresholds = () => useAppStore(selectVadThresholds);
+export const useFileState = () => useAppStore(selectFileState);
 
 export const useAppStore = create<AppState>()(
   devtools(
@@ -165,8 +238,8 @@ export const useAppStore = create<AppState>()(
         toggleSettings: () =>
           set((state) => ({ isSettingsOpen: !state.isSettingsOpen })),
         
-        selectedTab: 'record',
-        setSelectedTab: (tab) => set({ selectedTab: tab }),
+        selectedTab: 'record' as 'record' | 'file' | 'demo',
+        setSelectedTab: (tab: 'record' | 'file' | 'demo') => set({ selectedTab: tab }),
         
         // File Processing State
         processedFileResult: null,
@@ -178,12 +251,48 @@ export const useAppStore = create<AppState>()(
       }),
       {
         name: 'murmuraba-app-store',
+        version: 2, // Increment version to clear old cached data
+        // Fix hydration issues that can cause getSnapshot loops
+        onRehydrateStorage: () => (state, error) => {
+          if (error) {
+            console.warn('Store hydration failed:', error);
+            return;
+          }
+          if (state) {
+            console.log('Store rehydrated successfully');
+            // Note: WeakMap doesn't have clear method, cache will be garbage collected naturally
+          }
+        },
+        // Only persist essential state to minimize hydration complexity
         partialize: (state) => ({
           engineConfig: state.engineConfig,
           displaySettings: state.displaySettings,
           vadThresholds: state.vadThresholds,
           isDarkMode: state.isDarkMode
-        })
+        }),
+        // Additional options to prevent loops
+        skipHydration: false,
+        // Merge strategy that prevents reference issues
+        merge: (persistedState, currentState) => {
+          const mergedState = {
+            ...currentState,
+            ...(persistedState as Partial<AppState>),
+          };
+          
+          // Ensure functions from current state are preserved
+          return {
+            ...mergedState,
+            updateEngineConfig: currentState.updateEngineConfig,
+            updateDisplaySettings: currentState.updateDisplaySettings,
+            updateVadThresholds: currentState.updateVadThresholds,
+            toggleDarkMode: currentState.toggleDarkMode,
+            toggleChat: currentState.toggleChat,
+            toggleSettings: currentState.toggleSettings,
+            setSelectedTab: currentState.setSelectedTab,
+            setProcessedFileResult: currentState.setProcessedFileResult,
+            setIsProcessingAudio: currentState.setIsProcessingAudio
+          };
+        },
       }
     )
   )

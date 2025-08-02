@@ -1,5 +1,6 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ErrorInfo, ReactNode } from 'react';
 import { Logger } from '../../core/services/Logger';
+import { createSafeErrorContext, sanitizeProps } from '../../core/utils/serialization';
 
 interface Props {
   children: ReactNode;
@@ -43,17 +44,31 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const { onError, level = 'component' } = this.props;
     
-    // Log error to logging service
-    Logger.error('ErrorBoundary caught error', {
-      level,
-      error: error.toString(),
-      componentStack: errorInfo.componentStack,
-      errorBoundary: this.constructor.name,
-      props: this.props
-    });
+    try {
+      // Create safe context for logging (avoid circular references)
+      const safeContext = createSafeErrorContext(error, errorInfo, {
+        level,
+        errorBoundary: this.constructor.name,
+        props: sanitizeProps(this.props),
+        errorCount: this.state.errorCount
+      });
+
+      // Log error to logging service with safe context
+      Logger.error('ErrorBoundary caught error', safeContext);
+    } catch (loggingError) {
+      // Fallback logging if safe context creation fails
+      console.error('ErrorBoundary: Failed to log error safely', {
+        originalError: error.message,
+        loggingError: loggingError instanceof Error ? loggingError.message : 'Unknown logging error'
+      });
+    }
 
     // Call custom error handler if provided
-    onError?.(error, errorInfo);
+    try {
+      onError?.(error, errorInfo);
+    } catch (handlerError) {
+      console.error('ErrorBoundary: Custom error handler failed', handlerError);
+    }
 
     this.setState(prevState => ({
       errorInfo,

@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ChunkHeader } from '../chunk-header/chunk-header';
+import { vi, beforeEach } from 'vitest';
 
 describe('ChunkHeader', () => {
   const mockProps = {
@@ -15,15 +16,15 @@ describe('ChunkHeader', () => {
     isPlaying: false,
     isExpanded: false,
     hasProcessedAudio: true,
-    onTogglePlayback: jest.fn(),
-    onToggleExpansion: jest.fn(),
-    onKeyDown: jest.fn(),
-    formatTime: (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`,
+    onTogglePlayback: vi.fn(),
+    onToggleExpansion: vi.fn(),
+    onKeyDown: vi.fn(),
+    formatTime: (s: number) => `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`,
     formatPercentage: (v: number) => `${v.toFixed(1)}%`
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should render chunk header with VAD display prominently', () => {

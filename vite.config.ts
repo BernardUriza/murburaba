@@ -11,14 +11,26 @@ export default defineConfig({
     sourcemap: true,
     chunkSizeWarningLimit: 500,
     rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, 'index.html')
-      },
       output: {
         manualChunks(id) {
-          // Separate WASM into its own chunk
-          if (id.includes('rnnoise.wasm')) {
+          // Separate WASM modules into their own chunk
+          if (id.includes('rnnoise.wasm') || id.includes('rnnoise-wasm')) {
             return 'rnnoise-wasm';
+          }
+          // Separate workers into their own chunk
+          if (id.includes('.worker.')) {
+            return 'workers';
+          }
+          // Separate large dependencies
+          if (id.includes('node_modules')) {
+            // Keep the sync version out of main bundle
+            if (id.includes('rnnoise-sync')) {
+              return 'rnnoise-sync';
+            }
+            // Other large dependencies
+            if (id.includes('jszip')) {
+              return 'jszip';
+            }
           }
           // Return undefined for default chunking behavior
           return undefined;
@@ -48,6 +60,10 @@ export default defineConfig({
     }
   },
   assetsInclude: ['**/*.wasm'],
+  worker: {
+    format: 'es',
+    plugins: () => [react()]
+  },
   server: {
     port: 3000,
     open: true,

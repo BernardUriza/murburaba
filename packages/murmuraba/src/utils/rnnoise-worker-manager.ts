@@ -15,10 +15,12 @@ export class RNNoiseWorkerManager {
   private workerTasks = new Map<Worker, WorkerTask>();
   private initialized = false;
   private readonly maxWorkers: number;
+  private readonly initTimeout: number;
   
-  constructor(maxWorkers = navigator.hardwareConcurrency || 4) {
+  constructor(maxWorkers = navigator.hardwareConcurrency || 4, initTimeout = 30000) {
     this.maxWorkers = Math.min(maxWorkers, 8); // Cap at 8 workers
-    console.log(`[RNNoiseWorkerManager] Initializing with ${this.maxWorkers} workers`);
+    this.initTimeout = initTimeout;
+    console.log(`[RNNoiseWorkerManager] Initializing with ${this.maxWorkers} workers, timeout: ${initTimeout}ms`);
   }
   
   async initialize(): Promise<void> {
@@ -35,8 +37,8 @@ export class RNNoiseWorkerManager {
       
       const initPromise = new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => {
-          reject(new Error(`Worker ${i} initialization timeout`));
-        }, 10000);
+          reject(new Error(`Worker ${i} initialization timeout after ${this.initTimeout}ms`));
+        }, this.initTimeout);
         
         const messageHandler = (event: MessageEvent) => {
           if (event.data.type === 'initialized') {

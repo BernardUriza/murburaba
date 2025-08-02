@@ -125,7 +125,9 @@
       "Bash(npx depcheck:*)",
       "Bash(npx vitest list:*)",
       "Bash(vite build)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(npx knip:*)",
+      "Bash(npx madge:*)"
     ],
     "deny": []
   }

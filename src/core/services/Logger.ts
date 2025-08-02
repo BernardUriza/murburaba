@@ -72,8 +72,75 @@ class LoggerService {
   private formatMessage(entry: LogEntry): string {
     const timestamp = entry.timestamp.toISOString();
     const level = LogLevel[entry.level];
-    const context = entry.context ? JSON.stringify(entry.context) : '';
+    const context = entry.context ? this.safeStringifyContext(entry.context) : '';
     return `[${timestamp}] [${level}] ${entry.message} ${context}`;
+  }
+
+  private safeStringifyContext(context: any): string {
+    try {
+      // Handle simple primitives directly
+      if (context === null || context === undefined) {
+        return '';
+      }
+      
+      if (typeof context === 'string' || typeof context === 'number' || typeof context === 'boolean') {
+        return String(context);
+      }
+
+      // For complex objects, use safe serialization
+      return this.safeStringify(context);
+    } catch (error) {
+      return `[Context Serialization Error: ${error instanceof Error ? error.message : 'Unknown error'}]`;
+    }
+  }
+
+  private safeStringify(obj: any): string {
+    const seen = new WeakSet();
+    
+    try {
+      return JSON.stringify(obj, (key: string, value: any) => {
+        // Skip React internal properties
+        if (key.startsWith('__react') || key.startsWith('_react') || key === '_owner' || key === 'ref') {
+          return '[React Internal]';
+        }
+
+        // Handle circular references
+        if (typeof value === 'object' && value !== null) {
+          if (seen.has(value)) {
+            return '[Circular Reference]';
+          }
+          seen.add(value);
+
+          // Handle React elements
+          if (value.$$typeof) {
+            return '[React Element]';
+          }
+
+          // Handle DOM nodes
+          if (value.nodeType) {
+            return `[DOM Node: ${value.nodeName}]`;
+          }
+
+          // Handle functions
+          if (typeof value === 'function') {
+            return `[Function: ${value.name || 'anonymous'}]`;
+          }
+
+          // Handle Errors
+          if (value instanceof Error) {
+            return {
+              name: value.name,
+              message: value.message,
+              stack: value.stack
+            };
+          }
+        }
+
+        return value;
+      });
+    } catch (error) {
+      return `[Serialization Failed: ${error instanceof Error ? error.message : 'Unknown error'}]`;
+    }
   }
 
   private consoleLog(entry: LogEntry) {
@@ -112,17 +179,31 @@ class LoggerService {
     this.buffer = [];
 
     try {
+      // Safe serialization of logs before sending
+      const serializedLogs = logs.map(log => ({
+        ...log,
+        context: log.context ? this.safeStringifyContext(log.context) : undefined
+      }));
+
       await fetch(this.config.remoteEndpoint!, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ logs })
+        body: JSON.stringify({ logs: serializedLogs })
       });
     } catch (error) {
       // Failed to send logs, add them back to buffer if not too large
       if (this.buffer.length + logs.length < this.config.maxBufferSize * 2) {
         this.buffer = [...logs, ...this.buffer];
+      }
+      
+      // Log the flush error to console as fallback (but don't recurse)
+      if (this.config.enableConsole) {
+        console.warn('Logger: Failed to flush logs to remote endpoint', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          logsCount: logs.length
+        });
       }
     }
   }
@@ -130,16 +211,29 @@ class LoggerService {
   log(level: LogLevel, message: string, context?: any, error?: Error) {
     if (!this.shouldLog(level)) return;
 
-    const entry: LogEntry = {
-      level,
-      message,
-      timestamp: new Date(),
-      context,
-      error
-    };
+    try {
+      const entry: LogEntry = {
+        level,
+        message,
+        timestamp: new Date(),
+        context,
+        error
+      };
 
-    this.consoleLog(entry);
-    this.addToBuffer(entry);
+      this.consoleLog(entry);
+      this.addToBuffer(entry);
+    } catch (loggingError) {
+      // Fallback to basic console logging if our logger fails
+      const fallbackMessage = `Logger Error: ${loggingError instanceof Error ? loggingError.message : 'Unknown error'} | Original: ${message}`;
+      
+      if (level >= LogLevel.ERROR) {
+        console.error(fallbackMessage, error);
+      } else if (level >= LogLevel.WARN) {
+        console.warn(fallbackMessage);
+      } else {
+        console.log(fallbackMessage);
+      }
+    }
   }
 
   debug(message: string, context?: any) {

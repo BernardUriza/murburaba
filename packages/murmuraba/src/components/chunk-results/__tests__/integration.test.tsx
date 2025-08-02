@@ -1,18 +1,19 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { ChunkProcessingResults } from '../../ChunkProcessingResults';
+import { ChunkProcessingResults } from '../../chunk-processing-results/chunk-processing-results';
 import { ProcessedChunk } from '../../../hooks/murmuraba-engine/types';
+import { vi } from 'vitest';
 
 describe('ChunkProcessingResults - VAD Integration', () => {
   const mockProps = {
     averageNoiseReduction: 75.5,
     selectedChunk: null,
-    onTogglePlayback: jest.fn(),
-    onToggleExpansion: jest.fn(),
-    onClearAll: jest.fn(),
-    onExportWav: jest.fn(),
-    onExportMp3: jest.fn(),
-    onDownloadChunk: jest.fn()
+    onTogglePlayback: vi.fn(),
+    onToggleExpansion: vi.fn(),
+    onClearAll: vi.fn(),
+    onExportWav: vi.fn(),
+    onExportMp3: vi.fn(),
+    onDownloadChunk: vi.fn()
   };
 
   const createChunkWithVAD = (id: string, averageVad: number): ProcessedChunk => ({

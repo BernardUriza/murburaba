@@ -136,6 +136,8 @@ export interface EngineEvents {
   'state-change': (oldState: EngineState, newState: EngineState) => void;
   'metrics-update': (metrics: ProcessingMetrics) => void;
   'degraded-mode': () => void;
+  'user-gesture-required': () => void;
+  'audio-context-resumed': () => void;
   [key: string]: (...args: any[]) => void;
 }
 

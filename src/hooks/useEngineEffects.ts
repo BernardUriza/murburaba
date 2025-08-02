@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import Swal from 'sweetalert2';
 import { Logger } from '../core/services/Logger';
 
@@ -23,30 +23,54 @@ export function useEngineEffects({
   engineConfig,
   initialize
 }: UseEngineEffectsProps) {
-  // Initialize engine on mount - removed initialize from deps to prevent loop
+  // CRITICAL FIX: Use refs to prevent stale closures and dependency loops
+  const initializeRef = useRef(initialize);
+  const engineConfigRef = useRef(engineConfig);
+  const hasShownErrorRef = useRef(false);
+  const hasInitializedRef = useRef(false);
+  
+  // Update refs on every render
+  initializeRef.current = initialize;
+  engineConfigRef.current = engineConfig;
+
+  // Initialize engine on mount - FIXED: Only run once per session
   useEffect(() => {
-    if (!isInitialized && !isLoading && !error) {
-      initialize();
+    if (!isInitialized && !isLoading && !error && !hasInitializedRef.current) {
+      console.log('useEngineEffects: Initializing engine...');
+      hasInitializedRef.current = true;
+      initializeRef.current();
     }
   }, [isInitialized, isLoading, error]);
 
-  // Apply dark mode
+  // Reset initialization flag when engine is destroyed
+  useEffect(() => {
+    if (!isInitialized && !isLoading && !error) {
+      hasInitializedRef.current = false;
+    }
+  }, [isInitialized, isLoading, error]);
+
+  // Apply dark mode - STABLE: no issues here
   useEffect(() => {
     document.body.classList.toggle('dark-mode', isDarkMode);
   }, [isDarkMode]);
 
-  // Save engine config to localStorage when it changes
+  // CRITICAL FIX: Save engine config with debouncing to prevent loops
   useEffect(() => {
-    try {
-      localStorage.setItem('murmuraba-config', JSON.stringify(engineConfig));
-    } catch (error) {
-      Logger.warn('Failed to save engine config to localStorage', { error });
-    }
+    const timeoutId = setTimeout(() => {
+      try {
+        localStorage.setItem('murmuraba-config', JSON.stringify(engineConfigRef.current));
+      } catch (error) {
+        Logger.warn('Failed to save engine config to localStorage', { error });
+      }
+    }, 100); // Debounce config saves
+    
+    return () => clearTimeout(timeoutId);
   }, [engineConfig]);
 
-  // Show initialization error if any
+  // CRITICAL FIX: Show initialization error only once to prevent loops
   useEffect(() => {
-    if (error && error.includes('WASM')) {
+    if (error && error.includes('WASM') && !hasShownErrorRef.current) {
+      hasShownErrorRef.current = true;
       Swal.fire({
         icon: 'error',
         title: 'Initialization Error',
@@ -55,6 +79,11 @@ export function useEngineEffects({
       }).catch((swalError) => {
         Logger.error('Failed to show error dialog', { swalError });
       });
+    }
+    
+    // Reset flag when error clears
+    if (!error) {
+      hasShownErrorRef.current = false;
     }
   }, [error]);
 }

@@ -134,15 +134,32 @@ vi.mock('lamejs', () => ({
   })),
 }));
 
-// Mock RNNoise module
-vi.mock('../engines/rnnoise-loader', () => ({
-  default: vi.fn().mockResolvedValue({
-    _rnnoise_create: vi.fn().mockReturnValue(1),
+// Mock @jitsi/rnnoise-wasm module - CRITICAL FIX
+vi.mock('@jitsi/rnnoise-wasm', () => ({
+  createRNNWasmModule: vi.fn().mockImplementation(() => {
+    return Promise.resolve({
+      _malloc: vi.fn().mockReturnValue(1000),
+      _free: vi.fn(),
+      _rnnoise_create: vi.fn().mockReturnValue(12345),
+      _rnnoise_destroy: vi.fn(),
+      _rnnoise_process_frame: vi.fn().mockReturnValue(0.7),
+      HEAPU8: new Uint8Array(10000),
+      HEAPF32: new Float32Array(10000),
+      HEAP32: new Int32Array(10000)
+    });
+  })
+}));
+
+// Mock RNNoise loader module
+vi.mock('../utils/rnnoise-loader', () => ({
+  loadRNNoiseModule: vi.fn().mockResolvedValue({
+    _rnnoise_create: vi.fn().mockReturnValue(12345),
     _rnnoise_destroy: vi.fn(),
     _rnnoise_process_frame: vi.fn().mockReturnValue(0.5),
     _malloc: vi.fn().mockReturnValue(1000),
     _free: vi.fn(),
     HEAPF32: new Float32Array(10000),
+    HEAPU8: new Uint8Array(10000),
     HEAP32: new Int32Array(10000)
   })
 }));

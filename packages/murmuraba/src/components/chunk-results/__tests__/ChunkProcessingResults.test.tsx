@@ -1,27 +1,28 @@
 import React from 'react';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ChunkProcessingResults } from '../../ChunkProcessingResults';
+import { ChunkProcessingResults } from '../../chunk-processing-results/chunk-processing-results';
 import { ProcessedChunk } from '../../../hooks/murmuraba-engine/types';
+import { vi } from 'vitest';
 
 // Mock the child components
-jest.mock('../chunk-header/chunk-header');
-jest.mock('../processing-metrics/processing-metrics');
-jest.mock('../file-info/file-info');
-jest.mock('../vad-timeline/vad-timeline');
-jest.mock('../audio-controls/audio-controls');
+vi.mock('../chunk-header/chunk-header');
+vi.mock('../processing-metrics/processing-metrics');
+vi.mock('../file-info/file-info');
+vi.mock('../vad-timeline/vad-timeline');
+vi.mock('../audio-controls/audio-controls');
 
 describe('ChunkProcessingResults - VAD Prominence', () => {
   const mockProps = {
     chunks: [] as ProcessedChunk[],
     averageNoiseReduction: 75.5,
     selectedChunk: null,
-    onTogglePlayback: jest.fn(),
-    onToggleExpansion: jest.fn(),
-    onClearAll: jest.fn(),
-    onExportWav: jest.fn(),
-    onExportMp3: jest.fn(),
-    onDownloadChunk: jest.fn()
+    onTogglePlayback: vi.fn(),
+    onToggleExpansion: vi.fn(),
+    onClearAll: vi.fn(),
+    onExportWav: vi.fn(),
+    onExportMp3: vi.fn(),
+    onDownloadChunk: vi.fn()
   };
 
   const createChunkWithVAD = (id: string, averageVad: number): ProcessedChunk => ({
@@ -55,7 +56,7 @@ describe('ChunkProcessingResults - VAD Prominence', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should pass VAD data to ChunkHeader for prominent display', () => {

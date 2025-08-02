@@ -41,8 +41,8 @@ export async function loadRNNoiseModule({
 // Modified to support retry mechanism
 async function loadWASMOptimized(retriesLeft = 2): Promise<RNNoiseModule> {
   try {
-    const rnnoiseModule = await import('@jitsi/rnnoise-wasm');
-    const { createRNNWasmModule } = rnnoiseModule as any;
+    // Import only the async function to avoid bundling the 1.9MB sync version
+    const { createRNNWasmModule } = await import('@jitsi/rnnoise-wasm') as any;
     
     const module = await createRNNWasmModule({
       locateFile: (filename: string) => {

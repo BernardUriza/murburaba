@@ -9,7 +9,13 @@ import { CopilotChat } from './components/copilot-chat/copilot-chat';
 import { Settings } from './components/settings/settings';
 import { AppHeader } from './components/app-header';
 import { TabContent } from './components/tab-content';
-import { useAppStore } from './core/store/useAppStore';
+import { 
+  useUIState,
+  useEngineConfig, 
+  useDisplaySettings, 
+  useVadThresholds, 
+  useFileState 
+} from './core/store/useAppStore';
 import { ErrorBoundary } from './shared/components/ErrorBoundary';
 import { AsyncBoundary } from './shared/components/AsyncBoundary';
 import { Logger } from './core/services/Logger';
@@ -18,35 +24,25 @@ import { useEngineEffects } from './hooks';
 // Lazy load heavy components for code splitting
 const AdvancedMetricsPanel = lazy(() => import('murmuraba').then(m => ({ default: m.AdvancedMetricsPanel })));
 
-// Store selectors with proper memoization
-const selectAppUI = (state: any) => ({
-  isDarkMode: state.isDarkMode,
-  isChatOpen: state.isChatOpen,
-  toggleChat: state.toggleChat,
-  isSettingsOpen: state.isSettingsOpen,
-  toggleSettings: state.toggleSettings,
-  selectedTab: state.selectedTab
-});
-
-const selectAppConfig = (state: any) => ({
-  engineConfig: state.engineConfig,
-  updateEngineConfig: state.updateEngineConfig,
-  displaySettings: state.displaySettings,
-  updateDisplaySettings: state.updateDisplaySettings,
-  vadThresholds: state.vadThresholds,
-  updateVadThresholds: state.updateVadThresholds
-});
-
-const selectAppFileState = (state: any) => ({
-  processedFileResult: state.processedFileResult,
-  setProcessedFileResult: state.setProcessedFileResult
-});
 
 const App = memo(function App() {
-  // Selective store subscriptions to minimize re-renders
-  const { isDarkMode, isChatOpen, toggleChat, isSettingsOpen, toggleSettings, selectedTab } = useAppStore(selectAppUI);
-  const { engineConfig, updateEngineConfig, displaySettings, updateDisplaySettings, vadThresholds, updateVadThresholds } = useAppStore(selectAppConfig);
-  const { processedFileResult, setProcessedFileResult } = useAppStore(selectAppFileState);
+  // Test render first
+  console.log('App component rendering...');
+  
+  // CRITICAL FIX: Use cached utility hooks to prevent getSnapshot infinite loops
+  const uiState = useUIState();
+  const { engineConfig, updateEngineConfig } = useEngineConfig();
+  const { displaySettings, updateDisplaySettings } = useDisplaySettings();
+  const { vadThresholds, updateVadThresholds } = useVadThresholds();
+  const { processedFileResult, setProcessedFileResult } = useFileState();
+  
+  // Destructure UI state
+  const { isDarkMode, isChatOpen, toggleChat, isSettingsOpen, toggleSettings, selectedTab } = uiState;
+  
+  console.log('Store subscription successful');
+
+  // CRITICAL FIX: Memoize engine config with stable reference to prevent re-initialization loops
+  const memoizedEngineConfig = useMemo(() => engineConfig, [engineConfig]);
 
   const {
     // Engine State
@@ -79,16 +75,18 @@ const App = memo(function App() {
     exportChunkAsWav,
     exportChunkAsMp3,
     downloadAllChunksAsZip
-  } = useMurmubaraEngine(engineConfig);
+  } = useMurmubaraEngine(memoizedEngineConfig);
 
-  // Consolidated effects for better organization and performance
+  // CRITICAL FIX: Stable config object to prevent dependency loops
+  // CRITICAL FIX: Use individual props instead of memoized object to prevent dependency loops
+  // This prevents the entire config object from being recreated when any single prop changes
   useEngineEffects({
     isInitialized,
     isLoading,
     error,
     isDarkMode,
-    engineConfig,
-    initialize
+    engineConfig: memoizedEngineConfig,
+    initialize // Pass function directly without extra memoization
   });
 
 
@@ -142,7 +140,7 @@ const App = memo(function App() {
   const appClassName = useMemo(() => `app ${isDarkMode ? 'dark' : ''}`, [isDarkMode]);
   
   const shouldShowWaveform = useMemo(() => 
-    recordingState.isRecording && currentStream, [recordingState.isRecording, currentStream]);
+    recordingState.isRecording && !!currentStream, [recordingState.isRecording, currentStream]);
   
   const shouldShowMetrics = useMemo(() => 
     engineConfig.enableMetrics && metrics, [engineConfig.enableMetrics, metrics]);

@@ -1,4 +1,4 @@
-import { MurmubaraEngine } from './core/murmubara-engine';
+import { MurmubaraEngine } from './core/murmuraba-engine';
 import { MurmubaraConfig } from './types';
 
 let globalEngine: MurmubaraEngine | null = null;
