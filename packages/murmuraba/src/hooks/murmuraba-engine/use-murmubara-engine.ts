@@ -238,6 +238,12 @@ export function useMurmubaraEngine(
     
     return audioExporterRef.current.downloadChunk(chunk, format, audioType);
   }, [recordingState.chunks]);
+
+  const downloadAllChunksAsZip = useCallback(async (
+    audioType: 'processed' | 'original' | 'both' = 'both'
+  ): Promise<void> => {
+    return audioExporterRef.current.downloadAllChunksAsZip(recordingState.chunks, audioType);
+  }, [recordingState.chunks]);
   
   // Utility functions
   const formatTime = useCallback((seconds: number): string => {
@@ -395,6 +401,7 @@ export function useMurmubaraEngine(
     exportChunkAsWav,
     exportChunkAsMp3,
     downloadChunk,
+    downloadAllChunksAsZip,
     
     // Utility
     getDiagnostics: updateDiagnostics,

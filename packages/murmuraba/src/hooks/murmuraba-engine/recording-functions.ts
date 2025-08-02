@@ -104,7 +104,12 @@ export function createRecordingFunctions({
       
       // Start the chunk processing
       const onChunkProcessed = (chunk: ProcessedChunk) => {
-        addChunk(chunk);
+        // Add index to chunk for ChunkData compatibility
+        const chunkWithIndex = {
+          ...chunk,
+          index: recordingStateHook.recordingState.chunks.length
+        };
+        addChunk(chunkWithIndex);
         logger.info('Chunk processed', {
           id: chunk.id,
           duration: chunk.duration,

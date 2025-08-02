@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug React App</title>
+    <style>
+        body {
+            background-color: #0A0B0E;
+            color: #E4E5F1;
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .debug-info {
+            padding: 20px;
+            background: rgba(31, 32, 40, 0.8);
+            border-radius: 8px;
+            border: 1px solid #2E3039;
+            margin-bottom: 20px;
+        }
+        #test-root {
+            min-height: 200px;
+            background: rgba(31, 32, 40, 0.4);
+            border: 2px dashed #52A32F;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-info">
+        <h1>🔍 React App Debug Page</h1>
+        <p>This page helps debug the React application visibility issues.</p>
+        <p><strong>Current time:</strong> <span id="current-time"></span></p>
+        <p><strong>User Agent:</strong> <span id="user-agent"></span></p>
+    </div>
+    
+    <div id="test-root">
+        <h2>React App Should Render Here</h2>
+        <p>If you can see this text, the HTML structure is working.</p>
+        <p>If the React app loads successfully, this content will be replaced.</p>
+    </div>
+
+    <script>
+        // Basic debugging info
+        document.getElementById('current-time').textContent = new Date().toLocaleString();
+        document.getElementById('user-agent').textContent = navigator.userAgent;
+        
+        // Test if we can access the development server
+        fetch('/src/main.tsx')
+            .then(response => {
+                console.log('✅ Main.tsx accessible:', response.status);
+            })
+            .catch(error => {
+                console.error('❌ Main.tsx not accessible:', error);
+            });
+            
+        // Test if we can load React
+        console.log('🔍 Starting debug tests...');
+        console.log('📍 Current URL:', window.location.href);
+        console.log('🌐 Protocol:', window.location.protocol);
+        console.log('🏠 Host:', window.location.host);
+    </script>
+    
+    <!-- Try to load the main React app -->
+    <script type="module">
+        try {
+            console.log('🚀 Attempting to load React main module...');
+            import('/src/main.tsx').then(() => {
+                console.log('✅ React main module loaded successfully');
+                document.getElementById('test-root').innerHTML = '<h2>✅ React Module Loaded!</h2><p>The main.tsx file loaded without errors.</p>';
+            }).catch(error => {
+                console.error('❌ Failed to load React main module:', error);
+                document.getElementById('test-root').innerHTML = `<h2>❌ React Module Failed</h2><pre>${error.toString()}</pre>`;
+            });
+        } catch (error) {
+            console.error('❌ Error in module loading:', error);
+            document.getElementById('test-root').innerHTML = `<h2>❌ Script Error</h2><pre>${error.toString()}</pre>`;
+        }
+    </script>
+</body>
+</html>

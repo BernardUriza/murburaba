@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect } from 'react';
+import { lazy, useEffect } from 'react';
 import { 
   useMurmubaraEngine,
   BuildInfo,
@@ -47,17 +47,15 @@ export default function App() {
     isInitialized,
     isLoading,
     error,
-    engineState,
     metrics,
     diagnostics,
     
     // Recording State
     recordingState,
-    currentStream,
     
     // Actions
     initialize,
-    destroy,
+    processFile,
     
     // Recording Actions
     startRecording,
@@ -105,22 +103,19 @@ export default function App() {
     }
   }, [error]);
 
-  const handleEngineConfigChange = (key: string, value: any) => {
-    updateEngineConfig({ [key]: value });
-  };
 
-  const handleExportChunk = async (chunkId: string, format: 'wav' | 'mp3') => {
+  const handleExportChunk = async (chunkId: string, format: 'wav' | 'mp3', audioType: 'processed' | 'original' = 'processed') => {
     try {
       if (format === 'wav') {
-        await exportChunkAsWav(chunkId);
+        await exportChunkAsWav(chunkId, audioType);
       } else {
-        await exportChunkAsMp3(chunkId);
+        await exportChunkAsMp3(chunkId, audioType);
       }
       
       await Swal.fire({
         icon: 'success',
         title: 'Export Successful',
-        text: `Chunk exported as ${format.toUpperCase()}`,
+        text: `Chunk exported as ${format.toUpperCase()} (${audioType})`,
         timer: 2000,
         showConfirmButton: false
       });
@@ -146,7 +141,7 @@ export default function App() {
               <span className="logo-icon">🎵</span>
               Murmuraba Studio
             </h1>
-            <span className="version-badge">v{BuildInfo.version}</span>
+            <BuildInfo format="badge" size="small" />
           </div>
           
           <UIControls className="header-controls" />
@@ -165,14 +160,14 @@ export default function App() {
           <>
             <div className="tab-content">
               {selectedTab === 'record' && (
-                <ErrorBoundary level="section" resetKeys={[recordingState]}>
+                <ErrorBoundary level="section" resetKeys={[recordingState.chunks.length]}>
                   <div className="record-tab">
                   <AudioRecorder
                     recordingState={recordingState}
                     isInitialized={isInitialized}
                     isLoading={isLoading}
                     onStartRecording={startRecording}
-                    onStopRecording={stopRecording}
+                    onStopRecording={async () => stopRecording()}
                     onPauseRecording={pauseRecording}
                     onResumeRecording={resumeRecording}
                     onClearRecordings={clearRecordings}
@@ -184,11 +179,13 @@ export default function App() {
                         chunks={recordingState.chunks}
                         isPlaying={recordingState.playingChunks}
                         expandedChunk={recordingState.expandedChunk}
-                        onTogglePlayback={toggleChunkPlayback}
+                        onTogglePlayback={(chunkId: string, audioType: 'processed' | 'original' = 'processed') => 
+                          toggleChunkPlayback(chunkId, audioType)
+                        }
                         onToggleExpansion={toggleChunkExpansion}
                         onExportWav={(id) => handleExportChunk(id, 'wav')}
                         onExportMp3={(id) => handleExportChunk(id, 'mp3')}
-                        onDownloadAll={downloadAllChunksAsZip}
+                        onDownloadAll={() => downloadAllChunksAsZip('both')}
                         ChunkProcessingResults={ChunkProcessingResults}
                       />
                     </AsyncBoundary>
@@ -211,9 +208,9 @@ export default function App() {
                     <AsyncBoundary level="component" fallback={<div>Loading results...</div>}>
                       <div className="file-results">
                         <SimpleWaveformAnalyzer
-                          audioUrl={processedFileResult.processedUrl}
-                          label="Processed Audio"
-                          color="#10b981"
+                          isActive={true}
+                          width={800}
+                          height={200}
                         />
                       </div>
                     </AsyncBoundary>
@@ -224,7 +221,13 @@ export default function App() {
 
               {selectedTab === 'demo' && (
                 <AsyncBoundary level="section" fallback={<div>Loading demo...</div>}>
-                  <AudioDemo />
+                  <AudioDemo 
+                    getEngineStatus={getEngineStatus}
+                    processFile={async (buffer: ArrayBuffer) => {
+                      // Process file using the engine
+                      return await processFile(buffer);
+                    }}
+                  />
                 </AsyncBoundary>
               )}
             </div>
@@ -233,9 +236,11 @@ export default function App() {
             {engineConfig.enableMetrics && metrics && (
               <AsyncBoundary level="component" fallback={<div>Loading metrics...</div>}>
                 <AdvancedMetricsPanel
-                  metrics={metrics}
+                  isVisible={true}
                   diagnostics={diagnostics}
-                  isRecording={recordingState.isRecording}
+                  onClose={() => {
+                    // Handle close if needed
+                  }}
                 />
               </AsyncBoundary>
             )}
@@ -256,8 +261,14 @@ export default function App() {
       <CopilotChat
         isOpen={isChatOpen}
         onClose={toggleChat}
-        engineStatus={getEngineStatus()}
-        currentConfig={engineConfig}
+        engineConfig={engineConfig}
+        setEngineConfig={updateEngineConfig}
+        isRecording={recordingState.isRecording}
+        isInitialized={isInitialized}
+        onApplyChanges={async () => {
+          // Apply any pending configuration changes
+          await initialize();
+        }}
       />
       </div>
     </ErrorBoundary>

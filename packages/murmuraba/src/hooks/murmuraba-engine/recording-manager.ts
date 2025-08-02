@@ -325,6 +325,7 @@ export class RecordingManager {
     // Create chunk with real metrics from processing
     const newChunk: ProcessedChunk = {
       id: chunkId,
+      index: this.cycleCount - 1, // Use cycleCount as index
       startTime: cycleStartTime,
       endTime: cycleEndTime,
       duration: actualDuration / 1000, // Convert milliseconds to seconds

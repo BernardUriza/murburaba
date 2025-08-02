@@ -5,7 +5,7 @@ interface AudioProcessorProps {
   chunks: ChunkData[];
   isPlaying: { [key: string]: boolean };
   expandedChunk: string | null;
-  onTogglePlayback: (chunkId: string) => void;
+  onTogglePlayback: (chunkId: string, audioType?: 'processed' | 'original') => Promise<void>;
   onToggleExpansion: (chunkId: string) => void;
   onExportWav: (chunkId: string) => Promise<void>;
   onExportMp3: (chunkId: string) => Promise<void>;
@@ -61,7 +61,7 @@ export const AudioProcessor: React.FC<AudioProcessorProps> = ({
 
               <div className="chunk-actions">
                 <button
-                  onClick={() => onTogglePlayback(chunk.id)}
+                  onClick={() => onTogglePlayback(chunk.id, 'processed')}
                   className="play-button"
                   title={isPlaying[chunk.id] ? 'Pause' : 'Play'}
                 >
@@ -100,7 +100,7 @@ export const AudioProcessor: React.FC<AudioProcessorProps> = ({
                 <ChunkProcessingResults
                   chunk={chunk}
                   isPlaying={isPlaying[chunk.id]}
-                  onPlaybackToggle={() => onTogglePlayback(chunk.id)}
+                  onPlaybackToggle={() => onTogglePlayback(chunk.id, 'processed')}
                 />
               </div>
             )}

@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
+import { BufferSize } from 'murmuraba';
 
 interface EngineConfig {
-  bufferSize: number;
+  bufferSize: BufferSize;
   processWindow: number;
   hopSize: number;
   spectralFloorDb: number;
@@ -84,7 +85,7 @@ interface AppState {
 }
 
 const defaultEngineConfig: EngineConfig = {
-  bufferSize: 16384,
+  bufferSize: 4096,
   processWindow: 1024,
   hopSize: 256,
   spectralFloorDb: -80,
@@ -152,7 +153,7 @@ export const useAppStore = create<AppState>()(
           })),
         
         // UI State
-        isDarkMode: false,
+        isDarkMode: true,
         toggleDarkMode: () =>
           set((state) => ({ isDarkMode: !state.isDarkMode })),
         

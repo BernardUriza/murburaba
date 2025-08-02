@@ -101,4 +101,65 @@ export class AudioExporter {
     
     console.log(`✅ ${LOG_PREFIX.EXPORT} Downloaded ${filename}`);
   }
+
+  /**
+   * Download all chunks as ZIP
+   */
+  async downloadAllChunksAsZip(
+    chunks: ProcessedChunk[], 
+    audioType: 'processed' | 'original' | 'both' = 'both'
+  ): Promise<void> {
+    if (chunks.length === 0) {
+      throw new Error('No chunks available to export');
+    }
+
+    console.log(`📦 ${LOG_PREFIX.EXPORT} Creating ZIP with ${chunks.length} chunks (${audioType})...`);
+
+    // Dynamic import for JSZip to reduce bundle size
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+
+    // Process each chunk
+    for (const chunk of chunks) {
+      const timestamp = new Date(chunk.startTime).toISOString().replace(/:/g, '-').split('.')[0];
+      const chunkIndex = chunks.indexOf(chunk) + 1;
+
+      try {
+        if (audioType === 'processed' || audioType === 'both') {
+          if (chunk.processedAudioUrl) {
+            const blob = await this.exportChunkAsWav(chunk, 'processed');
+            zip.file(`chunk_${chunkIndex.toString().padStart(3, '0')}_enhanced_${timestamp}.wav`, blob);
+          }
+        }
+
+        if (audioType === 'original' || audioType === 'both') {
+          if (chunk.originalAudioUrl) {
+            const blob = await this.exportChunkAsWav(chunk, 'original');
+            zip.file(`chunk_${chunkIndex.toString().padStart(3, '0')}_original_${timestamp}.wav`, blob);
+          }
+        }
+      } catch (error) {
+        console.warn(`⚠️ ${LOG_PREFIX.EXPORT} Failed to export chunk ${chunk.id}:`, error);
+      }
+    }
+
+    // Generate ZIP
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0];
+    const filename = `murmuraba_recordings_${audioType}_${timestamp}.zip`;
+
+    // Download ZIP
+    const url = URL.createObjectURL(zipBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+    
+    console.log(`✅ ${LOG_PREFIX.EXPORT} Downloaded ZIP: ${filename}`);
+  }
 }

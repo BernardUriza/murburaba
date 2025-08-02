@@ -1,19 +1,14 @@
-import { MurmubaraConfig, ChunkMetrics, EngineState, ProcessingMetrics, DiagnosticInfo, StreamController } from '../../types';
-export interface ProcessedChunk extends ChunkMetrics {
-    id: string;
-    processedAudioUrl?: string;
-    originalAudioUrl?: string;
-    isPlaying: boolean;
-    isExpanded: boolean;
-    isValid?: boolean;
-    errorMessage?: string;
-    currentlyPlayingType?: 'processed' | 'original' | null;
-}
+import { MurmubaraConfig, ChunkMetrics, ChunkData, EngineState, ProcessingMetrics, DiagnosticInfo, StreamController } from '../../types';
+export type ProcessedChunk = ChunkData;
 export interface RecordingState {
     isRecording: boolean;
     isPaused: boolean;
     recordingTime: number;
-    chunks: ProcessedChunk[];
+    chunks: ChunkData[];
+    playingChunks: {
+        [key: string]: boolean;
+    };
+    expandedChunk: string | null;
 }
 export interface UseMurmubaraEngineOptions extends MurmubaraConfig {
     autoInitialize?: boolean;
@@ -50,6 +45,7 @@ export interface UseMurmubaraEngineReturn {
     exportChunkAsWav: (chunkId: string, audioType: 'processed' | 'original') => Promise<Blob>;
     exportChunkAsMp3: (chunkId: string, audioType: 'processed' | 'original', bitrate?: number) => Promise<Blob>;
     downloadChunk: (chunkId: string, format: 'webm' | 'wav' | 'mp3', audioType: 'processed' | 'original') => Promise<void>;
+    downloadAllChunksAsZip: (audioType?: 'processed' | 'original' | 'both') => Promise<void>;
     getDiagnostics: () => DiagnosticInfo | null;
     resetError: () => void;
     formatTime: (seconds: number) => string;

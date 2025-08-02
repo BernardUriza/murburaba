@@ -69,6 +69,19 @@ export interface ChunkMetrics {
   averageVad?: number;
 }
 
+// Enhanced chunk interface used in recording functionality
+export interface ChunkData extends ChunkMetrics {
+  id: string;
+  index: number;
+  processedAudioUrl?: string;
+  originalAudioUrl?: string;
+  isPlaying: boolean;
+  isExpanded: boolean;
+  isValid?: boolean;
+  errorMessage?: string;
+  currentlyPlayingType?: 'processed' | 'original' | null;
+}
+
 export interface ChunkConfig {
   chunkDuration: number;
   onChunkProcessed?: (chunk: ChunkMetrics) => void;

@@ -54,7 +54,6 @@ export class AudioConverter {
       const audioBuffer = await converter.audioContext.decodeAudioData(arrayBuffer);
       
       // Convert to mono if stereo (lamejs works better with mono)
-      const channels = audioBuffer.numberOfChannels;
       const sampleRate = audioBuffer.sampleRate;
       const samples = audioBuffer.length;
       
