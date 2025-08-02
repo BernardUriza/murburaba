@@ -14,11 +14,11 @@ import {
   getDiagnostics,
   onMetricsUpdate
 } from '../api';
-import { MurmubaraEngine } from '../core/MurmubaraEngine';
+import { MurmubaraEngine } from '../core/murmubara-engine';
 import { BufferSize } from '../types';
 
 // Mock MurmubaraEngine
-vi.mock('../core/MurmubaraEngine');
+vi.mock('../core/murmubara-engine');
 
 describe('API Module', () => {
   let mockEngine: any;

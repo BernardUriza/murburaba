@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { MurmubaraEngine } from '../../core/MurmubaraEngine'
+import { MurmubaraEngine } from '../../core/murmubara-engine'
 
 describe('🔥 RNNoise VAD 15 Rules Verification', () => {
   let engine: MurmubaraEngine

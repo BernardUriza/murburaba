@@ -1,4 +1,4 @@
-import { MurmubaraEngine } from './core/MurmubaraEngine';
+import { MurmubaraEngine } from './core/murmubara-engine';
 let globalEngine = null;
 export async function initializeAudioEngine(config) {
     if (globalEngine) {

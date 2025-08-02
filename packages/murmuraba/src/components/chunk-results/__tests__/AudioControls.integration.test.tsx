@@ -3,9 +3,9 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { AudioControls } from '../audio-controls/audio-controls';
-import { SyncedWaveforms } from '../../SyncedWaveforms';
+import { SyncedWaveforms } from '../../synced-waveforms/synced-waveforms';
 
-vi.mock('../../SyncedWaveforms', () => ({
+vi.mock('../../synced-waveforms/synced-waveforms', () => ({
   SyncedWaveforms: vi.fn(({ processedAudioUrl, originalAudioUrl, isPlaying, onPlayingChange }) => (
     <div data-testid="synced-waveforms">
       <div>Processed: {processedAudioUrl}</div>

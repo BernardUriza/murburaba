@@ -1,4 +1,4 @@
-import { RNNoiseEngine } from './RNNoiseEngine';
+import { RNNoiseEngine } from './rnnoise-engine';
 export function createAudioEngine(config) {
     switch (config.engineType) {
         case 'rnnoise':

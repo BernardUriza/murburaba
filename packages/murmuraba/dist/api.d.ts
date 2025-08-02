@@ -1,4 +1,4 @@
-import { MurmubaraEngine } from './core/MurmubaraEngine';
+import { MurmubaraEngine } from './core/murmubara-engine';
 import { MurmubaraConfig } from './types';
 export declare function initializeAudioEngine(config?: MurmubaraConfig): Promise<void>;
 export declare function getEngine(): MurmubaraEngine;

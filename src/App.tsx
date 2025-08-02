@@ -13,6 +13,9 @@ import { FileManager } from './features/file-management';
 import { AudioProcessor } from './features/audio-processing';
 import { UIControls } from './features/ui-controls';
 import { useAppStore } from './core/store/useAppStore';
+import { ErrorBoundary } from './shared/components/ErrorBoundary';
+import { AsyncBoundary } from './shared/components/AsyncBoundary';
+import { Logger } from './core/services/Logger';
 
 // Lazy load heavy components for code splitting
 const AudioDemo = lazy(() => import('./components/audio-demo/audio-demo'));
@@ -132,7 +135,10 @@ export default function App() {
   };
 
   return (
-    <div className={`app ${isDarkMode ? 'dark' : ''}`}>
+    <ErrorBoundary level="page" onError={(error, errorInfo) => {
+      Logger.fatal('App crashed', { error: error.message, errorInfo });
+    }}>
+      <div className={`app ${isDarkMode ? 'dark' : ''}`}>
       <header className="app-header">
         <div className="header-content">
           <div className="logo-section">
@@ -159,7 +165,8 @@ export default function App() {
           <>
             <div className="tab-content">
               {selectedTab === 'record' && (
-                <div className="record-tab">
+                <ErrorBoundary level="section" resetKeys={[recordingState]}>
+                  <div className="record-tab">
                   <AudioRecorder
                     recordingState={recordingState}
                     isInitialized={isInitialized}
@@ -172,7 +179,7 @@ export default function App() {
                   />
 
                   {recordingState.chunks.length > 0 && (
-                    <Suspense fallback={<div>Loading audio processor...</div>}>
+                    <AsyncBoundary level="component" fallback={<div>Loading audio processor...</div>}>
                       <AudioProcessor
                         chunks={recordingState.chunks}
                         isPlaying={recordingState.playingChunks}
@@ -184,13 +191,15 @@ export default function App() {
                         onDownloadAll={downloadAllChunksAsZip}
                         ChunkProcessingResults={ChunkProcessingResults}
                       />
-                    </Suspense>
+                    </AsyncBoundary>
                   )}
-                </div>
+                  </div>
+                </ErrorBoundary>
               )}
 
               {selectedTab === 'file' && (
-                <div className="file-tab">
+                <ErrorBoundary level="section" resetKeys={[processedFileResult]}>
+                  <div className="file-tab">
                   <FileManager
                     isInitialized={isInitialized}
                     isLoading={isLoading}
@@ -199,7 +208,7 @@ export default function App() {
                   />
 
                   {processedFileResult && (
-                    <Suspense fallback={<div>Loading results...</div>}>
+                    <AsyncBoundary level="component" fallback={<div>Loading results...</div>}>
                       <div className="file-results">
                         <SimpleWaveformAnalyzer
                           audioUrl={processedFileResult.processedUrl}
@@ -207,27 +216,28 @@ export default function App() {
                           color="#10b981"
                         />
                       </div>
-                    </Suspense>
+                    </AsyncBoundary>
                   )}
-                </div>
+                  </div>
+                </ErrorBoundary>
               )}
 
               {selectedTab === 'demo' && (
-                <Suspense fallback={<div>Loading demo...</div>}>
+                <AsyncBoundary level="section" fallback={<div>Loading demo...</div>}>
                   <AudioDemo />
-                </Suspense>
+                </AsyncBoundary>
               )}
             </div>
 
             {/* Metrics Panel */}
             {engineConfig.enableMetrics && metrics && (
-              <Suspense fallback={<div>Loading metrics...</div>}>
+              <AsyncBoundary level="component" fallback={<div>Loading metrics...</div>}>
                 <AdvancedMetricsPanel
                   metrics={metrics}
                   diagnostics={diagnostics}
                   isRecording={recordingState.isRecording}
                 />
-              </Suspense>
+              </AsyncBoundary>
             )}
           </>
         )}
@@ -249,6 +259,7 @@ export default function App() {
         engineStatus={getEngineStatus()}
         currentConfig={engineConfig}
       />
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }

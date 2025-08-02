@@ -36,12 +36,12 @@ vi.mock('../../../utils/rnnoise-loader', () => ({
 }));
 
 // Import mocks after vi.mock
-import { StateManager } from '../../../core/StateManager';
-import { Logger } from '../../../core/Logger';
-import { WorkerManager } from '../../../managers/WorkerManager';
-import { MetricsManager } from '../../../managers/MetricsManager';
-import { ChunkProcessor } from '../../../managers/ChunkProcessor';
-import { SimpleAGC } from '../../../utils/SimpleAGC';
+import { StateManager } from '../../../core/state-manager';
+import { Logger } from '../../../core/logger';
+import { WorkerManager } from '../../../managers/worker-manager';
+import { MetricsManager } from '../../../managers/metrics-manager';
+import { ChunkProcessor } from '../../../managers/chunk-processor';
+import { SimpleAGC } from '../../../utils/simple-agc';
 
 describe('MurmubaraEngine - Consolidated Test Suite', () => {
   let engine: MurmubaraEngine;

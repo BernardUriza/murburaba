@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback } from 'react';
-import type { DiagnosticInfo } from '../types/audio-types';
+import type { DiagnosticInfo } from '../../types';
 
 export interface IAdvancedMetricsPanelProps {
   /** Controls visibility of the panel */
