@@ -395,3 +395,62 @@
   filter: blur(4px);
   animation: pulse-glow 3s infinite;
 }
+
+/* 🎵 Real-time Recording Visualization */
+.recording-visualization {
+  margin: var(--space-6) 0;
+  padding: var(--space-6);
+  background: var(--dark-card);
+  border: 1px solid var(--dark-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elevation-2);
+  animation: slide-up 0.3s ease-out;
+}
+
+.visualization-title {
+  color: var(--text-primary);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin: 0 0 var(--space-4) 0;
+  text-align: center;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.live-waveform {
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.live-vad {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+/* 🎨 Animation for visualization appearance */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 📱 Responsive adjustments for visualization */
+@media (max-width: 768px) {
+  .recording-visualization {
+    margin: var(--space-4) 0;
+    padding: var(--space-4);
+  }
+  
+  .visualization-title {
+    font-size: var(--text-base);
+  }
+}

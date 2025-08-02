@@ -1,46 +1,52 @@
-import { lazy, useEffect } from 'react';
+import { lazy, memo, useCallback, useMemo } from 'react';
+import Swal from 'sweetalert2';
 import { 
   useMurmubaraEngine,
-  BuildInfo,
   getEngineStatus
 } from 'murmuraba';
-import Swal from 'sweetalert2';
 import { WASMErrorDisplay } from './components/wasm-error-display/wasm-error-display';
 import { CopilotChat } from './components/copilot-chat/copilot-chat';
 import { Settings } from './components/settings/settings';
-import { AudioRecorder } from './features/audio-recording';
-import { FileManager } from './features/file-management';
-import { AudioProcessor } from './features/audio-processing';
-import { UIControls } from './features/ui-controls';
+import { AppHeader } from './components/app-header';
+import { TabContent } from './components/tab-content';
 import { useAppStore } from './core/store/useAppStore';
 import { ErrorBoundary } from './shared/components/ErrorBoundary';
 import { AsyncBoundary } from './shared/components/AsyncBoundary';
 import { Logger } from './core/services/Logger';
+import { useEngineEffects } from './hooks';
 
 // Lazy load heavy components for code splitting
-const AudioDemo = lazy(() => import('./components/audio-demo/audio-demo'));
-const SimpleWaveformAnalyzer = lazy(() => import('murmuraba').then(m => ({ default: m.SimpleWaveformAnalyzer })));
 const AdvancedMetricsPanel = lazy(() => import('murmuraba').then(m => ({ default: m.AdvancedMetricsPanel })));
-const ChunkProcessingResults = lazy(() => import('murmuraba').then(m => ({ default: m.ChunkProcessingResults })));
 
-export default function App() {
-  const {
-    // App State from Zustand
-    engineConfig,
-    updateEngineConfig,
-    displaySettings,
-    updateDisplaySettings,
-    vadThresholds,
-    updateVadThresholds,
-    isDarkMode,
-    isChatOpen,
-    toggleChat,
-    isSettingsOpen,
-    toggleSettings,
-    selectedTab,
-    processedFileResult,
-    setProcessedFileResult
-  } = useAppStore();
+// Store selectors with proper memoization
+const selectAppUI = (state: any) => ({
+  isDarkMode: state.isDarkMode,
+  isChatOpen: state.isChatOpen,
+  toggleChat: state.toggleChat,
+  isSettingsOpen: state.isSettingsOpen,
+  toggleSettings: state.toggleSettings,
+  selectedTab: state.selectedTab
+});
+
+const selectAppConfig = (state: any) => ({
+  engineConfig: state.engineConfig,
+  updateEngineConfig: state.updateEngineConfig,
+  displaySettings: state.displaySettings,
+  updateDisplaySettings: state.updateDisplaySettings,
+  vadThresholds: state.vadThresholds,
+  updateVadThresholds: state.updateVadThresholds
+});
+
+const selectAppFileState = (state: any) => ({
+  processedFileResult: state.processedFileResult,
+  setProcessedFileResult: state.setProcessedFileResult
+});
+
+const App = memo(function App() {
+  // Selective store subscriptions to minimize re-renders
+  const { isDarkMode, isChatOpen, toggleChat, isSettingsOpen, toggleSettings, selectedTab } = useAppStore(selectAppUI);
+  const { engineConfig, updateEngineConfig, displaySettings, updateDisplaySettings, vadThresholds, updateVadThresholds } = useAppStore(selectAppConfig);
+  const { processedFileResult, setProcessedFileResult } = useAppStore(selectAppFileState);
 
   const {
     // Engine State
@@ -52,6 +58,7 @@ export default function App() {
     
     // Recording State
     recordingState,
+    currentStream,
     
     // Actions
     initialize,
@@ -74,37 +81,19 @@ export default function App() {
     downloadAllChunksAsZip
   } = useMurmubaraEngine(engineConfig);
 
-  // Initialize engine on mount
-  useEffect(() => {
-    if (!isInitialized && !isLoading && !error) {
-      initialize();
-    }
-  }, [isInitialized, isLoading, error, initialize]);
-
-  // Apply dark mode
-  useEffect(() => {
-    document.body.classList.toggle('dark-mode', isDarkMode);
-  }, [isDarkMode]);
-
-  // Save engine config to localStorage when it changes
-  useEffect(() => {
-    localStorage.setItem('murmuraba-config', JSON.stringify(engineConfig));
-  }, [engineConfig]);
-
-  // Show initialization error if any
-  useEffect(() => {
-    if (error && error.includes('WASM')) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Initialization Error',
-        text: error,
-        footer: 'Please refresh the page and try again'
-      });
-    }
-  }, [error]);
+  // Consolidated effects for better organization and performance
+  useEngineEffects({
+    isInitialized,
+    isLoading,
+    error,
+    isDarkMode,
+    engineConfig,
+    initialize
+  });
 
 
-  const handleExportChunk = async (chunkId: string, format: 'wav' | 'mp3', audioType: 'processed' | 'original' = 'processed') => {
+  // Memoized callback to prevent unnecessary re-renders of child components
+  const handleExportChunk = useCallback(async (chunkId: string, format: 'wav' | 'mp3', audioType: 'processed' | 'original' = 'processed') => {
     try {
       if (format === 'wav') {
         await exportChunkAsWav(chunkId, audioType);
@@ -120,33 +109,50 @@ export default function App() {
         showConfirmButton: false
       });
     } catch (error) {
-      console.error('Export error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      Logger.error('Export chunk failed', { chunkId, format, audioType, error: errorMessage });
+      
       await Swal.fire({
         icon: 'error',
         title: 'Export Failed',
-        text: error instanceof Error ? error.message : 'Unknown error occurred'
+        text: errorMessage
+      }).catch((swalError) => {
+        Logger.error('Failed to show export error dialog', { swalError });
       });
     }
-  };
+  }, [exportChunkAsWav, exportChunkAsMp3]);
+
+  // Memoized handlers to prevent unnecessary re-renders
+  const handleStopRecording = useCallback(async () => stopRecording(), [stopRecording]);
+  
+  const handleProcessFile = useCallback(async (buffer: ArrayBuffer) => {
+    return await processFile(buffer);
+  }, [processFile]);
+
+  const handleApplyConfigChanges = useCallback(async () => {
+    await initialize();
+  }, [initialize]);
+
+  const handleTogglePlayback = useCallback((chunkId: string, audioType: 'processed' | 'original' = 'processed') => 
+    toggleChunkPlayback(chunkId, audioType), [toggleChunkPlayback]);
+
+  const handleDownloadAll = useCallback(() => downloadAllChunksAsZip('both'), [downloadAllChunksAsZip]);
+
+  // Memoized computed values
+  const appClassName = useMemo(() => `app ${isDarkMode ? 'dark' : ''}`, [isDarkMode]);
+  
+  const shouldShowWaveform = useMemo(() => 
+    recordingState.isRecording && currentStream, [recordingState.isRecording, currentStream]);
+  
+  const shouldShowMetrics = useMemo(() => 
+    engineConfig.enableMetrics && metrics, [engineConfig.enableMetrics, metrics]);
 
   return (
     <ErrorBoundary level="page" onError={(error, errorInfo) => {
       Logger.fatal('App crashed', { error: error.message, errorInfo });
     }}>
-      <div className={`app ${isDarkMode ? 'dark' : ''}`}>
-      <header className="app-header">
-        <div className="header-content">
-          <div className="logo-section">
-            <h1 className="app-title">
-              <span className="logo-icon">🎵</span>
-              Murmuraba Studio
-            </h1>
-            <BuildInfo format="badge" size="small" />
-          </div>
-          
-          <UIControls className="header-controls" />
-        </div>
-      </header>
+      <div className={appClassName}>
+      <AppHeader />
 
       <main className="app-main">
         {error ? (
@@ -158,82 +164,32 @@ export default function App() {
           </div>
         ) : (
           <>
-            <div className="tab-content">
-              {selectedTab === 'record' && (
-                <ErrorBoundary level="section" resetKeys={[recordingState.chunks.length]}>
-                  <div className="record-tab">
-                  <AudioRecorder
-                    recordingState={recordingState}
-                    isInitialized={isInitialized}
-                    isLoading={isLoading}
-                    onStartRecording={startRecording}
-                    onStopRecording={async () => stopRecording()}
-                    onPauseRecording={pauseRecording}
-                    onResumeRecording={resumeRecording}
-                    onClearRecordings={clearRecordings}
-                  />
-
-                  {recordingState.chunks.length > 0 && (
-                    <AsyncBoundary level="component" fallback={<div>Loading audio processor...</div>}>
-                      <AudioProcessor
-                        chunks={recordingState.chunks}
-                        isPlaying={recordingState.playingChunks}
-                        expandedChunk={recordingState.expandedChunk}
-                        onTogglePlayback={(chunkId: string, audioType: 'processed' | 'original' = 'processed') => 
-                          toggleChunkPlayback(chunkId, audioType)
-                        }
-                        onToggleExpansion={toggleChunkExpansion}
-                        onExportWav={(id) => handleExportChunk(id, 'wav')}
-                        onExportMp3={(id) => handleExportChunk(id, 'mp3')}
-                        onDownloadAll={() => downloadAllChunksAsZip('both')}
-                        ChunkProcessingResults={ChunkProcessingResults}
-                      />
-                    </AsyncBoundary>
-                  )}
-                  </div>
-                </ErrorBoundary>
-              )}
-
-              {selectedTab === 'file' && (
-                <ErrorBoundary level="section" resetKeys={[processedFileResult]}>
-                  <div className="file-tab">
-                  <FileManager
-                    isInitialized={isInitialized}
-                    isLoading={isLoading}
-                    engineConfig={engineConfig}
-                    onFileProcessed={setProcessedFileResult}
-                  />
-
-                  {processedFileResult && (
-                    <AsyncBoundary level="component" fallback={<div>Loading results...</div>}>
-                      <div className="file-results">
-                        <SimpleWaveformAnalyzer
-                          isActive={true}
-                          width={800}
-                          height={200}
-                        />
-                      </div>
-                    </AsyncBoundary>
-                  )}
-                  </div>
-                </ErrorBoundary>
-              )}
-
-              {selectedTab === 'demo' && (
-                <AsyncBoundary level="section" fallback={<div>Loading demo...</div>}>
-                  <AudioDemo 
-                    getEngineStatus={getEngineStatus}
-                    processFile={async (buffer: ArrayBuffer) => {
-                      // Process file using the engine
-                      return await processFile(buffer);
-                    }}
-                  />
-                </AsyncBoundary>
-              )}
-            </div>
+            <TabContent
+              selectedTab={selectedTab}
+              recordingState={recordingState}
+              currentStream={currentStream}
+              shouldShowWaveform={shouldShowWaveform}
+              metrics={metrics}
+              isInitialized={isInitialized}
+              isLoading={isLoading}
+              engineConfig={engineConfig}
+              processedFileResult={processedFileResult}
+              onStartRecording={startRecording}
+              onStopRecording={handleStopRecording}
+              onPauseRecording={pauseRecording}
+              onResumeRecording={resumeRecording}
+              onClearRecordings={clearRecordings}
+              onTogglePlayback={handleTogglePlayback}
+              onToggleExpansion={toggleChunkExpansion}
+              onExportChunk={handleExportChunk}
+              onDownloadAll={handleDownloadAll}
+              onFileProcessed={setProcessedFileResult}
+              onProcessFile={handleProcessFile}
+              getEngineStatus={getEngineStatus}
+            />
 
             {/* Metrics Panel */}
-            {engineConfig.enableMetrics && metrics && (
+            {shouldShowMetrics && (
               <AsyncBoundary level="component" fallback={<div>Loading metrics...</div>}>
                 <AdvancedMetricsPanel
                   isVisible={true}
@@ -265,12 +221,11 @@ export default function App() {
         setEngineConfig={updateEngineConfig}
         isRecording={recordingState.isRecording}
         isInitialized={isInitialized}
-        onApplyChanges={async () => {
-          // Apply any pending configuration changes
-          await initialize();
-        }}
+        onApplyChanges={handleApplyConfigChanges}
       />
       </div>
     </ErrorBoundary>
   );
-}
+});
+
+export default App;

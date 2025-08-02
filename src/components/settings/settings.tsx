@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useFormStatus } from 'react-dom'
-import '../../styles/settings-chat.css'
+import '../../styles/settings.css'
 
 interface ISettingsProps {
   isOpen: boolean

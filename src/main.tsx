@@ -18,7 +18,5 @@ import('../packages/murmuraba/src/utils/rnnoise-loader').then(({ preloadRNNoiseW
 
 // Render app immediately (preloading happens in parallel)
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+  <App />
 )
