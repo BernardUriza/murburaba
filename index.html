@@ -4,9 +4,16 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Murmuraba Studio v1.6.0 | 🎙️ Next-Gen Audio Processing</title>
+    <title>Murmuraba Studio v2.3.1 | 🎙️ Next-Gen Audio Processing</title>
     <meta name="description" content="Real-time neural audio enhancement with advanced chunk processing" />
     <meta name="theme-color" content="#0A0B0E" />
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/wasm/rnnoise.wasm" as="fetch" crossorigin>
+    <link rel="modulepreload" href="/src/main.tsx">
+    
+    <!-- PWA support -->
+    <link rel="manifest" href="/manifest.json">
     <style>
       /* Dark mode aplicado inmediatamente para evitar flash */
       body {
@@ -32,5 +39,16 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Register Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('[SW] Registered:', reg.scope))
+            .catch(err => console.error('[SW] Registration failed:', err));
+        });
+      }
+    </script>
   </body>
 </html>

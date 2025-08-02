@@ -1,20 +1,21 @@
-import React, { useState } from 'react'
+import React, { useState, lazy, Suspense } from 'react'
 import { 
   useMurmubaraEngine,
-  WaveformAnalyzer,
   BuildInfo,
-  AdvancedMetricsPanel,
-  ChunkProcessingResults,
   getEngineStatus,
   processFile,
   processFileWithMetrics
 } from 'murmuraba'
-import { SimpleWaveformAnalyzer } from '../packages/murmuraba/src/components/SimpleWaveformAnalyzer'
 import Swal from 'sweetalert2'
 import { WASMErrorDisplay } from './components/WASMErrorDisplay'
-import AudioDemo from './components/AudioDemo'
 import { CopilotChat } from './components/CopilotChat'
 import { Settings } from './components/Settings'
+
+// Lazy load heavy components for code splitting
+const AudioDemo = lazy(() => import('./components/AudioDemo'))
+const SimpleWaveformAnalyzer = lazy(() => import('../packages/murmuraba/src/components/SimpleWaveformAnalyzer').then(m => ({ default: m.SimpleWaveformAnalyzer })))
+const AdvancedMetricsPanel = lazy(() => import('murmuraba').then(m => ({ default: m.AdvancedMetricsPanel })))
+const ChunkProcessingResults = lazy(() => import('murmuraba').then(m => ({ default: m.ChunkProcessingResults })))
 
 export default function App() {
   // Engine configuration state with localStorage persistence
@@ -245,37 +246,39 @@ export default function App() {
           </div>
           <div className="panel-content">
             {showAudioDemo && (
-              <AudioDemo 
-                getEngineStatus={getEngineStatus}
-                processFile={processFile}
-                processFileWithMetrics={processFileWithMetrics}
-                autoProcess={true}
-                onProcessComplete={(buffer) => {
-                console.log('Audio processing completed', buffer)
-                Swal.fire({
-                  toast: true,
-                  position: 'top-end',
-                  icon: 'success',
-                  title: '¡Audio procesado exitosamente!',
-                  showConfirmButton: false,
-                  timer: 2000,
-                  timerProgressBar: true
-                })
-              }}
-              onError={(err) => {
-                console.error('AudioDemo error:', err)
-                Swal.fire({
-                  toast: true,
-                  position: 'top-end',
-                  icon: 'error',
-                  title: 'Error al procesar audio',
-                  text: err.message,
-                  showConfirmButton: false,
-                  timer: 3000,
-                  timerProgressBar: true
-                })
-              }}
-              />
+              <Suspense fallback={<div className="loading-spinner">Loading audio demo...</div>}>
+                <AudioDemo 
+                  getEngineStatus={getEngineStatus}
+                  processFile={processFile}
+                  processFileWithMetrics={processFileWithMetrics}
+                  autoProcess={true}
+                  onProcessComplete={(buffer) => {
+                  console.log('Audio processing completed', buffer)
+                  Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: '¡Audio procesado exitosamente!',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true
+                  })
+                }}
+                onError={(err) => {
+                  console.error('AudioDemo error:', err)
+                  Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'error',
+                    title: 'Error al procesar audio',
+                    text: err.message,
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true
+                  })
+                }}
+                />
+              </Suspense>
             )}
           </div>
         </div>
@@ -601,11 +604,13 @@ export default function App() {
           <section className="waveform-section glass-panel">
             <h2 className="section-title">🌊 Live Waveform Analysis</h2>
             <div className="waveform-container">
-              <SimpleWaveformAnalyzer 
-                stream={currentStream} 
-                isActive={isRecording && !isPaused}
-                isPaused={isPaused}
-              />
+              <Suspense fallback={<div className="loading-spinner">Loading waveform...</div>}>
+                <SimpleWaveformAnalyzer 
+                  stream={currentStream} 
+                  isActive={isRecording && !isPaused}
+                  isPaused={isPaused}
+                />
+              </Suspense>
               {isPaused && (
                 <div className="paused-overlay">
                   <span className="pause-icon">⏸️</span>
@@ -617,17 +622,19 @@ export default function App() {
         )}
 
         {/* Chunk Processing Results */}
-        <ChunkProcessingResults
-          chunks={processedChunks}
-          averageNoiseReduction={averageNoiseReduction}
-          selectedChunk={selectedChunk}
-          onTogglePlayback={toggleChunkPlayback}
-          onToggleExpansion={handleToggleChunkExpansion}
-          onClearAll={clearRecordings}
-          onExportWav={exportChunkAsWav}
-          onExportMp3={exportChunkAsMp3}
-          onDownloadChunk={downloadChunk}
-        />
+        <Suspense fallback={<div className="loading-spinner">Loading results...</div>}>
+          <ChunkProcessingResults
+            chunks={processedChunks}
+            averageNoiseReduction={averageNoiseReduction}
+            selectedChunk={selectedChunk}
+            onTogglePlayback={toggleChunkPlayback}
+            onToggleExpansion={handleToggleChunkExpansion}
+            onClearAll={clearRecordings}
+            onExportWav={exportChunkAsWav}
+            onExportMp3={exportChunkAsMp3}
+            onDownloadChunk={downloadChunk}
+          />
+        </Suspense>
 
         {/* Floating Action Buttons */}
         <div className="fab-container">
@@ -732,11 +739,13 @@ export default function App() {
         </div>
         
         {/* Advanced Metrics Panel */}
-        <AdvancedMetricsPanel
-          isVisible={showAdvancedMetrics}
-          diagnostics={diagnostics}
-          onClose={() => setShowAdvancedMetrics(false)}
-        />
+        <Suspense fallback={<div className="loading-spinner">Loading metrics...</div>}>
+          <AdvancedMetricsPanel
+            isVisible={showAdvancedMetrics}
+            diagnostics={diagnostics}
+            onClose={() => setShowAdvancedMetrics(false)}
+          />
+        </Suspense>
         
       </main>
       

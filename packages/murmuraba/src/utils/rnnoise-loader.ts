@@ -1,4 +1,4 @@
-import { WASMLoader, createLazyWASMLoader } from './wasm-loader';
+// Removed wasm-loader import - using direct implementation
 
 export interface RNNoiseModule {
   _malloc: (size: number) => number;
@@ -11,7 +11,7 @@ export interface RNNoiseModule {
 }
 
 let modulePromise: Promise<RNNoiseModule> | null = null;
-const wasmLoader = WASMLoader.getInstance();
+// Direct WASM loading implementation
 
 export async function loadRNNoiseModule(): Promise<RNNoiseModule> {
   if (!modulePromise) {
@@ -92,10 +92,10 @@ function getOptimizedWASMPath(filename: string): string {
 }
 
 // Lazy loader for RNNoise module
-export const lazyLoadRNNoise = createLazyWASMLoader(loadRNNoiseModule);
+export const lazyLoadRNNoise = () => loadRNNoiseModule();
 
 // Preload WASM for better performance
 export async function preloadRNNoiseWASM(): Promise<void> {
-  const wasmPath = getOptimizedWASMPath('rnnoise.wasm');
-  await wasmLoader.preloadModule(wasmPath);
+  // Preloading is now handled internally by loadRNNoiseModule
+  await loadRNNoiseModule();
 }
