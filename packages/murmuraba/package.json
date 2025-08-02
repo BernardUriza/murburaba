@@ -1,6 +1,6 @@
 {
   "name": "murmuraba",
-  "version": "2.3.1",
+  "version": "3.0.0",
   "type": "module",
   "description": "Real-time audio noise reduction with advanced chunked processing for web applications",
   "main": "dist/index.js",

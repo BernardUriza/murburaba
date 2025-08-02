@@ -1,0 +1,397 @@
+/* 🎵 Murmuraba Studio v3.0.0 - App Styles */
+@import './design-system.css';
+
+/* 🏗️ App Layout */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--dark-bg);
+  position: relative;
+  overflow-x: hidden;
+}
+
+.app::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(168, 85, 247, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(236, 72, 153, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 🎯 Header Styles */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--dark-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--dark-border);
+  box-shadow: var(--elevation-1);
+  animation: fade-in 0.5s ease-out;
+}
+
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-6);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.app-title {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+}
+
+.logo-icon {
+  font-size: var(--text-3xl);
+  animation: pulse-glow 3s infinite;
+  filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.5));
+}
+
+/* 🎨 Tab Navigation */
+.tab-nav {
+  display: flex;
+  gap: var(--space-2);
+  background: var(--dark-surface-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-inner);
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-lg);
+  color: var(--dark-text-secondary);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.tab-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-gradient);
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  transition: all var(--transition-base);
+  border-radius: inherit;
+  z-index: -1;
+}
+
+.tab-button:hover {
+  color: var(--dark-text);
+  transform: translateY(-1px);
+}
+
+.tab-button.active {
+  color: white;
+  background: var(--primary-gradient);
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+}
+
+.tab-button.active::before {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+
+.tab-icon {
+  font-size: var(--text-lg);
+}
+
+/* 🎪 Main Content */
+.app-main {
+  flex: 1;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--space-6);
+  position: relative;
+  z-index: 1;
+}
+
+.tab-content {
+  animation: fade-in 0.5s ease-out;
+}
+
+/* 🎯 Section Styles */
+.record-tab,
+.file-tab,
+.demo-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* 🎨 Loading States */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: var(--space-4);
+}
+
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 3px solid var(--dark-surface-3);
+  border-top-color: var(--primary-500);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  color: var(--dark-text-secondary);
+  font-size: var(--text-lg);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* 🎯 Error States */
+.error-container {
+  background: var(--dark-surface);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  text-align: center;
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.1);
+}
+
+.error-icon {
+  font-size: var(--text-5xl);
+  color: #ef4444;
+  margin-bottom: var(--space-4);
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-10px);
+  }
+  75% {
+    transform: translateX(10px);
+  }
+}
+
+.error-title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: #ef4444;
+  margin-bottom: var(--space-2);
+}
+
+.error-message {
+  color: var(--dark-text-secondary);
+  margin-bottom: var(--space-6);
+  line-height: 1.8;
+}
+
+/* 🎪 Floating Action Buttons */
+.fab-container {
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  z-index: 40;
+}
+
+.fab {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xl);
+  background: var(--primary-gradient);
+  color: white;
+  border: none;
+  cursor: pointer;
+  box-shadow: var(--elevation-2);
+  transition: all var(--transition-spring);
+  position: relative;
+  overflow: hidden;
+}
+
+.fab::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%) scale(0);
+  border-radius: inherit;
+  transition: transform 0.5s ease-out;
+}
+
+.fab:hover {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: var(--elevation-3);
+}
+
+.fab:hover::before {
+  transform: translate(-50%, -50%) scale(2);
+}
+
+.fab:active {
+  transform: scale(0.95);
+}
+
+/* 🎯 Responsive Design */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+  }
+  
+  .app-title {
+    font-size: var(--text-xl);
+  }
+  
+  .tab-nav {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .app-main {
+    padding: var(--space-4);
+  }
+  
+  .fab-container {
+    bottom: var(--space-4);
+    right: var(--space-4);
+  }
+}
+
+/* 🌟 Special Effects */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  to {
+    left: 100%;
+  }
+}
+
+/* 🎨 Glassmorphism Elements */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* 🎯 Neon Effects */
+.neon-text {
+  text-shadow: 
+    0 0 10px currentColor,
+    0 0 20px currentColor,
+    0 0 40px currentColor;
+}
+
+.neon-border {
+  position: relative;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.neon-border::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: var(--primary-gradient);
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0.5;
+  filter: blur(4px);
+  animation: pulse-glow 3s infinite;
+}

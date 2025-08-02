@@ -106,7 +106,7 @@ export const BuildInfo: React.FC<IBuildInfoProps> = ({
 export const getPackageVersion = (): string => {
   try {
     // In a real package, this would be replaced during build
-    return process.env.PACKAGE_VERSION || '1.0.0';
+    return process.env.PACKAGE_VERSION || '3.0.0';
   } catch {
     return '1.0.0';
   }

@@ -42,7 +42,7 @@ export {
 } from './api/process-file-with-metrics';
 
 // Export version
-export const VERSION = '1.5.0';
+export const VERSION = '3.0.0';
 export const MURMURABA_VERSION = VERSION;
 
 // Re-export error codes
