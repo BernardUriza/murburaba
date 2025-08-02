@@ -1,9 +1,53 @@
-# Changelog
+# 📋 Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to Murmuraba Studio will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [3.0.0] - 2025-08-02
+
+### 🎨 Design System Revolution
+- **MAJOR**: Complete CSS architecture overhaul with modern design system
+- **NEW**: Comprehensive CSS variables for colors, spacing, typography, and animations
+- **NEW**: Glassmorphism effects and modern neon styling throughout UI
+- **NEW**: Gradient animations and sophisticated visual interactions
+- **NEW**: Dark theme optimizations with enhanced color palette
+
+### 🏗️ Architecture Improvements
+- **NEW**: Single source of truth versioning system with `version.json`
+- **NEW**: Automatic version synchronization across all components
+- **IMPROVED**: React 19 compliance with optimized store selectors
+- **IMPROVED**: Component organization with proper memoization patterns
+- **REMOVED**: Duplicate and scattered CSS files
+
+### ✨ User Experience Enhancements
+- **NEW**: Modern app header with animated gradients
+- **NEW**: Enhanced settings panel with glassmorphism effects
+- **NEW**: Audio controls with gradient interactions and hover animations
+- **NEW**: Improved waveform displays with modern container styling
+- **NEW**: Floating panels with smooth slide-in animations
+- **IMPROVED**: Real-time VAD indicators with modern styling
+- **IMPROVED**: Loading states and error handling with better visual feedback
+
+### 📱 Responsive Design
+- **IMPROVED**: Mobile-first responsive design across all components
+- **IMPROVED**: Touch-friendly interactions and accessibility
+- **IMPROVED**: Cross-browser compatibility for modern features
+
+### 🔧 Technical Updates
+- **NEW**: Design tokens system for consistent styling
+- **NEW**: Advanced animation and transition systems
+- **NEW**: Modern elevation and shadow definitions
+- **IMPROVED**: Performance optimizations with reduced CSS bundle size
+- **CLEANED**: Removed redundant styles and consolidated design patterns
+
+### 🚀 Performance
+- **IMPROVED**: Optimized CSS loading and rendering
+- **IMPROVED**: Reduced layout shifts with better skeleton loading
+- **IMPROVED**: Enhanced component rendering performance
+
+---
 
 ## [1.3.0] - 2025-07-20
 

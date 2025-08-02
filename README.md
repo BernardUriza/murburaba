@@ -1,17 +1,18 @@
-# 🎉 Murmuraba 2.0 - The Ultimate Audio Processing Revolution! 🚀
+# 🎵 Murmuraba Studio v3.0.0 - Next-Generation Neural Audio Processing! 🚀
 
-**¡LA VERSIÓN 2.0 ESTÁ AQUÍ!** 🔥 Una biblioteca de procesamiento de audio de nivel empresarial que redefine los estándares de reducción de ruido en tiempo real. Potenciada por la red neuronal RNNoise con una arquitectura completamente revolucionaria.
+**¡LA VERSIÓN 3.0.0 ESTÁ AQUÍ!** 🔥 Una plataforma completa de procesamiento de audio neural con diseño moderno revolucionario. Potenciada por RNNoise con un sistema de diseño glassmorphism de última generación y arquitectura React 19 optimizada.
 
 ## 🎯 Overview
 
 Murmuraba provides a complete audio processing solution with a powerful React hook (`useMurmubaraEngine`) that handles **everything internally** - from recording to playback, with automatic format conversion and cross-browser compatibility. Built on RNNoise technology, it delivers state-of-the-art noise suppression with an ultra-clean API.
 
-### 🌟 **VERSION 2.0 - LA REVOLUCIÓN DEFINITIVA**
-- **🏗️ Arquitectura Ultra-Limpia**: Frontend puro (<100 líneas) - solo importa y renderiza
-- **📦 Package Todopoderoso**: TODA la lógica de audio centralizada en el paquete `murmuraba`
-- **🎯 Cero Configuración**: El hook maneja TODO automáticamente - MediaRecorder, chunks, reproducción
-- **⚡ Performance Extremo**: Optimizaciones que rompen todos los límites conocidos
-- **🔥 Nueva API Brutal**: Más simple, más poderosa, más inteligente
+### 🌟 **VERSION 3.0.0 - EL DISEÑO DEL FUTURO**
+- **🎨 Sistema de Diseño Completo**: Glassmorphism, gradientes animados y efectos neón modernos
+- **🎯 Single Source of Truth**: Sistema de versionado unificado con `version.json`
+- **⚡ React 19 Optimizado**: Selectores memorizados y rendimiento extremo
+- **🎪 Arquitectura Modular**: Componentes organizados con patrones modernos
+- **🌈 Tokens de Diseño**: Variables CSS para colores, espaciado y tipografía consistentes
+- **📱 Responsive Avanzado**: Mobile-first con interacciones táctiles optimizadas
 
 ## 🚀 Features
 
@@ -24,15 +25,15 @@ Murmuraba provides a complete audio processing solution with a powerful React ho
 - **Performance Metrics**: Real-time latency, noise reduction, and processing metrics
 - **Waveform Visualization**: Live audio waveform display with synced playback
 
-### ⚡ **2.0 - CARACTERÍSTICAS QUE CAMBIAN EL JUEGO**
-- **🎯 Zero-Setup Recording**: `startRecording()` handles everything - MediaRecorder, streams, chunks
-- **🔄 WAV-First Strategy**: Prioritizes WAV format, auto-fallback to WebM/Opus
-- **📊 Built-in Chunk Management**: Automatic chunk creation with original/processed audio URLs
-- **🎵 Integrated Playback**: `toggleChunkPlayback()` and `toggleChunkExpansion()` included
-- **⏱️ Smart Time Formatting**: `formatTime()` for human-readable displays
-- **📈 Metrics Calculation**: `getAverageNoiseReduction()` across all chunks
-- **🧹 Auto Memory Management**: Automatic cleanup of audio URLs and resources
-- **🎛️ Complete State Management**: `recordingState` includes everything you need
+### ⚡ **3.0.0 - CARACTERÍSTICAS VISUALES REVOLUCIONARIAS**
+- **🎨 Glassmorphism Effects**: Paneles flotantes con efectos de cristal y blur
+- **🌈 Gradient Animations**: Animaciones de gradiente fluidas en tiempo real
+- **💫 Neon Glow Effects**: Efectos de neón para elementos interactivos
+- **🎯 Modern Design System**: Tokens CSS consistentes y mantenibles
+- **📱 Enhanced Responsiveness**: Diseño móvil mejorado con gestos táctiles
+- **⚡ Performance Optimized**: Animaciones GPU aceleradas y transiciones suaves
+- **🎪 Component Architecture**: Organización modular con React 19 patterns
+- **🌟 Dark Theme Enhanced**: Optimizaciones de tema oscuro con mejor contraste
 
 ### 🏗️ **Clean Architecture Benefits**
 - **Frontend Developers**: Just import hook and render - no complex logic
@@ -65,16 +66,16 @@ npm run dev
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-## 🎨 ¡Usa el Paquete NPM v2.0!
+## 🎨 ¡Usa el Paquete NPM v3.0.0!
 
 ### Instalación
 ```bash
-npm install murmuraba@2.0.0
+npm install murmuraba@3.0.0
 # o
-yarn add murmuraba@2.0.0
+yarn add murmuraba@3.0.0
 ```
 
-🔥 **¡NUEVO EN v2.0!** Instalación 3x más rápida, bundle 50% más pequeño, 100% más potente.
+🔥 **¡NUEVO EN v3.0.0!** Diseño moderno completo, sistema de diseño integrado, optimizaciones React 19.
 
 ### Basic Usage
 ```typescript
@@ -439,19 +440,19 @@ This microfrontend approach would transform the RNNoise implementation from a Ne
 
 ---
 
-🚀 **Murmuraba v2.0** - Construido con 💪 pasión técnica extrema usando Next.js y RNNoise
+🚀 **Murmuraba Studio v3.0.0** - Construido con 💪 pasión por el diseño moderno usando React 19 y RNNoise
 
-### 🎊 ¿Por qué v2.0 es REVOLUCIONARIA?
+### 🎊 ¿Por qué v3.0.0 es REVOLUCIONARIA?
 
-- **🎯 API Perfecta**: Un solo hook que lo hace TODO
-- **⚡ Performance Brutal**: Procesamiento en tiempo real sin compromisos
-- **🔧 Arquitectura Impecable**: Separación total UI/Lógica
-- **📊 Métricas en Tiempo Real**: Visualización instantánea del poder de reducción
-- **🎵 Compatibilidad Total**: Funciona en TODOS los navegadores modernos
-- **🧠 IA Mejorada**: RNNoise optimizado para máxima calidad
+- **🎨 Diseño del Futuro**: Sistema completo de glassmorphism y efectos modernos
+- **⚡ Performance Visual**: Animaciones GPU aceleradas y transiciones fluidas
+- **🌈 Sistema de Tokens**: Diseño consistente con variables CSS organizadas
+- **📱 Mobile Perfection**: Experiencia móvil optimizada con gestos táctiles
+- **🎯 Single Source**: Versionado unificado y arquitectura modular
+- **🔧 React 19 Optimized**: Patrones modernos y rendimiento máximo
 
-### 🔥 El Futuro del Audio Web Comienza AHORA
+### 🔥 El Futuro del Diseño Web Audio Comienza AHORA
 
-¡Únete a la revolución del procesamiento de audio! Con Murmuraba 2.0, tu aplicación no solo procesa audio... ¡lo TRANSFORMA!
+¡Únete a la revolución visual del procesamiento de audio! Con Murmuraba Studio v3.0.0, tu aplicación no solo suena increíble... ¡SE VE ESPECTACULAR!
 
-**#Murmuraba2 #AudioRevolution #RealTimeProcessing**
+**#MurmurabaStudio3 #DesignRevolution #ModernUI #GlassmorphismAudio**
