@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MurmurabaProcessor } from '../../utils/MurmurabaProcessor';
+import { MurmurabaProcessor } from '../../utils/murmuraba-processor';
 import { AudioEngine } from '../../engines/types';
 
 describe('MurmurabaProcessor - Critical Audio Processing', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SimpleAGC } from '../../utils/SimpleAGC';
+import { SimpleAGC } from '../../utils/simple-agc';
 
 describe('SimpleAGC - TDD Red Phase', () => {
   let mockAudioContext: any;

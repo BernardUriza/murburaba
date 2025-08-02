@@ -1,5 +1,5 @@
 import { ProcessedChunk } from './types';
-import { AudioConverter } from '../../utils/audioConverter';
+import { AudioConverter } from '../../utils/audio-converter';
 import { DEFAULT_MP3_BITRATE, LOG_PREFIX } from './constants';
 
 export class AudioExporter {

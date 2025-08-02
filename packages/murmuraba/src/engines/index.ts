@@ -1,5 +1,5 @@
 import { AudioEngine, AudioEngineConfig } from './types';
-import { RNNoiseEngine, RNNoiseConfig } from './RNNoiseEngine';
+import { RNNoiseEngine, RNNoiseConfig } from './rnnoise-engine';
 
 export function createAudioEngine(config: AudioEngineConfig & { rnnoiseConfig?: RNNoiseConfig }): AudioEngine {
   switch (config.engineType) {

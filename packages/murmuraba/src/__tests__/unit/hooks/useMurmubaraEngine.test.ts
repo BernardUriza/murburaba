@@ -13,7 +13,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import { useMurmubaraEngine } from '../../../hooks/murmuraba-engine';
 import * as api from '../../../api';
-import { destroyAudioConverter } from '../../../utils/audioConverter';
+import { destroyAudioConverter } from '../../../utils/audio-converter';
 import { 
   setupMediaDevicesMock, 
   setupAudioElementMock, 

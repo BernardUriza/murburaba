@@ -1,7 +1,7 @@
-import { ChunkProcessor } from '../../managers/ChunkProcessor';
+import { ChunkProcessor } from '../../managers/chunk-processor';
 import { vi } from 'vitest';
-import { Logger } from '../../core/Logger';
-import { MetricsManager } from '../../managers/MetricsManager';
+import { Logger } from '../../core/logger';
+import { MetricsManager } from '../../managers/metrics-manager';
 import { ChunkConfig } from '../../types';
 
 describe('ChunkProcessor', () => {

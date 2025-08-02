@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { AudioWorkletEngine } from '../../engines/AudioWorkletEngine';
+import { AudioWorkletEngine } from '../../engines/audio-worklet-engine';
 
 // Mock AudioWorkletNode
 class MockAudioWorkletNode {

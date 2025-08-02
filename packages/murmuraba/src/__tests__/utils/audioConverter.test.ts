@@ -3,7 +3,7 @@
  * MEDICAL GRADE: These tests ensure no memory leaks in hospital environments
  */
 
-import { AudioConverter, getAudioConverter, destroyAudioConverter } from '../../utils/audioConverter';
+import { AudioConverter, getAudioConverter, destroyAudioConverter } from '../../utils/audio-converter';
 import { vi } from 'vitest';
 
 describe('AudioConverter - Medical Grade Memory Management', () => {

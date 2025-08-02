@@ -1,11 +1,11 @@
-import { AudioResampler } from '../utils/AudioResampler'
-import { EventEmitter } from './EventEmitter';
-import { StateManager } from './StateManager';
-import { Logger } from './Logger';
-import { WorkerManager } from '../managers/WorkerManager';
-import { MetricsManager } from '../managers/MetricsManager';
-import { ChunkProcessor } from '../managers/ChunkProcessor';
-import { SimpleAGC } from '../utils/SimpleAGC';
+import { AudioResampler } from '../utils/audio-resampler'
+import { EventEmitter } from './event-emitter';
+import { StateManager } from './state-manager';
+import { Logger } from './logger';
+import { WorkerManager } from '../managers/worker-manager';
+import { MetricsManager } from '../managers/metrics-manager';
+import { ChunkProcessor } from '../managers/chunk-processor';
+import { SimpleAGC } from '../utils/simple-agc';
 import {
   MurmubaraConfig,
   EngineEvents,

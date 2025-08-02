@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { PlaybackManager } from '../../../hooks/murmuraba-engine/playbackManager';
+import { PlaybackManager } from '../../../hooks/murmuraba-engine/playback-manager';
 import { ProcessedChunk } from '../../../hooks/murmuraba-engine/types';
 
 // Mock HTMLAudioElement

@@ -1,7 +1,7 @@
 import { ProcessedChunk, RecordingState } from './types';
 import { StreamController } from '../../types';
 import { processStream } from '../../api';
-import { UseRecordingStateReturn } from './useRecordingState';
+import { UseRecordingStateReturn } from './use-recording-state';
 import { IChunkManager, IRecordingManager } from './interfaces';
 import { logger } from './logger';
 import { DEFAULT_CHUNK_DURATION } from './constants';

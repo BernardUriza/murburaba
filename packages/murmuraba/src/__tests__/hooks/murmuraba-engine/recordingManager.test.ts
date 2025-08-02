@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { RecordingManager } from '../../../hooks/murmuraba-engine/recordingManager';
-import { URLManager } from '../../../hooks/murmuraba-engine/urlManager';
+import { RecordingManager } from '../../../hooks/murmuraba-engine/recording-manager';
+import { URLManager } from '../../../hooks/murmuraba-engine/url-manager';
 import { ProcessedChunk } from '../../../hooks/murmuraba-engine/types';
 import { MIN_VALID_BLOB_SIZE } from '../../../hooks/murmuraba-engine/constants';
-import * as processFileApi from '../../../api/processFileWithMetrics';
+import * as processFileApi from '../../../api/process-file-with-metrics';
 
 // Mock dependencies
-vi.mock('../../../api/processFileWithMetrics');
-vi.mock('../../../utils/audioConverter', () => ({
+vi.mock('../../../api/process-file-with-metrics');
+vi.mock('../../../utils/audio-converter', () => ({
   AudioConverter: {
     concatenateBlobs: vi.fn((blobs) => Promise.resolve(new Blob(blobs)))
   }

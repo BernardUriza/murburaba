@@ -1,4 +1,4 @@
-import { AudioWorkletEngine } from '../../engines/AudioWorkletEngine';
+import { AudioWorkletEngine } from '../../engines/audio-worklet-engine';
 import { vi } from 'vitest';
 
 describe('AudioWorkletEngine', () => {

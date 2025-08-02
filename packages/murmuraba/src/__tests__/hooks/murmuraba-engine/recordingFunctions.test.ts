@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createRecordingFunctions } from '../../../hooks/murmuraba-engine/recordingFunctions';
+import { createRecordingFunctions } from '../../../hooks/murmuraba-engine/recording-functions';
 import { ProcessedChunk, RecordingState } from '../../../hooks/murmuraba-engine/types';
 import { StreamController } from '../../../types';
 import * as api from '../../../api';

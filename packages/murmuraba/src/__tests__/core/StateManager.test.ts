@@ -1,4 +1,4 @@
-import { StateManager } from '../../core/StateManager';
+import { StateManager } from '../../core/state-manager';
 import { vi } from 'vitest';
 import { EngineState } from '../../types';
 

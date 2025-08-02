@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { AudioExporter } from '../../../hooks/murmuraba-engine/audioExporter';
-import { AudioConverter } from '../../../utils/audioConverter';
+import { AudioExporter } from '../../../hooks/murmuraba-engine/audio-exporter';
+import { AudioConverter } from '../../../utils/audio-converter';
 import { ProcessedChunk } from '../../../hooks/murmuraba-engine/types';
 
 // Mock the AudioConverter
-vi.mock('../../../utils/audioConverter', () => ({
+vi.mock('../../../utils/audio-converter', () => ({
   AudioConverter: {
     webmToWav: vi.fn(),
     webmToMp3: vi.fn()

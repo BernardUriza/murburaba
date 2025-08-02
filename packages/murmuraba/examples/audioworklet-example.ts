@@ -1,7 +1,7 @@
 /**
  * Example: Using AudioWorklet for high-performance audio processing
  */
-import { AudioWorkletEngine } from '../src/engines/AudioWorkletEngine';
+import { AudioWorkletEngine } from '../src/engines/audio-worklet-engine';
 
 async function runAudioWorkletExample() {
   // Create AudioWorklet engine instance

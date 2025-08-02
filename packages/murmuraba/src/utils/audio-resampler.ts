@@ -1,5 +1,5 @@
 // import resample from 'audio-resampler'; // This library doesn't work as expected
-import { Logger } from '../core/Logger';
+import { Logger } from '../core/logger';
 
 export interface ResamplingOptions {
   targetSampleRate: number;

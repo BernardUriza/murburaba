@@ -1,7 +1,7 @@
-import { EventEmitter } from '../core/EventEmitter';
-import { Logger } from '../core/Logger';
+import { EventEmitter } from '../core/event-emitter';
+import { Logger } from '../core/logger';
 import { ChunkMetrics, ChunkConfig, ProcessingMetrics } from '../types';
-import { MetricsManager } from './MetricsManager';
+import { MetricsManager } from './metrics-manager';
 
 interface ChunkEvents {
   'chunk-ready': (chunk: AudioChunk) => void;

@@ -13,7 +13,7 @@ import {
   NoiseProfile 
 } from '../helpers/audioTestHelpers';
 import { createAudioEngine } from '../../engines';
-import { RNNoiseEngine } from '../../engines/RNNoiseEngine';
+import { RNNoiseEngine } from '../../engines/rnnoise-engine';
 
 // Mock WASM module with realistic behavior
 const mockWasmModule = {

@@ -6,7 +6,7 @@
 
 import { renderHook, act } from '@testing-library/react';
 import { vi } from 'vitest';
-import { useAudioEngine } from '../../hooks/useAudioEngine';
+import { useAudioEngine } from '../../hooks/use-audio-engine';
 import { createAudioEngine } from '../../engines';
 
 // Mock the engines module

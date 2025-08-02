@@ -1,5 +1,5 @@
 import { EngineState } from '../types';
-import { EventEmitter } from './EventEmitter';
+import { EventEmitter } from './event-emitter';
 
 interface StateEvents {
   'state-change': (oldState: EngineState, newState: EngineState) => void;

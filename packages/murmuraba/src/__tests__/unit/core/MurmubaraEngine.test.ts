@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MurmubaraEngine } from '../../../core/MurmubaraEngine';
+import { MurmubaraEngine } from '../../../core/murmubara-engine';
 import { MurmubaraConfig, EngineState, MurmubaraError, ErrorCodes } from '../../../types';
 import { 
   mockWasmModule,
@@ -24,13 +24,13 @@ import {
 } from '../../setup/audio-mocks';
 
 // Mock all dependencies
-vi.mock('../../../core/StateManager');
-vi.mock('../../../core/Logger');
-vi.mock('../../../managers/WorkerManager');
-vi.mock('../../../managers/MetricsManager');
-vi.mock('../../../managers/ChunkProcessor');
-vi.mock('../../../utils/SimpleAGC');
-vi.mock('../../../utils/AudioResampler');
+vi.mock('../../../core/state-manager');
+vi.mock('../../../core/logger');
+vi.mock('../../../managers/worker-manager');
+vi.mock('../../../managers/metrics-manager');
+vi.mock('../../../managers/chunk-processor');
+vi.mock('../../../utils/simple-agc');
+vi.mock('../../../utils/audio-resampler');
 vi.mock('../../../utils/rnnoise-loader', () => ({
   loadRNNoiseModule: vi.fn().mockResolvedValue(mockWasmModule)
 }));

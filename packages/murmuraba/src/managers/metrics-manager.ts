@@ -1,5 +1,5 @@
 import { ProcessingMetrics, ChunkMetrics } from '../types';
-import { EventEmitter } from '../core/EventEmitter';
+import { EventEmitter } from '../core/event-emitter';
 
 interface MetricsEvents {
   'metrics-update': (metrics: ProcessingMetrics) => void;

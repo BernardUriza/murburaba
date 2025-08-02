@@ -1,5 +1,5 @@
 // Main hook export
-export { useMurmubaraEngine } from './useMurmubaraEngine';
+export { useMurmubaraEngine } from './use-murmubara-engine';
 
 // Type exports
 export type {

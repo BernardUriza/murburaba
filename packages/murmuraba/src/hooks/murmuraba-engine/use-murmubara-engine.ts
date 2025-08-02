@@ -9,7 +9,7 @@ import {
   onMetricsUpdate,
   processFile,
 } from '../../api';
-import { getAudioConverter, AudioConverter, destroyAudioConverter } from '../../utils/audioConverter';
+import { getAudioConverter, AudioConverter, destroyAudioConverter } from '../../utils/audio-converter';
 
 // Import types
 import {
@@ -24,15 +24,15 @@ import {
 } from '../../types';
 
 // Import managers
-import { URLManager } from './urlManager';
-import { ChunkManager } from './chunkManager';
-import { RecordingManager } from './recordingManager';
-import { AudioExporter } from './audioExporter';
-import { PlaybackManager } from './playbackManager';
-import { createRecordingFunctions } from './recordingFunctions';
+import { URLManager } from './url-manager';
+import { ChunkManager } from './chunk-manager';
+import { RecordingManager } from './recording-manager';
+import { AudioExporter } from './audio-exporter';
+import { PlaybackManager } from './playback-manager';
+import { createRecordingFunctions } from './recording-functions';
 
 // Import hooks
-import { useRecordingState } from './useRecordingState';
+import { useRecordingState } from './use-recording-state';
 
 // Import constants
 import { RECORDING_UPDATE_INTERVAL, LOG_PREFIX } from './constants';

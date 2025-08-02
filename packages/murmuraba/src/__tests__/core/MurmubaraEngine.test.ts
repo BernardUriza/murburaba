@@ -4,29 +4,29 @@
  * This is where boys become men
  */
 
-import { MurmubaraEngine } from '../../core/MurmubaraEngine';
+import { MurmubaraEngine } from '../../core/murmubara-engine';
 import { vi } from 'vitest';
-import { StateManager } from '../../core/StateManager';
-import { Logger } from '../../core/Logger';
-import { WorkerManager } from '../../managers/WorkerManager';
-import { MetricsManager } from '../../managers/MetricsManager';
-import { ChunkProcessor } from '../../managers/ChunkProcessor';
+import { StateManager } from '../../core/state-manager';
+import { Logger } from '../../core/logger';
+import { WorkerManager } from '../../managers/worker-manager';
+import { MetricsManager } from '../../managers/metrics-manager';
+import { ChunkProcessor } from '../../managers/chunk-processor';
 import { MurmubaraConfig, EngineState } from '../../types';
 
 // Mock all dependencies
-vi.mock('../../core/StateManager', () => ({
+vi.mock('../../core/state-manager', () => ({
   StateManager: vi.fn()
 }));
-vi.mock('../../core/Logger', () => ({
+vi.mock('../../core/logger', () => ({
   Logger: vi.fn()
 }));
-vi.mock('../../managers/WorkerManager', () => ({
+vi.mock('../../managers/worker-manager', () => ({
   WorkerManager: vi.fn()
 }));
-vi.mock('../../managers/MetricsManager', () => ({
+vi.mock('../../managers/metrics-manager', () => ({
   MetricsManager: vi.fn()
 }));
-vi.mock('../../managers/ChunkProcessor', () => ({
+vi.mock('../../managers/chunk-processor', () => ({
   ChunkProcessor: vi.fn()
 }));
 

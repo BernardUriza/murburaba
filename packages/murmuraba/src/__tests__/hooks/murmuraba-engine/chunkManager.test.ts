@@ -3,9 +3,9 @@
  * MEDICAL GRADE: Ensures memory doesn't overflow during multi-hour recordings
  */
 
-import { ChunkManager } from '../../../hooks/murmuraba-engine/chunkManager';
+import { ChunkManager } from '../../../hooks/murmuraba-engine/chunk-manager';
 import { vi } from 'vitest';
-import { URLManager } from '../../../hooks/murmuraba-engine/urlManager';
+import { URLManager } from '../../../hooks/murmuraba-engine/url-manager';
 import { ProcessedChunk, RecordingState } from '../../../hooks/murmuraba-engine/types';
 import { MAX_CHUNKS_IN_MEMORY, CHUNKS_TO_KEEP_ON_OVERFLOW } from '../../../hooks/murmuraba-engine/constants';
 

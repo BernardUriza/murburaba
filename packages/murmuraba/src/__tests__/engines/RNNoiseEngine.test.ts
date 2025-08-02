@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { RNNoiseEngine } from '../../engines/RNNoiseEngine';
+import { RNNoiseEngine } from '../../engines/rnnoise-engine';
 
 // Global mocks
 let mockModule: any;

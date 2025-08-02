@@ -19,7 +19,7 @@ vi.mock('../../api', () => ({
   processFile: vi.fn()
 }));
 
-vi.mock('../../utils/audioConverter', () => ({
+vi.mock('../../utils/audio-converter', () => ({
   getAudioConverter: vi.fn().mockReturnValue({}),
   destroyAudioConverter: vi.fn()
 }));

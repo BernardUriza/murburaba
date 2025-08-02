@@ -4,18 +4,18 @@
  */
 
 // Core exports
-export { MurmubaraEngine } from './core/MurmubaraEngine';
-export { EventEmitter } from './core/EventEmitter';
-export { StateManager } from './core/StateManager';
-export { Logger } from './core/Logger';
+export { MurmubaraEngine } from './core/murmubara-engine';
+export { EventEmitter } from './core/event-emitter';
+export { StateManager } from './core/state-manager';
+export { Logger } from './core/logger';
 
 // Manager exports
-export { WorkerManager } from './managers/WorkerManager';
-export { MetricsManager } from './managers/MetricsManager';
+export { WorkerManager } from './managers/worker-manager';
+export { MetricsManager } from './managers/metrics-manager';
 
 // Engine exports
-export { AudioWorkletEngine } from './engines/AudioWorkletEngine';
-export { RNNoiseEngine } from './engines/RNNoiseEngine';
+export { AudioWorkletEngine } from './engines/audio-worklet-engine';
+export { RNNoiseEngine } from './engines/rnnoise-engine';
 export type { AudioEngine } from './engines/types';
 
 // Type exports
@@ -39,7 +39,7 @@ export {
   processFileWithMetrics,
   type ProcessingMetrics,
   type ProcessFileWithMetricsResult
-} from './api/processFileWithMetrics';
+} from './api/process-file-with-metrics';
 
 // Export version
 export const VERSION = '1.5.0';
@@ -70,11 +70,11 @@ export {
 } from './components/build-info/build-info';
 
 // Hook exports at the end to avoid circular dependency
-export { useMurmubaraEngine } from './hooks/useMurmubaraEngine';
-export { useAudioEngine } from './hooks/useAudioEngine';
+export { useMurmubaraEngine } from './hooks/use-murmubara-engine';
+export { useAudioEngine } from './hooks/use-audio-engine';
 
 // Audio converter utility export
-export { AudioConverter, getAudioConverter } from './utils/audioConverter';
+export { AudioConverter, getAudioConverter } from './utils/audio-converter';
 
 // Export types from the hook
 export type { 
@@ -82,12 +82,12 @@ export type {
   RecordingState, 
   UseMurmubaraEngineOptions, 
   UseMurmubaraEngineReturn 
-} from './hooks/useMurmubaraEngine';
+} from './hooks/use-murmubara-engine';
 
 // Import for default export
-import { useMurmubaraEngine } from './hooks/useMurmubaraEngine';
-import { useAudioEngine } from './hooks/useAudioEngine';
-import { MurmubaraEngine } from './core/MurmubaraEngine';
+import { useMurmubaraEngine } from './hooks/use-murmubara-engine';
+import { useAudioEngine } from './hooks/use-audio-engine';
+import { MurmubaraEngine } from './core/murmubara-engine';
 
 // Default export for easier usage
 const murmurabaExports = {

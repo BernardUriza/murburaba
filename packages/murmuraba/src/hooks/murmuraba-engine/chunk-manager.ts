@@ -1,5 +1,5 @@
 import { ProcessedChunk, RecordingState } from './types';
-import { URLManager } from './urlManager';
+import { URLManager } from './url-manager';
 import { MAX_CHUNKS_IN_MEMORY, CHUNKS_TO_KEEP_ON_OVERFLOW, LOG_PREFIX } from './constants';
 
 export class ChunkManager {

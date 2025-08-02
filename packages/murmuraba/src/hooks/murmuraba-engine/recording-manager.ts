@@ -1,8 +1,8 @@
 import { ProcessedChunk } from './types';
-import { processFileWithMetrics } from '../../api/processFileWithMetrics';
+import { processFileWithMetrics } from '../../api/process-file-with-metrics';
 import { MIN_VALID_BLOB_SIZE, LOG_PREFIX } from './constants';
-import { URLManager } from './urlManager';
-import { AudioConverter } from '../../utils/audioConverter';
+import { URLManager } from './url-manager';
+import { AudioConverter } from '../../utils/audio-converter';
 
 interface ChunkRecording {
   processed: Blob[];
