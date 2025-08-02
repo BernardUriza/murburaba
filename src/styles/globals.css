@@ -7,6 +7,7 @@
 /* Import Component Styles */
 @import './components/audio-recorder.css';
 @import './components/audio-processor.css';
+@import './components/audio-demo.css';
 @import './floating-panels.css';
 @import './settings.css';
 

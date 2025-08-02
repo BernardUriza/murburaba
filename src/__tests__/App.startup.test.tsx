@@ -98,7 +98,12 @@ vi.mock('../components/wasm-error-display/wasm-error-display', () => ({
   WASMErrorDisplay: vi.fn(({ error, onRetry }) => 
     <div data-testid="wasm-error-display">
       <div>Error: {error.message}</div>
-      <button onClick={onRetry}>Retry</button>
+      <button 
+        onClick={onRetry}
+        aria-label="Retry loading WASM module"
+      >
+        Retry
+      </button>
     </div>
   )
 }));
