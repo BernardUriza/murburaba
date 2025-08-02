@@ -176,12 +176,13 @@ export class ResourcePreloader {
         type: 'fetch',
         priority: 'high',
         crossOrigin: true
-      },
-      {
-        url: '/src/workers/rnnoise.worker.js',
-        type: 'script',
-        priority: 'high'
       }
+      // Worker file doesn't exist yet
+      // {
+      //   url: '/src/workers/rnnoise.worker.js',
+      //   type: 'script',
+      //   priority: 'high'
+      // }
     ]);
   }
   

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test App</title>
+    <style>
+        body {
+            background: #0A0B0E;
+            color: #E4E5F1;
+            font-family: system-ui;
+            padding: 2rem;
+            margin: 0;
+        }
+        .status {
+            background: rgba(82, 163, 47, 0.1);
+            border: 1px solid #52A32F;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            color: #fca5a5;
+        }
+        .log {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid #3b82f6;
+            border-radius: 4px;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 React App Debug Page</h1>
+    
+    <div class="status">
+        <h2>Page Status</h2>
+        <p>✅ If you can see this, the server is working!</p>
+        <p>Time: <span id="time"></span></p>
+    </div>
+    
+    <div id="root">
+        <div style="padding: 2rem; text-align: center;">
+            <h2>⏳ Waiting for React to mount...</h2>
+            <p>If this message persists, React is not loading properly.</p>
+        </div>
+    </div>
+    
+    <div class="status">
+        <h2>Console Logs</h2>
+        <div id="logs"></div>
+    </div>
+    
+    <script>
+        // Update time
+        document.getElementById('time').textContent = new Date().toLocaleString();
+        
+        // Capture console logs
+        const logsDiv = document.getElementById('logs');
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        function addLog(type, ...args) {
+            const logDiv = document.createElement('div');
+            logDiv.className = 'log';
+            if (type === 'error') logDiv.classList.add('error');
+            logDiv.textContent = `[${type.toUpperCase()}] ${args.join(' ')}`;
+            logsDiv.appendChild(logDiv);
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog('log', ...args);
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog('error', ...args);
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addLog('warn', ...args);
+        };
+        
+        // Test basic JavaScript
+        console.log('JavaScript is working!');
+        
+        // Try to load React manually
+        console.log('Loading React modules...');
+    </script>
+    
+    <script type="module">
+        console.log('ES Modules are supported!');
+        
+        // Try to import and run the app
+        try {
+            console.log('Importing main.tsx...');
+            import('/src/main.tsx').then(() => {
+                console.log('main.tsx imported successfully!');
+            }).catch(err => {
+                console.error('Failed to import main.tsx:', err.message);
+            });
+        } catch (err) {
+            console.error('Import error:', err.message);
+        }
+    </script>
+</body>
+</html>
