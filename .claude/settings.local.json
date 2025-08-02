@@ -121,7 +121,9 @@
       "Bash(test:*)",
       "Bash(npm:*)",
       "Bash(/workspaces/murburaba/.claude/hooks/pre-architecture-check.sh:*)",
-      "Bash(./.claude/hooks/pre-architecture-check.sh:*)"
+      "Bash(./.claude/hooks/pre-architecture-check.sh:*)",
+      "Bash(npx depcheck:*)",
+      "Bash(npx vitest list:*)"
     ],
     "deny": []
   }

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-interface BuildInfoProps {
+interface IBuildInfoProps {
   version?: string;
   buildDate?: string;
   className?: string;
@@ -11,7 +11,7 @@ interface BuildInfoProps {
   size?: 'small' | 'medium' | 'large';
 }
 
-export const BuildInfo: React.FC<BuildInfoProps> = ({
+export const BuildInfo: React.FC<IBuildInfoProps> = ({
   version = '1.0.0',
   buildDate = new Date().toLocaleDateString(),
   className = '',
@@ -127,14 +127,14 @@ export const formatBuildDate = (date: Date | string): string => {
 };
 
 // Pre-configured variants for common use cases
-export const BuildInfoBadge: React.FC<Omit<BuildInfoProps, 'format'>> = (props) => (
+export const BuildInfoBadge: React.FC<Omit<IBuildInfoProps, 'format'>> = (props) => (
   <BuildInfo {...props} format="badge" />
 );
 
-export const BuildInfoBlock: React.FC<Omit<BuildInfoProps, 'format'>> = (props) => (
+export const BuildInfoBlock: React.FC<Omit<IBuildInfoProps, 'format'>> = (props) => (
   <BuildInfo {...props} format="block" />
 );
 
-export const BuildInfoInline: React.FC<Omit<BuildInfoProps, 'format'>> = (props) => (
+export const BuildInfoInline: React.FC<Omit<IBuildInfoProps, 'format'>> = (props) => (
   <BuildInfo {...props} format="inline" />
 );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { VadDisplay } from '../VadDisplay';
+import { VadDisplay } from '../vad-display/vad-display';
 
 describe('VadDisplay', () => {
   const mockVadData = [

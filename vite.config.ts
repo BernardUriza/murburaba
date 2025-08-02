@@ -9,9 +9,18 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    chunkSizeWarningLimit: 500,
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'index.html')
+      },
+      output: {
+        manualChunks(id) {
+          // Separate WASM into its own chunk
+          if (id.includes('rnnoise.wasm')) {
+            return 'rnnoise-wasm';
+          }
+        }
       }
     }
   },
@@ -25,7 +34,6 @@ export default defineConfig({
     global: 'globalThis',
   },
   optimizeDeps: {
-    include: ['audio-resampler'],
     exclude: ['@jitsi/rnnoise-wasm', 'rnnoise.wasm'],
     // Explicitly configure WASM handling
     esbuildOptions: {
@@ -33,22 +41,6 @@ export default defineConfig({
     }
   },
   assetsInclude: ['**/*.wasm'],
-  build: {
-    ...defineConfig().build,
-    rollupOptions: {
-      ...defineConfig().build?.rollupOptions,
-      output: {
-        manualChunks(id) {
-          // Separate WASM into its own chunk
-          if (id.includes('rnnoise.wasm')) {
-            return 'rnnoise-wasm';
-          }
-        }
-      }
-    },
-    // Reduce chunk size
-    chunkSizeWarningLimit: 500,
-  },
   server: {
     port: 3000,
     open: true,

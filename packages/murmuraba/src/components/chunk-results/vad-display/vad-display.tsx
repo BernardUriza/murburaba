@@ -1,12 +1,12 @@
 import React from 'react';
 
-interface VadDisplayProps {
+interface IVadDisplayProps {
   averageVad?: number;
   vadData?: Array<{ time: number; vad: number }>;
   chunkIndex: number;
 }
 
-export function VadDisplay({ averageVad, vadData, chunkIndex }: VadDisplayProps) {
+export function VadDisplay({ averageVad, vadData, chunkIndex }: IVadDisplayProps) {
   if (averageVad === undefined) return null;
 
   const vadPercentage = averageVad * 100;

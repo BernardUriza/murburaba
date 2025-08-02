@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
-interface WaveformAnalyzerProps {
+interface IWaveformAnalyzerProps {
   stream?: MediaStream;
   audioUrl?: string;
   label?: string;
@@ -19,7 +19,7 @@ interface WaveformAnalyzerProps {
   disablePlayback?: boolean;
 }
 
-export const WaveformAnalyzer: React.FC<WaveformAnalyzerProps> = ({ 
+export const WaveformAnalyzer: React.FC<IWaveformAnalyzerProps> = ({ 
   stream,
   audioUrl, 
   label, 

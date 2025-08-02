@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
-interface VadTimelineProps {
+interface IVadTimelineProps {
   vadData: Array<{ time: number; vad: number }>;
   chunkId: string;
 }
 
-export const VadTimeline = React.memo(function VadTimeline({ vadData, chunkId }: VadTimelineProps) {
+export const VadTimeline = React.memo(function VadTimeline({ vadData, chunkId }: IVadTimelineProps) {
 
   // Show loading state while data is being processed
   if (!vadData || vadData.length === 0) {

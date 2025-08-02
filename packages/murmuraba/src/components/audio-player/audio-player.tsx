@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 
-export interface AudioPlayerProps {
+export interface IAudioPlayerProps {
   /** Audio source URL */
   src?: string;
   /** Callback when play state changes */
@@ -21,7 +21,7 @@ export interface AudioPlayerProps {
   muted?: boolean;
 }
 
-interface AudioState {
+interface IAudioState {
   isPlaying: boolean;
   currentTime: number;
   duration: number;
@@ -43,12 +43,12 @@ export function AudioPlayer({
   disabled = false,
   volume = 1,
   muted = false,
-}: AudioPlayerProps) {
+}: IAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const seekTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
   
-  const [state, setState] = useState<AudioState>({
+  const [state, setState] = useState<IAudioState>({
     isPlaying: false,
     currentTime: 0,
     duration: 0,
@@ -57,7 +57,7 @@ export function AudioPlayer({
   });
 
   // Safe state updater that checks if component is still mounted
-  const safeSetState = useCallback((updater: Partial<AudioState>) => {
+  const safeSetState = useCallback((updater: Partial<IAudioState>) => {
     if (mountedRef.current) {
       setState(prev => ({ ...prev, ...updater }));
     }

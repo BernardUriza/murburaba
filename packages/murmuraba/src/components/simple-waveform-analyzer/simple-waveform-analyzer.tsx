@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 
-interface SimpleWaveformAnalyzerProps {
+interface ISimpleWaveformAnalyzerProps {
   stream?: MediaStream;
   isActive?: boolean;
   isPaused?: boolean;
@@ -8,7 +8,7 @@ interface SimpleWaveformAnalyzerProps {
   height?: number;
 }
 
-export const SimpleWaveformAnalyzer: React.FC<SimpleWaveformAnalyzerProps> = ({
+export const SimpleWaveformAnalyzer: React.FC<ISimpleWaveformAnalyzerProps> = ({
   stream,
   isActive = true,
   isPaused = false,

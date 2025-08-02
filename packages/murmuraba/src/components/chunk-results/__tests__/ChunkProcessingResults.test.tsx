@@ -5,11 +5,11 @@ import { ChunkProcessingResults } from '../../ChunkProcessingResults';
 import { ProcessedChunk } from '../../../hooks/murmuraba-engine/types';
 
 // Mock the child components
-jest.mock('../ChunkHeader');
-jest.mock('../ProcessingMetrics');
-jest.mock('../FileInfo');
-jest.mock('../VadTimeline');
-jest.mock('../AudioControls');
+jest.mock('../chunk-header/chunk-header');
+jest.mock('../processing-metrics/processing-metrics');
+jest.mock('../file-info/file-info');
+jest.mock('../vad-timeline/vad-timeline');
+jest.mock('../audio-controls/audio-controls');
 
 describe('ChunkProcessingResults - VAD Prominence', () => {
   const mockProps = {
@@ -60,7 +60,7 @@ describe('ChunkProcessingResults - VAD Prominence', () => {
 
   it('should pass VAD data to ChunkHeader for prominent display', () => {
     const chunk = createChunkWithVAD('chunk-1', 0.75);
-    const { ChunkHeader } = require('../ChunkHeader');
+    const { ChunkHeader } = require('../chunk-header/chunk-header');
     
     render(<ChunkProcessingResults {...mockProps} chunks={[chunk]} />);
     
@@ -80,7 +80,7 @@ describe('ChunkProcessingResults - VAD Prominence', () => {
       createChunkWithVAD('chunk-3', 0.15)
     ];
     
-    const { ChunkHeader } = require('../ChunkHeader');
+    const { ChunkHeader } = require('../chunk-header/chunk-header');
     render(<ChunkProcessingResults {...mockProps} chunks={chunks} />);
     
     // Verify each chunk gets its VAD data
@@ -106,7 +106,7 @@ describe('ChunkProcessingResults - VAD Prominence', () => {
       vadData: undefined
     };
     
-    const { ChunkHeader } = require('../ChunkHeader');
+    const { ChunkHeader } = require('../chunk-header/chunk-header');
     render(<ChunkProcessingResults {...mockProps} chunks={[chunkWithoutVAD]} />);
     
     expect(ChunkHeader).toHaveBeenCalledWith(
@@ -122,7 +122,7 @@ describe('ChunkProcessingResults - VAD Prominence', () => {
     const chunk = createChunkWithVAD('chunk-1', 0.65);
     chunk.isExpanded = true;
     
-    const { VadTimeline } = require('../VadTimeline');
+    const { VadTimeline } = require('../vad-timeline/vad-timeline');
     render(<ChunkProcessingResults {...mockProps} chunks={[chunk]} />);
     
     expect(VadTimeline).toHaveBeenCalledWith(

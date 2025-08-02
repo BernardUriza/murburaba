@@ -8,7 +8,7 @@ interface Message {
   isTyping?: boolean
 }
 
-interface CopilotChatProps {
+interface ICopilotChatProps {
   isOpen: boolean
   onClose: () => void
   engineConfig: any
@@ -49,7 +49,7 @@ export function CopilotChat({
   isRecording,
   isInitialized,
   onApplyChanges: _onApplyChanges 
-}: CopilotChatProps) {
+}: ICopilotChatProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',

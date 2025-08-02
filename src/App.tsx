@@ -7,13 +7,13 @@ import {
   processFileWithMetrics
 } from 'murmuraba'
 import Swal from 'sweetalert2'
-import { WASMErrorDisplay } from './components/WASMErrorDisplay'
-import { CopilotChat } from './components/CopilotChat'
-import { Settings } from './components/Settings'
+import { WASMErrorDisplay } from './components/wasm-error-display/wasm-error-display'
+import { CopilotChat } from './components/copilot-chat/copilot-chat'
+import { Settings } from './components/settings/settings'
 
 // Lazy load heavy components for code splitting
-const AudioDemo = lazy(() => import('./components/AudioDemo'))
-const SimpleWaveformAnalyzer = lazy(() => import('../packages/murmuraba/src/components/SimpleWaveformAnalyzer').then(m => ({ default: m.SimpleWaveformAnalyzer })))
+const AudioDemo = lazy(() => import('./components/audio-demo/audio-demo'))
+const SimpleWaveformAnalyzer = lazy(() => import('murmuraba').then(m => ({ default: m.SimpleWaveformAnalyzer })))
 const AdvancedMetricsPanel = lazy(() => import('murmuraba').then(m => ({ default: m.AdvancedMetricsPanel })))
 const ChunkProcessingResults = lazy(() => import('murmuraba').then(m => ({ default: m.ChunkProcessingResults })))
 

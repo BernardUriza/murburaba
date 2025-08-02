@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { WaveformAnalyzer } from './WaveformAnalyzer';
 import './SyncedWaveforms.css';
 
-interface SyncedWaveformsProps {
+interface ISyncedWaveformsProps {
   originalAudioUrl?: string;
   processedAudioUrl?: string;
   isPlaying?: boolean;
@@ -18,7 +18,7 @@ interface SyncedWaveformsProps {
   processedColor?: string;
 }
 
-interface WaveformColumn {
+interface IWaveformColumn {
   audioUrl?: string;
   label: string;
   color: string;
@@ -27,7 +27,7 @@ interface WaveformColumn {
   emoji: string;
 }
 
-export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
+export const SyncedWaveforms: React.FC<ISyncedWaveformsProps> = ({
   originalAudioUrl,
   processedAudioUrl,
   isPlaying = false,
@@ -115,7 +115,7 @@ export const SyncedWaveforms: React.FC<SyncedWaveformsProps> = ({
     setCurrentAudioType(prev => prev === 'original' ? 'processed' : 'original');
   }, []);
 
-  const waveformColumns: WaveformColumn[] = [
+  const waveformColumns: IWaveformColumn[] = [
     {
       audioUrl: originalAudioUrl,
       label: originalLabel,

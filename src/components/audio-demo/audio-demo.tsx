@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 
-export interface AudioLog {
+export interface IAudioLog {
   timestamp: number
   frame: number
   vad: number
@@ -8,14 +8,14 @@ export interface AudioLog {
   message: string
 }
 
-export interface AudioDemoProps {
+export interface IAudioDemoProps {
   getEngineStatus: () => string
   processFile: (arrayBuffer: ArrayBuffer) => Promise<ArrayBuffer>
   processFileWithMetrics?: (buffer: ArrayBuffer, onFrame?: (metrics: any) => void) => Promise<{ processedBuffer: ArrayBuffer; metrics: any[]; averageVad: number }>
   autoProcess?: boolean
   onProcessComplete?: (processedBuffer: ArrayBuffer) => void
   onError?: (error: Error) => void
-  onLog?: (log: AudioLog) => void
+  onLog?: (log: IAudioLog) => void
 }
 
 export default function AudioDemo({
@@ -26,8 +26,8 @@ export default function AudioDemo({
   onProcessComplete,
   onError,
   onLog
-}: AudioDemoProps) {
-  const [logs, setLogs] = useState<AudioLog[]>([])
+}: IAudioDemoProps) {
+  const [logs, setLogs] = useState<IAudioLog[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
   const [originalAudioUrl, setOriginalAudioUrl] = useState<string | null>(null)
   const [processedAudioUrl, setProcessedAudioUrl] = useState<string | null>(null)
@@ -69,7 +69,7 @@ export default function AudioDemo({
     }
   }, [logs])
 
-  const addLog = useCallback((log: AudioLog) => {
+  const addLog = useCallback((log: IAudioLog) => {
     setLogs(prev => {
       // Limit logs to prevent memory issues
       const newLogs = [...prev, log]

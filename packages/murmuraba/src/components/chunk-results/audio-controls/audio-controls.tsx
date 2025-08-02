@@ -1,8 +1,8 @@
 import React from 'react';
-import { SyncedWaveforms } from '../SyncedWaveforms';
-import './AudioControls.modern.css';
+import { SyncedWaveforms } from '../../synced-waveforms/synced-waveforms';
+import './audio-controls.modern.css';
 
-interface AudioControlsProps {
+interface IAudioControlsProps {
   chunkId: string;
   index: number;
   isPlaying: boolean;
@@ -28,7 +28,7 @@ export function AudioControls({
   processedAudioUrl,
   originalAudioUrl,
   currentlyPlayingType
-}: AudioControlsProps) {
+}: IAudioControlsProps) {
   return (
     <div className="details__section">
       <h4 className="section__title">🎵 Audio Controls</h4>

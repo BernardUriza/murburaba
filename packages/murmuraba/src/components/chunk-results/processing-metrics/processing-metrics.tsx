@@ -1,7 +1,7 @@
 import React from 'react';
 import { formatPercentage } from './formatters';
 
-interface ProcessingMetricsProps {
+interface IProcessingMetricsProps {
   inputLevel: number;
   outputLevel: number;
   frameCount: number;
@@ -13,7 +13,7 @@ export function ProcessingMetrics({
   outputLevel, 
   frameCount, 
   droppedFrames 
-}: ProcessingMetricsProps) {
+}: IProcessingMetricsProps) {
   return (
     <div className="details__section">
       <h4 className="section__title">📊 Processing Metrics</h4>

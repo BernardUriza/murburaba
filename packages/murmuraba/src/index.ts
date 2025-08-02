@@ -49,17 +49,17 @@ export const MURMURABA_VERSION = VERSION;
 export { ErrorCodes } from './types';
 
 // UI Component exports - Professional Audio Interface Components
-export { AudioPlayer } from './components/AudioPlayer';
-export { AdvancedMetricsPanel } from './components/AdvancedMetricsPanel';
-export { ChunkProcessingResults } from './components/ChunkProcessingResults';
-export { SimpleWaveformAnalyzer } from './components/SimpleWaveformAnalyzer';
+export { AudioPlayer } from './components/audio-player/audio-player';
+export { AdvancedMetricsPanel } from './components/advanced-metrics-panel/advanced-metrics-panel';
+export { ChunkProcessingResults } from './components/chunk-processing-results/chunk-processing-results';
+export { SimpleWaveformAnalyzer } from './components/simple-waveform-analyzer/simple-waveform-analyzer';
 
 // Audio Visualization Components
-export { WaveformAnalyzer } from './components/WaveformAnalyzer';
-export { SyncedWaveforms } from './components/SyncedWaveforms';
+export { WaveformAnalyzer } from './components/waveform-analyzer/waveform-analyzer';
+export { SyncedWaveforms } from './components/synced-waveforms/synced-waveforms';
 
 // Utility Components
-export { ErrorBoundary, withErrorBoundary } from './components/ErrorBoundary';
+export { ErrorBoundary, withErrorBoundary } from './components/error-boundary/error-boundary';
 export { 
   BuildInfo, 
   BuildInfoBadge, 
@@ -67,7 +67,7 @@ export {
   BuildInfoInline,
   getPackageVersion,
   formatBuildDate 
-} from './components/BuildInfo';
+} from './components/build-info/build-info';
 
 // Hook exports at the end to avoid circular dependency
 export { useMurmubaraEngine } from './hooks/useMurmubaraEngine';

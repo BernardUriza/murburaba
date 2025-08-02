@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { AudioPlayer } from '../../components/AudioPlayer';
+import { AudioPlayer } from '../../components/audio-player/audio-player';
 
 describe('AudioPlayer - Consolidated Tests', () => {
   beforeEach(() => {

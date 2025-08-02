@@ -1,13 +1,13 @@
 import React from 'react';
 import { formatFileSize } from './formatters';
 
-interface FileInfoProps {
+interface IFileInfoProps {
   originalSize: number;
   processedSize: number;
   noiseRemoved: number;
 }
 
-export function FileInfo({ originalSize, processedSize, noiseRemoved }: FileInfoProps) {
+export function FileInfo({ originalSize, processedSize, noiseRemoved }: IFileInfoProps) {
   return (
     <div className="details__section">
       <h4 className="section__title">📁 File Information</h4>

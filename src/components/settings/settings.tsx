@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
-import '../styles/settings-chat.css'
+import { useFormStatus } from 'react-dom'
+import '../../styles/settings-chat.css'
 
-interface SettingsProps {
+interface ISettingsProps {
   isOpen: boolean
   onClose: () => void
   vadThresholds: {
@@ -24,13 +25,39 @@ export function Settings({
   displaySettings,
   onThresholdChange,
   onDisplayChange
-}: SettingsProps) {
+}: ISettingsProps) {
   const [localThresholds, setLocalThresholds] = useState(vadThresholds)
   const [localDisplay, setLocalDisplay] = useState(displaySettings)
 
-  const handleApply = () => {
+  const handleApply = async () => {
+    // Simulate async operation
+    await new Promise(resolve => setTimeout(resolve, 500))
     onThresholdChange(localThresholds)
     onDisplayChange(localDisplay)
+    onClose()
+  }
+
+  // Submit button component that uses useFormStatus
+  function SubmitButton() {
+    const { pending } = useFormStatus()
+    
+    return (
+      <button 
+        type="submit" 
+        className="btn-primary" 
+        disabled={pending}
+        aria-busy={pending}
+      >
+        {pending ? (
+          <>
+            <span className="spinner" aria-hidden="true">⏳</span>
+            Applying...
+          </>
+        ) : (
+          'Apply'
+        )}
+      </button>
+    )
   }
 
   return (
@@ -42,7 +69,7 @@ export function Settings({
           <button className="close-btn" onClick={onClose} aria-label="Close settings">×</button>
         </div>
         
-        <div className="settings-content">
+        <form action={handleApply} className="settings-content">
           <section className="settings-section">
             <h4>VAD Thresholds</h4>
             
@@ -145,10 +172,10 @@ export function Settings({
           </section>
 
           <div className="settings-actions">
-            <button className="btn-primary" onClick={handleApply}>Apply</button>
-            <button className="btn-secondary" onClick={onClose}>Cancel</button>
+            <SubmitButton />
+            <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
           </div>
-        </div>
+        </form>
       </div>
     </>
   )

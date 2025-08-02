@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import { VadTimeline } from '../VadTimeline';
+import { VadTimeline } from '../vad-timeline/vad-timeline';
 
 describe('VadTimeline - Renderizado sin interacción del usuario', () => {
   const mockVadData = [

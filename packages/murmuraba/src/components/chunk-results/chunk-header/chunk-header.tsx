@@ -1,7 +1,7 @@
 import React from 'react';
 import { VadDisplay } from './VadDisplay';
 
-interface ChunkHeaderProps {
+interface IChunkHeaderProps {
   index: number;
   duration: number;
   noiseReduction: number;
@@ -35,7 +35,7 @@ export function ChunkHeader({
   onKeyDown,
   formatTime,
   formatPercentage
-}: ChunkHeaderProps) {
+}: IChunkHeaderProps) {
   return (
     <div className="chunk__header">
       <div className="chunk__info">

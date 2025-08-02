@@ -1,6 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 
-interface ErrorBoundaryProps {
+interface IErrorBoundaryProps {
   children: ReactNode;
   fallback?: (error: Error, errorInfo: ErrorInfo) => ReactNode;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
@@ -9,22 +9,22 @@ interface ErrorBoundaryProps {
   'aria-label'?: string;
 }
 
-interface ErrorBoundaryState {
+interface IErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
 }
 
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<IErrorBoundaryProps, IErrorBoundaryState> {
   private resetTimeoutId: number | null = null;
 
-  public state: ErrorBoundaryState = {
+  public state: IErrorBoundaryState = {
     hasError: false,
     error: null,
     errorInfo: null
   };
 
-  public static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
+  public static getDerivedStateFromError(error: Error): Partial<IErrorBoundaryState> {
     return { 
       hasError: true, 
       error 
@@ -41,7 +41,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     console.error('🚨 Murmuraba ErrorBoundary caught an error:', error, errorInfo);
   }
 
-  public componentDidUpdate(prevProps: ErrorBoundaryProps) {
+  public componentDidUpdate(prevProps: IErrorBoundaryProps) {
     const { resetOnPropsChange } = this.props;
     const { hasError } = this.state;
     
@@ -282,7 +282,7 @@ const defaultStyles = {
 // Export a HOC version for easier usage
 export function withErrorBoundary<P extends object>(
   Component: React.ComponentType<P>,
-  errorBoundaryProps?: Omit<ErrorBoundaryProps, 'children'>
+  errorBoundaryProps?: Omit<IErrorBoundaryProps, 'children'>
 ) {
   const WrappedComponent = (props: P) => (
     <ErrorBoundary {...errorBoundaryProps}>

@@ -1,7 +1,7 @@
 import React, { useMemo, useCallback } from 'react';
 import type { DiagnosticInfo } from '../types/audio-types';
 
-export interface AdvancedMetricsPanelProps {
+export interface IAdvancedMetricsPanelProps {
   /** Controls visibility of the panel */
   isVisible: boolean;
   /** Diagnostic information to display */
@@ -14,24 +14,24 @@ export interface AdvancedMetricsPanelProps {
   'aria-label'?: string;
 }
 
-interface MetricItemProps {
+interface IMetricItemProps {
   label: string;
   value: string | React.ReactNode;
   'data-testid'?: string;
 }
 
-const MetricItem: React.FC<MetricItemProps> = ({ label, value, 'data-testid': testId }) => (
+const MetricItem: React.FC<IMetricItemProps> = ({ label, value, 'data-testid': testId }) => (
   <div className="metric-item" data-testid={testId}>
     <span className="metric-label">{label}</span>
     <span className="metric-value">{value}</span>
   </div>
 );
 
-interface PerformanceIndicatorProps {
+interface IPerformanceIndicatorProps {
   memoryUsage: number;
 }
 
-const PerformanceIndicator: React.FC<PerformanceIndicatorProps> = ({ memoryUsage }) => {
+const PerformanceIndicator: React.FC<IPerformanceIndicatorProps> = ({ memoryUsage }) => {
   const performance = useMemo(() => {
     const memoryMB = memoryUsage / (1024 * 1024);
     
@@ -47,11 +47,11 @@ const PerformanceIndicator: React.FC<PerformanceIndicatorProps> = ({ memoryUsage
   );
 };
 
-interface PanelHeaderProps {
+interface IPanelHeaderProps {
   onClose: () => void;
 }
 
-const PanelHeader: React.FC<PanelHeaderProps> = ({ onClose }) => {
+const PanelHeader: React.FC<IPanelHeaderProps> = ({ onClose }) => {
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
@@ -88,7 +88,7 @@ export function AdvancedMetricsPanel({
   onClose,
   className = '',
   'aria-label': ariaLabel,
-}: AdvancedMetricsPanelProps) {
+}: IAdvancedMetricsPanelProps) {
   // Handle escape key at panel level
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
     if (event.key === 'Escape') {

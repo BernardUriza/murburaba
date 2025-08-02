@@ -1,14 +1,14 @@
 import React, { useCallback } from 'react';
-import { ProcessedChunk } from '../hooks/murmuraba-engine/types';
-import { ChunkHeader } from './chunk-results/ChunkHeader';
-import { ProcessingMetrics } from './chunk-results/ProcessingMetrics';
-import { FileInfo } from './chunk-results/FileInfo';
-import { VadTimeline } from './chunk-results/VadTimeline';
-import { AudioControls } from './chunk-results/AudioControls';
-import { formatTime, formatPercentage, formatFileSize, calculateChunkStats } from './chunk-results/formatters';
-import './ChunkProcessingResults.css';
+import { ProcessedChunk } from '../../hooks/murmuraba-engine/types';
+import { ChunkHeader } from '../chunk-results/chunk-header/chunk-header';
+import { ProcessingMetrics } from '../chunk-results/processing-metrics/processing-metrics';
+import { FileInfo } from '../chunk-results/file-info/file-info';
+import { VadTimeline } from '../chunk-results/vad-timeline/vad-timeline';
+import { AudioControls } from '../chunk-results/audio-controls/audio-controls';
+import { formatTime, formatPercentage, formatFileSize, calculateChunkStats } from '../chunk-results/formatters';
+import './chunk-processing-results.css';
 
-export interface ChunkProcessingResultsProps {
+export interface IChunkProcessingResultsProps {
   /** Array of processed audio chunks */
   chunks: ProcessedChunk[];
   /** Average noise reduction percentage across all chunks */
@@ -40,7 +40,7 @@ export function ChunkProcessingResults({
   onClearAll,
   onDownloadChunk,
   className = '',
-}: ChunkProcessingResultsProps) {
+}: IChunkProcessingResultsProps) {
   
   const chunkStats = calculateChunkStats(chunks);
 

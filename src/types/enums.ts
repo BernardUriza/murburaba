@@ -1,0 +1,74 @@
+// Audio Processing Enums
+
+export enum AudioQuality {
+  LOW_QUALITY = 'LOW_QUALITY',
+  MEDIUM_QUALITY = 'MEDIUM_QUALITY',
+  HIGH_QUALITY = 'HIGH_QUALITY',
+  LOSSLESS = 'LOSSLESS'
+}
+
+export enum EngineState {
+  UNINITIALIZED = 'UNINITIALIZED',
+  INITIALIZING = 'INITIALIZING',
+  READY = 'READY',
+  PROCESSING = 'PROCESSING',
+  ERROR = 'ERROR',
+  DEGRADED = 'DEGRADED'
+}
+
+export enum ProcessingMode {
+  REAL_TIME = 'REAL_TIME',
+  BATCH = 'BATCH',
+  STREAMING = 'STREAMING'
+}
+
+export enum NoiseReductionLevel {
+  OFF = 'OFF',
+  LIGHT = 'LIGHT',
+  MODERATE = 'MODERATE',
+  AGGRESSIVE = 'AGGRESSIVE',
+  MAXIMUM = 'MAXIMUM'
+}
+
+export enum AudioFormat {
+  WAV = 'WAV',
+  MP3 = 'MP3',
+  WEBM = 'WEBM',
+  OGG = 'OGG',
+  FLAC = 'FLAC'
+}
+
+export enum VoiceActivityLevel {
+  SILENCE = 'SILENCE',
+  NOISE = 'NOISE',
+  VOICE = 'VOICE',
+  CLEAR_VOICE = 'CLEAR_VOICE'
+}
+
+export enum ErrorCode {
+  INITIALIZATION_FAILED = 'INITIALIZATION_FAILED',
+  WASM_LOAD_ERROR = 'WASM_LOAD_ERROR',
+  MICROPHONE_ACCESS_DENIED = 'MICROPHONE_ACCESS_DENIED',
+  PROCESSING_ERROR = 'PROCESSING_ERROR',
+  MEMORY_ALLOCATION_ERROR = 'MEMORY_ALLOCATION_ERROR',
+  INVALID_CONFIGURATION = 'INVALID_CONFIGURATION'
+}
+
+export enum LatencyMode {
+  INTERACTIVE = 'INTERACTIVE',
+  BALANCED = 'BALANCED',
+  PLAYBACK = 'PLAYBACK'
+}
+
+export enum Theme {
+  LIGHT = 'LIGHT',
+  DARK = 'DARK',
+  SYSTEM = 'SYSTEM'
+}
+
+export enum RecordingStatus {
+  IDLE = 'IDLE',
+  RECORDING = 'RECORDING',
+  PAUSED = 'PAUSED',
+  STOPPING = 'STOPPING'
+}

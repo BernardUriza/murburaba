@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
-import { WaveformAnalyzer } from '../WaveformAnalyzer';
+import { WaveformAnalyzer } from '../waveform-analyzer/waveform-analyzer';
 
 // Mock AudioContext
 const mockAudioContext = {

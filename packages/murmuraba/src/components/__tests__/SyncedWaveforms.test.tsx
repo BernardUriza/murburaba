@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { SyncedWaveforms } from '../SyncedWaveforms';
+import { SyncedWaveforms } from '../synced-waveforms/synced-waveforms';
 
 describe('SyncedWaveforms', () => {
   const mockAudioUrl1 = 'blob:http://localhost/audio1';

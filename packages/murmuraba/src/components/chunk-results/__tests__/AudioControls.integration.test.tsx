@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { AudioControls } from '../AudioControls';
+import { AudioControls } from '../audio-controls/audio-controls';
 import { SyncedWaveforms } from '../../SyncedWaveforms';
 
 vi.mock('../../SyncedWaveforms', () => ({

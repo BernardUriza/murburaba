@@ -23,15 +23,13 @@
     "test:all": "npm run test && npm run test:e2e"
   },
   "dependencies": {
-    "audio-resampler": "^1.0.1",
     "murmuraba": "workspace:*",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "recharts": "^3.1.0",
-    "sweetalert2": "^11.22.2"
+    "sweetalert2": "^11.4.8"
   },
   "devDependencies": {
-    "@types/minimatch": "^6.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
