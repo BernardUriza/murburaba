@@ -74,6 +74,9 @@ interface AppState {
   isSettingsOpen: boolean;
   toggleSettings: () => void;
   
+  isMetricsPanelOpen: boolean;
+  toggleMetricsPanel: () => void;
+  
   selectedTab: 'record' | 'file' | 'demo';
   setSelectedTab: (tab: 'record' | 'file' | 'demo') => void;
   
@@ -151,10 +154,12 @@ export const selectUIState = createCachedSelector('uiState', (state: AppState) =
   isDarkMode: state.isDarkMode,
   isChatOpen: state.isChatOpen,
   isSettingsOpen: state.isSettingsOpen,
+  isMetricsPanelOpen: state.isMetricsPanelOpen,
   selectedTab: state.selectedTab,
   toggleDarkMode: state.toggleDarkMode,
   toggleChat: state.toggleChat,
   toggleSettings: state.toggleSettings,
+  toggleMetricsPanel: state.toggleMetricsPanel,
   setSelectedTab: state.setSelectedTab
 }));
 
@@ -237,6 +242,10 @@ export const useAppStore = create<AppState>()(
         isSettingsOpen: false,
         toggleSettings: () =>
           set((state) => ({ isSettingsOpen: !state.isSettingsOpen })),
+        
+        isMetricsPanelOpen: false,
+        toggleMetricsPanel: () =>
+          set((state) => ({ isMetricsPanelOpen: !state.isMetricsPanelOpen })),
         
         selectedTab: 'record' as 'record' | 'file' | 'demo',
         setSelectedTab: (tab: 'record' | 'file' | 'demo') => set({ selectedTab: tab }),

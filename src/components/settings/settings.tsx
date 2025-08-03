@@ -44,17 +44,20 @@ export function Settings({
     return (
       <button 
         type="submit" 
-        className="btn-primary" 
+        className="btn btn-primary" 
         disabled={pending}
         aria-busy={pending}
       >
         {pending ? (
           <>
-            <span className="spinner" aria-hidden="true">⏳</span>
-            Applying...
+            <span className="btn-icon spinner" aria-hidden="true">⏳</span>
+            <span>Applying...</span>
           </>
         ) : (
-          'Apply'
+          <>
+            <span className="btn-icon">✓</span>
+            <span>Apply</span>
+          </>
         )}
       </button>
     )
@@ -65,13 +68,15 @@ export function Settings({
       <div className={`settings-overlay ${isOpen ? 'active' : ''}`} onClick={onClose} />
       <div className={`settings-panel ${isOpen ? 'active' : ''}`} data-testid="settings-panel">
         <div className="settings-header">
-          <h3>Settings</h3>
-          <button className="close-btn" onClick={onClose} aria-label="Close settings">×</button>
+          <h3 className="settings-title">⚙️ Settings</h3>
+          <button className="btn btn-icon-only btn-ghost" onClick={onClose} aria-label="Close settings">
+            <span className="text-2xl">×</span>
+          </button>
         </div>
         
         <form action={handleApply} className="settings-content">
           <section className="settings-section">
-            <h4>VAD Thresholds</h4>
+            <h4 className="section-title">🌊 VAD Thresholds</h4>
             
             <div className="setting-item">
               <label htmlFor="silenceThreshold">
@@ -138,7 +143,7 @@ export function Settings({
           </section>
 
           <section className="settings-section">
-            <h4>Display Settings</h4>
+            <h4 className="section-title">🔮 Display Settings</h4>
             
             <div className="setting-item">
               <label htmlFor="showVadValues">
@@ -173,7 +178,10 @@ export function Settings({
 
           <div className="settings-actions">
             <SubmitButton />
-            <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>
+              <span className="btn-icon">✕</span>
+              <span>Cancel</span>
+            </button>
           </div>
         </form>
       </div>

@@ -37,7 +37,7 @@ const App = memo(function App() {
   const { processedFileResult, setProcessedFileResult } = useFileState();
   
   // Destructure UI state
-  const { isDarkMode, isChatOpen, toggleChat, isSettingsOpen, toggleSettings, selectedTab } = uiState;
+  const { isDarkMode, isChatOpen, toggleChat, isSettingsOpen, toggleSettings, isMetricsPanelOpen, toggleMetricsPanel, selectedTab } = uiState;
   
   console.log('Store subscription successful');
 
@@ -190,11 +190,9 @@ const App = memo(function App() {
             {shouldShowMetrics && (
               <AsyncBoundary level="component" fallback={<div>Loading metrics...</div>}>
                 <AdvancedMetricsPanel
-                  isVisible={true}
+                  isVisible={isMetricsPanelOpen}
                   diagnostics={diagnostics}
-                  onClose={() => {
-                    // Handle close if needed
-                  }}
+                  onClose={toggleMetricsPanel}
                 />
               </AsyncBoundary>
             )}

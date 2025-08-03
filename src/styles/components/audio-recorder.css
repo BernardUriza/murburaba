@@ -1,6 +1,7 @@
 /* 🎙️ Audio Recorder Component - Modern Styles v3.0.0 */
 
-.audio-recorder {
+/* Main Container */
+.audio-recorder-container {
   background: var(--dark-surface);
   border-radius: var(--radius-2xl);
   padding: var(--space-8);
@@ -10,7 +11,7 @@
   animation: fade-in 0.5s ease-out;
 }
 
-.audio-recorder::before {
+.audio-recorder-container::before {
   content: '';
   position: absolute;
   top: 0;
@@ -45,15 +46,19 @@
 }
 
 /* 🎪 Recording Status */
-.recording-status {
+.recording-status-card {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-4);
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
   background: var(--dark-surface-2);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-lg);
   font-size: var(--text-sm);
   font-weight: 600;
+  margin-top: var(--space-4);
+  border: 1px solid var(--dark-border);
+  animation: fade-in 0.3s ease-out;
 }
 
 .status-indicator {
@@ -372,9 +377,59 @@
   font-size: var(--text-sm);
 }
 
+/* 🎯 Button Styles for Recorder */
+.btn-record {
+  min-width: 180px;
+  height: 56px;
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.btn-danger {
+  background: var(--danger-gradient);
+  animation: pulse-danger 2s infinite;
+}
+
+.recording-pulse {
+  width: 12px;
+  height: 12px;
+  background: #ef4444;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+  display: inline-block;
+  margin-right: var(--space-2);
+}
+
+.recording-indicator {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  color: var(--dark-text);
+}
+
+@keyframes pulse-scale {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+}
+
+@keyframes pulse-danger {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(239, 68, 68, 0.8);
+  }
+}
+
 /* 🎯 Responsive */
 @media (max-width: 768px) {
-  .audio-recorder {
+  .audio-recorder-container {
     padding: var(--space-6);
   }
   

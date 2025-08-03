@@ -39,22 +39,22 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   };
 
   return (
-    <div className="recording-controls">
-      <div className="control-group">
+    <div className="audio-recorder-container">
+      <div className="recorder-controls">
         <button
           onClick={handleRecordClick}
           disabled={!isInitialized || isLoading}
-          className={`record-button ${recordingState.isRecording ? 'recording' : ''}`}
+          className={`btn ${recordingState.isRecording ? 'btn-danger' : 'btn-primary'} btn-record`}
         >
           {recordingState.isRecording ? (
             <>
-              <span className="record-icon">⏹</span>
-              Stop Recording
+              <span className="btn-icon">⏹</span>
+              <span>Stop Recording</span>
             </>
           ) : (
             <>
-              <span className="record-icon">🎙️</span>
-              Start Recording
+              <span className="btn-icon">🎙️</span>
+              <span>Start Recording</span>
             </>
           )}
         </button>
@@ -62,17 +62,17 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         {recordingState.isRecording && (
           <button
             onClick={handlePauseClick}
-            className="pause-button"
+            className="btn btn-secondary"
           >
             {recordingState.isPaused ? (
               <>
-                <span className="pause-icon">▶️</span>
-                Resume
+                <span className="btn-icon">▶️</span>
+                <span>Resume</span>
               </>
             ) : (
               <>
-                <span className="pause-icon">⏸️</span>
-                Pause
+                <span className="btn-icon">⏸️</span>
+                <span>Pause</span>
               </>
             )}
           </button>
@@ -81,21 +81,21 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         {recordingState.chunks.length > 0 && !recordingState.isRecording && (
           <button
             onClick={onClearRecordings}
-            className="clear-button"
+            className="btn btn-ghost"
           >
-            <span className="clear-icon">🗑️</span>
-            Clear Recordings
+            <span className="btn-icon">🗑️</span>
+            <span>Clear Recordings</span>
           </button>
         )}
       </div>
 
       {recordingState.isRecording && (
-        <div className="recording-status">
+        <div className="recording-status-card">
           <div className="recording-indicator">
-            <span className="recording-dot"></span>
+            <span className="recording-pulse"></span>
             {recordingState.isPaused ? 'Paused' : 'Recording...'}
           </div>
-          <div className="recording-time">
+          <div className="recording-timer">
             Duration: {Math.floor(recordingState.duration)}s
           </div>
         </div>

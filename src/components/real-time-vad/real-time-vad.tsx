@@ -45,6 +45,11 @@ export function RealTimeVad({
     // Extract VAD data from engine metrics if available
     const currentVad = metrics.averageVad || 0;
     
+    // Debug: Log when metrics are received
+    if (currentVad > 0 || metrics.vadLevel > 0) {
+      console.log(`🎯 RealTimeVad received metrics: averageVad=${currentVad}, vadLevel=${metrics.vadLevel}`);
+    }
+    
     // Add to history (keep last 100 samples for rolling average)
     vadHistoryRef.current.push(currentVad);
     if (vadHistoryRef.current.length > 100) {

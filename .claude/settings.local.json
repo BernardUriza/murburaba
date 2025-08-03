@@ -127,7 +127,8 @@
       "Bash(vite build)",
       "Bash(npx vite:*)",
       "Bash(npx knip:*)",
-      "Bash(npx madge:*)"
+      "Bash(npx madge:*)",
+      "Bash(echo \"Exit code: $?\")"
     ],
     "deny": []
   }

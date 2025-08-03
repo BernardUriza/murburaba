@@ -289,73 +289,6 @@
   color: var(--warning);
 }
 
-/* 🔘 Buttons */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-5);
-  border: none;
-  border-radius: var(--radius-lg);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  outline: none;
-  position: relative;
-  overflow: hidden;
-}
-
-.btn:focus-visible {
-  box-shadow: 0 0 0 3px var(--primary-alpha);
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background: var(--primary-gradient);
-  color: var(--white);
-}
-
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: var(--elevation-2);
-}
-
-.btn-secondary {
-  background: var(--dark-surface);
-  color: var(--white);
-  border: 1px solid var(--border-color);
-}
-
-.btn-secondary:hover:not(:disabled) {
-  border-color: var(--primary);
-  background: var(--primary-bg);
-}
-
-.btn-ghost {
-  background: transparent;
-  color: var(--text-secondary);
-}
-
-.btn-ghost:hover:not(:disabled) {
-  color: var(--white);
-  background: var(--dark-surface);
-}
-
-.btn-small {
-  padding: var(--space-2) var(--space-4);
-  font-size: var(--text-xs);
-}
-
-.btn-icon {
-  font-size: var(--text-lg);
-  animation: pulse 2s ease infinite;
-}
-
 /* 📱 Responsive Design */
 @media (max-width: 768px) {
   .audio-demo-container {
@@ -391,31 +324,9 @@
   outline: none;
 }
 
-/* 🎨 Animations */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
+/* 🎨 Component-Specific Animation */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-10px); }
   75% { transform: translateX(10px); }
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
 }

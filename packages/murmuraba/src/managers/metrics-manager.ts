@@ -30,7 +30,12 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
     this.stopAutoUpdate();
     this.updateInterval = setInterval(() => {
       this.calculateLatency();
-      this.emit('metrics-update', { ...this.metrics });
+      // Include averageVad in the emitted metrics
+      const metricsWithAverage = {
+        ...this.metrics,
+        averageVad: this.getAverageVAD()
+      };
+      this.emit('metrics-update', metricsWithAverage);
     }, intervalMs);
   }
   
@@ -96,7 +101,10 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
   }
   
   getMetrics(): ProcessingMetrics {
-    return { ...this.metrics };
+    return { 
+      ...this.metrics,
+      averageVad: this.getAverageVAD()
+    };
   }
   
   reset(): void {

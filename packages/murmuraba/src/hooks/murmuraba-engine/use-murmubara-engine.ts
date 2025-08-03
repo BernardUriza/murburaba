@@ -153,6 +153,10 @@ export function useMurmubaraEngine(
         
         // Set up metrics listener
         onMetricsUpdate((newMetrics: ProcessingMetrics) => {
+          // Debug: Log VAD updates
+          if (newMetrics.averageVad !== undefined) {
+            console.log(`📊 VAD Update: current=${newMetrics.vadLevel?.toFixed(3)}, avg=${newMetrics.averageVad?.toFixed(3)}, active=${newMetrics.isVoiceActive}`);
+          }
           setMetrics(newMetrics);
         });
         

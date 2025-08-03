@@ -26,43 +26,43 @@ export const AudioProcessor: React.FC<AudioProcessorProps> = ({
 }) => {
   if (chunks.length === 0) {
     return (
-      <div className="empty-state">
-        <div className="empty-icon">🎵</div>
-        <p>No recordings yet. Start recording to see processed chunks here.</p>
+      <div className="empty-state-card">
+        <div className="empty-icon-large">🎵</div>
+        <p className="text-secondary">No recordings yet. Start recording to see processed chunks here.</p>
       </div>
     );
   }
 
   return (
-    <div className="audio-processor">
+    <div className="audio-processor-container">
       <div className="processor-header">
-        <h3>Processed Audio Chunks ({chunks.length})</h3>
+        <h3 className="processor-title">📊 Processed Audio Chunks ({chunks.length})</h3>
         {chunks.length > 1 && (
           <button
             onClick={onDownloadAll}
-            className="download-all-button"
+            className="btn btn-primary"
           >
-            <span className="download-icon">📦</span>
-            Download All as ZIP
+            <span className="btn-icon">📦</span>
+            <span>Download All as ZIP</span>
           </button>
         )}
       </div>
 
-      <div className="chunks-container">
+      <div className="chunks-grid">
         {chunks.map((chunk) => (
-          <div key={chunk.id} className="chunk-wrapper">
+          <div key={chunk.id} className="chunk-card">
             <div className="chunk-header">
               <div className="chunk-info">
-                <span className="chunk-number">Chunk #{chunk.index + 1}</span>
-                <span className="chunk-duration">
+                <span className="chunk-badge">Chunk #{chunk.index + 1}</span>
+                <span className="chunk-time badge badge-primary">
                   {(chunk.duration / 1000).toFixed(1)}s
                 </span>
               </div>
 
-              <div className="chunk-actions">
+              <div className="chunk-controls">
                 <button
                   onClick={() => onTogglePlayback(chunk.id, 'processed')}
-                  className="play-button"
+                  className="btn btn-icon-only btn-primary"
                   title={isPlaying[chunk.id] ? 'Pause' : 'Play'}
                 >
                   {isPlaying[chunk.id] ? '⏸️' : '▶️'}
@@ -70,23 +70,23 @@ export const AudioProcessor: React.FC<AudioProcessorProps> = ({
 
                 <button
                   onClick={() => onToggleExpansion(chunk.id)}
-                  className="expand-button"
+                  className="btn btn-icon-only btn-ghost"
                   title={expandedChunk === chunk.id ? 'Collapse' : 'Expand'}
                 >
                   {expandedChunk === chunk.id ? '🔽' : '▶️'}
                 </button>
 
-                <div className="export-buttons">
+                <div className="export-group">
                   <button
                     onClick={() => onExportWav(chunk.id)}
-                    className="export-button"
+                    className="btn btn-small btn-secondary"
                     title="Export as WAV"
                   >
                     WAV
                   </button>
                   <button
                     onClick={() => onExportMp3(chunk.id)}
-                    className="export-button"
+                    className="btn btn-small btn-secondary"
                     title="Export as MP3"
                   >
                     MP3
@@ -96,7 +96,7 @@ export const AudioProcessor: React.FC<AudioProcessorProps> = ({
             </div>
 
             {expandedChunk === chunk.id && (
-              <div className="chunk-details">
+              <div className="chunk-expanded-content">
                 <ChunkProcessingResults
                   chunk={chunk}
                   isPlaying={isPlaying[chunk.id]}

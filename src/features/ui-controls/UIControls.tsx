@@ -12,7 +12,8 @@ export const UIControls: React.FC<UIControlsProps> = memo(({ className = '' }) =
     isDarkMode,
     toggleDarkMode,
     toggleChat,
-    toggleSettings
+    toggleSettings,
+    toggleMetricsPanel
   } = useUIState();
 
   return (
@@ -66,6 +67,14 @@ export const UIControls: React.FC<UIControlsProps> = memo(({ className = '' }) =
           title="Settings"
         >
           ⚙️
+        </button>
+        
+        <button
+          className="utility-button"
+          onClick={toggleMetricsPanel}
+          title="Engine Diagnostics"
+        >
+          📊
         </button>
       </div>
     </div>

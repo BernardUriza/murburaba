@@ -2,8 +2,6 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import './styles/globals.css'
-import './styles/floating-panels.css'
-import './styles/settings.css'
 import { preloader } from '../packages/murmuraba/src/utils/resource-preloader'
 
 // Start preloading critical resources immediately

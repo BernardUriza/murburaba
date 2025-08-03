@@ -8,6 +8,10 @@
 @import './components/audio-recorder.css';
 @import './components/audio-processor.css';
 @import './components/audio-demo.css';
+@import './components/copilot-chat.css';
+@import './components/advanced-metrics-panel.css';
+@import './components/ui-controls.css';
+@import './components/file-manager.css';
 @import './floating-panels.css';
 @import './settings.css';
 

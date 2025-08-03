@@ -5,8 +5,10 @@
  * "YOU SHALL NOT PASS!" - To bad UX patterns and accessibility violations
  */
 
+/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 const fs = require('fs');
-const path = require('path');
 const glob = require('glob').sync;
 
 class GandalfUXAnalyzer {

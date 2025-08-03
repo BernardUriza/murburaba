@@ -96,8 +96,8 @@ export function createRecordingFunctions({
         }
       });
       
-      // Use original stream for Live Waveform Analysis
-      setCurrentStream(stream);
+      // Use processed stream for Live Waveform Analysis to get real-time metrics
+      setCurrentStream(controller.stream);
       
       // Use hook's state management
       startRecordingState();
