@@ -151,14 +151,45 @@ export function useMurmubaraEngine(
         console.log(`🔧 ${LOG_PREFIX.LIFECYCLE} Calling initializeAudioEngine with config:`, currentConfig);
         await initializeAudioEngine(currentConfig);
         
-        // Set up metrics listener
-        onMetricsUpdate((newMetrics: ProcessingMetrics) => {
-          // Debug: Log VAD updates
-          if (newMetrics.averageVad !== undefined) {
-            console.log(`📊 VAD Update: current=${newMetrics.vadLevel?.toFixed(3)}, avg=${newMetrics.averageVad?.toFixed(3)}, active=${newMetrics.isVoiceActive}`);
+        // Set up metrics listener with throttling to prevent excessive re-renders
+        // Throttle to 500ms (2 updates per second) instead of 100ms (10 updates per second)
+        let lastUpdate = 0;
+        let pendingMetrics: ProcessingMetrics | null = null;
+        let timeoutId: NodeJS.Timeout | null = null;
+        
+        const throttledSetMetrics = (newMetrics: ProcessingMetrics) => {
+          const now = Date.now();
+          const timeSinceLastUpdate = now - lastUpdate;
+          
+          if (timeSinceLastUpdate >= 500) {
+            // Enough time has passed, update immediately
+            setMetrics(newMetrics);
+            lastUpdate = now;
+            pendingMetrics = null;
+          } else {
+            // Store the latest metrics and schedule an update
+            pendingMetrics = newMetrics;
+            if (!timeoutId) {
+              timeoutId = setTimeout(() => {
+                if (pendingMetrics) {
+                  setMetrics(pendingMetrics);
+                  lastUpdate = Date.now();
+                  pendingMetrics = null;
+                }
+                timeoutId = null;
+              }, 500 - timeSinceLastUpdate);
+            }
           }
-          setMetrics(newMetrics);
-        });
+        };
+        
+        const unsubscribe = onMetricsUpdate(throttledSetMetrics);
+        metricsUnsubscribeRef.current = () => {
+          unsubscribe();
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+          }
+        };
         
         // Initialize audio converter
         audioConverterRef.current = getAudioConverter();

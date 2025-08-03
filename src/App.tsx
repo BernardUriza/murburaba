@@ -26,9 +26,6 @@ const AdvancedMetricsPanel = lazy(() => import('murmuraba').then(m => ({ default
 
 
 const App = memo(function App() {
-  // Test render first
-  console.log('App component rendering...');
-  
   // CRITICAL FIX: Use cached utility hooks to prevent getSnapshot infinite loops
   const uiState = useUIState();
   const { engineConfig, updateEngineConfig } = useEngineConfig();
@@ -38,8 +35,6 @@ const App = memo(function App() {
   
   // Destructure UI state
   const { isDarkMode, isChatOpen, toggleChat, isSettingsOpen, toggleSettings, isMetricsPanelOpen, toggleMetricsPanel, selectedTab } = uiState;
-  
-  console.log('Store subscription successful');
 
   // CRITICAL FIX: Deep comparison for engine config to prevent unnecessary recreations
   const memoizedEngineConfig = useMemo(() => {

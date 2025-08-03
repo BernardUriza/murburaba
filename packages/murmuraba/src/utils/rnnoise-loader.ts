@@ -70,6 +70,7 @@ async function loadWASMOptimized(retriesLeft = 2): Promise<RNNoiseModule> {
             const result = await WebAssembly.instantiate(buffer, imports);
             successCallback(result.instance, result.module);
           }
+          return {}; // Return empty object to satisfy TypeScript
         } catch (error) {
           if (retriesLeft > 0) {
             console.warn(`[RNNoise] WASM load failed, retrying... (${retriesLeft} attempts left)`);

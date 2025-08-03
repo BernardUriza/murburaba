@@ -8,6 +8,11 @@
     <meta name="description" content="Real-time neural audio enhancement with advanced chunk processing" />
     <meta name="theme-color" content="#0A0B0E" />
     
+    <!-- Force no-cache for Chrome -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    
     <!-- Preload critical resources -->
     <link rel="preload" href="/wasm/rnnoise.wasm" as="fetch" crossorigin>
     <link rel="modulepreload" href="/src/main.tsx">
@@ -39,6 +44,37 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Force reload on version change for Chrome -->
+    <script>
+      // Add timestamp to force cache invalidation
+      const buildTime = new Date().getTime();
+      window.__BUILD_TIME__ = buildTime;
+      
+      // Check for updates every 5 seconds in development
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        setInterval(() => {
+          fetch('/src/main.tsx', { 
+            cache: 'no-cache',
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            }
+          })
+          .then(response => response.text())
+          .then(content => {
+            const currentHash = btoa(content).substring(0, 8);
+            const storedHash = sessionStorage.getItem('app-hash');
+            if (storedHash && storedHash !== currentHash) {
+              console.log('🔄 App updated, reloading...');
+              window.location.reload(true);
+            }
+            sessionStorage.setItem('app-hash', currentHash);
+          })
+          .catch(() => {}); // Ignore errors
+        }, 5000);
+      }
+    </script>
     
     <!-- Register Service Worker -->
     <script>

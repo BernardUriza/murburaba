@@ -15,6 +15,7 @@ vi.mock('murmuraba', async () => {
 
 // Test component that uses the engine (simulates real App behavior)
 function TestEngineComponent() {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { useMurmubaraEngine } = require('murmuraba');
   
   const {
@@ -76,7 +77,8 @@ describe('Engine Integration Startup Tests', () => {
       downloadAllChunksAsZip: vi.fn()
     };
 
-    const { useMurmubaraEngine } = require('murmuraba');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { useMurmubaraEngine } = require('murmuraba');
     vi.mocked(useMurmubaraEngine).mockReturnValue(mockEngineReturn);
   });
 
@@ -98,7 +100,8 @@ describe('Engine Integration Startup Tests', () => {
 
   it('should handle engine initialization success', async () => {
     // Test successful initialization
-    const { useMurmubaraEngine } = require('murmuraba');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { useMurmubaraEngine } = require('murmuraba');
     let initializeResolve: () => void;
     const initializePromise = new Promise<void>((resolve) => {
       initializeResolve = resolve;
@@ -174,7 +177,8 @@ describe('Engine Integration Startup Tests', () => {
   });
 
   it('should retry initialization on failure', async () => {
-    const { useMurmubaraEngine } = require('murmuraba');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { useMurmubaraEngine } = require('murmuraba');
     
     // First attempt fails
     let attemptCount = 0;

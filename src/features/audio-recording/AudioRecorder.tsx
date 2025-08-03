@@ -96,7 +96,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
             {recordingState.isPaused ? 'Paused' : 'Recording...'}
           </div>
           <div className="recording-timer">
-            Duration: {Math.floor(recordingState.duration)}s
+            Duration: {Math.floor(recordingState.recordingTime)}s
           </div>
         </div>
       )}

@@ -70,6 +70,22 @@ export default defineConfig({
     fs: {
       // Allow serving files from node_modules for WASM
       allow: ['..']
+    },
+    // Add aggressive cache-busting headers for development
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      'Surrogate-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'X-XSS-Protection': '1; mode=block'
+    },
+    // Force full page reload on file changes
+    hmr: {
+      overlay: true,
+      protocol: 'ws',
+      host: 'localhost'
     }
   }
 })

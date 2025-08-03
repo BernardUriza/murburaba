@@ -1,4 +1,3 @@
-import { use } from 'react';
 
 // Server component for fetching audio processing statistics
 export default async function AudioStats() {

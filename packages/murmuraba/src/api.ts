@@ -59,6 +59,10 @@ export function getDiagnostics() {
 export function onMetricsUpdate(callback: (metrics: any) => void) {
   const engine = getEngine();
   engine.onMetricsUpdate(callback);
+  // Return unsubscribe function
+  return () => {
+    engine.off('metrics-update', callback);
+  };
 }
 
 export async function processFile(arrayBuffer: ArrayBuffer): Promise<ArrayBuffer> {

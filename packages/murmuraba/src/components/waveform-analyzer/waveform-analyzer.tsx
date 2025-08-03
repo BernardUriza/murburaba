@@ -114,18 +114,30 @@ export const WaveformAnalyzer: React.FC<IWaveformAnalyzerProps> = ({
   }, [color]);
 
   // Drawing functions
-  const drawLiveWaveform = useCallback((analyserNode: AnalyserNode) => {
+  const drawLiveWaveform = useCallback((analyserNode?: AnalyserNode) => {
     if (!canvasRef.current || disabled) return;
+
+    const activeAnalyser = analyserNode || analyser;
+    if (!activeAnalyser) {
+      console.log('WaveformAnalyzer: No analyser available for drawing');
+      return;
+    }
+
+    console.log('🎨 drawLiveWaveform: Starting animation with analyser:', {
+      fftSize: activeAnalyser.fftSize,
+      frequencyBinCount: activeAnalyser.frequencyBinCount
+    });
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const bufferLength = analyserNode.frequencyBinCount;
+    const bufferLength = activeAnalyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     const waveformData = new Uint8Array(bufferLength);
 
     const drawVisual = () => {
+      if (!activeAnalyser || disabled) return;
       animationRef.current = requestAnimationFrame(drawVisual);
 
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
@@ -135,8 +147,8 @@ export const WaveformAnalyzer: React.FC<IWaveformAnalyzerProps> = ({
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       if (isActive && !isPaused) {
-        analyserNode.getByteFrequencyData(dataArray);
-        analyserNode.getByteTimeDomainData(waveformData);
+        activeAnalyser.getByteFrequencyData(dataArray);
+        activeAnalyser.getByteTimeDomainData(waveformData);
         
       } else {
         dataArray.fill(0);
@@ -225,7 +237,7 @@ export const WaveformAnalyzer: React.FC<IWaveformAnalyzerProps> = ({
     };
 
     drawVisual();
-  }, [isActive, isPaused, color, disabled]);
+  }, [isActive, isPaused, color, disabled, analyser]);
 
   const draw = useCallback(() => {
     if (!canvasRef.current || disabled) return;
@@ -417,7 +429,7 @@ export const WaveformAnalyzer: React.FC<IWaveformAnalyzerProps> = ({
 
     try {
       console.log('WaveformAnalyzer: Initializing live stream...');
-      console.log('Stream tracks:', stream?.getTracks().map(t => ({ 
+      console.log('Stream tracks:', currentStream?.getTracks().map(t => ({ 
         kind: t.kind, 
         enabled: t.enabled, 
         readyState: t.readyState,
@@ -427,7 +439,7 @@ export const WaveformAnalyzer: React.FC<IWaveformAnalyzerProps> = ({
       })));
       
       // Verificar que el stream tenga audio tracks activos
-      const audioTracks = stream?.getAudioTracks() || [];
+      const audioTracks = currentStream?.getAudioTracks() || [];
       if (audioTracks.length === 0) {
         console.error('WaveformAnalyzer: No audio tracks found in stream!');
         setError('No audio tracks found in stream');
@@ -485,6 +497,7 @@ export const WaveformAnalyzer: React.FC<IWaveformAnalyzerProps> = ({
       setError(null);
       
       console.log('WaveformAnalyzer: Live stream initialized successfully');
+      console.log('🎯 Calling drawLiveWaveform with analyser:', analyserNode);
       drawLiveWaveform(analyserNode);
     } catch (error) {
       console.error('Error initializing live stream:', error);
@@ -509,7 +522,10 @@ export const WaveformAnalyzer: React.FC<IWaveformAnalyzerProps> = ({
   // CRITICAL FIX: Stable effect for stream initialization - prevent mount/unmount cycles
   useEffect(() => {
     if (stream && isActive && !isPaused && !disabled) {
+      console.log('🎤 WaveformAnalyzer: Stream active, initializing live stream...');
       initializeLiveStream();
+      // Start drawing animation for live stream
+      drawLiveWaveform();
     }
     
     return () => {
@@ -518,7 +534,7 @@ export const WaveformAnalyzer: React.FC<IWaveformAnalyzerProps> = ({
         animationRef.current = 0;
       }
     };
-  }, [stream, isActive, isPaused, disabled]); // REMOVED initializeLiveStream dependency
+  }, [stream, isActive, isPaused, disabled, drawLiveWaveform]); // Added drawLiveWaveform dependency
 
   // CRITICAL FIX: Single cleanup effect on unmount only
   useEffect(() => {

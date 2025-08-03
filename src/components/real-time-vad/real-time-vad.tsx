@@ -1,8 +1,15 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { ProcessingMetrics } from 'murmuraba';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import type { ProcessingMetrics } from 'murmuraba';
+
+// Extended interface to handle optional VAD properties
+interface ExtendedProcessingMetrics extends ProcessingMetrics {
+  vadLevel?: number;
+  averageVad?: number;
+  isVoiceActive?: boolean;
+}
 
 interface IRealTimeVadProps {
-  metrics?: ProcessingMetrics | null;
+  metrics?: ExtendedProcessingMetrics | null;
   isActive?: boolean;
   className?: string;
 }
@@ -51,7 +58,7 @@ export function RealTimeVad({
     const now = Date.now();
     
     // CRITICAL FIX: Better VAD extraction and more aggressive update rates
-    const currentVad = currentMetrics.vadLevel ?? currentMetrics.averageVad ?? currentMetrics.voiceActivityLevel ?? 0;
+    const currentVad = currentMetrics.vadLevel ?? currentMetrics.averageVad ?? 0;
     const throttleMs = currentVad > 0.001 ? 16 : 33; // Even more aggressive - 60 FPS during any activity, 30 FPS otherwise
     
     if (now - lastUpdateTimeRef.current < throttleMs) return;
@@ -63,10 +70,9 @@ export function RealTimeVad({
       console.log(`🔍 RealTimeVad DEBUG: metrics=`, {
         vadLevel: currentMetrics.vadLevel,
         averageVad: currentMetrics.averageVad,
-        voiceActivityLevel: currentMetrics.voiceActivityLevel,
-        hasAudio: !!currentMetrics.inputSamples,
-        inputSamples: currentMetrics.inputSamples,
-        outputSamples: currentMetrics.outputSamples,
+        isVoiceActive: currentMetrics.isVoiceActive,
+        inputLevel: currentMetrics.inputLevel,
+        outputLevel: currentMetrics.outputLevel,
         currentVad
       });
     }
@@ -210,7 +216,7 @@ export function RealTimeVad({
         </div>
       </div>
 
-      <style jsx>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         .real-time-vad {
           background: var(--card-bg, #1a1b23);
           border: 1px solid var(--border-color, #2a2d3a);
@@ -341,7 +347,7 @@ export function RealTimeVad({
         .vad-metric__fill--peak {
           background: linear-gradient(90deg, #ec4899, #db2777);
         }
-      `}</style>
+      `}} />
     </div>
   );
 }
