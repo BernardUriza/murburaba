@@ -69,3 +69,13 @@ export async function processFile(arrayBuffer: ArrayBuffer): Promise<ArrayBuffer
   const engine = getEngine();
   return engine.processFile(arrayBuffer);
 }
+
+export function setInputGain(gain: number): void {
+  const engine = getEngine();
+  engine.setInputGain(gain);
+}
+
+export function getInputGain(): number {
+  const engine = getEngine();
+  return engine.getInputGain();
+}

@@ -80,7 +80,11 @@ const App = memo(function App() {
     // Export Actions
     exportChunkAsWav,
     exportChunkAsMp3,
-    downloadAllChunksAsZip
+    downloadAllChunksAsZip,
+    
+    // Gain Control
+    inputGain,
+    setInputGain
   } = useMurmubaraEngine(memoizedEngineConfig);
 
   // CRITICAL FIX: Stable config object to prevent dependency loops
@@ -178,6 +182,7 @@ const App = memo(function App() {
               isLoading={isLoading}
               engineConfig={engineConfig}
               processedFileResult={processedFileResult}
+              inputGain={inputGain}
               onStartRecording={startRecording}
               onStopRecording={handleStopRecording}
               onPauseRecording={pauseRecording}
@@ -189,6 +194,7 @@ const App = memo(function App() {
               onDownloadAll={handleDownloadAll}
               onFileProcessed={setProcessedFileResult}
               onProcessFile={handleProcessFile}
+              onSetInputGain={setInputGain}
               getEngineStatus={getEngineStatus}
             />
 

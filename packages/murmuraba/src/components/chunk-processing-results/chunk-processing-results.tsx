@@ -5,7 +5,7 @@ import { ProcessingMetrics } from '../chunk-results/processing-metrics/processin
 import { FileInfo } from '../chunk-results/file-info/file-info';
 import { VadTimeline } from '../chunk-results/vad-timeline/vad-timeline';
 import { AudioControls } from '../chunk-results/audio-controls/audio-controls';
-import { formatTime, formatPercentage, formatFileSize, calculateChunkStats } from '../chunk-results/formatters';
+import { formatTime, formatPercentage, calculateChunkStats } from '../chunk-results/formatters';
 import './chunk-processing-results.css';
 
 export interface IChunkProcessingResultsProps {

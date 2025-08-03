@@ -180,7 +180,7 @@ export const AudioProcessor: React.FC<AudioProcessorProps> = ({
 
   // Render the ChunkProcessingResults component with proper props
   return (
-    <div className="audio-processor-wrapper" role="region" aria-label="Audio Processing Results">
+    <div className="audio-processor-wrapper" role="region" aria-label="Audio Processing Results"> 
       <ChunkProcessingResults
         chunks={processedChunks}
         averageNoiseReduction={averageNoiseReduction}

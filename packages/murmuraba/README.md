@@ -10,6 +10,7 @@
 ## 🚀 Features
 
 - ✅ **Real-time noise reduction** using RNNoise neural network
+- ✅ **Input gain control** - Adjust microphone volume (0.5x-3.0x) 🎚️
 - ✅ **Chunked recording** with MediaRecorder for efficient memory usage
 - ✅ **Voice Activity Detection (VAD)** integrated with real-time metrics
 - ✅ **Professional React components** with TypeScript
@@ -209,6 +210,61 @@ interface ProcessingMetrics {
   timestamp: number;           // last update time
 }
 ```
+
+### 🎚️ Input Gain Control (New in v3.0.0)
+
+Control input microphone volume level to optimize audio quality:
+
+```typescript
+import { useMurmubaraEngine } from 'murmuraba';
+
+function AudioRecorder() {
+  const {
+    inputGain,        // Current gain level (0.5-3.0)
+    setInputGain,     // Update gain level
+    getInputGain,     // Get current gain from engine
+    // ... other props
+  } = useMurmubaraEngine({
+    inputGain: 1.5    // Initial gain (optional, default: 1.0)
+  });
+
+  return (
+    <div>
+      <label>Microphone Gain: {inputGain}x</label>
+      <input
+        type="range"
+        min="0.5"
+        max="3.0"
+        step="0.1"
+        value={inputGain}
+        onChange={(e) => setInputGain(parseFloat(e.target.value))}
+      />
+      <div>
+        <button onClick={() => setInputGain(0.7)}>🔇 Low</button>
+        <button onClick={() => setInputGain(1.0)}>🔊 Normal</button>
+        <button onClick={() => setInputGain(1.5)}>📢 High</button>
+        <button onClick={() => setInputGain(2.0)}>🚀 Boost</button>
+      </div>
+    </div>
+  );
+}
+```
+
+**Features:**
+- **Dynamic Gain Adjustment**: Change microphone input level in real-time
+- **Range**: 0.5x (quieter) to 3.0x (louder) 
+- **Default**: 1.0x (no change)
+- **Use Cases**:
+  - Compensate for quiet microphones
+  - Reduce input from loud environments
+  - Optimize signal before noise reduction
+  - Improve voice clarity
+
+**Technical Details:**
+- Implemented using Web Audio API's `GainNode`
+- Applied before all audio processing (filters, noise reduction, etc.)
+- No quality loss - pure digital gain adjustment
+- Prevents clipping with maximum 3.0x limit
 
 ## 🔧 Utility Functions
 

@@ -8,6 +8,8 @@ import {
   getDiagnostics,
   onMetricsUpdate,
   processFile,
+  setInputGain,
+  getInputGain,
 } from '../../api';
 import { getAudioConverter, AudioConverter, destroyAudioConverter } from '../../utils/audio-converter';
 
@@ -58,6 +60,7 @@ export function useMurmubaraEngine(
   const [engineState, setEngineState] = useState<EngineState>('uninitialized');
   const [metrics, setMetrics] = useState<ProcessingMetrics | null>(null);
   const [diagnostics, setDiagnostics] = useState<DiagnosticInfo | null>(null);
+  const [inputGain, setInputGainState] = useState<number>(1.0);
   
   // Use dedicated recording state hook
   const {
@@ -310,6 +313,40 @@ export function useMurmubaraEngine(
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   }, []);
   
+  /**
+   * Set the input gain level
+   */
+  const updateInputGain = useCallback((gain: number) => {
+    try {
+      if (!isInitialized) {
+        throw new Error('Engine not initialized');
+      }
+      setInputGain(gain);
+      setInputGainState(gain);
+      console.log(`[${LOG_PREFIX}] Input gain set to ${gain}x`);
+    } catch (error) {
+      console.error(`[${LOG_PREFIX}] Failed to set input gain:`, error);
+      setError(error instanceof Error ? error.message : 'Failed to set input gain');
+    }
+  }, [isInitialized]);
+  
+  /**
+   * Get the current input gain level
+   */
+  const getCurrentInputGain = useCallback(() => {
+    try {
+      if (!isInitialized) {
+        return inputGain;
+      }
+      const gain = getInputGain();
+      setInputGainState(gain);
+      return gain;
+    } catch (error) {
+      console.error(`[${LOG_PREFIX}] Failed to get input gain:`, error);
+      return inputGain;
+    }
+  }, [isInitialized, inputGain]);
+  
   const getAverageNoiseReduction = useCallback(() => {
     return chunkManagerRef.current.getAverageNoiseReduction(recordingState.chunks);
   }, [recordingState.chunks]);
@@ -426,6 +463,7 @@ export function useMurmubaraEngine(
     engineState,
     metrics,
     diagnostics,
+    inputGain,
     
     // Recording State
     recordingState,
@@ -455,6 +493,10 @@ export function useMurmubaraEngine(
     exportChunkAsMp3,
     downloadChunk,
     downloadAllChunksAsZip,
+    
+    // Gain Control
+    setInputGain: updateInputGain,
+    getInputGain: getCurrentInputGain,
     
     // Utility
     getDiagnostics: updateDiagnostics,

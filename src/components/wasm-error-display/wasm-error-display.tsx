@@ -1,11 +1,12 @@
 import React from 'react';
 
-interface WASMErrorProps {
+export interface WASMErrorProps {
   error: string;
-  onDismiss: () => void;
+  onRetry?: () => Promise<void>;
+  onDismiss?: () => void;
 }
 
-export const WASMErrorDisplay: React.FC<WASMErrorProps> = ({ error, onDismiss }) => {
+export const WASMErrorDisplay: React.FC<WASMErrorProps> = ({ error, onRetry, onDismiss }) => {
   const isWASMError = error.includes('wasm') || error.includes('WASM') || error.includes('Aborted');
   
   if (isWASMError) {
@@ -37,7 +38,7 @@ export const WASMErrorDisplay: React.FC<WASMErrorProps> = ({ error, onDismiss })
             <pre>{error}</pre>
           </details>
         </div>
-        <button onClick={onDismiss} className="error-dismiss-btn">
+        <button onClick={() => onRetry?.()} className="error-dismiss-btn">
           Try Again
         </button>
         <style>{`

@@ -28,6 +28,7 @@ export interface MurmubaraConfig {
   workerPath?: string;
   allowDegraded?: boolean;
   useAudioWorklet?: boolean;
+  inputGain?: number; // Input gain multiplier, default 1.0, range 0.5-3.0
 }
 
 export interface StreamController {

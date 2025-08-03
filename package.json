@@ -18,6 +18,9 @@
     "test:ui": "npm run test:ui --workspace=murmuraba",
     "test:coverage": "npm run test:coverage --workspace=murmuraba",
     "test:integration": "npm run test --workspace=murmuraba -- --run ChunkProcessorRecordingManagerIntegration",
+    "test:gain": "vitest run --reporter=verbose 'gain.test'",
+    "test:gain:watch": "vitest watch 'gain.test'",
+    "test:gain:coverage": "vitest run --coverage 'gain.test'",
     "test:e2e": "vitest run --config ./vitest.e2e.config.ts",
     "test:e2e:watch": "vitest watch --config ./vitest.e2e.config.ts",
     "test:all": "npm run test && npm run test:e2e"

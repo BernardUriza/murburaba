@@ -39,6 +39,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
   private agc?: SimpleAGC;
   private audioWorkletEngine?: AudioWorkletEngine;
   private useAudioWorklet = false;
+  private inputGainNode?: GainNode;
+  private inputGain: number = 1.0;
   
   constructor(config: MurmubaraConfig = {}) {
     super();
@@ -55,7 +57,11 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       workerPath: config.workerPath || '/murmuraba.worker.js',
       allowDegraded: config.allowDegraded ?? false,
       useAudioWorklet: config.useAudioWorklet ?? true,
+      inputGain: config.inputGain ?? 1.0,
     } as Required<MurmubaraConfig>;
+    
+    // Validate and set input gain
+    this.inputGain = Math.max(0.5, Math.min(3.0, this.config.inputGain));
     
     this.logger = new Logger('[Murmuraba]');
     this.logger.setLevel(this.config.logLevel);
@@ -629,6 +635,11 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     const destination = this.audioContext.createMediaStreamDestination();
     const processor = this.audioContext.createScriptProcessor(this.config.bufferSize, 1, 1);
     
+    // Create input gain node for volume control
+    this.inputGainNode = this.audioContext.createGain();
+    this.inputGainNode.gain.value = this.inputGain;
+    this.logger.info(`Input gain set to ${this.inputGain}x`);
+    
     // Create pre-filters for medical equipment noise
     const notchFilter1 = this.audioContext.createBiquadFilter();
     notchFilter1.type = 'notch';
@@ -846,8 +857,9 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       }
     };
     
-    // Connect filters in chain: source -> filters -> (AGC) -> processor -> destination
-    source.connect(highPassFilter);
+    // Connect filters in chain: source -> gain -> filters -> (AGC) -> processor -> destination
+    source.connect(this.inputGainNode!);
+    this.inputGainNode!.connect(highPassFilter);
     highPassFilter.connect(notchFilter1);
     notchFilter1.connect(notchFilter2);
     notchFilter2.connect(lowShelfFilter);
@@ -1051,6 +1063,27 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
   
   isActive(): boolean {
     return this.activeStreams.size > 0;
+  }
+  
+  /**
+   * Set the input gain level dynamically
+   * @param gain - Gain value between 0.5 and 3.0
+   */
+  setInputGain(gain: number): void {
+    const validatedGain = Math.max(0.5, Math.min(3.0, gain));
+    this.inputGain = validatedGain;
+    
+    if (this.inputGainNode) {
+      this.inputGainNode.gain.value = validatedGain;
+      this.logger.info(`Input gain updated to ${validatedGain}x`);
+    }
+  }
+  
+  /**
+   * Get the current input gain level
+   */
+  getInputGain(): number {
+    return this.inputGain;
   }
   
   getDiagnostics(): DiagnosticInfo {

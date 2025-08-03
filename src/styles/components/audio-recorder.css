@@ -427,6 +427,144 @@
   }
 }
 
+/* 🎯 Gain Control Styles */
+.gain-control-section {
+  margin-top: var(--space-6);
+}
+
+.gain-control-panel {
+  animation: slideDown 0.3s ease-out;
+  box-shadow: var(--elevation-1);
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Visual feedback for gain level */
+.gain-control-panel input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  outline: none;
+  margin: var(--space-4) 0;
+}
+
+.gain-control-panel input[type="range"]::-webkit-slider-track {
+  background: linear-gradient(to right, 
+    #4ade80 0%, 
+    #22c55e 25%, 
+    #fbbf24 50%, 
+    #f97316 75%, 
+    #ef4444 100%);
+  height: 8px;
+  border-radius: 4px;
+}
+
+.gain-control-panel input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid var(--primary-500);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.gain-control-panel input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.gain-control-panel input[type="range"]:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+}
+
+/* Firefox support */
+.gain-control-panel input[type="range"]::-moz-range-track {
+  background: linear-gradient(to right, 
+    #4ade80 0%, 
+    #22c55e 25%, 
+    #fbbf24 50%, 
+    #f97316 75%, 
+    #ef4444 100%);
+  height: 8px;
+  border-radius: 4px;
+}
+
+.gain-control-panel input[type="range"]::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid var(--primary-500);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  border: 0; /* Reset Firefox default border */
+}
+
+/* Active state for preset buttons */
+.btn-ghost.active {
+  background: var(--primary-500);
+  color: white;
+  transform: scale(1.05);
+}
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Focus visible enhancement */
+.gain-control-section button:focus-visible,
+.gain-control-panel button:focus-visible {
+  outline: 3px solid var(--primary-400);
+  outline-offset: 2px;
+}
+
+/* Touch target optimization for mobile */
+@media (pointer: coarse) {
+  .gain-control-panel button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .gain-control-panel input[type="range"]::-webkit-slider-thumb {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .gain-control-panel input[type="range"]::-moz-range-thumb {
+    width: 32px;
+    height: 32px;
+  }
+}
+
 /* 🎯 Responsive */
 @media (max-width: 768px) {
   .audio-recorder-container {
@@ -445,5 +583,51 @@
   
   .recording-info {
     grid-template-columns: 1fr;
+  }
+  
+  .recorder-controls {
+    flex-direction: column;
+  }
+  
+  .recorder-controls button {
+    width: 100%;
+  }
+  
+  /* Mobile-optimized gain control */
+  .gain-control-panel {
+    padding: var(--space-5);
+  }
+  
+  .gain-control-panel button {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .gain-control-panel {
+    border: 2px solid currentColor;
+  }
+  
+  .gain-control-panel input[type="range"]::-webkit-slider-thumb {
+    border-width: 2px;
+  }
+  
+  .gain-control-panel input[type="range"]::-moz-range-thumb {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .gain-control-panel {
+    animation: none;
+  }
+  
+  .gain-control-panel button,
+  .gain-control-panel input[type="range"]::-webkit-slider-thumb,
+  .gain-control-panel input[type="range"]::-moz-range-thumb {
+    transition: none;
   }
 }

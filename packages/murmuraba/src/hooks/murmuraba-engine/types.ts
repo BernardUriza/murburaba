@@ -72,6 +72,11 @@ export interface UseMurmubaraEngineReturn {
   downloadChunk: (chunkId: string, format: 'webm' | 'wav' | 'mp3', audioType: 'processed' | 'original') => Promise<void>;
   downloadAllChunksAsZip: (audioType?: 'processed' | 'original' | 'both') => Promise<void>;
   
+  // Gain Control
+  inputGain: number;
+  setInputGain: (gain: number) => void;
+  getInputGain: () => number;
+  
   // Utility
   getDiagnostics: () => DiagnosticInfo | null;
   resetError: () => void;

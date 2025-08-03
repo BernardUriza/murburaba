@@ -22,17 +22,19 @@ interface TabContentProps {
   isLoading: boolean;
   engineConfig: any;
   processedFileResult: any;
-  onStartRecording: () => void;
+  inputGain: number;
+  onStartRecording: (chunkDuration?: number) => Promise<void>;
   onStopRecording: () => Promise<void>;
   onPauseRecording: () => void;
   onResumeRecording: () => void;
   onClearRecordings: () => void;
-  onTogglePlayback: (chunkId: string, audioType?: 'processed' | 'original') => void;
+  onTogglePlayback: (chunkId: string, audioType?: 'processed' | 'original') => Promise<void>;
   onToggleExpansion: (chunkId: string) => void;
   onExportChunk: (chunkId: string, format: 'wav' | 'mp3') => Promise<void>;
   onDownloadAll: () => void;
   onFileProcessed: (result: any) => void;
   onProcessFile: (buffer: ArrayBuffer) => Promise<any>;
+  onSetInputGain: (gain: number) => void;
   getEngineStatus: () => any;
 }
 
@@ -46,6 +48,7 @@ export const TabContent = memo(function TabContent({
   isLoading,
   engineConfig,
   processedFileResult,
+  inputGain,
   onStartRecording,
   onStopRecording,
   onPauseRecording,
@@ -57,6 +60,7 @@ export const TabContent = memo(function TabContent({
   onDownloadAll,
   onFileProcessed,
   onProcessFile,
+  onSetInputGain,
   getEngineStatus
 }: TabContentProps) {
   return (
@@ -68,11 +72,13 @@ export const TabContent = memo(function TabContent({
               recordingState={recordingState}
               isInitialized={isInitialized}
               isLoading={isLoading}
+              inputGain={inputGain}
               onStartRecording={onStartRecording}
               onStopRecording={onStopRecording}
               onPauseRecording={onPauseRecording}
               onResumeRecording={onResumeRecording}
               onClearRecordings={onClearRecordings}
+              onSetInputGain={onSetInputGain}
             />
 
             {/* Real-time waveform visualization during recording */}
