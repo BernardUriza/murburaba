@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 describe('Basic Import Tests - Startup Diagnostics', () => {
   it('should import murmuraba package without errors', async () => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import '../../styles/settings.css'
 

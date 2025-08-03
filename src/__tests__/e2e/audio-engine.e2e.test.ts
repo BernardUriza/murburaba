@@ -15,7 +15,7 @@ describe('Audio Engine E2E Integration', () => {
 
   beforeAll(async () => {
     // Setup realistic audio environment for E2E testing
-    mockAudioContext = new (global.AudioContext || global.webkitAudioContext)();
+    mockAudioContext = new ((globalThis as any).AudioContext || (globalThis as any).webkitAudioContext)();
     
     // Create a mock media stream with audio tracks
     mockMediaStream = new MediaStream();
@@ -68,23 +68,22 @@ describe('Audio Engine E2E Integration', () => {
       const { useMurmubaraEngine } = await import('murmuraba');
       
       // Test the complete initialization flow
-      let engineError: Error | null = null;
+      let engineError: string | null = null;
       let isInitialized = false;
       
       try {
         // This would normally be called within a React component
         // For E2E, we test the underlying initialization logic
         const { isInitialized: initialized, error } = useMurmubaraEngine({
-          enableNoiseReduction: true,
-          enableMetrics: true,
-          chunkDuration: 30000,
-          noiseGateThreshold: 0.01
+          noiseReductionLevel: 'high',
+          bufferSize: 4096,
+          autoInitialize: true
         });
         
         isInitialized = initialized;
         engineError = error;
       } catch (error) {
-        engineError = error as Error;
+        engineError = error instanceof Error ? error.message : String(error);
       }
       
       // In a real E2E environment, this should succeed
@@ -188,7 +187,7 @@ describe('Audio Engine E2E Integration', () => {
   describe('Performance and Memory', () => {
     it('should maintain acceptable memory usage during processing', async () => {
       // Test memory usage patterns
-      const initialMemory = performance.memory?.usedJSHeapSize || 0;
+      const initialMemory = (performance as any).memory?.usedJSHeapSize || 0;
       
       // Simulate processing multiple audio chunks
       const chunks = [];
@@ -199,7 +198,7 @@ describe('Audio Engine E2E Integration', () => {
       }
       
       // Verify memory allocation is reasonable
-      const afterMemory = performance.memory?.usedJSHeapSize || 0;
+      const afterMemory = (performance as any).memory?.usedJSHeapSize || 0;
       const memoryIncrease = afterMemory - initialMemory;
       
       // Should not increase by more than 50MB for test data
@@ -220,7 +219,7 @@ describe('Audio Engine E2E Integration', () => {
       const processedData = new Float32Array(audioData.length);
       for (let i = 0; i < audioData.length; i++) {
         // Simple noise reduction simulation
-        processedData[i] = audioData[i] * 0.8;
+        processedData[i] = (audioData[i] || 0) * 0.8;
       }
       
       const endTime = performance.now();

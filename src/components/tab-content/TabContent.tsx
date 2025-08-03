@@ -112,6 +112,7 @@ export const TabContent = memo(function TabContent({
                   onExportWav={(id) => onExportChunk(id, 'wav')}
                   onExportMp3={(id) => onExportChunk(id, 'mp3')}
                   onDownloadAll={onDownloadAll}
+                  onClearChunks={onClearRecordings}
                   ChunkProcessingResults={ChunkProcessingResults}
                 />
               </AsyncBoundary>

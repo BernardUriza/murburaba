@@ -1,4 +1,4 @@
-import { createContext, use, ReactNode, useState, useEffect, useContext } from 'react';
+import { createContext, ReactNode, useState, useEffect, useContext } from 'react';
 
 import { Theme } from '../types/enums';
 

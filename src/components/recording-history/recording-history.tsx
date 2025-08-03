@@ -1,6 +1,4 @@
-'use server';
-
-import { revalidatePath } from 'next/cache';
+import { useState, useEffect } from 'react';
 
 interface IRecordingData {
   id: string;
@@ -10,16 +8,32 @@ interface IRecordingData {
   avgNoiseReduction: number;
 }
 
-// Server component that fetches recording history
-export default async function RecordingHistory() {
-  const recordings = await getRecordingHistory();
+// React component that fetches recording history
+export default function RecordingHistory() {
+  const [recordings, setRecordings] = useState<IRecordingData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    getRecordingHistory().then((data) => {
+      setRecordings(data);
+      setIsLoading(false);
+    });
+  }, []);
+
+  if (isLoading) {
+    return <div className="recording-history loading">Loading recordings...</div>;
+  }
   
   return (
     <div className="recording-history">
       <h3>Recording History</h3>
       <div className="history-list">
         {recordings.map(recording => (
-          <RecordingItem key={recording.id} recording={recording} />
+          <RecordingItem 
+            key={recording.id} 
+            recording={recording} 
+            onDelete={(id) => setRecordings(prev => prev.filter(r => r.id !== id))}
+          />
         ))}
       </div>
     </div>
@@ -27,18 +41,12 @@ export default async function RecordingHistory() {
 }
 
 // Client component for interactive parts
-function RecordingItem({ recording }: { recording: IRecordingData }) {
-  async function deleteRecording(formData: FormData) {
-    'use server';
-    
-    const id = formData.get('id') as string;
-    
+function RecordingItem({ recording, onDelete }: { recording: IRecordingData; onDelete: (id: string) => void }) {
+  const handleDelete = () => {
     // In a real app, this would delete from database
-    console.log('Deleting recording:', id);
-    
-    // Revalidate the page to show updated data
-    revalidatePath('/recordings');
-  }
+    console.log('Deleting recording:', recording.id);
+    onDelete(recording.id);
+  };
   
   return (
     <div className="recording-item">
@@ -48,10 +56,7 @@ function RecordingItem({ recording }: { recording: IRecordingData }) {
         <span className="recording-chunks">{recording.chunks} chunks</span>
         <span className="recording-reduction">{recording.avgNoiseReduction}% reduction</span>
       </div>
-      <form action={deleteRecording}>
-        <input type="hidden" name="id" value={recording.id} />
-        <button type="submit" className="btn-delete">Delete</button>
-      </form>
+      <button onClick={handleDelete} className="btn-delete">Delete</button>
     </div>
   );
 }

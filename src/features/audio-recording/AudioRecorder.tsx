@@ -5,8 +5,8 @@ interface AudioRecorderProps {
   recordingState: RecordingState;
   isInitialized: boolean;
   isLoading: boolean;
-  onStartRecording: () => Promise<void>;
-  onStopRecording: () => Promise<void>;
+  onStartRecording: (chunkDuration?: number) => Promise<void>;
+  onStopRecording: () => void;
   onPauseRecording: () => void;
   onResumeRecording: () => void;
   onClearRecordings: () => void;
@@ -24,7 +24,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
 }) => {
   const handleRecordClick = async () => {
     if (recordingState.isRecording) {
-      await onStopRecording();
+      onStopRecording();
     } else {
       await onStartRecording();
     }

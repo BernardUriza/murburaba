@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Logger, LogLevel } from '../Logger';
+import { Logger } from '../Logger';
 
 describe('Logger integration tests', () => {
   beforeEach(() => {
@@ -23,7 +23,7 @@ describe('Logger integration tests', () => {
     expect(consoleSpy).toHaveBeenCalled();
     
     // The logged message should contain our error text
-    const loggedMessage = consoleSpy.mock.calls[0][0];
+    const loggedMessage = consoleSpy.mock.calls[0]?.[0];
     expect(loggedMessage).toContain('Test error');
   });
 
@@ -54,7 +54,7 @@ describe('Logger integration tests', () => {
     
     expect(consoleSpy).toHaveBeenCalled();
     
-    const loggedMessage = consoleSpy.mock.calls[0][0];
+    const loggedMessage = consoleSpy.mock.calls[0]?.[0];
     expect(loggedMessage).toContain('React error');
   });
 

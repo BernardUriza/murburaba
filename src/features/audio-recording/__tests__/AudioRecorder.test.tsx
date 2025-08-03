@@ -7,9 +7,8 @@ describe('AudioRecorder', () => {
   const mockRecordingState: RecordingState = {
     isRecording: false,
     isPaused: false,
-    duration: 0,
+    recordingTime: 0,
     chunks: [],
-    currentChunkId: null,
     playingChunks: {},
     expandedChunk: null
   };

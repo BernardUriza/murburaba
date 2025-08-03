@@ -46,12 +46,12 @@ describe('useAppStore', () => {
       
       act(() => {
         result.current.updateEngineConfig({
-          bufferSize: 32768,
+          bufferSize: 4096,
           denoiseStrength: 0.95
         });
       });
       
-      expect(result.current.engineConfig.bufferSize).toBe(32768);
+      expect(result.current.engineConfig.bufferSize).toBe(4096);
       expect(result.current.engineConfig.denoiseStrength).toBe(0.95);
       expect(result.current.engineConfig.processWindow).toBe(1024); // unchanged
     });

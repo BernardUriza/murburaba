@@ -19,9 +19,8 @@ import { RecordingState } from 'murmuraba';
 const createMockRecordingState = (overrides: Partial<RecordingState> = {}): RecordingState => ({
   isRecording: false,
   isPaused: false,
-  duration: 0,
+  recordingTime: 0,
   chunks: [],
-  currentChunkId: null,
   playingChunks: {},
   expandedChunk: null,
   ...overrides
@@ -83,7 +82,7 @@ describe('AudioRecorder - Modern Testing Patterns', () => {
 
     it('should announce state changes to screen readers', () => {
       const props = createMockProps({
-        recordingState: createMockRecordingState({ isRecording: true, duration: 10 })
+        recordingState: createMockRecordingState({ isRecording: true, recordingTime: 10 })
       });
       
       render(<AudioRecorder {...props} />);
@@ -109,7 +108,7 @@ describe('AudioRecorder - Modern Testing Patterns', () => {
       
       // Update state to recording
       const recordingProps = createMockProps({
-        recordingState: createMockRecordingState({ isRecording: true, duration: 5 })
+        recordingState: createMockRecordingState({ isRecording: true, recordingTime: 5 })
       });
       rerender(<AudioRecorder {...recordingProps} />);
       
@@ -239,7 +238,7 @@ describe('AudioRecorder - Modern Testing Patterns', () => {
       // Simulate rapid state changes
       for (let i = 0; i < 10; i++) {
         const newProps = createMockProps({
-          recordingState: createMockRecordingState({ duration: i * 1000 })
+          recordingState: createMockRecordingState({ recordingTime: i * 1000 })
         });
         rerender(<AudioRecorder {...newProps} />);
       }
@@ -254,7 +253,7 @@ describe('AudioRecorder - Modern Testing Patterns', () => {
       const props = createMockProps({
         recordingState: createMockRecordingState({ 
           isRecording: true, 
-          duration: 125 // 2 minutes and 5 seconds
+          recordingTime: 125 // 2 minutes and 5 seconds
         })
       });
       
@@ -267,7 +266,7 @@ describe('AudioRecorder - Modern Testing Patterns', () => {
     it('should handle edge cases in audio data', () => {
       const props = createMockProps({
         recordingState: createMockRecordingState({
-          duration: 0,
+          recordingTime: 0,
           chunks: []
         })
       });

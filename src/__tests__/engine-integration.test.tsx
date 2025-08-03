@@ -177,9 +177,6 @@ describe('Engine Integration Startup Tests', () => {
   });
 
   it('should retry initialization on failure', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { useMurmubaraEngine } = require('murmuraba');
-    
     // First attempt fails
     let attemptCount = 0;
     mockEngineReturn.initialize = vi.fn(() => {

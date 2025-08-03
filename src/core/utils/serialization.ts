@@ -20,7 +20,7 @@ const DEFAULT_OPTIONS: Required<SerializationOptions> = {
   maxDepth: 10,
   maxStringLength: 1000,
   includeFunctions: false,
-  replacer: (key, value) => value,
+  replacer: (_key, value) => value,
   excludeKeys: []
 };
 

@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import { shallow } from 'zustand/shallow';
 import { BufferSize } from 'murmuraba';
 
 interface EngineConfig {

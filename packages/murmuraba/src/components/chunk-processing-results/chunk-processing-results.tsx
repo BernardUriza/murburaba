@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 import { ProcessedChunk } from '../../hooks/murmuraba-engine/types';
+import { ChunkHeader } from '../chunk-results/chunk-header/chunk-header';
 import { ProcessingMetrics } from '../chunk-results/processing-metrics/processing-metrics';
 import { FileInfo } from '../chunk-results/file-info/file-info';
 import { VadTimeline } from '../chunk-results/vad-timeline/vad-timeline';
@@ -154,6 +155,24 @@ export function ChunkProcessingResults({
               className={`chunk ${isSelected ? 'chunk--selected' : ''} ${!isValid ? 'chunk--invalid' : ''}`.trim()}
               role="listitem"
             >
+              <ChunkHeader
+                index={index}
+                duration={chunk.duration}
+                noiseReduction={chunk.metrics.noiseReductionLevel}
+                processingLatency={chunk.metrics.processingLatency}
+                averageVad={chunk.averageVad}
+                vadData={chunk.vadData}
+                isValid={isValid}
+                isPlaying={chunk.isPlaying}
+                isExpanded={chunk.isExpanded}
+                hasProcessedAudio={hasProcessedAudio}
+                onTogglePlayback={() => handlePlaybackToggle(chunk.id, 'processed')}
+                onToggleExpansion={() => onToggleExpansion(chunk.id)}
+                onKeyDown={handleKeyDown}
+                formatTime={formatTime}
+                formatPercentage={formatPercentage}
+              />
+
               {/* Error message for invalid chunks */}
               {!isValid && chunk.errorMessage && (
                 <div className="chunk__error" role="alert">

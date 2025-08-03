@@ -128,10 +128,10 @@ export function CopilotChat({
             `• ≥ 0.8 = Voz clara`
           await simulateTyping(vadHelp)
         } else if (args[0] === 'threshold' && args[1]) {
-          await simulateTyping(`✅ Umbral VAD de ${args[1]} actualizado`)
-        } else if (args[0] === 'display' && ['on', 'off'].includes(args[1])) {
+          await simulateTyping(`✅ Umbral VAD de ${args[1] || ''} actualizado`)
+        } else if (args[0] === 'display' && args[1] && ['on', 'off'].includes(args[1])) {
           await simulateTyping(`✅ Visualización VAD ${args[1] === 'on' ? 'activada' : 'desactivada'}`)
-        } else if (args[0] === 'timeline' && ['on', 'off'].includes(args[1])) {
+        } else if (args[0] === 'timeline' && args[1] && ['on', 'off'].includes(args[1])) {
           await simulateTyping(`✅ Timeline VAD ${args[1] === 'on' ? 'activado' : 'desactivado'}`)
         } else {
           await simulateTyping('❌ Comando VAD inválido. Usa: /vad help')

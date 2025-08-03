@@ -1,11 +1,9 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import type { ProcessingMetrics } from 'murmuraba';
 
-// Extended interface to handle optional VAD properties
+// Extended interface to handle optional VAD properties (already defined in ProcessingMetrics)
 interface ExtendedProcessingMetrics extends ProcessingMetrics {
-  vadLevel?: number;
-  averageVad?: number;
-  isVoiceActive?: boolean;
+  // All properties are already defined in ProcessingMetrics
 }
 
 interface IRealTimeVadProps {

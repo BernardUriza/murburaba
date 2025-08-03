@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { act } from 'react';
 import App from '../App';
 
@@ -49,12 +49,7 @@ vi.mock('murmuraba', () => ({
 
 // Mock the store
 const mockStoreState = {
-  isDarkMode: false,
-  isChatOpen: false,
-  toggleChat: vi.fn(),
-  isSettingsOpen: false,
-  toggleSettings: vi.fn(),
-  selectedTab: 'record',
+  // Engine Configuration
   engineConfig: {
     bufferSize: 4096,
     processWindow: 2048,
@@ -69,19 +64,45 @@ const mockStoreState = {
     workletProcessorPath: '/worklets/audio-processor.js'
   },
   updateEngineConfig: vi.fn(),
+  
+  // Display Settings
   displaySettings: {
-    showWaveform: true,
-    showMetrics: false,
-    theme: 'dark'
+    showVadValues: true,
+    showVadTimeline: false
   },
   updateDisplaySettings: vi.fn(),
+  
+  // VAD Thresholds
   vadThresholds: {
-    low: 0.3,
-    high: 0.7
+    silence: 0.3,
+    voice: 0.7,
+    clearVoice: 0.9
   },
   updateVadThresholds: vi.fn(),
+  
+  // UI State
+  isDarkMode: false,
+  toggleDarkMode: vi.fn(),
+  
+  isChatOpen: false,
+  toggleChat: vi.fn(),
+  
+  isSettingsOpen: false,
+  toggleSettings: vi.fn(),
+  
+  isMetricsPanelOpen: false,
+  toggleMetricsPanel: vi.fn(),
+  
+  selectedTab: 'record' as const,
+  setSelectedTab: vi.fn(),
+  
+  // File Processing State
   processedFileResult: null,
-  setProcessedFileResult: vi.fn()
+  setProcessedFileResult: vi.fn(),
+  
+  // Recording State
+  isProcessingAudio: false,
+  setIsProcessingAudio: vi.fn()
 };
 
 vi.mock('../core/store/useAppStore', () => ({
@@ -189,10 +210,17 @@ describe('App Startup Tests', () => {
     vi.mocked(useMurmubaraEngine).mockReturnValue({
       isInitialized: false,
       isLoading: false,
-      error: new Error('WASM loading failed'),
+      error: 'WASM loading failed',
       metrics: null,
       diagnostics: null,
-      recordingState: { isRecording: false, isPaused: false },
+      recordingState: { 
+        isRecording: false, 
+        isPaused: false, 
+        recordingTime: 0, 
+        chunks: [], 
+        playingChunks: {}, 
+        expandedChunk: null 
+      },
       currentStream: null,
       initialize: vi.fn(),
       processFile: vi.fn(),
@@ -226,7 +254,14 @@ describe('App Startup Tests', () => {
       error: null,
       metrics: null,
       diagnostics: null,
-      recordingState: { isRecording: false, isPaused: false },
+      recordingState: { 
+        isRecording: false, 
+        isPaused: false, 
+        recordingTime: 0, 
+        chunks: [], 
+        playingChunks: {}, 
+        expandedChunk: null 
+      },
       currentStream: null,
       initialize: vi.fn(),
       processFile: vi.fn(),

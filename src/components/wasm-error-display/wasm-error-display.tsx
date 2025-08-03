@@ -5,7 +5,7 @@ interface WASMErrorProps {
   onDismiss: () => void;
 }
 
-export const WASMErrorDisplay: React.FC<IWASMErrorProps> = ({ error, onDismiss }) => {
+export const WASMErrorDisplay: React.FC<WASMErrorProps> = ({ error, onDismiss }) => {
   const isWASMError = error.includes('wasm') || error.includes('WASM') || error.includes('Aborted');
   
   if (isWASMError) {

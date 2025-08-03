@@ -52,6 +52,7 @@ export { ErrorCodes } from './types';
 export { AudioPlayer } from './components/audio-player/audio-player';
 export { AdvancedMetricsPanel } from './components/advanced-metrics-panel/advanced-metrics-panel';
 export { ChunkProcessingResults } from './components/chunk-processing-results/chunk-processing-results';
+export type { IChunkProcessingResultsProps } from './components/chunk-processing-results/chunk-processing-results';
 export { SimpleWaveformAnalyzer } from './components/simple-waveform-analyzer/simple-waveform-analyzer';
 
 // Audio Visualization Components

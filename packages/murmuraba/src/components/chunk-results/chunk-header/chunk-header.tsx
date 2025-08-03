@@ -91,12 +91,7 @@ export function ChunkHeader({
 
         <button
           className={`btn btn-ghost ${isExpanded ? 'btn--active' : ''}`}
-          onClick={(e) => {
-            console.log('🔧 Details button clicked');
-            console.log('🔧 onToggleExpansion exists:', !!onToggleExpansion);
-            e.stopPropagation();
-            onToggleExpansion();
-          }}
+          onClick={onToggleExpansion}
           onKeyDown={(e) => onKeyDown(e, onToggleExpansion)}
           aria-label={`${isExpanded ? 'Collapse' : 'Expand'} details for chunk ${index + 1}`}
           aria-expanded={isExpanded}
