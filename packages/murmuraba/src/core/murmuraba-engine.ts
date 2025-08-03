@@ -585,6 +585,12 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         // Update VAD metrics
         this.metricsManager.updateVAD(vad);
         
+        // Emit real-time metrics update for immediate UI reactivity
+        if (framesProcessed % 5 === 0) { // Emit every 5 frames (~50ms at 48kHz/480 samples)
+          const currentMetrics = this.metricsManager.getMetrics();
+          this.emit('metrics-update', currentMetrics);
+        }
+        
         // Apply noise reduction level adjustment
         const reductionFactor = this.getReductionFactor();
         for (let i = 0; i < processed.length; i++) {

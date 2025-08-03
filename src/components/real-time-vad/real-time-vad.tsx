@@ -38,16 +38,17 @@ export function RealTimeVad({
 
     const now = Date.now();
     
-    // Throttle updates to ~30 FPS for smooth animation
-    if (now - lastUpdateTimeRef.current < 33) return;
+    // Adaptive throttling: faster updates during voice activity
+    const currentVad = metrics.vadLevel || metrics.averageVad || 0;
+    const throttleMs = currentVad > 0.1 ? 16 : 33; // 60 FPS during voice, 30 FPS otherwise
+    
+    if (now - lastUpdateTimeRef.current < throttleMs) return;
     lastUpdateTimeRef.current = now;
 
-    // Extract VAD data from engine metrics if available
-    const currentVad = metrics.averageVad || 0;
-    
-    // Debug: Log when metrics are received
-    if (currentVad > 0 || metrics.vadLevel > 0) {
-      console.log(`🎯 RealTimeVad received metrics: averageVad=${currentVad}, vadLevel=${metrics.vadLevel}`);
+    // Extract VAD data from engine metrics - prefer real-time vadLevel
+    // Debug: Log when metrics are received with significant activity
+    if (currentVad > 0.01) {
+      console.log(`🎯 RealTimeVad: vadLevel=${metrics.vadLevel?.toFixed(3)}, averageVad=${metrics.averageVad?.toFixed(3)}, using=${currentVad.toFixed(3)}`);
     }
     
     // Add to history (keep last 100 samples for rolling average)

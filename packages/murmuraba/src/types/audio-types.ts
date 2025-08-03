@@ -54,6 +54,7 @@ export interface ProcessingMetrics {
   frameCount: number;
   droppedFrames: number;
   vadLevel?: number; // Voice Activity Detection level 0-1
+  averageVad?: number; // Average VAD over recent frames
   isVoiceActive?: boolean; // Whether voice is currently detected
 }
 

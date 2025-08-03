@@ -26,14 +26,15 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
   private vadHistory: number[] = [];
   private currentVAD = 0;
   
-  startAutoUpdate(intervalMs: number = 100): void {
+  startAutoUpdate(intervalMs: number = 33): void { // ~30 FPS for more responsive updates
     this.stopAutoUpdate();
     this.updateInterval = setInterval(() => {
       this.calculateLatency();
       // Include averageVad in the emitted metrics
       const metricsWithAverage = {
         ...this.metrics,
-        averageVad: this.getAverageVAD()
+        averageVad: this.getAverageVAD(),
+        vadLevel: this.currentVAD // Ensure vadLevel is always included
       };
       this.emit('metrics-update', metricsWithAverage);
     }, intervalMs);
