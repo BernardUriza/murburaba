@@ -32,23 +32,48 @@ export function RealTimeVad({
   const animationRef = useRef<number>(0);
   const lastUpdateTimeRef = useRef<number>(0);
 
-  // Update VAD metrics from engine metrics
+  // CRITICAL FIX: Stabilize updateVadMetrics with useRef to prevent animation loop
+  const metricsRef = useRef(metrics);
+  const isActiveRef = useRef(isActive);
+  
+  // Update refs when props change
+  useEffect(() => {
+    metricsRef.current = metrics;
+    isActiveRef.current = isActive;
+  }, [metrics, isActive]);
+  
   const updateVadMetrics = useCallback(() => {
-    if (!metrics || !isActive) return;
+    const currentMetrics = metricsRef.current;
+    const currentIsActive = isActiveRef.current;
+    
+    if (!currentMetrics || !currentIsActive) return;
 
     const now = Date.now();
     
-    // Adaptive throttling: faster updates during voice activity
-    const currentVad = metrics.vadLevel || metrics.averageVad || 0;
-    const throttleMs = currentVad > 0.1 ? 16 : 33; // 60 FPS during voice, 30 FPS otherwise
+    // CRITICAL FIX: Better VAD extraction and more aggressive update rates
+    const currentVad = currentMetrics.vadLevel ?? currentMetrics.averageVad ?? currentMetrics.voiceActivityLevel ?? 0;
+    const throttleMs = currentVad > 0.001 ? 16 : 33; // Even more aggressive - 60 FPS during any activity, 30 FPS otherwise
     
     if (now - lastUpdateTimeRef.current < throttleMs) return;
     lastUpdateTimeRef.current = now;
 
     // Extract VAD data from engine metrics - prefer real-time vadLevel
-    // Debug: Log when metrics are received with significant activity
+    // ENHANCED DEBUG: Better logging for VAD metrics debugging
+    if (Math.random() < 0.01) { // Log 1% of the time to debug metrics
+      console.log(`🔍 RealTimeVad DEBUG: metrics=`, {
+        vadLevel: currentMetrics.vadLevel,
+        averageVad: currentMetrics.averageVad,
+        voiceActivityLevel: currentMetrics.voiceActivityLevel,
+        hasAudio: !!currentMetrics.inputSamples,
+        inputSamples: currentMetrics.inputSamples,
+        outputSamples: currentMetrics.outputSamples,
+        currentVad
+      });
+    }
+    
+    // Log significant activity
     if (currentVad > 0.01) {
-      console.log(`🎯 RealTimeVad: vadLevel=${metrics.vadLevel?.toFixed(3)}, averageVad=${metrics.averageVad?.toFixed(3)}, using=${currentVad.toFixed(3)}`);
+      console.log(`🎯 RealTimeVad: VAD Update: current=${currentVad.toFixed(3)}, avg=${vadHistoryRef.current.length > 0 ? (vadHistoryRef.current.reduce((a,b) => a+b, 0) / vadHistoryRef.current.length).toFixed(3) : '0.000'}`);
     }
     
     // Add to history (keep last 100 samples for rolling average)
@@ -74,9 +99,9 @@ export function RealTimeVad({
       voiceDetectedPercentage,
       sampleCount: history.length
     });
-  }, [metrics, isActive]);
+  }, []); // CRITICAL FIX: Empty dependency array to prevent recreation
 
-  // Animation loop for smooth updates
+  // CRITICAL FIX: Stable animation loop that doesn't depend on changing functions
   useEffect(() => {
     if (!isActive) {
       if (animationRef.current) {
@@ -87,7 +112,7 @@ export function RealTimeVad({
     }
 
     const animate = () => {
-      updateVadMetrics();
+      updateVadMetrics(); // Function is now stable
       animationRef.current = requestAnimationFrame(animate);
     };
 
@@ -99,7 +124,7 @@ export function RealTimeVad({
         animationRef.current = 0;
       }
     };
-  }, [isActive, updateVadMetrics]);
+  }, [isActive]); // REMOVED updateVadMetrics dependency
 
   // Reset metrics when not active
   useEffect(() => {

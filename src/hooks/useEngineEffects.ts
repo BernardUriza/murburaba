@@ -33,12 +33,15 @@ export function useEngineEffects({
   initializeRef.current = initialize;
   engineConfigRef.current = engineConfig;
 
-  // Initialize engine on mount - FIXED: Only run once per session
+  // CRITICAL FIX: Initialize engine only once with more specific conditions
   useEffect(() => {
     if (!isInitialized && !isLoading && !error && !hasInitializedRef.current) {
       console.log('useEngineEffects: Initializing engine...');
       hasInitializedRef.current = true;
-      initializeRef.current();
+      // Use setTimeout to break potential synchronous update cycles
+      setTimeout(() => {
+        initializeRef.current();
+      }, 0);
     }
   }, [isInitialized, isLoading, error]);
 

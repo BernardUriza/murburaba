@@ -30,11 +30,12 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
     this.stopAutoUpdate();
     this.updateInterval = setInterval(() => {
       this.calculateLatency();
-      // Include averageVad in the emitted metrics
+      // Include all VAD data in the emitted metrics
       const metricsWithAverage = {
         ...this.metrics,
         averageVad: this.getAverageVAD(),
-        vadLevel: this.currentVAD // Ensure vadLevel is always included
+        vadLevel: this.currentVAD, // Ensure vadLevel is always included
+        isVoiceActive: this.currentVAD > 0.3 // Update voice activity state
       };
       this.emit('metrics-update', metricsWithAverage);
     }, intervalMs);
@@ -60,12 +61,18 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
   }
   
   updateVAD(vadLevel: number): void {
-    this.metrics.vadLevel = Math.max(0, Math.min(1, vadLevel));
-    this.metrics.isVoiceActive = vadLevel > 0.3; // Threshold for voice detection
-    this.currentVAD = vadLevel;
-    this.vadHistory.push(vadLevel);
+    const clampedVAD = Math.max(0, Math.min(1, vadLevel));
+    this.metrics.vadLevel = clampedVAD;
+    this.metrics.isVoiceActive = clampedVAD > 0.3; // Threshold for voice detection
+    this.currentVAD = clampedVAD;
+    this.vadHistory.push(clampedVAD);
     if (this.vadHistory.length > this.maxFrameHistory) {
       this.vadHistory.shift();
+    }
+    
+    // Log significant VAD updates for debugging
+    if (clampedVAD > 0.01) {
+      console.log(`[MetricsManager] VAD updated: ${clampedVAD.toFixed(3)}`);
     }
   }
   
@@ -104,7 +111,9 @@ export class MetricsManager extends EventEmitter<MetricsEvents> {
   getMetrics(): ProcessingMetrics {
     return { 
       ...this.metrics,
-      averageVad: this.getAverageVAD()
+      vadLevel: this.currentVAD, // Always include current VAD
+      averageVad: this.getAverageVAD(),
+      isVoiceActive: this.currentVAD > 0.3
     };
   }
   

@@ -152,63 +152,90 @@ export class AudioWorkletEngine implements AudioEngine {
         }
         
         process(inputs, outputs, parameters) {
-          const startTime = currentTime;
+          const startTime = currentFrame; // Use currentFrame instead of currentTime
           const input = inputs[0];
           const output = outputs[0];
           
-          if (!input || !input[0]) {
+          if (!input || !input[0] || !output || !output[0]) {
             this.bufferUnderruns++;
+            // Still fill output with silence
+            if (output && output[0]) {
+              output[0].fill(0);
+            }
             return this.isActive;
           }
           
           const inputChannel = input[0];
           const outputChannel = output[0];
+          const frameLength = inputChannel.length;
           
-          // Process samples in chunks of 480 (RNNoise frame size)
-          for (let i = 0; i < inputChannel.length; i++) {
-            this.inputBuffer[this.bufferIndex++] = inputChannel[i];
+          // Calculate input RMS for VAD and metrics
+          let inputRMS = 0;
+          for (let i = 0; i < frameLength; i++) {
+            inputRMS += inputChannel[i] * inputChannel[i];
+          }
+          inputRMS = Math.sqrt(inputRMS / frameLength);
+          
+          // Direct processing for better real-time performance
+          if (this.isRNNoiseReady) {
+            // Process in 480-sample chunks for RNNoise
+            let outputIndex = 0;
             
-            if (this.bufferIndex === this.frameSize) {
-              // Process the frame
-              const processedFrame = this.isRNNoiseReady 
-                ? this.processFrame(this.inputBuffer)
-                : this.inputBuffer;
+            for (let i = 0; i < frameLength; i++) {
+              this.inputBuffer[this.bufferIndex++] = inputChannel[i];
               
-              // Copy processed frame to output
-              const startIdx = i - this.frameSize + 1;
-              for (let j = 0; j < this.frameSize; j++) {
-                if (startIdx + j >= 0 && startIdx + j < outputChannel.length) {
-                  outputChannel[startIdx + j] = processedFrame[j];
+              if (this.bufferIndex === this.frameSize) {
+                // Process the frame
+                const processedFrame = this.processFrame(this.inputBuffer);
+                
+                // Copy processed frame to output
+                for (let j = 0; j < this.frameSize && outputIndex < frameLength; j++) {
+                  outputChannel[outputIndex++] = processedFrame[j];
                 }
+                
+                this.bufferIndex = 0;
+                this.framesProcessed++;
               }
-              
-              this.bufferIndex = 0;
-              this.framesProcessed++;
+            }
+            
+            // Handle remaining samples in buffer by copying to output
+            const remainingSamples = frameLength - outputIndex;
+            for (let i = 0; i < remainingSamples && i < this.bufferIndex; i++) {
+              outputChannel[outputIndex + i] = this.inputBuffer[i];
+            }
+          } else {
+            // Pass-through mode when RNNoise is not ready
+            for (let i = 0; i < frameLength; i++) {
+              outputChannel[i] = inputChannel[i] * 0.8; // Apply slight attenuation
             }
           }
           
-          // Handle remaining samples
-          if (this.bufferIndex > 0) {
-            const startIdx = inputChannel.length - this.bufferIndex;
-            for (let i = 0; i < this.bufferIndex; i++) {
-              if (startIdx + i < outputChannel.length) {
-                outputChannel[startIdx + i] = this.inputBuffer[i];
-              }
-            }
+          // Calculate output RMS
+          let outputRMS = 0;
+          for (let i = 0; i < frameLength; i++) {
+            outputRMS += outputChannel[i] * outputChannel[i];
           }
+          outputRMS = Math.sqrt(outputRMS / frameLength);
           
           // Track performance
-          const processingTime = currentTime - startTime;
+          const endTime = currentFrame;
+          const processingTime = endTime - startTime;
           this.processingTimeSum += processingTime;
           
-          // Send performance metrics every 100 frames
-          if (this.framesProcessed % 100 === 0) {
+          // Send real-time metrics more frequently and with more detail
+          if (this.framesProcessed % 10 === 0) { // Send every 10 audio callback frames
             this.port.postMessage({
               type: 'performance',
               metrics: {
-                processingTime: this.processingTimeSum / 100,
+                processingTime: this.processingTimeSum / 10,
                 bufferUnderruns: this.bufferUnderruns,
-                framesProcessed: this.framesProcessed
+                framesProcessed: this.framesProcessed,
+                inputLevel: inputRMS,
+                outputLevel: outputRMS,
+                noiseReduction: inputRMS > 0 ? (1 - outputRMS / inputRMS) * 100 : 0,
+                vadLevel: inputRMS > 0.01 ? Math.min(inputRMS * 10, 1) : 0,
+                isVoiceActive: inputRMS > 0.03,
+                timestamp: Date.now()
               }
             });
             this.processingTimeSum = 0;

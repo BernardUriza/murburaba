@@ -6,6 +6,7 @@ import { WorkerManager } from '../managers/worker-manager';
 import { MetricsManager } from '../managers/metrics-manager';
 import { ChunkProcessor } from '../managers/chunk-processor';
 import { SimpleAGC } from '../utils/simple-agc';
+import { AudioWorkletEngine } from '../engines/audio-worklet-engine';
 import {
   MurmubaraConfig,
   EngineEvents,
@@ -36,6 +37,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
   private errorHistory: Array<{ timestamp: number; error: string }> = [];
   private agcEnabled = true;
   private agc?: SimpleAGC;
+  private audioWorkletEngine?: AudioWorkletEngine;
+  private useAudioWorklet = false;
   
   constructor(config: MurmubaraConfig = {}) {
     super();
@@ -51,6 +54,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       useWorker: config.useWorker ?? false,
       workerPath: config.workerPath || '/murmuraba.worker.js',
       allowDegraded: config.allowDegraded ?? false,
+      useAudioWorklet: config.useAudioWorklet ?? true,
     } as Required<MurmubaraConfig>;
     
     this.logger = new Logger('[Murmuraba]');
@@ -135,6 +139,9 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       this.stateManager.transitionTo('creating-context');
       await this.initializeAudioContext();
       
+      // Initialize AudioWorklet engine if enabled and supported
+      await this.initializeAudioWorkletEngine();
+      
       // Load WASM module with timeout
       this.stateManager.transitionTo('loading-wasm');
       await this.loadWasmModuleWithTimeout(5000);
@@ -201,6 +208,56 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       }
     } catch (error) {
       throw new Error(`Failed to create AudioContext: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  private async initializeAudioWorkletEngine(): Promise<void> {
+    if (!this.config.useAudioWorklet) {
+      this.logger.info('AudioWorklet disabled in configuration');
+      return;
+    }
+
+    try {
+      this.audioWorkletEngine = new AudioWorkletEngine({
+        enableRNNoise: true,
+        rnnoiseWasmUrl: '/rnnoise.wasm'
+      });
+      
+      if (this.audioWorkletEngine.isAudioWorkletSupported()) {
+        await this.audioWorkletEngine.initialize();
+        this.useAudioWorklet = true;
+        this.logger.info('AudioWorklet engine initialized successfully');
+        
+        // Set up performance metrics callback with error handling
+        this.audioWorkletEngine.onPerformanceMetrics((metrics) => {
+          try {
+            this.emit('metrics-update', {
+              noiseReductionLevel: metrics.noiseReduction || 0,
+              processingLatency: metrics.processingTime || 0,
+              inputLevel: metrics.inputLevel || 0,
+              outputLevel: metrics.outputLevel || 0,
+              timestamp: metrics.timestamp || Date.now(),
+              frameCount: metrics.framesProcessed || 0,
+              droppedFrames: metrics.bufferUnderruns || 0,
+              vadLevel: metrics.vadLevel || 0,
+              isVoiceActive: metrics.isVoiceActive || false
+            });
+          } catch (error) {
+            this.logger.warn('Error emitting AudioWorklet metrics:', error);
+          }
+        });
+      } else {
+        this.logger.warn('AudioWorklet not supported by browser, falling back to ScriptProcessorNode');
+        this.audioWorkletEngine = undefined;
+        this.useAudioWorklet = false;
+      }
+    } catch (error) {
+      this.logger.warn('Failed to initialize AudioWorklet engine, falling back to ScriptProcessorNode:', error);
+      this.audioWorkletEngine = undefined;
+      this.useAudioWorklet = false;
+      
+      // Record the error but don't fail initialization
+      this.recordError(error);
     }
   }
   
@@ -442,6 +499,132 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       throw new Error('Audio context not initialized');
     }
     
+    // Try to use AudioWorklet if available and enabled
+    if (this.audioWorkletEngine && this.useAudioWorklet) {
+      return this.createAudioWorkletStreamController(stream, streamId, chunkConfig);
+    } else {
+      this.logger.info('Using ScriptProcessorNode for audio processing');
+      return this.createScriptProcessorStreamController(stream, streamId, chunkConfig);
+    }
+  }
+
+  private async createAudioWorkletStreamController(
+    stream: MediaStream,
+    streamId: string,
+    chunkConfig?: ChunkConfig
+  ): Promise<StreamController> {
+    if (!this.audioContext || !this.audioWorkletEngine) {
+      throw new Error('AudioWorklet engine not available');
+    }
+
+    this.logger.info('Creating AudioWorklet-based stream controller');
+
+    try {
+      const pipeline = await this.audioWorkletEngine.createProcessingPipeline({
+        echoCancellation: true,
+        noiseSuppression: false, // We use RNNoise instead
+        autoGainControl: true
+      });
+
+      // Setup chunk processor if configured
+      let chunkProcessor: ChunkProcessor | undefined;
+      if (chunkConfig) {
+        chunkProcessor = new ChunkProcessor(
+          this.audioContext.sampleRate,
+          chunkConfig,
+          this.logger,
+          this.metricsManager
+        );
+        
+        // Forward chunk events
+        chunkProcessor.on('chunk-processed', (metrics) => {
+          this.logger.debug('Chunk processed:', metrics);
+          this.metricsManager.recordChunk(metrics);
+        });
+        
+        // TDD Integration: Forward period-complete events for RecordingManager integration
+        chunkProcessor.on('period-complete', (aggregatedMetrics) => {
+          this.logger.info(`🎯 [TDD-INTEGRATION] Period complete: ${aggregatedMetrics.totalFrames} frames, ${aggregatedMetrics.averageNoiseReduction.toFixed(1)}% avg reduction`);
+          
+          // Make aggregated metrics available to RecordingManager
+          if ((global as any).__murmurabaTDDBridge) {
+            (global as any).__murmurabaTDDBridge.notifyMetrics(aggregatedMetrics);
+          }
+        });
+        
+        // TDD Integration: Store ChunkProcessor reference globally for RecordingManager access  
+        (global as any).__murmurabaTDDBridge = {
+          chunkProcessor,
+          notifyMetrics: (metrics: any) => {
+            if ((global as any).__murmurabaTDDBridge.recordingManagers) {
+              (global as any).__murmurabaTDDBridge.recordingManagers.forEach((rm: any) => {
+                rm.receiveMetrics(metrics);
+              });
+            }
+          },
+          recordingManagers: new Set()
+        };
+      }
+
+      let isPaused = false;
+      let isStopped = false;
+
+      const controller: StreamController = {
+        stream: pipeline.output,
+        processor: {
+          id: streamId,
+          state: 'processing',
+          inputNode: pipeline.input,
+          outputNode: pipeline.workletNode,
+        },
+        stop: () => {
+          isStopped = true;
+          
+          // Flush any remaining chunks
+          if (chunkProcessor) {
+            chunkProcessor.flush();
+          }
+          
+          pipeline.workletNode.disconnect();
+          pipeline.input.disconnect();
+          this.activeStreams.delete(streamId);
+          this.logger.info(`AudioWorklet stream ${streamId} stopped`);
+          
+          if (this.activeStreams.size === 0) {
+            this.stateManager.transitionTo('ready');
+            this.emit('processing-end');
+          }
+        },
+        pause: () => {
+          isPaused = true;
+          controller.processor.state = 'paused';
+          this.logger.info(`AudioWorklet stream ${streamId} paused`);
+        },
+        resume: () => {
+          isPaused = false;
+          controller.processor.state = 'processing';
+          this.logger.info(`AudioWorklet stream ${streamId} resumed`);
+        },
+        getState: () => controller.processor.state
+      };
+
+      return controller;
+
+    } catch (error) {
+      this.logger.error('Failed to create AudioWorklet stream controller, falling back to ScriptProcessor:', error);
+      return this.createScriptProcessorStreamController(stream, streamId, chunkConfig);
+    }
+  }
+
+  private async createScriptProcessorStreamController(
+    stream: MediaStream,
+    streamId: string,
+    chunkConfig?: ChunkConfig
+  ): Promise<StreamController> {
+    if (!this.audioContext) {
+      throw new Error('Audio context not initialized');
+    }
+    
     const source = this.audioContext.createMediaStreamSource(stream);
     const destination = this.audioContext.createMediaStreamDestination();
     const processor = this.audioContext.createScriptProcessor(this.config.bufferSize, 1, 1);
@@ -558,14 +741,16 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         inputBuffer.push(input[i]);
       }
       
-      // If using chunk processing, add samples to chunk processor
+      // If using chunk processing, add samples to chunk processor with VAD data
       if (chunkProcessor && !isPaused && !isStopped) {
         chunkProcessor.addSamples(input);
         
         // TDD Integration: Also process frame for real-time metrics accumulation
         // This feeds data to our TDD integration system
         const timestamp = Date.now();
-        chunkProcessor.processFrame(input, timestamp, output).catch(err => {
+        // Pass VAD data to chunk processor
+        const vadData = this.metricsManager.getMetrics().vadLevel || 0;
+        chunkProcessor.processFrame(input, timestamp, output, vadData).catch(err => {
           this.logger.debug('TDD frame processing error:', err);
         });
       }
@@ -574,6 +759,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       let totalInputRMS = 0;
       let totalOutputRMS = 0;
       let framesProcessed = 0;
+      let currentFrameVAD = 0;
       
       while (inputBuffer.length >= 480) {
         const frame = new Float32Array(inputBuffer.splice(0, 480));
@@ -582,12 +768,23 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         const { output: processed, vad } = this.processFrame(frame);
         const frameOutputRMS = this.metricsManager.calculateRMS(processed);
         
+        // Store current VAD for immediate use
+        currentFrameVAD = vad;
+        
         // Update VAD metrics
         this.metricsManager.updateVAD(vad);
         
+        // Log significant VAD activity for debugging
+        if (vad > 0.01) {
+          this.logger.debug(`📊 VAD Update: current=${vad.toFixed(3)}, avg=${this.metricsManager.getAverageVAD().toFixed(3)}, active=${vad > 0.3}`);          
+        }
+        
         // Emit real-time metrics update for immediate UI reactivity
-        if (framesProcessed % 5 === 0) { // Emit every 5 frames (~50ms at 48kHz/480 samples)
+        if (framesProcessed % 5 === 0 || vad > 0.1) { // Emit every 5 frames OR when voice detected
           const currentMetrics = this.metricsManager.getMetrics();
+          // Ensure VAD is included in emitted metrics
+          currentMetrics.vadLevel = currentFrameVAD;
+          currentMetrics.isVoiceActive = currentFrameVAD > 0.3;
           this.emit('metrics-update', currentMetrics);
         }
         
@@ -753,6 +950,14 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
   private generateStreamId(): string {
     return `stream-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
+
+  getState(): EngineState {
+    return this.stateManager.getState();
+  }
+
+  isUsingAudioWorklet(): boolean {
+    return this.useAudioWorklet;
+  }
   
   async destroy(force: boolean = false): Promise<void> {
     if (!this.stateManager.canTransitionTo('destroying')) {
@@ -787,6 +992,12 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       
       // Terminate workers
       this.workerManager.terminateAll();
+      
+      // Clean up AudioWorklet engine
+      if (this.audioWorkletEngine) {
+        this.audioWorkletEngine.cleanup();
+        this.audioWorkletEngine = undefined;
+      }
       
       // Clean up WASM
       if (this.wasmModule) {

@@ -393,8 +393,11 @@ export const WaveformAnalyzer: React.FC<IWaveformAnalyzerProps> = ({
     }
   }, [volume, isMuted, audioContext, disabled, analyser, source]);
 
+  // CRITICAL FIX: Stabilize callback with refs to prevent dependency loops
+  const streamRef = useRef<MediaStream | undefined>(stream);
   const initializeLiveStream = useCallback(async () => {
-    if (!stream || disabled) return;
+    const currentStream = streamRef.current;
+    if (!currentStream || disabled) return;
     
     // If we already have an audio context for this stream, don't create a new one
     if (audioContext && source && source instanceof MediaStreamAudioSourceNode) {
@@ -414,7 +417,7 @@ export const WaveformAnalyzer: React.FC<IWaveformAnalyzerProps> = ({
 
     try {
       console.log('WaveformAnalyzer: Initializing live stream...');
-      console.log('Stream tracks:', stream.getTracks().map(t => ({ 
+      console.log('Stream tracks:', stream?.getTracks().map(t => ({ 
         kind: t.kind, 
         enabled: t.enabled, 
         readyState: t.readyState,
@@ -424,7 +427,7 @@ export const WaveformAnalyzer: React.FC<IWaveformAnalyzerProps> = ({
       })));
       
       // Verificar que el stream tenga audio tracks activos
-      const audioTracks = stream.getAudioTracks();
+      const audioTracks = stream?.getAudioTracks() || [];
       if (audioTracks.length === 0) {
         console.error('WaveformAnalyzer: No audio tracks found in stream!');
         setError('No audio tracks found in stream');
@@ -473,7 +476,7 @@ export const WaveformAnalyzer: React.FC<IWaveformAnalyzerProps> = ({
       analyserNode.minDecibels = -90;
       analyserNode.maxDecibels = -10;
 
-      const sourceNode = ctx.createMediaStreamSource(stream);
+      const sourceNode = ctx.createMediaStreamSource(currentStream);
       sourceNode.connect(analyserNode);
       
       setAudioContext(ctx);
@@ -496,9 +499,14 @@ export const WaveformAnalyzer: React.FC<IWaveformAnalyzerProps> = ({
         setError('Failed to initialize live stream');
       }
     }
-  }, [stream, audioContext, disabled, drawLiveWaveform, source, analyser]);
+  }, [audioContext, disabled, drawLiveWaveform, source, analyser]); // REMOVED stream dependency
+  
+  // Update stream ref when stream changes
+  useEffect(() => {
+    streamRef.current = stream;
+  }, [stream]);
 
-  // Effects
+  // CRITICAL FIX: Stable effect for stream initialization - prevent mount/unmount cycles
   useEffect(() => {
     if (stream && isActive && !isPaused && !disabled) {
       initializeLiveStream();
@@ -507,15 +515,18 @@ export const WaveformAnalyzer: React.FC<IWaveformAnalyzerProps> = ({
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = 0;
       }
     };
-  }, [stream, isActive, isPaused, disabled, initializeLiveStream]);
+  }, [stream, isActive, isPaused, disabled]); // REMOVED initializeLiveStream dependency
 
+  // CRITICAL FIX: Single cleanup effect on unmount only
   useEffect(() => {
     return () => {
+      console.log('🧹 WaveformAnalyzer: Component unmounting, cleaning up...');
       cleanup();
     };
-  }, [cleanup]);
+  }, []); // EMPTY dependency array - only run on mount/unmount
 
   // Initialize audio URL when hideControls is true and handle external playback
   useEffect(() => {
@@ -598,23 +609,22 @@ export const WaveformAnalyzer: React.FC<IWaveformAnalyzerProps> = ({
     };
   }, [analyser, stream, disabled, audioUrl, draw]);
 
-  // Cleanup effect - called when component unmounts or stream changes
-  useEffect(() => {
-    return () => {
-      console.log('🧹 WaveformAnalyzer: Component unmounting, cleaning up...');
-      cleanup();
-    };
-  }, [cleanup]);
+  // REMOVED: Duplicate cleanup effect that was causing mount/unmount cycles
 
-  // Cleanup when stream changes
+  // CRITICAL FIX: Stream change cleanup with ref pattern
+  const prevStreamRef = useRef<MediaStream | undefined>(stream);
   useEffect(() => {
-    return () => {
-      if (stream) {
-        console.log('🧹 WaveformAnalyzer: Stream changed, cleaning up previous stream...');
-        cleanup();
+    const prevStream = prevStreamRef.current;
+    if (prevStream && prevStream !== stream) {
+      console.log('🧹 WaveformAnalyzer: Stream changed, cleaning up previous stream...');
+      // Only cleanup when stream actually changes, not on every render
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = 0;
       }
-    };
-  }, [stream, cleanup]);
+    }
+    prevStreamRef.current = stream;
+  }, [stream]); // REMOVED cleanup dependency
 
   // Handle keyboard navigation
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {

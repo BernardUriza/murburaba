@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAD Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1b23;
+            color: white;
+        }
+        .metrics {
+            background: #2a2d3a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #3a3d4a;
+        }
+        .vad-bar {
+            width: 100%;
+            height: 30px;
+            background: #3a3d4a;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        .vad-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #22c55e, #16a34a);
+            transition: width 0.1s ease;
+        }
+        #status {
+            padding: 10px;
+            background: #3a3d4a;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #6366f1;
+        }
+        button:disabled {
+            background: #3a3d4a;
+            cursor: not-allowed;
+        }
+        #log {
+            background: #000;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>VAD (Voice Activity Detection) Test</h1>
+    
+    <div id="status">Status: Not initialized</div>
+    
+    <div>
+        <button id="initBtn">Initialize Engine</button>
+        <button id="startBtn" disabled>Start Recording</button>
+        <button id="stopBtn" disabled>Stop Recording</button>
+    </div>
+    
+    <div class="metrics">
+        <h2>Real-time Metrics</h2>
+        
+        <div class="metric-row">
+            <span>Current VAD:</span>
+            <span id="currentVad">0.000</span>
+        </div>
+        
+        <div class="vad-bar">
+            <div id="vadFill" class="vad-fill" style="width: 0%"></div>
+        </div>
+        
+        <div class="metric-row">
+            <span>Average VAD:</span>
+            <span id="avgVad">0.000</span>
+        </div>
+        
+        <div class="metric-row">
+            <span>Voice Active:</span>
+            <span id="voiceActive">No</span>
+        </div>
+        
+        <div class="metric-row">
+            <span>Input Level:</span>
+            <span id="inputLevel">0.000</span>
+        </div>
+        
+        <div class="metric-row">
+            <span>Output Level:</span>
+            <span id="outputLevel">0.000</span>
+        </div>
+        
+        <div class="metric-row">
+            <span>Frame Count:</span>
+            <span id="frameCount">0</span>
+        </div>
+    </div>
+    
+    <div id="log"></div>
+
+    <script type="module">
+        // Import Murmuraba from the built package
+        import { 
+            initializeAudioEngine, 
+            processStreamChunked,
+            onMetricsUpdate,
+            getEngineStatus 
+        } from './packages/murmuraba/dist/index.esm.js';
+        
+        let streamController = null;
+        let mediaStream = null;
+        const log = (msg) => {
+            const logDiv = document.getElementById('log');
+            const time = new Date().toISOString().slice(11, 23);
+            logDiv.innerHTML = `[${time}] ${msg}<br>` + logDiv.innerHTML;
+            console.log(msg);
+        };
+        
+        const updateStatus = (status) => {
+            document.getElementById('status').textContent = `Status: ${status}`;
+        };
+        
+        document.getElementById('initBtn').addEventListener('click', async () => {
+            try {
+                updateStatus('Initializing...');
+                log('Initializing audio engine...');
+                
+                await initializeAudioEngine({
+                    logLevel: 'debug',
+                    noiseReductionLevel: 'medium',
+                    bufferSize: 4096
+                });
+                
+                // Set up metrics listener
+                onMetricsUpdate((metrics) => {
+                    // Update UI with metrics
+                    const vadLevel = metrics.vadLevel || 0;
+                    const avgVad = metrics.averageVad || 0;
+                    const isActive = metrics.isVoiceActive || false;
+                    
+                    document.getElementById('currentVad').textContent = vadLevel.toFixed(3);
+                    document.getElementById('avgVad').textContent = avgVad.toFixed(3);
+                    document.getElementById('voiceActive').textContent = isActive ? 'Yes' : 'No';
+                    document.getElementById('inputLevel').textContent = (metrics.inputLevel || 0).toFixed(3);
+                    document.getElementById('outputLevel').textContent = (metrics.outputLevel || 0).toFixed(3);
+                    document.getElementById('frameCount').textContent = metrics.frameCount || 0;
+                    
+                    // Update VAD bar
+                    document.getElementById('vadFill').style.width = `${vadLevel * 100}%`;
+                    
+                    // Log significant VAD activity
+                    if (vadLevel > 0.01) {
+                        log(`VAD: ${vadLevel.toFixed(3)} (avg: ${avgVad.toFixed(3)}) - ${isActive ? 'VOICE' : 'silence'}`);
+                    }
+                });
+                
+                updateStatus('Ready');
+                log('Engine initialized successfully');
+                
+                document.getElementById('initBtn').disabled = true;
+                document.getElementById('startBtn').disabled = false;
+                
+            } catch (error) {
+                log(`Error initializing: ${error.message}`);
+                updateStatus('Initialization failed');
+            }
+        });
+        
+        document.getElementById('startBtn').addEventListener('click', async () => {
+            try {
+                updateStatus('Requesting microphone access...');
+                log('Requesting microphone access...');
+                
+                // Get microphone stream
+                mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: false, // Let RNNoise handle this
+                        autoGainControl: false
+                    } 
+                });
+                
+                log('Microphone access granted');
+                updateStatus('Processing audio...');
+                
+                // Process with chunking for better VAD tracking
+                streamController = await processStreamChunked(mediaStream, {
+                    chunkDuration: 3000, // 3 second chunks
+                    onChunkProcessed: (chunk) => {
+                        log(`Chunk processed: VAD avg=${(chunk.averageVad || 0).toFixed(3)}, noise removed=${chunk.noiseRemoved.toFixed(1)}%`);
+                    }
+                });
+                
+                log('Audio processing started');
+                
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                
+            } catch (error) {
+                log(`Error starting recording: ${error.message}`);
+                updateStatus('Failed to start recording');
+            }
+        });
+        
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            if (streamController) {
+                streamController.stop();
+                streamController = null;
+                log('Audio processing stopped');
+            }
+            
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+                log('Microphone released');
+            }
+            
+            updateStatus('Stopped');
+            
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+        });
+    </script>
+</body>
+</html>

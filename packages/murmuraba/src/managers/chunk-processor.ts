@@ -47,11 +47,15 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
     frameCount: number;
     totalLatency: number;
     periodStartTime: number | null;
+    totalVAD: number;
+    vadReadings: number[];
   } = {
     totalNoiseReduction: 0,
     frameCount: 0,
     totalLatency: 0,
-    periodStartTime: null
+    periodStartTime: null,
+    totalVAD: 0,
+    vadReadings: []
   };
   
   constructor(
@@ -216,6 +220,14 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
       ? ((originalRMS - processedRMS) / originalRMS) * 100 
       : 0;
     
+    // Get current VAD from accumulated metrics
+    const currentVAD = this.accumulatedMetrics.vadReadings.length > 0
+      ? this.accumulatedMetrics.vadReadings[this.accumulatedMetrics.vadReadings.length - 1]
+      : 0;
+    const averageVAD = this.accumulatedMetrics.vadReadings.length > 0
+      ? this.accumulatedMetrics.totalVAD / this.accumulatedMetrics.vadReadings.length
+      : 0;
+
     const metrics: ChunkMetrics = {
       originalSize: originalSamples.length * 4, // Float32 = 4 bytes
       processedSize: processedSamples.length * 4,
@@ -228,10 +240,14 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
         timestamp: chunk.endTime,
         frameCount: Math.floor(processedSamples.length / 480), // RNNoise frame size
         droppedFrames: 0,
+        vadLevel: currentVAD,
+        averageVad: averageVAD,
+        isVoiceActive: currentVAD > 0.3,
       },
       duration: this.config.chunkDuration,
       startTime: chunk.startTime,
       endTime: chunk.endTime,
+      averageVad: averageVAD,
     };
     
     // Record metrics in metrics manager
@@ -327,7 +343,8 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
   async processFrame(
     originalFrame: Float32Array, 
     timestamp: number, 
-    processedFrame?: Float32Array
+    processedFrame?: Float32Array,
+    vadLevel?: number
   ): Promise<void> {
     // Set period start time on first frame
     if (this.accumulatedMetrics.periodStartTime === null) {
@@ -349,6 +366,12 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
     this.accumulatedMetrics.totalNoiseReduction += Math.max(0, Math.min(100, frameNoiseReduction));
     this.accumulatedMetrics.frameCount++;
     this.accumulatedMetrics.totalLatency += 0.01; // Assume ~0.01ms per frame processing
+    
+    // Accumulate VAD data
+    if (vadLevel !== undefined) {
+      this.accumulatedMetrics.totalVAD += vadLevel;
+      this.accumulatedMetrics.vadReadings.push(vadLevel);
+    }
 
     // Emit frame-processed event for temporal tracking
     this.emit('frame-processed', timestamp);
@@ -396,7 +419,9 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
       totalNoiseReduction: 0,
       frameCount: 0,
       totalLatency: 0,
-      periodStartTime: null
+      periodStartTime: null,
+      totalVAD: 0,
+      vadReadings: []
     };
   }
 

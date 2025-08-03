@@ -41,8 +41,19 @@ const App = memo(function App() {
   
   console.log('Store subscription successful');
 
-  // CRITICAL FIX: Memoize engine config with stable reference to prevent re-initialization loops
-  const memoizedEngineConfig = useMemo(() => engineConfig, [engineConfig]);
+  // CRITICAL FIX: Deep comparison for engine config to prevent unnecessary recreations
+  const memoizedEngineConfig = useMemo(() => {
+    // Create a new object only if the actual values have changed
+    return { ...engineConfig };
+  }, [
+    engineConfig.bufferSize,
+    engineConfig.denoiseStrength,
+    engineConfig.enableMetrics,
+    engineConfig.enableDebugLogs,
+    engineConfig.spectralFloorDb,
+    engineConfig.noiseFloorDb
+    // Add other critical config properties that actually affect engine behavior
+  ]);
 
   const {
     // Engine State

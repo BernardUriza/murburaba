@@ -27,6 +27,7 @@ export interface MurmubaraConfig {
   useWorker?: boolean;
   workerPath?: string;
   allowDegraded?: boolean;
+  useAudioWorklet?: boolean;
 }
 
 export interface StreamController {
