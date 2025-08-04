@@ -266,8 +266,8 @@ export function useMurmubaraEngine(
       // CRITICAL: Destroy audio converter to prevent memory leaks
       destroyAudioConverter();
       
-      // Clean up all URLs
-      urlManagerRef.current!.revokeAllUrls();
+      // DON'T revoke URLs - keep chunks playable after engine destroy
+      // urlManagerRef.current!.revokeAllUrls();
       
       await destroyEngine({ force });
       setIsInitialized(false);
@@ -400,6 +400,15 @@ export function useMurmubaraEngine(
     return chunkManagerRef.current!.getAverageNoiseReduction(recordingState.chunks);
   }, [recordingState.chunks]);
   
+  // Reinitialize function for fresh start
+  const reinitialize = useCallback(async () => {
+    console.log(`♻️ ${LOG_PREFIX.LIFECYCLE} Reinitializing engine...`);
+    if (isInitialized) {
+      await destroy(true);
+    }
+    await initialize();
+  }, [isInitialized, destroy, initialize]);
+  
   // Create recording functions
   const recordingFunctions = createRecordingFunctions({
     isInitialized,
@@ -424,8 +433,7 @@ export function useMurmubaraEngine(
     setError,
     chunkManager: chunkManagerRef.current,
     recordingManager: recordingManagerRef.current,
-    initialize,
-    destroy
+    initialize
   });
   
   // Playback functions
@@ -526,6 +534,7 @@ export function useMurmubaraEngine(
     
     // Actions
     initialize,
+    reinitialize,
     destroy,
     processStream,
     processStreamChunked,

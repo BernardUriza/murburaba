@@ -19,7 +19,6 @@ interface RecordingFunctionsProps {
   chunkManager: IChunkManager;
   recordingManager: IRecordingManager;
   initialize: () => Promise<void>;
-  destroy: (force?: boolean) => Promise<void>;
 }
 
 export function createRecordingFunctions({
@@ -34,8 +33,7 @@ export function createRecordingFunctions({
   setError,
   chunkManager,
   recordingManager,
-  initialize,
-  destroy
+  initialize
 }: RecordingFunctionsProps) {
   
   const {
@@ -136,10 +134,10 @@ export function createRecordingFunctions({
   };
   
   /**
-   * Stop recording, cleanup and destroy engine for fresh restart
+   * Stop recording and cleanup (but keep engine for chunk playback)
    */
-  const stopRecording = async () => {
-    logger.info('Stopping recording and destroying engine for fresh restart');
+  const stopRecording = () => {
+    logger.info('Stopping recording');
     
     // First stop the recording manager
     recordingManager.stopRecording();
@@ -184,16 +182,8 @@ export function createRecordingFunctions({
     // Use hook's state management
     stopRecordingState();
     
-    // CRITICAL: Destroy the engine to allow fresh restart
-    // This ensures we can start recording again without reload
-    try {
-      await destroy(true); // Force destroy to ensure clean state
-      logger.info('Engine destroyed, ready for fresh initialization');
-    } catch (error) {
-      logger.error('Failed to destroy engine after stop', { error });
-    }
-    
-    logger.info('Recording stopped, all audio resources released, and engine destroyed');
+    // NOTE: We don't destroy the engine here to keep chunks playable
+    logger.info('Recording stopped and audio resources released');
   };
   
   /**

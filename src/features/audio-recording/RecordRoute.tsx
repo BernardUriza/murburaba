@@ -8,6 +8,7 @@ const RecordRoute: React.FC = () => {
     isLoading,
     recordingState,
     initialize,
+    reinitialize,
     startRecording,
     stopRecording,
     pauseRecording,
@@ -27,6 +28,7 @@ const RecordRoute: React.FC = () => {
       inputGain={inputGain}
       agcEnabled={agcEnabled}
       onInitialize={initialize}
+      onReinitialize={reinitialize}
       onStartRecording={startRecording}
       onStopRecording={stopRecording}
       onPauseRecording={pauseRecording}

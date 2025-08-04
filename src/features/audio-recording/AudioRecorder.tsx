@@ -8,8 +8,9 @@ interface AudioRecorderProps {
   inputGain: number;
   agcEnabled: boolean;
   onInitialize: () => Promise<void>;
+  onReinitialize: () => Promise<void>;
   onStartRecording: (chunkDuration?: number) => Promise<void>;
-  onStopRecording: () => Promise<void>;
+  onStopRecording: () => void;
   onPauseRecording: () => void;
   onResumeRecording: () => void;
   onClearRecordings: () => void;
@@ -24,6 +25,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   inputGain,
   agcEnabled,
   onInitialize,
+  onReinitialize,
   onStartRecording,
   onStopRecording,
   onPauseRecording,
@@ -35,7 +37,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   const [showGainControl, setShowGainControl] = useState(false);
   const handleRecordClick = async () => {
     if (recordingState.isRecording) {
-      await onStopRecording();
+      onStopRecording();
     } else {
       await onStartRecording();
     }
@@ -71,23 +73,40 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
             )}
           </button>
         ) : (
-          <button
-            onClick={handleRecordClick}
-            disabled={!isInitialized || isLoading}
-            className={`btn ${recordingState.isRecording ? 'btn-danger' : 'btn-primary'} btn-record`}
-          >
-            {recordingState.isRecording ? (
-              <>
-                <span className="btn-icon">⏹</span>
-                <span>Stop Recording</span>
-              </>
-            ) : (
-              <>
-                <span className="btn-icon">🎙️</span>
-                <span>Start Recording</span>
-              </>
+          <>
+            <button
+              onClick={handleRecordClick}
+              disabled={!isInitialized || isLoading}
+              className={`btn ${recordingState.isRecording ? 'btn-danger' : 'btn-primary'} btn-record`}
+            >
+              {recordingState.isRecording ? (
+                <>
+                  <span className="btn-icon">⏹</span>
+                  <span>Stop Recording</span>
+                </>
+              ) : (
+                <>
+                  <span className="btn-icon">🎙️</span>
+                  <span>Start Recording</span>
+                </>
+              )}
+            </button>
+            
+            {/* Reinitialize button for fresh start (only show when not recording) */}
+            {!recordingState.isRecording && (
+              <button
+                onClick={async () => {
+                  // Always keep chunks, just reinitialize engine
+                  await onReinitialize();
+                }}
+                className="btn btn-ghost"
+                title="Reinitialize engine for fresh start"
+              >
+                <span className="btn-icon">🔄</span>
+                <span>Reinitialize</span>
+              </button>
             )}
-          </button>
+          </>
         )}
 
         {recordingState.isRecording && (

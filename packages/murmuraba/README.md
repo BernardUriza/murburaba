@@ -1,454 +1,121 @@
-# 🎵 Murmuraba - Real-time Audio Noise Reduction
+# 🎵 Murmuraba - Real-time Neural Noise Reduction with Chunked Streaming
 
 [![npm version](https://img.shields.io/npm/v/murmuraba.svg)](https://www.npmjs.com/package/murmuraba)
 [![React](https://img.shields.io/badge/React-19.1.1-blue.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> Real-time audio noise reduction for web applications using RNNoise WASM with advanced chunked recording and processing
+> Professional-grade real-time audio streaming with neural noise reduction using RNNoise WASM. Process long recordings efficiently with automatic chunking - no need to wait for recording completion.
 
-## 🚀 Features
+## 🚀 Why Murmuraba?
 
-- ✅ **Real-time noise reduction** using RNNoise neural network
-- ✅ **Input gain control** - Adjust microphone volume (0.5x-3.0x) 🎚️
-- ✅ **Chunked recording** with MediaRecorder for efficient memory usage
-- ✅ **Voice Activity Detection (VAD)** integrated with real-time metrics
-- ✅ **Professional React components** with TypeScript
-- ✅ **Stream control** - pause, resume, stop with state management
-- ✅ **Export capabilities** - WAV and MP3 formats
-- ✅ **Automatic cleanup** and memory management
-- ✅ **React 19 compatible** with latest optimizations
+Traditional audio recording libraries make you wait until the user stops recording to process the entire audio file. This approach fails for:
+- Long recordings (podcasts, meetings, interviews)
+- Real-time transcription needs
+- Live streaming applications
+- Memory-constrained environments
+
+**Murmuraba solves this with automatic chunked streaming**: Audio is processed in real-time segments while recording continues, giving you instant access to processed chunks with neural noise reduction applied.
 
 ## 📦 Installation
 
 ```bash
 npm install murmuraba
-# or
-yarn add murmuraba
-# or
-pnpm add murmuraba
 ```
 
-## 🎯 Quick Start
+## 🎯 Core Concept: The Hook-First Approach
 
-### Basic Recording with Noise Reduction
+Murmuraba is built around the powerful `useMurmubaraEngine` hook that handles everything:
 
 ```typescript
 import { useMurmubaraEngine } from 'murmuraba';
 
-function App() {
+function YourAudioApp() {
   const {
-    // State
-    isInitialized,
-    isLoading,
-    error,
-    metrics,
+    recordingState,      // Real-time state with chunks array
+    startRecording,      // Start chunked recording
+    stopRecording,       // Stop and cleanup
+    // ... more controls
+  } = useMurmubaraEngine();
+  
+  // Your custom UI here
+}
+```
+
+## 🔄 The Chunked Streaming Flow
+
+### How It Works
+
+```
+Microphone Input (Continuous Stream)
+         ↓
+    [8 seconds] → Chunk 1 → Process → Noise Reduced → Available Immediately
+         ↓
+    [8 seconds] → Chunk 2 → Process → Noise Reduced → Available Immediately
+         ↓
+    [8 seconds] → Chunk 3 → Process → Noise Reduced → Available Immediately
+         ↓
+    ... continues until stop
+```
+
+Each chunk is processed independently with:
+- **Neural noise reduction** via RNNoise
+- **Dual audio URLs** (original + processed) 
+- **Real-time metrics** (VAD, noise levels)
+- **Instant availability** for playback/export/upload
+
+### Basic Implementation
+
+```typescript
+import { useMurmubaraEngine } from 'murmuraba';
+import { useEffect } from 'react';
+
+function StreamingRecorder() {
+  const {
     recordingState,
-    
-    // Actions
-    initialize,
     startRecording,
     stopRecording,
-    pauseRecording,
-    resumeRecording,
-    
-    // Export functions
     exportChunkAsWav,
-    exportChunkAsMp3,
-    downloadChunk
   } = useMurmubaraEngine({
-    autoInitialize: true,
-    logLevel: 'info',
-    defaultChunkDuration: 8
+    defaultChunkDuration: 8  // 8-second chunks
   });
 
-  const { isRecording, chunks, recordingTime } = recordingState;
-
-  const handleToggleRecording = async () => {
-    if (!isRecording) {
-      await startRecording(8); // 8 second chunks
-    } else {
-      stopRecording();
-    }
-  };
-
-  return (
-    <div>
-      <button onClick={handleToggleRecording}>
-        {isRecording ? 'Stop Recording' : 'Start Recording'}
-      </button>
-      
-      {isRecording && (
-        <div>
-          <p>Recording: {recordingTime}s</p>
-          <p>Chunks: {chunks.length}</p>
-        </div>
-      )}
-      
-      {metrics && (
-        <div>
-          <p>Noise Reduction: {metrics.noiseReductionLevel.toFixed(1)}%</p>
-          <p>Voice Activity: {((metrics.vadLevel || 0) * 100).toFixed(0)}%</p>
-          <p>Latency: {metrics.processingLatency.toFixed(2)}ms</p>
-        </div>
-      )}
-    </div>
-  );
-}
-```
-
-## 🎨 Components
-
-### WaveformAnalyzer
-
-Real-time waveform visualization for audio streams:
-
-```typescript
-import { WaveformAnalyzer } from 'murmuraba';
-
-<WaveformAnalyzer 
-  stream={mediaStream}
-  isActive={true}
-  isPaused={false}
-  color="#52A32F"
-  width={800}
-  height={200}
-  hideControls={false}
-/>
-```
-
-### ChunkProcessingResults
-
-Display and manage recorded chunks:
-
-```typescript
-import { ChunkProcessingResults } from 'murmuraba';
-
-<ChunkProcessingResults
-  chunks={recordingState.chunks}
-  onTogglePlayback={toggleChunkPlayback}
-  onToggleExpansion={toggleChunkExpansion}
-  onDownload={downloadChunk}
-  onExportWav={exportChunkAsWav}
-  onExportMp3={exportChunkAsMp3}
-  formatTime={formatTime}
-  averageNoiseReduction={getAverageNoiseReduction()}
-/>
-```
-
-### AdvancedMetricsPanel
-
-System diagnostics and performance monitoring:
-
-```typescript
-import { AdvancedMetricsPanel } from 'murmuraba';
-
-<AdvancedMetricsPanel 
-  diagnostics={diagnostics}
-  isOpen={showMetrics}
-  onClose={() => setShowMetrics(false)}
-/>
-```
-
-### SimpleWaveformAnalyzer
-
-Lightweight waveform display:
-
-```typescript
-import { SimpleWaveformAnalyzer } from 'murmuraba';
-
-<SimpleWaveformAnalyzer
-  stream={mediaStream}
-  isActive={true}
-  width={400}
-  height={100}
-/>
-```
-
-## 🎛️ Advanced Configuration
-
-### Engine Options
-
-```typescript
-interface UseMurmubaraEngineOptions {
-  // Initialization
-  autoInitialize?: boolean;      // Auto-init on mount (default: false)
-  allowDegraded?: boolean;        // Allow fallback mode (default: true)
-  
-  // Audio Configuration
-  defaultChunkDuration?: number;  // Chunk size in seconds (default: 8)
-  bufferSize?: number;           // Audio buffer size (default: 16384)
-  sampleRate?: number;           // Sample rate (default: 48000)
-  
-  // Processing
-  enableAGC?: boolean;           // Auto gain control (default: true)
-  spectralFloorDb?: number;      // Noise floor (default: -80)
-  noiseFloorDb?: number;         // Detection threshold (default: -60)
-  denoiseStrength?: number;      // Reduction strength 0-1 (default: 0.85)
-  
-  // Features
-  enableMetrics?: boolean;       // Real-time metrics (default: true)
-  metricsUpdateInterval?: number; // Update interval ms (default: 100)
-  
-  // Logging
-  logLevel?: 'none' | 'error' | 'warn' | 'info' | 'debug';
-}
-```
-
-### Real-time Metrics
-
-```typescript
-interface ProcessingMetrics {
-  noiseReductionLevel: number;  // 0-100%
-  processingLatency: number;    // milliseconds
-  inputLevel: number;          // 0-1 (audio level)
-  outputLevel: number;         // 0-1 (audio level)
-  vadLevel?: number;           // 0-1 (voice activity)
-  isVoiceActive?: boolean;     // true when voice detected
-  frameCount: number;          // processed frames
-  droppedFrames: number;       // performance indicator
-  timestamp: number;           // last update time
-}
-```
-
-### 🎚️ Input Gain Control (New in v3.0.0)
-
-Control input microphone volume level to optimize audio quality:
-
-```typescript
-import { useMurmubaraEngine } from 'murmuraba';
-
-function AudioRecorder() {
-  const {
-    inputGain,        // Current gain level (0.5-3.0)
-    setInputGain,     // Update gain level
-    getInputGain,     // Get current gain from engine
-    // ... other props
-  } = useMurmubaraEngine({
-    inputGain: 1.5    // Initial gain (optional, default: 1.0)
-  });
-
-  return (
-    <div>
-      <label>Microphone Gain: {inputGain}x</label>
-      <input
-        type="range"
-        min="0.5"
-        max="3.0"
-        step="0.1"
-        value={inputGain}
-        onChange={(e) => setInputGain(parseFloat(e.target.value))}
-      />
-      <div>
-        <button onClick={() => setInputGain(0.7)}>🔇 Low</button>
-        <button onClick={() => setInputGain(1.0)}>🔊 Normal</button>
-        <button onClick={() => setInputGain(1.5)}>📢 High</button>
-        <button onClick={() => setInputGain(2.0)}>🚀 Boost</button>
-      </div>
-    </div>
-  );
-}
-```
-
-**Features:**
-- **Dynamic Gain Adjustment**: Change microphone input level in real-time
-- **Range**: 0.5x (quieter) to 3.0x (louder) 
-- **Default**: 1.0x (no change)
-- **Use Cases**:
-  - Compensate for quiet microphones
-  - Reduce input from loud environments
-  - Optimize signal before noise reduction
-  - Improve voice clarity
-
-**Technical Details:**
-- Implemented using Web Audio API's `GainNode`
-- Applied before all audio processing (filters, noise reduction, etc.)
-- No quality loss - pure digital gain adjustment
-- Prevents clipping with maximum 3.0x limit
-
-## 🔧 Utility Functions
-
-### File Processing
-
-Process audio files with noise reduction:
-
-```typescript
-import { processFile, processFileWithMetrics } from 'murmuraba';
-
-// Simple processing
-const processedBuffer = await processFile(audioArrayBuffer);
-
-// With detailed metrics
-const result = await processFileWithMetrics(audioArrayBuffer);
-console.log({
-  averageNoiseReduction: result.metrics.averageNoiseReduction,
-  voiceActivityPercentage: result.metrics.voiceActivityPercentage,
-  averageVAD: result.metrics.averageVAD,
-  duration: result.duration
-});
-```
-
-### Audio Format Conversion
-
-```typescript
-import { AudioConverter } from 'murmuraba';
-
-const converter = AudioConverter.getInstance();
-
-// Convert to WAV
-const wavBlob = await converter.convertToWav(audioData, sampleRate);
-
-// Convert to MP3
-const mp3Blob = await converter.convertToMp3(audioData, sampleRate, bitrate);
-```
-
-## 📱 Real-World Examples
-
-### Recording with Custom Chunk Duration
-
-```typescript
-function RecordingApp() {
-  const [chunkDuration, setChunkDuration] = useState(8);
-  const { startRecording, stopRecording, recordingState } = useMurmubaraEngine();
-
-  const handleRecord = () => {
-    if (!recordingState.isRecording) {
-      startRecording(chunkDuration);
-    } else {
-      stopRecording();
-    }
-  };
-
-  return (
-    <div>
-      <input 
-        type="range" 
-        min="2" 
-        max="30" 
-        value={chunkDuration}
-        onChange={(e) => setChunkDuration(Number(e.target.value))}
-        disabled={recordingState.isRecording}
-      />
-      <span>{chunkDuration}s chunks</span>
-      <button onClick={handleRecord}>
-        {recordingState.isRecording ? 'Stop' : 'Record'}
-      </button>
-    </div>
-  );
-}
-```
-
-### File Upload and Processing
-
-```typescript
-function FileProcessor() {
-  const [processing, setProcessing] = useState(false);
-  const [result, setResult] = useState(null);
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setProcessing(true);
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const processed = await processFileWithMetrics(arrayBuffer);
-      
-      setResult({
-        originalName: file.name,
-        processedBuffer: processed.processedBuffer,
-        metrics: processed.metrics,
-        duration: processed.duration
+  // Watch for new chunks in real-time
+  useEffect(() => {
+    const latestChunk = recordingState.chunks[recordingState.chunks.length - 1];
+    
+    if (latestChunk) {
+      console.log('New chunk available!', {
+        id: latestChunk.id,
+        duration: latestChunk.duration,
+        processedUrl: latestChunk.processedAudioUrl,  // Noise-reduced audio
+        originalUrl: latestChunk.originalAudioUrl,    // Raw microphone input
+        noiseReduction: latestChunk.noiseRemoved      // Percentage reduced
       });
       
-      // Auto-download processed file
-      const blob = new Blob([processed.processedBuffer], { type: 'audio/wav' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `processed_${file.name}`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Processing failed:', error);
-    } finally {
-      setProcessing(false);
+      // You can immediately:
+      // - Play it back
+      // - Send to server
+      // - Transcribe it
+      // - Export it
+      // No need to wait for recording to finish!
     }
-  };
+  }, [recordingState.chunks.length]);
 
   return (
     <div>
-      <input 
-        type="file" 
-        accept="audio/*" 
-        onChange={handleFileUpload}
-        disabled={processing}
-      />
-      {processing && <p>Processing...</p>}
-      {result && (
-        <div>
-          <h3>Results:</h3>
-          <p>Noise Reduction: {result.metrics.averageNoiseReduction.toFixed(1)}%</p>
-          <p>Voice Activity: {result.metrics.voiceActivityPercentage.toFixed(1)}%</p>
-          <p>Duration: {result.duration.toFixed(2)}s</p>
-        </div>
-      )}
-    </div>
-  );
-}
-```
-
-### Integrated Audio Recorder with Playback
-
-```typescript
-function AudioRecorderWithPlayback() {
-  const {
-    recordingState,
-    startRecording,
-    stopRecording,
-    toggleChunkPlayback,
-    exportChunkAsWav,
-    exportChunkAsMp3,
-    metrics
-  } = useMurmubaraEngine({
-    autoInitialize: true,
-    enableMetrics: true
-  });
-
-  return (
-    <div>
-      {/* Recording Controls */}
       <button onClick={() => startRecording(10)}>
         Start Recording (10s chunks)
       </button>
-      <button onClick={stopRecording} disabled={!recordingState.isRecording}>
-        Stop Recording
-      </button>
-
-      {/* Real-time Metrics */}
-      {metrics && recordingState.isRecording && (
-        <div>
-          <div>Input Level: {(metrics.inputLevel * 100).toFixed(0)}%</div>
-          <div>Noise Reduction: {metrics.noiseReductionLevel.toFixed(1)}%</div>
-          <div>Voice Detected: {metrics.isVoiceActive ? 'Yes' : 'No'}</div>
-        </div>
-      )}
-
-      {/* Recorded Chunks */}
+      <button onClick={stopRecording}>Stop</button>
+      
+      {/* Real-time chunk list */}
       {recordingState.chunks.map(chunk => (
         <div key={chunk.id}>
-          <span>Chunk {chunk.index + 1} ({chunk.duration.toFixed(1)}s)</span>
-          <button onClick={() => toggleChunkPlayback(chunk.id, 'processed')}>
-            Play Processed
-          </button>
-          <button onClick={() => toggleChunkPlayback(chunk.id, 'original')}>
-            Play Original
-          </button>
+          Chunk {chunk.index}: {chunk.duration}ms
+          <audio src={chunk.processedAudioUrl} controls />
           <button onClick={() => exportChunkAsWav(chunk.id)}>
-            Download WAV
-          </button>
-          <button onClick={() => exportChunkAsMp3(chunk.id)}>
-            Download MP3
+            Export WAV
           </button>
         </div>
       ))}
@@ -457,86 +124,372 @@ function AudioRecorderWithPlayback() {
 }
 ```
 
-## 🏗️ Architecture
+## 🧠 Neural Noise Reduction with RNNoise
 
-### Chunked Recording System
+Every audio chunk passes through RNNoise, a recurrent neural network trained on thousands of hours of speech data. This happens in real-time using WebAssembly for native performance.
 
-Murmuraba uses a sophisticated chunked recording system that:
-
-1. **Records in fixed-duration segments** - Prevents memory overflow
-2. **Processes audio in real-time** - Applies noise reduction during recording
-3. **Maintains dual streams** - Keeps both original and processed audio
-4. **Enables partial exports** - Download only the chunks you need
-5. **Provides per-chunk metrics** - Individual analysis for each segment
-
-### Voice Activity Detection (VAD)
-
-The integrated RNNoise VAD provides:
-- Real-time voice detection (0.0 to 1.0 scale)
-- Configurable thresholds for voice activity
-- Integration with visual components
-- Per-chunk voice activity statistics
-
-## 🐛 Troubleshooting
-
-### WASM Loading Issues
+### The Processing Pipeline
 
 ```typescript
-// Ensure WASM file is accessible
-// For Vite projects, add to vite.config.ts:
-{
-  assetsInclude: ['**/*.wasm'],
-  optimizeDeps: {
-    exclude: ['@jitsi/rnnoise-wasm']
-  }
+// What happens inside each chunk:
+Raw Audio → RNNoise Neural Network → Clean Audio
+           ↓
+    - Removes background noise
+    - Preserves voice clarity  
+    - Maintains natural sound
+    - ~85% noise reduction
+```
+
+### Comparing Original vs Processed
+
+```typescript
+function NoiseComparison() {
+  const { recordingState, toggleChunkPlayback } = useMurmubaraEngine();
+  
+  return (
+    <div>
+      {recordingState.chunks.map(chunk => (
+        <div key={chunk.id}>
+          {/* Play original (noisy) */}
+          <button onClick={() => toggleChunkPlayback(chunk.id, 'original')}>
+            Play Original
+          </button>
+          
+          {/* Play processed (clean) */}
+          <button onClick={() => toggleChunkPlayback(chunk.id, 'processed')}>
+            Play Processed
+          </button>
+          
+          <span>Noise Reduced: {chunk.noiseRemoved}%</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 ```
 
-### Audio Context Errors
+## 📊 Real-time Chunk Data Structure
+
+Each chunk in `recordingState.chunks` contains:
 
 ```typescript
-// Initialize after user interaction
-const handleUserClick = async () => {
-  await initialize();
-  // Now audio context is ready
-};
-```
-
-### Memory Management
-
-```typescript
-// The engine automatically cleans up, but you can force it:
-const { destroy } = useMurmubaraEngine();
-
-useEffect(() => {
-  return () => {
-    destroy(); // Clean up on unmount
+interface ProcessedChunk {
+  // Identifiers
+  id: string;                      // Unique chunk ID
+  index: number;                   // Sequential index (0, 1, 2...)
+  
+  // Audio URLs (Blob URLs ready for immediate use)
+  processedAudioUrl?: string;      // blob:http://... (noise-reduced)
+  originalAudioUrl?: string;       // blob:http://... (raw input)
+  
+  // Timing
+  duration: number;                // Duration in milliseconds
+  startTime: number;               // Recording start timestamp
+  endTime: number;                 // Recording end timestamp
+  
+  // Processing Metrics
+  noiseRemoved: number;            // Noise reduction % (0-100)
+  averageVad: number;              // Voice activity average (0-1)
+  vadData: VadPoint[];             // Voice activity timeline
+  
+  // Quality Metrics
+  metrics: {
+    processingLatency: number;     // Processing time in ms
+    frameCount: number;            // Audio frames processed
+    inputLevel: number;            // Input volume (0-1)
+    outputLevel: number;           // Output volume (0-1)
+    noiseReductionLevel: number;  // Reduction applied (0-1)
   };
-}, []);
+  
+  // File Information
+  originalSize: number;            // Original blob size in bytes
+  processedSize: number;           // Processed blob size in bytes
+  
+  // State
+  isPlaying: boolean;              // Currently playing
+  isExpanded: boolean;             // UI expanded state
+  isValid: boolean;                // Processing succeeded
+  errorMessage?: string;           // Error details if failed
+}
 ```
 
-## 📈 Performance
+## 🎮 Complete Hook API
 
-- **Latency**: < 50ms typical processing delay
-- **CPU Usage**: 5-15% on modern devices
-- **Memory**: ~50MB with WASM loaded
-- **Browser Support**: Chrome 80+, Firefox 75+, Safari 14+, Edge 88+
+```typescript
+const {
+  // 📊 State
+  recordingState: {
+    isRecording: boolean,          // Currently recording
+    isPaused: boolean,              // Recording paused
+    chunks: ProcessedChunk[],       // All processed chunks
+    recordingTime: number,          // Total recording duration
+    currentChunkTime: number,       // Current chunk progress
+    playingChunks: Set<string>,     // Currently playing chunk IDs
+    expandedChunk: string | null,   // Expanded chunk ID
+  },
+  
+  // 🎙️ Recording Controls
+  startRecording: (chunkDuration?: number) => Promise<void>,
+  stopRecording: () => void,
+  pauseRecording: () => void,
+  resumeRecording: () => void,
+  clearRecordings: () => void,
+  
+  // 🔊 Playback Controls
+  toggleChunkPlayback: (chunkId: string, type?: 'processed' | 'original') => Promise<void>,
+  stopAllPlayback: () => void,
+  
+  // 💾 Export Functions
+  exportChunkAsWav: (chunkId: string, type?: 'processed' | 'original') => Promise<void>,
+  exportChunkAsMp3: (chunkId: string, type?: 'processed' | 'original') => Promise<void>,
+  downloadChunk: (chunkId: string, format: 'wav' | 'mp3', type?: 'processed' | 'original') => Promise<void>,
+  exportAllChunks: () => Promise<void>,
+  
+  // 🎚️ Audio Controls
+  inputGain: number,                 // Current gain (0.5-3.0)
+  setInputGain: (gain: number) => void,
+  agcEnabled: boolean,               // Auto gain control
+  setAgcEnabled: (enabled: boolean) => Promise<void>,
+  
+  // 🔧 Engine Management
+  isInitialized: boolean,
+  isLoading: boolean,
+  error: string | null,
+  initialize: () => Promise<void>,
+  reinitialize: () => Promise<void>,
+  metrics: ProcessingMetrics | null,
+  diagnostics: EngineDiagnostics | null,
+  
+} = useMurmubaraEngine(options);
+```
+
+## 🚀 Advanced Usage Patterns
+
+### Pattern 1: Auto-Upload Chunks to Server
+
+```typescript
+function AutoUploadRecorder() {
+  const { recordingState, startRecording } = useMurmubaraEngine();
+  const uploadedRef = useRef(new Set());
+  
+  useEffect(() => {
+    recordingState.chunks.forEach(async chunk => {
+      if (!uploadedRef.current.has(chunk.id)) {
+        uploadedRef.current.add(chunk.id);
+        
+        // Convert blob URL to blob
+        const response = await fetch(chunk.processedAudioUrl!);
+        const blob = await response.blob();
+        
+        // Upload to your server
+        const formData = new FormData();
+        formData.append('audio', blob, `chunk-${chunk.id}.wav`);
+        formData.append('metadata', JSON.stringify({
+          duration: chunk.duration,
+          noiseReduction: chunk.noiseRemoved,
+          vad: chunk.averageVad
+        }));
+        
+        await fetch('/api/upload-chunk', {
+          method: 'POST',
+          body: formData
+        });
+        
+        console.log(`Uploaded chunk ${chunk.id}`);
+      }
+    });
+  }, [recordingState.chunks]);
+  
+  return <button onClick={() => startRecording(5)}>Start 5s Chunks</button>;
+}
+```
+
+### Pattern 2: Real-time Transcription
+
+```typescript
+function LiveTranscription() {
+  const { recordingState } = useMurmubaraEngine();
+  const [transcripts, setTranscripts] = useState<Record<string, string>>({});
+  
+  useEffect(() => {
+    const latestChunk = recordingState.chunks[recordingState.chunks.length - 1];
+    
+    if (latestChunk && !transcripts[latestChunk.id]) {
+      // Send to transcription service
+      transcribeChunk(latestChunk).then(text => {
+        setTranscripts(prev => ({
+          ...prev,
+          [latestChunk.id]: text
+        }));
+      });
+    }
+  }, [recordingState.chunks.length]);
+  
+  return (
+    <div>
+      {recordingState.chunks.map(chunk => (
+        <p key={chunk.id}>
+          [{chunk.index}]: {transcripts[chunk.id] || 'Transcribing...'}
+        </p>
+      ))}
+    </div>
+  );
+}
+```
+
+### Pattern 3: Voice Activity Detection (VAD)
+
+```typescript
+function VoiceDetector() {
+  const { recordingState, metrics } = useMurmubaraEngine();
+  
+  return (
+    <div>
+      {/* Real-time VAD */}
+      {metrics && (
+        <div>
+          Voice Active: {metrics.vadLevel > 0.5 ? '🎤 Speaking' : '🔇 Silent'}
+          Level: {(metrics.vadLevel * 100).toFixed(0)}%
+        </div>
+      )}
+      
+      {/* Historical VAD per chunk */}
+      {recordingState.chunks.map(chunk => (
+        <div key={chunk.id}>
+          Chunk {chunk.index}: {(chunk.averageVad * 100).toFixed(0)}% voice activity
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+## ⚙️ Configuration Options
+
+```typescript
+interface UseMurmubaraEngineOptions {
+  // Chunking
+  defaultChunkDuration?: number;    // Seconds per chunk (default: 8)
+  
+  // Audio Processing
+  bufferSize?: number;              // Audio buffer size (default: 16384)
+  sampleRate?: number;              // Sample rate Hz (default: 48000)
+  denoiseStrength?: number;         // Noise reduction 0-1 (default: 0.85)
+  
+  // Gain Control
+  inputGain?: number;               // Initial gain 0.5-3.0 (default: 1.0)
+  enableAGC?: boolean;              // Auto gain control (default: true)
+  
+  // Voice Detection
+  spectralFloorDb?: number;         // Noise floor dB (default: -80)
+  noiseFloorDb?: number;            // VAD threshold dB (default: -60)
+  
+  // Performance
+  enableMetrics?: boolean;          // Real-time metrics (default: true)
+  metricsUpdateInterval?: number;   // Update interval ms (default: 100)
+  
+  // Initialization
+  autoInitialize?: boolean;         // Auto-init on mount (default: false)
+  allowDegraded?: boolean;          // Allow fallback mode (default: true)
+  
+  // Debugging
+  logLevel?: 'none' | 'error' | 'warn' | 'info' | 'debug';
+}
+```
+
+## 🔧 Memory Management
+
+Murmuraba automatically manages blob URLs to prevent memory leaks:
+
+```typescript
+// URLs are automatically created and tracked
+const processedUrl = URL.createObjectURL(processedBlob);  // ✅ Tracked
+
+// URLs are automatically revoked when:
+clearRecordings();  // All URLs revoked
+// or on component unmount
+```
+
+## 📈 Performance Considerations
+
+- **Chunk Duration**: 5-10 seconds optimal for most use cases
+- **Buffer Size**: Larger = better quality, more latency
+- **Sample Rate**: 48kHz for quality, 16kHz for size
+- **Memory**: Each chunk ~100-500KB depending on duration
+
+## 🎨 Building Custom UIs
+
+Since you have full control via the hook, build any UI you want:
+
+```typescript
+function MinimalRecorder() {
+  const { recordingState, startRecording, stopRecording } = useMurmubaraEngine();
+  
+  if (!recordingState.isRecording) {
+    return <button onClick={() => startRecording()}>🎤 Record</button>;
+  }
+  
+  return (
+    <div>
+      <button onClick={stopRecording}>⏹ Stop</button>
+      <div>
+        Recording: {recordingState.recordingTime}s
+        Chunks: {recordingState.chunks.length}
+      </div>
+    </div>
+  );
+}
+```
+
+## 🚨 Error Handling
+
+```typescript
+function RobustRecorder() {
+  const { 
+    error, 
+    isInitialized, 
+    initialize, 
+    startRecording 
+  } = useMurmubaraEngine();
+  
+  const handleStart = async () => {
+    try {
+      if (!isInitialized) {
+        await initialize();
+      }
+      await startRecording();
+    } catch (err) {
+      console.error('Recording failed:', err);
+      // Handle specific errors
+      if (err.message.includes('microphone')) {
+        alert('Please allow microphone access');
+      }
+    }
+  };
+  
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+  
+  return <button onClick={handleStart}>Start</button>;
+}
+```
 
 ## 🤝 Contributing
 
-See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.
+Contributions welcome! Please check our [GitHub repository](https://github.com/yourusername/murmuraba).
 
 ## 📄 License
 
-MIT © Bernard Uriza
+MIT © Murmuraba Team
 
-## 🔄 Version History
+## 🔗 Links
 
-See [CHANGELOG.md](../../CHANGELOG.md) for detailed version history.
+- [NPM Package](https://www.npmjs.com/package/murmuraba)
+- [GitHub Repository](https://github.com/yourusername/murmuraba)
+- [Documentation](https://murmuraba.dev)
+- [RNNoise Project](https://github.com/xiph/rnnoise)
 
-### Latest Updates (v2.3.1)
-- Fixed WASM module loading
-- Added VAD real-time display
-- Updated to React 19.1.1
-- Improved TypeScript types
-- Enhanced chunk recording stability
+---
+
+Built with ❤️ for developers who need professional audio streaming with neural noise reduction.

@@ -64,6 +64,7 @@ const App = memo(function App() {
     
     // Actions
     initialize,
+    reinitialize,
     processFile,
     
     // Recording Actions
@@ -134,7 +135,7 @@ const App = memo(function App() {
   }, [exportChunkAsWav, exportChunkAsMp3]);
 
   // Memoized handlers to prevent unnecessary re-renders
-  const handleStopRecording = useCallback(async () => stopRecording(), [stopRecording]);
+  const handleStopRecording = useCallback(() => stopRecording(), [stopRecording]);
   
   const handleProcessFile = useCallback(async (buffer: ArrayBuffer) => {
     return await processFile(buffer);
@@ -187,6 +188,7 @@ const App = memo(function App() {
               inputGain={inputGain}
               agcEnabled={agcEnabled}
               onInitialize={initialize}
+              onReinitialize={reinitialize}
               onStartRecording={startRecording}
               onStopRecording={handleStopRecording}
               onPauseRecording={pauseRecording}

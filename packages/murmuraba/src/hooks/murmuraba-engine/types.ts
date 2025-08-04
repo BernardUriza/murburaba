@@ -44,6 +44,7 @@ export interface UseMurmubaraEngineReturn {
   
   // Actions
   initialize: () => Promise<void>;
+  reinitialize: () => Promise<void>;
   destroy: (force?: boolean) => Promise<void>;
   processStream: (stream: MediaStream) => Promise<StreamController>;
   processStreamChunked: (
@@ -57,7 +58,7 @@ export interface UseMurmubaraEngineReturn {
   
   // Recording Actions
   startRecording: (chunkDuration?: number) => Promise<void>;
-  stopRecording: () => Promise<void>;
+  stopRecording: () => void;
   pauseRecording: () => void;
   resumeRecording: () => void;
   clearRecordings: () => void;
