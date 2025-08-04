@@ -10,6 +10,8 @@ import {
   processFile,
   setInputGain,
   getInputGain,
+  setAgcEnabled,
+  isAgcEnabled,
 } from '../../api';
 import { getAudioConverter, AudioConverter, destroyAudioConverter } from '../../utils/audio-converter';
 
@@ -61,6 +63,7 @@ export function useMurmubaraEngine(
   const [metrics, setMetrics] = useState<ProcessingMetrics | null>(null);
   const [diagnostics, setDiagnostics] = useState<DiagnosticInfo | null>(null);
   const [inputGain, setInputGainState] = useState<number>(1.0);
+  const [agcEnabled, setAgcEnabledState] = useState<boolean>(true);
   
   // Use dedicated recording state hook
   const {
@@ -364,6 +367,35 @@ export function useMurmubaraEngine(
     }
   }, [isInitialized, inputGain]);
   
+  const updateAgcEnabled = useCallback(async (enabled: boolean) => {
+    try {
+      if (!isInitialized) {
+        throw new Error('Engine not initialized');
+      }
+      setAgcEnabled(enabled);
+      setAgcEnabledState(enabled);
+      console.log(`[${LOG_PREFIX}] AGC ${enabled ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      console.error(`[${LOG_PREFIX}] Failed to set AGC enabled:`, error);
+      setError(error instanceof Error ? error.message : String(error));
+      throw error;
+    }
+  }, [isInitialized]);
+  
+  const getAgcEnabled = useCallback(() => {
+    try {
+      if (!isInitialized) {
+        return agcEnabled;
+      }
+      const enabled = isAgcEnabled();
+      setAgcEnabledState(enabled);
+      return enabled;
+    } catch (error) {
+      console.error(`[${LOG_PREFIX}] Failed to get AGC enabled:`, error);
+      return agcEnabled;
+    }
+  }, [isInitialized, agcEnabled]);
+  
   const getAverageNoiseReduction = useCallback(() => {
     return chunkManagerRef.current!.getAverageNoiseReduction(recordingState.chunks);
   }, [recordingState.chunks]);
@@ -518,6 +550,11 @@ export function useMurmubaraEngine(
     // Gain Control
     setInputGain: updateInputGain,
     getInputGain: getCurrentInputGain,
+    
+    // AGC Control
+    agcEnabled,
+    setAgcEnabled: updateAgcEnabled,
+    getAgcEnabled,
     
     // Utility
     getDiagnostics: updateDiagnostics,

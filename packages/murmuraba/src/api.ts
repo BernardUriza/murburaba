@@ -99,3 +99,13 @@ export function getInputGain(): number {
   const engine = getEngine();
   return engine.getInputGain();
 }
+
+export function setAgcEnabled(enabled: boolean): void {
+  const engine = getEngine();
+  engine.setAGCEnabled(enabled);
+}
+
+export function isAgcEnabled(): boolean {
+  const engine = getEngine();
+  return engine.isAGCEnabled();
+}

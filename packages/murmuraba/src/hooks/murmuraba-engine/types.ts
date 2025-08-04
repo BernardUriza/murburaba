@@ -77,6 +77,11 @@ export interface UseMurmubaraEngineReturn {
   setInputGain: (gain: number) => void;
   getInputGain: () => number;
   
+  // AGC Control
+  agcEnabled: boolean;
+  setAgcEnabled: (enabled: boolean) => Promise<void>;
+  getAgcEnabled: () => boolean;
+  
   // Utility
   getDiagnostics: () => DiagnosticInfo | null;
   resetError: () => void;

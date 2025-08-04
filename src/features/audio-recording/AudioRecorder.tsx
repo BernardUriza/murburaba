@@ -6,12 +6,14 @@ interface AudioRecorderProps {
   isInitialized: boolean;
   isLoading: boolean;
   inputGain: number;
+  agcEnabled: boolean;
   onStartRecording: (chunkDuration?: number) => Promise<void>;
   onStopRecording: () => void;
   onPauseRecording: () => void;
   onResumeRecording: () => void;
   onClearRecordings: () => void;
   onSetInputGain: (gain: number) => void;
+  onSetAgcEnabled: (enabled: boolean) => Promise<void>;
 }
 
 export const AudioRecorder: React.FC<AudioRecorderProps> = ({
@@ -19,12 +21,14 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   isInitialized,
   isLoading,
   inputGain,
+  agcEnabled,
   onStartRecording,
   onStopRecording,
   onPauseRecording,
   onResumeRecording,
   onClearRecordings,
-  onSetInputGain
+  onSetInputGain,
+  onSetAgcEnabled
 }) => {
   const [showGainControl, setShowGainControl] = useState(false);
   const handleRecordClick = async () => {
@@ -181,6 +185,33 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
                 aria-valuenow={inputGain}
                 aria-valuetext={`${inputGain.toFixed(1)} times normal volume`}
               />
+            </div>
+
+            {/* AGC Toggle */}
+            <div style={{ marginBottom: '15px', padding: '10px', backgroundColor: 'rgba(0, 0, 0, 0.05)', borderRadius: '6px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={agcEnabled}
+                  onChange={(e) => onSetAgcEnabled(e.target.checked)}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  aria-label="Automatic Gain Control (AGC)"
+                />
+                <span style={{ fontWeight: '600' }}>
+                  Automatic Gain Control (AGC) {agcEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </label>
+              <p style={{ 
+                marginTop: '8px', 
+                marginBottom: 0, 
+                fontSize: '12px', 
+                color: '#666',
+                paddingLeft: '28px'
+              }}>
+                {agcEnabled 
+                  ? '⚠️ AGC normalizes audio levels automatically, which may reduce the effect of manual gain adjustments.'
+                  : '✅ Manual gain control is fully active. Adjust the slider to control input volume precisely.'}
+              </p>
             </div>
 
             {/* Gain Presets */}

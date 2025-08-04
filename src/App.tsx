@@ -83,7 +83,11 @@ const App = memo(function App() {
     
     // Gain Control
     inputGain,
-    setInputGain
+    setInputGain,
+    
+    // AGC Control
+    agcEnabled,
+    setAgcEnabled
   } = useMurmubaraEngine(memoizedEngineConfig);
 
   // CRITICAL FIX: Stable config object to prevent dependency loops
@@ -181,6 +185,7 @@ const App = memo(function App() {
               engineConfig={engineConfig}
               processedFileResult={processedFileResult}
               inputGain={inputGain}
+              agcEnabled={agcEnabled}
               onStartRecording={startRecording}
               onStopRecording={handleStopRecording}
               onPauseRecording={pauseRecording}
@@ -192,6 +197,7 @@ const App = memo(function App() {
               onFileProcessed={setProcessedFileResult}
               onProcessFile={handleProcessFile}
               onSetInputGain={setInputGain}
+              onSetAgcEnabled={setAgcEnabled}
               getEngineStatus={getEngineStatus}
             />
 

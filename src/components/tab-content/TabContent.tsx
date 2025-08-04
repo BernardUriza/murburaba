@@ -23,6 +23,7 @@ interface TabContentProps {
   engineConfig: any;
   processedFileResult: any;
   inputGain: number;
+  agcEnabled: boolean;
   onStartRecording: (chunkDuration?: number) => Promise<void>;
   onStopRecording: () => Promise<void>;
   onPauseRecording: () => void;
@@ -34,6 +35,7 @@ interface TabContentProps {
   onFileProcessed: (result: any) => void;
   onProcessFile: (buffer: ArrayBuffer) => Promise<any>;
   onSetInputGain: (gain: number) => void;
+  onSetAgcEnabled: (enabled: boolean) => Promise<void>;
   getEngineStatus: () => any;
 }
 
@@ -48,6 +50,7 @@ export const TabContent = memo(function TabContent({
   engineConfig,
   processedFileResult,
   inputGain,
+  agcEnabled,
   onStartRecording,
   onStopRecording,
   onPauseRecording,
@@ -59,6 +62,7 @@ export const TabContent = memo(function TabContent({
   onFileProcessed,
   onProcessFile,
   onSetInputGain,
+  onSetAgcEnabled,
   getEngineStatus
 }: TabContentProps) {
   return (
@@ -71,12 +75,14 @@ export const TabContent = memo(function TabContent({
               isInitialized={isInitialized}
               isLoading={isLoading}
               inputGain={inputGain}
+              agcEnabled={agcEnabled}
               onStartRecording={onStartRecording}
               onStopRecording={onStopRecording}
               onPauseRecording={onPauseRecording}
               onResumeRecording={onResumeRecording}
               onClearRecordings={onClearRecordings}
               onSetInputGain={onSetInputGain}
+              onSetAgcEnabled={onSetAgcEnabled}
             />
 
             {/* Real-time waveform visualization during recording */}
