@@ -71,8 +71,28 @@ export async function processFile(arrayBuffer: ArrayBuffer): Promise<ArrayBuffer
 }
 
 export function setInputGain(gain: number): void {
+  // Validate input
+  if (typeof gain !== 'number') {
+    throw new TypeError(`Input gain must be a number, received ${typeof gain}`);
+  }
+  
+  if (isNaN(gain)) {
+    throw new TypeError('Input gain cannot be NaN');
+  }
+  
+  if (!isFinite(gain)) {
+    throw new TypeError('Input gain must be finite');
+  }
+  
+  if (gain < 0) {
+    throw new RangeError('Input gain cannot be negative');
+  }
+  
+  // Clamp to safe range
+  const safeGain = Math.max(0.5, Math.min(3.0, gain));
+  
   const engine = getEngine();
-  engine.setInputGain(gain);
+  engine.setInputGain(safeGain);
 }
 
 export function getInputGain(): number {

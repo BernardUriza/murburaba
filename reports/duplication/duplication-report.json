@@ -1,0 +1,708 @@
+{
+  "timestamp": "2025-08-04T00:05:36.575Z",
+  "tools": {
+    "jscpd": {
+      "status": "success",
+      "output": "Clone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [121:32 - 128:17] (7 lines, 81 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [96:38 - 103:4]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [143:36 - 150:17] (7 lines, 81 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [96:38 - 103:4]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [168:7 - 178:6] (10 lines, 97 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [97:7 - 106:7]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [184:6 - 193:4] (9 lines, 91 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [166:2 - 104:4]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [231:8 - 240:11] (9 lines, 93 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [211:4 - 221:4]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [249:32 - 257:4] (8 lines, 97 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [96:38 - 104:4]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [266:40 - 273:29] (7 lines, 81 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [96:38 - 103:4]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [308:39 - 315:17] (7 lines, 81 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [96:38 - 103:4]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [346:2 - 358:7] (12 lines, 97 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [97:2 - 196:11]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [384:2 - 396:28] (12 lines, 95 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [97:2 - 106:7]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [402:35 - 409:25] (7 lines, 81 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [96:38 - 103:4]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [420:47 - 428:4] (8 lines, 97 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx\u001b[39m\u001b[22m [96:38 - 104:4]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/components/chunk-results/__tests__/VadDisplay.test.tsx\u001b[39m\u001b[22m [6:2 - 12:2] (6 lines, 88 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/components/chunk-results/__tests__/integration.test.tsx\u001b[39m\u001b[22m [28:2 - 34:2]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/components/chunk-results/__tests__/ChunkProcessingResults.test.tsx\u001b[39m\u001b[22m [18:5 - 58:11] (40 lines, 356 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/components/chunk-results/__tests__/integration.test.tsx\u001b[39m\u001b[22m [9:5 - 49:3]\n\nClone found (javascript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/components/chunk-processing-results/__tests__/chunk-processing-results.e2e.test.tsx\u001b[39m\u001b[22m [314:2 - 407:3] (93 lines, 693 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/components/chunk-processing-results/__tests__/chunk-processing-results.e2e.test.tsx\u001b[39m\u001b[22m [151:3 - 265:3]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/components/chunk-processing-results/__tests__/chunk-processing-results.e2e.test.tsx\u001b[39m\u001b[22m [255:48 - 271:36] (16 lines, 95 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/components/chunk-processing-results/__tests__/chunk-processing-results.e2e.test.tsx\u001b[39m\u001b[22m [227:48 - 243:36]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/components/chunk-processing-results/__tests__/chunk-processing-results.e2e.test.tsx\u001b[39m\u001b[22m [480:36 - 495:20] (15 lines, 108 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/components/chunk-processing-results/__tests__/chunk-processing-results.e2e.test.tsx\u001b[39m\u001b[22m [125:56 - 139:6]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts\u001b[39m\u001b[22m [295:42 - 303:5] (8 lines, 91 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts\u001b[39m\u001b[22m [270:33 - 278:2]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts\u001b[39m\u001b[22m [391:2 - 402:6] (11 lines, 101 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts\u001b[39m\u001b[22m [360:2 - 370:6]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts\u001b[39m\u001b[22m [416:36 - 424:6] (8 lines, 87 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts\u001b[39m\u001b[22m [347:38 - 355:6]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts\u001b[39m\u001b[22m [426:12 - 441:7] (15 lines, 142 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts\u001b[39m\u001b[22m [355:11 - 370:6]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/unit/hooks/audioExporter.test.ts\u001b[39m\u001b[22m [34:2 - 48:20] (14 lines, 94 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/unit/hooks/playbackManager.test.ts\u001b[39m\u001b[22m [60:2 - 73:2]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts\u001b[39m\u001b[22m [342:32 - 349:6] (7 lines, 118 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts\u001b[39m\u001b[22m [301:35 - 308:5]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts\u001b[39m\u001b[22m [364:33 - 372:7] (8 lines, 146 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts\u001b[39m\u001b[22m [301:35 - 350:6]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts\u001b[39m\u001b[22m [416:7 - 424:2] (8 lines, 91 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts\u001b[39m\u001b[22m [109:7 - 117:7]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts\u001b[39m\u001b[22m [553:9 - 571:25] (18 lines, 143 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts\u001b[39m\u001b[22m [485:2 - 503:28]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts\u001b[39m\u001b[22m [623:2 - 642:42] (19 lines, 153 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts\u001b[39m\u001b[22m [484:2 - 503:28]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts\u001b[39m\u001b[22m [695:9 - 706:3] (11 lines, 92 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts\u001b[39m\u001b[22m [119:9 - 130:23]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts\u001b[39m\u001b[22m [749:7 - 764:27] (15 lines, 150 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts\u001b[39m\u001b[22m [688:7 - 703:3]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts\u001b[39m\u001b[22m [190:46 - 205:4] (15 lines, 102 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts\u001b[39m\u001b[22m [166:53 - 181:10]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts\u001b[39m\u001b[22m [236:42 - 251:26] (15 lines, 100 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts\u001b[39m\u001b[22m [166:53 - 181:7]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts\u001b[39m\u001b[22m [370:51 - 383:15] (13 lines, 89 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts\u001b[39m\u001b[22m [293:32 - 306:14]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts\u001b[39m\u001b[22m [391:52 - 404:16] (13 lines, 89 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts\u001b[39m\u001b[22m [293:32 - 306:14]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts\u001b[39m\u001b[22m [468:42 - 481:16] (13 lines, 89 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts\u001b[39m\u001b[22m [293:32 - 306:14]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts\u001b[39m\u001b[22m [492:15 - 506:5] (14 lines, 95 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts\u001b[39m\u001b[22m [273:11 - 287:8]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts\u001b[39m\u001b[22m [510:52 - 523:24] (13 lines, 98 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts\u001b[39m\u001b[22m [166:53 - 181:7]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/audio-exporter.ts\u001b[39m\u001b[22m [43:3 - 49:10] (6 lines, 88 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/murmuraba-engine/audio-exporter.ts\u001b[39m\u001b[22m [18:3 - 24:10]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/core/__tests__/murmuraba-engine.gain.test.ts\u001b[39m\u001b[22m [212:7 - 222:2] (10 lines, 121 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/core/__tests__/murmuraba-engine.gain.test.ts\u001b[39m\u001b[22m [157:7 - 168:6]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/core/__tests__/murmuraba-engine.gain.test.ts\u001b[39m\u001b[22m [258:7 - 271:7] (13 lines, 122 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/core/__tests__/murmuraba-engine.gain.test.ts\u001b[39m\u001b[22m [239:7 - 252:7]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/components/waveform-analyzer/waveform-analyzer.tsx\u001b[39m\u001b[22m [143:7 - 149:3] (6 lines, 83 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/components/waveform-analyzer/waveform-analyzer.tsx\u001b[39m\u001b[22m [93:5 - 99:38]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/components/waveform-analyzer/waveform-analyzer.tsx\u001b[39m\u001b[22m [228:10 - 234:9] (6 lines, 76 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/components/waveform-analyzer/waveform-analyzer.tsx\u001b[39m\u001b[22m [220:10 - 226:7]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/components/waveform-analyzer/waveform-analyzer.tsx\u001b[39m\u001b[22m [268:7 - 275:36] (7 lines, 86 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/components/waveform-analyzer/waveform-analyzer.tsx\u001b[39m\u001b[22m [92:5 - 99:38]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/components/waveform-analyzer/waveform-analyzer.tsx\u001b[39m\u001b[22m [281:18 - 297:10] (16 lines, 152 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/components/waveform-analyzer/waveform-analyzer.tsx\u001b[39m\u001b[22m [165:18 - 181:13]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/components/waveform-analyzer/waveform-analyzer.tsx\u001b[39m\u001b[22m [297:10 - 312:19] (15 lines, 129 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/components/waveform-analyzer/waveform-analyzer.tsx\u001b[39m\u001b[22m [181:13 - 196:24]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/components/waveform-analyzer/waveform-analyzer.tsx\u001b[39m\u001b[22m [322:5 - 331:9] (9 lines, 92 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/components/waveform-analyzer/waveform-analyzer.tsx\u001b[39m\u001b[22m [206:10 - 215:10]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/components/waveform-analyzer/waveform-analyzer.tsx\u001b[39m\u001b[22m [338:12 - 345:7] (7 lines, 78 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/components/waveform-analyzer/waveform-analyzer.tsx\u001b[39m\u001b[22m [220:10 - 226:7]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/components/simple-waveform-analyzer/simple-waveform-analyzer.tsx\u001b[39m\u001b[22m [101:2 - 119:24] (18 lines, 162 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/components/waveform-analyzer/waveform-analyzer.tsx\u001b[39m\u001b[22m [294:7 - 194:4]\n\nClone found (css):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/components/chunk-results/audio-controls.css\u001b[39m\u001b[22m [168:2 - 181:34] (13 lines, 98 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/components/synced-waveforms/synced-waveforms.css\u001b[39m\u001b[22m [152:2 - 165:46]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/components/__tests__/WaveformAnalyzer.test.tsx\u001b[39m\u001b[22m [93:5 - 108:68] (15 lines, 126 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/components/__tests__/WaveformAnalyzer.test.tsx\u001b[39m\u001b[22m [64:5 - 79:6]\n\nClone found (javascript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/components/__tests__/AdvancedMetricsPanel.test.tsx\u001b[39m\u001b[22m [62:2 - 136:12] (74 lines, 508 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/components/__tests__/AdvancedMetricsPanel.test.tsx\u001b[39m\u001b[22m [50:5 - 103:22]\n\nClone found (javascript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/components/__tests__/AdvancedMetricsPanel.test.tsx\u001b[39m\u001b[22m [136:12 - 409:22] (273 lines, 1870 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/components/__tests__/AdvancedMetricsPanel.test.tsx\u001b[39m\u001b[22m [117:2 - 197:12]\n\nClone found (javascript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/components/__tests__/AdvancedMetricsPanel.test.tsx\u001b[39m\u001b[22m [395:12 - 504:2] (109 lines, 729 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/components/__tests__/AdvancedMetricsPanel.test.tsx\u001b[39m\u001b[22m [103:2 - 410:2]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/factories.ts\u001b[39m\u001b[22m [369:2 - 375:11] (6 lines, 85 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/test-utils.ts\u001b[39m\u001b[22m [93:2 - 99:6]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/MurmurabaProcessor.test.ts\u001b[39m\u001b[22m [182:2 - 196:10] (14 lines, 103 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/MurmurabaProcessor.test.ts\u001b[39m\u001b[22m [162:4 - 176:14]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/MurmurabaProcessor.test.ts\u001b[39m\u001b[22m [200:2 - 212:7] (12 lines, 90 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/MurmurabaProcessor.test.ts\u001b[39m\u001b[22m [136:4 - 148:40]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/MurmurabaProcessor.test.ts\u001b[39m\u001b[22m [252:5 - 266:13] (14 lines, 103 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/MurmurabaProcessor.test.ts\u001b[39m\u001b[22m [162:4 - 176:14]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/MurmurabaProcessor.test.ts\u001b[39m\u001b[22m [276:7 - 290:17] (14 lines, 114 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/MurmurabaProcessor.test.ts\u001b[39m\u001b[22m [162:7 - 176:14]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/MurmurabaProcessor.test.ts\u001b[39m\u001b[22m [322:5 - 336:12] (14 lines, 103 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/MurmurabaProcessor.test.ts\u001b[39m\u001b[22m [162:4 - 176:14]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/MurmurabaProcessor.test.ts\u001b[39m\u001b[22m [431:2 - 440:7] (9 lines, 84 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/MurmurabaProcessor.test.ts\u001b[39m\u001b[22m [418:2 - 427:7]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/mocks/webAudioMocks.ts\u001b[39m\u001b[22m [40:7 - 45:26] (5 lines, 83 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/audio-context-utils.ts\u001b[39m\u001b[22m [70:7 - 75:4]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/mocks/webAudioMocks.ts\u001b[39m\u001b[22m [46:7 - 54:2] (8 lines, 116 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/audio-context-utils.ts\u001b[39m\u001b[22m [75:7 - 82:2]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/mocks/webAudioMocks.ts\u001b[39m\u001b[22m [78:5 - 89:2] (11 lines, 136 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/audio-context-utils.ts\u001b[39m\u001b[22m [188:5 - 198:2]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/mocks/webAudioMocks.ts\u001b[39m\u001b[22m [123:2 - 129:2] (6 lines, 68 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/audio-context-utils.ts\u001b[39m\u001b[22m [211:10 - 216:2]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/mocks/webAudioMocks.ts\u001b[39m\u001b[22m [214:5 - 225:2] (11 lines, 97 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/factories.ts\u001b[39m\u001b[22m [237:7 - 247:2]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/integration/noiseProcessing.integration.test.ts\u001b[39m\u001b[22m [233:9 - 238:3] (5 lines, 83 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/integration/noiseProcessing.integration.test.ts\u001b[39m\u001b[22m [196:9 - 201:3]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/integration/noiseProcessing.integration.test.ts\u001b[39m\u001b[22m [254:7 - 263:13] (9 lines, 84 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/integration/noiseProcessing.integration.test.ts\u001b[39m\u001b[22m [93:10 - 102:15]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/integration/audioEngine.integration.test.ts\u001b[39m\u001b[22m [25:5 - 37:10] (12 lines, 106 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/integration/noiseProcessing.integration.test.ts\u001b[39m\u001b[22m [31:5 - 43:9]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/integration/audioEngine.integration.test.ts\u001b[39m\u001b[22m [145:7 - 153:16] (8 lines, 81 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/integration/noiseProcessing.integration.test.ts\u001b[39m\u001b[22m [301:7 - 309:11]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts\u001b[39m\u001b[22m [74:2 - 82:55] (8 lines, 72 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/audio-context-utils.ts\u001b[39m\u001b[22m [211:2 - 131:8]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts\u001b[39m\u001b[22m [258:7 - 269:37] (11 lines, 111 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts\u001b[39m\u001b[22m [229:7 - 240:33]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts\u001b[39m\u001b[22m [287:7 - 300:36] (13 lines, 128 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts\u001b[39m\u001b[22m [256:7 - 240:33]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts\u001b[39m\u001b[22m [356:7 - 369:60] (13 lines, 128 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts\u001b[39m\u001b[22m [256:7 - 240:33]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts\u001b[39m\u001b[22m [456:34 - 464:4] (8 lines, 90 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts\u001b[39m\u001b[22m [309:64 - 317:4]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts\u001b[39m\u001b[22m [464:4 - 479:6] (15 lines, 134 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts\u001b[39m\u001b[22m [354:5 - 240:33]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts\u001b[39m\u001b[22m [503:7 - 516:20] (13 lines, 113 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts\u001b[39m\u001b[22m [324:7 - 481:13]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts\u001b[39m\u001b[22m [528:7 - 543:17] (15 lines, 152 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts\u001b[39m\u001b[22m [463:7 - 240:33]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts\u001b[39m\u001b[22m [548:8 - 554:2] (6 lines, 65 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/MurmurabaProcessor.test.ts\u001b[39m\u001b[22m [309:10 - 314:7]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts\u001b[39m\u001b[22m [625:4 - 638:53] (13 lines, 117 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts\u001b[39m\u001b[22m [256:5 - 240:33]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/engines/RNNoiseEngine.critical.test.ts\u001b[39m\u001b[22m [18:7 - 34:7] (16 lines, 135 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/engines/RNNoiseEngine.test.ts\u001b[39m\u001b[22m [34:7 - 50:13]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/engines/RNNoiseEngine.critical.test.ts\u001b[39m\u001b[22m [169:20 - 177:50] (8 lines, 83 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/engines/RNNoiseEngine.critical.test.ts\u001b[39m\u001b[22m [132:19 - 140:39]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/engines/AudioWorkletEngine.rnnoise.test.ts\u001b[39m\u001b[22m [46:9 - 54:51] (8 lines, 79 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/engines/AudioWorkletEngine.test.ts\u001b[39m\u001b[22m [79:9 - 87:7]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/engines/AudioWorkletEngine.rnnoise.test.ts\u001b[39m\u001b[22m [51:7 - 59:35] (8 lines, 90 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/engines/AudioWorkletEngine.test.ts\u001b[39m\u001b[22m [141:7 - 149:7]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/engines/AudioWorkletEngine.rnnoise.test.ts\u001b[39m\u001b[22m [87:54 - 101:26] (14 lines, 154 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/engines/AudioWorkletEngine.rnnoise.test.ts\u001b[39m\u001b[22m [42:56 - 81:31]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/engines/AudioWorkletEngine.rnnoise.test.ts\u001b[39m\u001b[22m [121:7 - 130:2] (9 lines, 92 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/engines/AudioWorkletEngine.rnnoise.test.ts\u001b[39m\u001b[22m [67:7 - 76:6]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/engines/AudioWorkletEngine.rnnoise.test.ts\u001b[39m\u001b[22m [124:9 - 132:6] (8 lines, 89 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/engines/AudioWorkletEngine.test.ts\u001b[39m\u001b[22m [190:2 - 198:28]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/engines/AudioWorkletEngine.rnnoise.test.ts\u001b[39m\u001b[22m [151:50 - 174:2] (23 lines, 247 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/engines/AudioWorkletEngine.rnnoise.test.ts\u001b[39m\u001b[22m [109:47 - 132:2]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts\u001b[39m\u001b[22m [35:1 - 43:2] (8 lines, 101 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/setup/audio-mocks.ts\u001b[39m\u001b[22m [4:2 - 11:2]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts\u001b[39m\u001b[22m [136:5 - 145:18] (9 lines, 82 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/managers/ChunkProcessor.test.ts\u001b[39m\u001b[22m [18:5 - 27:31]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts\u001b[39m\u001b[22m [164:7 - 174:6] (10 lines, 82 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/managers/ChunkProcessor.test.ts\u001b[39m\u001b[22m [29:7 - 39:13]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts\u001b[39m\u001b[22m [176:4 - 185:21] (9 lines, 84 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts\u001b[39m\u001b[22m [127:2 - 136:11]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts\u001b[39m\u001b[22m [202:2 - 209:2] (7 lines, 79 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts\u001b[39m\u001b[22m [127:2 - 134:2]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/components/AudioPlayer.test.tsx\u001b[39m\u001b[22m [261:32 - 269:28] (8 lines, 79 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/components/AudioPlayer.test.tsx\u001b[39m\u001b[22m [183:39 - 191:43]\n\nClone found (tsx):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/components/AudioPlayer.test.tsx\u001b[39m\u001b[22m [269:28 - 278:13] (9 lines, 100 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/components/AudioPlayer.test.tsx\u001b[39m\u001b[22m [191:43 - 200:16]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/hooks/use-audio-engine.ts\u001b[39m\u001b[22m [263:2 - 269:2] (6 lines, 89 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/utils/murmuraba-processor.ts\u001b[39m\u001b[22m [86:2 - 92:2]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/core/secure-event-bridge.ts\u001b[39m\u001b[22m [156:16 - 174:7] (18 lines, 124 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/utils/validation.ts\u001b[39m\u001b[22m [10:26 - 28:8]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/vitest.setup.ts\u001b[39m\u001b[22m [107:21 - 113:8] (6 lines, 90 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/utils/test-utils.ts\u001b[39m\u001b[22m [126:8 - 132:2]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/vitest.setup.ts\u001b[39m\u001b[22m [156:6 - 161:2] (5 lines, 67 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/core/__tests__/murmuraba-engine.gain.test.ts\u001b[39m\u001b[22m [159:2 - 165:2]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/api.test.ts\u001b[39m\u001b[22m [158:2 - 170:21] (12 lines, 114 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/api.test.ts\u001b[39m\u001b[22m [125:4 - 137:14]\n\nClone found (typescript):\n - \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/api.gain.test.ts\u001b[39m\u001b[22m [351:46 - 359:13] (8 lines, 96 tokens)\n   \u001b[1m\u001b[32mpackages/murmuraba/src/__tests__/api.gain.test.ts\u001b[39m\u001b[22m [223:57 - 231:20]\n\n\u001b[90m┌────────────\u001b[39m\u001b[90m┬────────────────\u001b[39m\u001b[90m┬─────────────\u001b[39m\u001b[90m┬──────────────\u001b[39m\u001b[90m┬──────────────\u001b[39m\u001b[90m┬──────────────────\u001b[39m\u001b[90m┬───────────────────┐\u001b[39m\n\u001b[90m│\u001b[39m\u001b[31m Format     \u001b[39m\u001b[90m│\u001b[39m\u001b[31m Files analyzed \u001b[39m\u001b[90m│\u001b[39m\u001b[31m Total lines \u001b[39m\u001b[90m│\u001b[39m\u001b[31m Total tokens \u001b[39m\u001b[90m│\u001b[39m\u001b[31m Clones found \u001b[39m\u001b[90m│\u001b[39m\u001b[31m Duplicated lines \u001b[39m\u001b[90m│\u001b[39m\u001b[31m Duplicated tokens \u001b[39m\u001b[90m│\u001b[39m\n\u001b[90m├────────────\u001b[39m\u001b[90m┼────────────────\u001b[39m\u001b[90m┼─────────────\u001b[39m\u001b[90m┼──────────────\u001b[39m\u001b[90m┼──────────────\u001b[39m\u001b[90m┼──────────────────\u001b[39m\u001b[90m┼───────────────────┤\u001b[39m\n\u001b[90m│\u001b[39m tsx        \u001b[90m│\u001b[39m 28             \u001b[90m│\u001b[39m 6286        \u001b[90m│\u001b[39m 53138        \u001b[90m│\u001b[39m 27           \u001b[90m│\u001b[39m 296 (4.71%)      \u001b[90m│\u001b[39m 2882 (5.42%)      \u001b[90m│\u001b[39m\n\u001b[90m├────────────\u001b[39m\u001b[90m┼────────────────\u001b[39m\u001b[90m┼─────────────\u001b[39m\u001b[90m┼──────────────\u001b[39m\u001b[90m┼──────────────\u001b[39m\u001b[90m┼──────────────────\u001b[39m\u001b[90m┼───────────────────┤\u001b[39m\n\u001b[90m│\u001b[39m javascript \u001b[90m│\u001b[39m 24             \u001b[90m│\u001b[39m 2753        \u001b[90m│\u001b[39m 22072        \u001b[90m│\u001b[39m 4            \u001b[90m│\u001b[39m 549 (19.94%)     \u001b[90m│\u001b[39m 3800 (17.22%)     \u001b[90m│\u001b[39m\n\u001b[90m├────────────\u001b[39m\u001b[90m┼────────────────\u001b[39m\u001b[90m┼─────────────\u001b[39m\u001b[90m┼──────────────\u001b[39m\u001b[90m┼──────────────\u001b[39m\u001b[90m┼──────────────────\u001b[39m\u001b[90m┼───────────────────┤\u001b[39m\n\u001b[90m│\u001b[39m typescript \u001b[90m│\u001b[39m 89             \u001b[90m│\u001b[39m 21581       \u001b[90m│\u001b[39m 185970       \u001b[90m│\u001b[39m 67           \u001b[90m│\u001b[39m 732 (3.39%)      \u001b[90m│\u001b[39m 7024 (3.78%)      \u001b[90m│\u001b[39m\n\u001b[90m├────────────\u001b[39m\u001b[90m┼────────────────\u001b[39m\u001b[90m┼─────────────\u001b[39m\u001b[90m┼──────────────\u001b[39m\u001b[90m┼──────────────\u001b[39m\u001b[90m┼──────────────────\u001b[39m\u001b[90m┼───────────────────┤\u001b[39m\n\u001b[90m│\u001b[39m css        \u001b[90m│\u001b[39m 2              \u001b[90m│\u001b[39m 610         \u001b[90m│\u001b[39m 3910         \u001b[90m│\u001b[39m 1            \u001b[90m│\u001b[39m 13 (2.13%)       \u001b[90m│\u001b[39m 98 (2.51%)        \u001b[90m│\u001b[39m\n\u001b[90m├────────────\u001b[39m\u001b[90m┼────────────────\u001b[39m\u001b[90m┼─────────────\u001b[39m\u001b[90m┼──────────────\u001b[39m\u001b[90m┼──────────────\u001b[39m\u001b[90m┼──────────────────\u001b[39m\u001b[90m┼───────────────────┤\u001b[39m\n\u001b[90m│\u001b[39m \u001b[1mTotal:\u001b[22m     \u001b[90m│\u001b[39m 143            \u001b[90m│\u001b[39m 31230       \u001b[90m│\u001b[39m 265090       \u001b[90m│\u001b[39m 99           \u001b[90m│\u001b[39m 1590 (5.09%)     \u001b[90m│\u001b[39m 13804 (5.21%)     \u001b[90m│\u001b[39m\n\u001b[90m└────────────\u001b[39m\u001b[90m┴────────────────\u001b[39m\u001b[90m┴─────────────\u001b[39m\u001b[90m┴──────────────\u001b[39m\u001b[90m┴──────────────\u001b[39m\u001b[90m┴──────────────────\u001b[39m\u001b[90m┴───────────────────┘\u001b[39m\n\u001b[90mFound 99 clones.\u001b[39m\n\u001b[3m\u001b[90mDetection time:\u001b[39m\u001b[23m: 4.658s\n"
+    },
+    "patterns": {
+      "useState duplications": [
+        {
+          "file": "packages/murmuraba/src/components/synced-waveforms/synced-waveforms.tsx",
+          "occurrences": 3,
+          "lines": [
+            45,
+            46,
+            47
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/hooks/murmuraba-engine/use-murmubara-engine.ts",
+          "occurrences": 2,
+          "lines": [
+            57,
+            58
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/hooks/use-audio-engine.ts",
+          "occurrences": 2,
+          "lines": [
+            7,
+            8
+          ]
+        }
+      ],
+      "useEffect duplications": [
+        {
+          "file": "packages/murmuraba/src/components/audio-player/audio-player.tsx",
+          "occurrences": 4,
+          "lines": [
+            125,
+            155,
+            164,
+            173
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/components/simple-waveform-analyzer/simple-waveform-analyzer.tsx",
+          "occurrences": 2,
+          "lines": [
+            25,
+            153
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/components/waveform-analyzer/waveform-analyzer.tsx",
+          "occurrences": 7,
+          "lines": [
+            518,
+            523,
+            540,
+            548,
+            559,
+            614,
+            632
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/hooks/murmuraba-engine/use-murmubara-engine.ts",
+          "occurrences": 5,
+          "lines": [
+            112,
+            401,
+            409,
+            421,
+            437
+          ]
+        }
+      ],
+      "vi.fn() mocks": [
+        {
+          "file": "packages/murmuraba/src/__tests__/mocks/webAudioMocks.ts",
+          "occurrences": 48,
+          "lines": [
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            22,
+            23,
+            50,
+            51,
+            52,
+            53,
+            61,
+            62,
+            97,
+            98,
+            108,
+            115,
+            116,
+            117,
+            120,
+            124,
+            125,
+            126,
+            127,
+            128,
+            181,
+            182,
+            183,
+            200,
+            226,
+            227,
+            228,
+            229,
+            345,
+            346,
+            347,
+            349,
+            367,
+            368,
+            369,
+            382,
+            398,
+            441,
+            442,
+            443,
+            458
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/__tests__/setup/audio-mocks.ts",
+          "occurrences": 46,
+          "lines": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            18,
+            19,
+            20,
+            22,
+            23,
+            24,
+            25,
+            26,
+            29,
+            30,
+            31,
+            33,
+            34,
+            36,
+            37,
+            38,
+            41,
+            43,
+            44,
+            50,
+            56,
+            57,
+            58,
+            59,
+            69,
+            71,
+            72,
+            73,
+            74,
+            75,
+            76,
+            98,
+            99,
+            100,
+            101,
+            107,
+            108,
+            113,
+            114,
+            115,
+            132
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/__tests__/shared/test-utils.ts",
+          "occurrences": 51,
+          "lines": [
+            13,
+            14,
+            15,
+            18,
+            19,
+            20,
+            22,
+            23,
+            25,
+            26,
+            27,
+            30,
+            31,
+            32,
+            38,
+            39,
+            44,
+            45,
+            46,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            82,
+            83,
+            84,
+            85,
+            86,
+            87,
+            88,
+            89,
+            90,
+            103,
+            106,
+            107,
+            115,
+            116,
+            117,
+            118,
+            123,
+            124,
+            145,
+            146,
+            152,
+            158,
+            208,
+            209,
+            221
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/__tests__/utils/audio-context-utils.ts",
+          "occurrences": 45,
+          "lines": [
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            52,
+            53,
+            79,
+            80,
+            81,
+            82,
+            96,
+            97,
+            98,
+            99,
+            106,
+            107,
+            108,
+            109,
+            110,
+            111,
+            112,
+            118,
+            119,
+            131,
+            132,
+            133,
+            134,
+            135,
+            136,
+            137,
+            138,
+            139,
+            157,
+            158,
+            208,
+            211,
+            212,
+            213,
+            214,
+            215,
+            216,
+            221
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/__tests__/utils/factories.ts",
+          "occurrences": 24,
+          "lines": [
+            209,
+            210,
+            211,
+            212,
+            213,
+            214,
+            215,
+            229,
+            230,
+            249,
+            250,
+            251,
+            252,
+            319,
+            320,
+            370,
+            371,
+            372,
+            374,
+            384,
+            385,
+            386,
+            389,
+            390
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/__tests__/utils/test-utils.ts",
+          "occurrences": 9,
+          "lines": [
+            94,
+            95,
+            96,
+            98,
+            107,
+            117,
+            121,
+            122,
+            131
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/__tests__/vitest.setup.ts",
+          "occurrences": 41,
+          "lines": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            15,
+            16,
+            17,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            63,
+            64,
+            66,
+            67,
+            68,
+            87,
+            98,
+            102,
+            103,
+            112,
+            131,
+            132,
+            133,
+            139,
+            141,
+            142,
+            143,
+            144,
+            145,
+            155,
+            156,
+            157,
+            158,
+            159,
+            160,
+            180
+          ]
+        }
+      ],
+      "AudioContext mocks": [
+        {
+          "file": "packages/murmuraba/src/__tests__/shared/test-utils.ts",
+          "occurrences": 2,
+          "lines": [
+            208,
+            209
+          ]
+        }
+      ],
+      "Console.log statements": [
+        {
+          "file": "packages/murmuraba/src/__tests__/mocks/webAudioMocks.ts",
+          "occurrences": 28,
+          "lines": [
+            3,
+            4,
+            5,
+            9,
+            93,
+            109,
+            121,
+            131,
+            143,
+            159,
+            164,
+            169,
+            198,
+            258,
+            262,
+            278,
+            295,
+            303,
+            311,
+            327,
+            363,
+            374,
+            383,
+            394,
+            399,
+            450,
+            455,
+            470
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/__tests__/vitest.setup.ts",
+          "occurrences": 2,
+          "lines": [
+            5,
+            206
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/components/waveform-analyzer/waveform-analyzer.tsx",
+          "occurrences": 18,
+          "lines": [
+            74,
+            122,
+            126,
+            358,
+            381,
+            416,
+            431,
+            432,
+            456,
+            464,
+            469,
+            473,
+            476,
+            499,
+            500,
+            525,
+            542,
+            635
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/engines/rnnoise-engine.ts",
+          "occurrences": 2,
+          "lines": [
+            30,
+            69
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/hooks/murmuraba-engine/audio-exporter.ts",
+          "occurrences": 5,
+          "lines": [
+            24,
+            49,
+            102,
+            116,
+            163
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/hooks/murmuraba-engine/recording-manager.ts",
+          "occurrences": 17,
+          "lines": [
+            174,
+            195,
+            227,
+            231,
+            275,
+            309,
+            324,
+            345,
+            350,
+            394,
+            403,
+            434,
+            447,
+            466,
+            479,
+            496,
+            579
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/hooks/murmuraba-engine/use-murmubara-engine.ts",
+          "occurrences": 13,
+          "lines": [
+            133,
+            140,
+            145,
+            154,
+            203,
+            227,
+            229,
+            236,
+            257,
+            326,
+            403,
+            438,
+            445
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/hooks/use-audio-engine.ts",
+          "occurrences": 4,
+          "lines": [
+            34,
+            49,
+            132,
+            161
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/utils/audio-converter.ts",
+          "occurrences": 9,
+          "lines": [
+            26,
+            102,
+            181,
+            187,
+            193,
+            212,
+            218,
+            223,
+            231
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/utils/rnnoise-worker-manager.ts",
+          "occurrences": 3,
+          "lines": [
+            23,
+            78,
+            234
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/workers/rnnoise.worker.ts",
+          "occurrences": 5,
+          "lines": [
+            31,
+            73,
+            84,
+            129,
+            144
+          ]
+        }
+      ],
+      "Error throwing patterns": [
+        {
+          "file": "packages/murmuraba/src/__tests__/shared/test-utils.ts",
+          "occurrences": 3,
+          "lines": [
+            261,
+            288,
+            294
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/__tests__/utils/factories.ts",
+          "occurrences": 2,
+          "lines": [
+            315,
+            387
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/api.ts",
+          "occurrences": 2,
+          "lines": [
+            8,
+            17
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/core/murmuraba-engine.ts",
+          "occurrences": 8,
+          "lines": [
+            550,
+            1297,
+            1308,
+            1331,
+            1342,
+            1345,
+            1349,
+            1377
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/core/secure-event-bridge.ts",
+          "occurrences": 5,
+          "lines": [
+            55,
+            65,
+            68,
+            79,
+            90
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/engines/audio-worklet-engine.ts",
+          "occurrences": 7,
+          "lines": [
+            61,
+            255,
+            265,
+            303,
+            359,
+            380,
+            396
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/engines/index.ts",
+          "occurrences": 3,
+          "lines": [
+            9,
+            11,
+            13
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/engines/rnnoise-engine.ts",
+          "occurrences": 5,
+          "lines": [
+            34,
+            46,
+            53,
+            74,
+            78
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/hooks/murmuraba-engine/audio-exporter.ts",
+          "occurrences": 6,
+          "lines": [
+            21,
+            30,
+            46,
+            73,
+            85,
+            113
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/hooks/murmuraba-engine/use-murmubara-engine.ts",
+          "occurrences": 4,
+          "lines": [
+            271,
+            282,
+            293,
+            322
+          ]
+        },
+        {
+          "file": "packages/murmuraba/src/utils/audio-resampler.ts",
+          "occurrences": 4,
+          "lines": [
+            27,
+            31,
+            35,
+            60
+          ]
+        }
+      ],
+      "RMS calculations": []
+    },
+    "bundleAnalyzer": {
+      "status": "skipped",
+      "reason": "No webpack configuration found"
+    },
+    "testAnalysis": {
+      "beforeEach patterns": 55,
+      "afterEach patterns": 27,
+      "describe blocks": 273,
+      "it blocks": 750,
+      "expect assertions": 1361
+    }
+  },
+  "summary": {
+    "totalDuplications": 409,
+    "criticalIssues": 0,
+    "estimatedSavings": 0
+  }
+}

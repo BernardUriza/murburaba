@@ -1,0 +1,77 @@
+# Pre-commit hooks configuration for code quality and duplication detection
+# See https://pre-commit.com for more information
+
+repos:
+  # Standard code quality hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-case-conflict
+
+  # TypeScript/JavaScript linting
+  - repo: local
+    hooks:
+      - id: eslint
+        name: ESLint
+        entry: npx eslint
+        language: node
+        types: [typescript, javascript, tsx, jsx]
+        args: [--fix, --max-warnings=0]
+        additional_dependencies: [eslint]
+
+      # Code duplication detection
+      - id: duplication-check
+        name: Code Duplication Check
+        entry: npm run lint:duplication:ci
+        language: system
+        stages: [commit]
+        pass_filenames: false
+        description: "Checks for code duplication and fails if thresholds are exceeded"
+
+      # Duplication threshold enforcement
+      - id: duplication-threshold
+        name: Duplication Threshold Enforcement
+        entry: node scripts/check-duplication-thresholds.js
+        language: node
+        stages: [commit]
+        pass_filenames: false
+        description: "Enforces strict duplication limits before commit"
+
+      # Test pattern validation
+      - id: test-pattern-check
+        name: Test Pattern Validation
+        entry: node scripts/validate-test-patterns.js
+        language: node
+        files: '.*\.test\.ts$|.*\.spec\.ts$'
+        description: "Ensures test files use centralized utilities instead of duplicate patterns"
+
+      # Console.log detection
+      - id: no-console-logs
+        name: No Console Logs in Production Code
+        entry: node scripts/check-console-logs.js
+        language: node
+        files: '^packages/murmuraba/src/(?!__tests__|mocks).*\.(ts|tsx)$'
+        exclude: '^packages/murmuraba/src/(utils/logger\.ts|__tests__|mocks).*'
+        description: "Prevents console.log statements in production code"
+
+      # Error pattern validation
+      - id: error-pattern-check
+        name: Error Pattern Validation
+        entry: node scripts/check-error-patterns.js
+        language: node
+        files: '.*\.(ts|tsx)$'
+        description: "Ensures errors use ErrorFactory instead of raw Error constructors"
+
+# Configure default stages
+default_stages: [commit]
+
+# Global configuration
+fail_fast: false
+minimum_pre_commit_version: '2.20.0'

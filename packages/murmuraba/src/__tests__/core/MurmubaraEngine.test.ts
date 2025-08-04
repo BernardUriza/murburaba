@@ -4,7 +4,7 @@
  * This is where boys become men
  */
 
-import { MurmubaraEngine } from '../../core/murmubara-engine';
+import { MurmubaraEngine } from '../../core/murmuraba-engine';
 import { vi } from 'vitest';
 import { StateManager } from '../../core/state-manager';
 import { Logger } from '../../core/logger';
@@ -12,6 +12,7 @@ import { WorkerManager } from '../../managers/worker-manager';
 import { MetricsManager } from '../../managers/metrics-manager';
 import { ChunkProcessor } from '../../managers/chunk-processor';
 import { MurmubaraConfig, EngineState } from '../../types';
+import { createFullTestEnvironment, TestUtils } from '../shared/test-utils';
 
 // Mock all dependencies
 vi.mock('../../core/state-manager', () => ({
@@ -30,7 +31,7 @@ vi.mock('../../managers/chunk-processor', () => ({
   ChunkProcessor: vi.fn()
 }));
 
-// Mock WASM
+// Mock WASM module
 const mockWasmModule = {
   _rnnoise_create: vi.fn().mockReturnValue(123),
   _rnnoise_destroy: vi.fn(),
@@ -46,146 +47,25 @@ vi.mock('../../utils/rnnoise-loader', () => ({
   loadRNNoiseModule: vi.fn().mockResolvedValue(mockWasmModule)
 }));
 
-// Mock AudioContext and nodes
-let mockAudioContext: any;
-let mockScriptProcessor: any;
-let mockMediaStreamSource: any;
-let mockMediaStreamDestination: any;
-let mockBiquadFilter: any;
-let mockHighPassFilter: any;
-let mockNotchFilter1: any;
-let mockNotchFilter2: any;
-let mockLowShelfFilter: any;
-let mockStream: any;
+// Test environment setup
+let testEnv: ReturnType<typeof createFullTestEnvironment>;
+let mockStream: MediaStream;
 
-// Setup global mocks
 beforeEach(async () => {
-  vi.clearAllMocks();
+  // Setup comprehensive test environment
+  testEnv = createFullTestEnvironment();
   
   // Reset the loader mock to its default behavior
   const { loadRNNoiseModule } = await import('../../utils/rnnoise-loader');
   (loadRNNoiseModule as any).mockResolvedValue(mockWasmModule);
   
-  // Create fresh mock nodes
-  mockScriptProcessor = {
-    connect: vi.fn(),
-    disconnect: vi.fn(),
-    onaudioprocess: null as any,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn()
-  };
-
-  mockMediaStreamSource = {
-    connect: vi.fn(),
-    disconnect: vi.fn()
-  };
-
-  mockMediaStreamDestination = {
-    stream: { 
-      id: 'mock-output-stream',
-      getTracks: vi.fn().mockReturnValue([]),
-      getAudioTracks: vi.fn().mockReturnValue([{ kind: 'audio' }]),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn()
-    }
-  };
-
-  // Create mock stream
-  mockStream = {
-    id: 'mock-input-stream',
-    getTracks: vi.fn().mockReturnValue([{ kind: 'audio', stop: vi.fn() }]),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn()
-  };
-
-  // Create multiple biquad filters for the chain
-  mockHighPassFilter = {
-    type: '' as BiquadFilterType,
-    frequency: { value: 0 },
-    Q: { value: 0 },
-    gain: { value: 0 },
-    connect: vi.fn(),
-    disconnect: vi.fn()
-  };
-
-  mockNotchFilter1 = {
-    type: '' as BiquadFilterType,
-    frequency: { value: 0 },
-    Q: { value: 0 },
-    connect: vi.fn(),
-    disconnect: vi.fn()
-  };
-
-  mockNotchFilter2 = {
-    type: '' as BiquadFilterType,
-    frequency: { value: 0 },
-    Q: { value: 0 },
-    connect: vi.fn(),
-    disconnect: vi.fn()
-  };
-
-  mockLowShelfFilter = {
-    type: '' as BiquadFilterType,
-    frequency: { value: 0 },
-    Q: { value: 0 },
-    gain: { value: 0 },
-    connect: vi.fn(),
-    disconnect: vi.fn()
-  };
-
-  mockBiquadFilter = mockHighPassFilter; // Default to high pass for backward compatibility
+  // Create test stream using MockFactories
+  const { MockFactories } = await import('../shared/test-utils');
+  mockStream = MockFactories.createMediaStreamMock([
+    { kind: 'audio', stop: vi.fn(), addEventListener: vi.fn() } as any
+  ]);
   
-  // Create a fresh mock AudioContext
-  const mockAnalyser = {
-    fftSize: 2048,
-    frequencyBinCount: 1024,
-    getFloatFrequencyData: vi.fn(),
-    getByteFrequencyData: vi.fn(),
-    getFloatTimeDomainData: vi.fn(),
-    getByteTimeDomainData: vi.fn(),
-    connect: vi.fn(),
-    disconnect: vi.fn()
-  };
-
-  const mockGainNode = {
-    gain: { 
-      value: 1,
-      setTargetAtTime: vi.fn()
-    },
-    connect: vi.fn(),
-    disconnect: vi.fn()
-  };
-
-  mockAudioContext = {
-    state: 'running' as AudioContextState,
-    sampleRate: 48000,
-    destination: { maxChannelCount: 2 },
-    createScriptProcessor: vi.fn().mockReturnValue(mockScriptProcessor),
-    createMediaStreamSource: vi.fn().mockReturnValue(mockMediaStreamSource),
-    createMediaStreamDestination: vi.fn().mockReturnValue(mockMediaStreamDestination),
-    createBiquadFilter: vi.fn()
-      .mockReturnValueOnce(mockNotchFilter1)
-      .mockReturnValueOnce(mockNotchFilter2)
-      .mockReturnValueOnce(mockHighPassFilter)
-      .mockReturnValueOnce(mockLowShelfFilter)
-      .mockReturnValue(mockBiquadFilter),
-    createAnalyser: vi.fn().mockReturnValue(mockAnalyser),
-    createGain: vi.fn().mockReturnValue(mockGainNode),
-    resume: vi.fn().mockResolvedValue(undefined),
-    close: vi.fn().mockResolvedValue(undefined),
-    currentTime: 0,
-    baseLatency: 0.01,
-    outputLatency: 0.02,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn()
-  };
-  
-  // Mock the global AudioContext constructor
-  global.AudioContext = vi.fn().mockImplementation(() => mockAudioContext);
-  global.webkitAudioContext = global.AudioContext;
-  
-  // Mock window for checkEnvironmentSupport
+  // Setup browser environment mocks
   global.window = Object.assign(global.window || {}, {
     AudioContext: global.AudioContext,
     webkitAudioContext: global.AudioContext,
@@ -196,15 +76,11 @@ beforeEach(async () => {
     React: { version: '18.2.0' }
   });
   
-  // Mock navigator
   global.navigator = {
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0',
-    mediaDevices: {
-      getUserMedia: vi.fn()
-    }
+    mediaDevices: { getUserMedia: vi.fn() }
   } as any;
   
-  // Mock performance
   global.performance = {
     ...global.performance,
     memory: {
@@ -215,7 +91,6 @@ beforeEach(async () => {
     now: vi.fn().mockReturnValue(0)
   } as any;
   
-  // Mock document
   global.document = {
     createElement: vi.fn().mockReturnValue({
       onload: null,
@@ -224,24 +99,14 @@ beforeEach(async () => {
     }),
     head: {
       appendChild: vi.fn().mockImplementation((script) => {
-        // Simulate script loading by calling onload after a microtask
-        setTimeout(() => {
-          if (script.onload) {
-            script.onload();
-          }
-        }, 0);
+        setTimeout(() => script.onload?.(), 0);
       })
     }
   } as any;
-  
-  mockScriptProcessor.onaudioprocess = null;
-  mockScriptProcessor.connect.mockClear();
-  mockScriptProcessor.disconnect.mockClear();
 });
 
 afterEach(() => {
-  // Only restore timers if they were faked
-  // vi.useRealTimers();
+  testEnv.cleanup();
 });
 
 describe('MurmubaraEngine - The Final Boss', () => {

@@ -1,0 +1,1386 @@
+{
+  "metadata": {
+    "timestamp": "2025-08-03T23:44:24.267Z",
+    "totalSourceFiles": 199
+  },
+  "summary": {
+    "testPatternDuplicates": 36,
+    "mockPatternDuplicates": 26,
+    "importDuplicates": 5,
+    "utilityFunctionDuplicates": 39,
+    "totalHighPriorityIssues": 14
+  },
+  "duplications": {
+    "testPatterns": [
+      {
+        "hash": "ecdb77deabb635e858c70b7c47825e6b",
+        "severity": "critical",
+        "occurrences": 53,
+        "files": [
+          "packages/murmuraba/src/__tests__/integration/audioEngine.integration.test.ts",
+          "packages/murmuraba/src/__tests__/integration/noiseProcessing.integration.test.ts",
+          "packages/murmuraba/src/__tests__/integration/react19-nextjs14.test.tsx",
+          "packages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts",
+          "packages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx",
+          "src/__tests__/gain-control-integration.test.tsx"
+        ],
+        "avgLinesOfCode": 1,
+        "sample": "renderHook(() => useMurmubaraEngine())...",
+        "patternType": "test-pattern-0",
+        "recommendation": "Create shared test helper for renderHook patterns"
+      },
+      {
+        "hash": "d49f87069370c1a7a0b9830da1ce7eb5",
+        "severity": "critical",
+        "occurrences": 49,
+        "files": [
+          "packages/murmuraba/src/__tests__/integration/audioEngine.integration.test.ts",
+          "packages/murmuraba/src/__tests__/integration/noiseProcessing.integration.test.ts",
+          "packages/murmuraba/src/__tests__/integration/react19-nextjs14.test.tsx",
+          "packages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts",
+          "packages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx",
+          "src/__tests__/gain-control-integration.test.tsx"
+        ],
+        "avgLinesOfCode": 1,
+        "sample": "const { result } = renderHook(() => useMurmubaraEngine());...",
+        "patternType": "test-pattern-4",
+        "recommendation": "Extract renderHook result destructuring to helper"
+      },
+      {
+        "hash": "99c26ce79a82a0203fa82ae2250a5e03",
+        "severity": "critical",
+        "occurrences": 13,
+        "files": [
+          "packages/murmuraba/src/__tests__/components/AudioPlayer.test.tsx",
+          "packages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts",
+          "packages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts",
+          "packages/murmuraba/src/__tests__/integration/audioEngine.integration.test.ts",
+          "packages/murmuraba/src/__tests__/integration/react19-nextjs14.test.tsx",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts",
+          "packages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/utils/rnnoise-loader.test.ts",
+          "packages/murmuraba/src/components/__tests__/AdvancedMetricsPanel.test.tsx",
+          "packages/murmuraba/src/components/chunk-processing-results/__tests__/chunk-processing-results.e2e.test.tsx",
+          "packages/murmuraba/src/utils/__tests__/AudioConverter.improved.test.ts",
+          "src/__tests__/App.startup.test.tsx",
+          "src/__tests__/engine-integration.test.tsx"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "afterEach(() => {\n    vi.restoreAllMocks();\n  }...",
+        "patternType": "test-pattern-3",
+        "recommendation": "Create shared afterEach cleanup function"
+      },
+      {
+        "hash": "50fa0ad5001bb67753ea1fb76fac7196",
+        "severity": "critical",
+        "occurrences": 9,
+        "files": [
+          "packages/murmuraba/src/__tests__/integration/react19-nextjs14.test.tsx",
+          "packages/murmuraba/src/__tests__/utils/rnnoise-loader.test.ts",
+          "packages/murmuraba/src/components/chunk-results/__tests__/AudioControls.integration.test.tsx",
+          "packages/murmuraba/src/components/chunk-results/__tests__/ChunkHeader.test.tsx",
+          "packages/murmuraba/src/components/chunk-results/__tests__/ChunkProcessingResults.test.tsx",
+          "packages/murmuraba/src/utils/__tests__/AudioConverter.improved.test.ts",
+          "src/core/services/__tests__/Logger.integration.test.ts",
+          "src/features/audio-recording/__tests__/AudioRecorder.gain.test.tsx",
+          "src/features/audio-recording/__tests__/AudioRecorder.test.tsx"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "beforeEach(() => {\n    vi.clearAllMocks();\n  }...",
+        "patternType": "test-pattern-2",
+        "recommendation": "Create shared beforeEach setup function"
+      },
+      {
+        "hash": "547b0cb25e4e9b37b11e11a204e45d34",
+        "severity": "critical",
+        "occurrences": 7,
+        "files": [
+          "packages/murmuraba/src/__tests__/engines/AudioWorkletEngine.complete.test.ts",
+          "packages/murmuraba/src/__tests__/engines/RNNoiseEngine.critical.test.ts",
+          "packages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts",
+          "packages/murmuraba/src/__tests__/utils/MurmurabaProcessor.test.ts",
+          "packages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx",
+          "packages/murmuraba/src/managers/__tests__/ChunkProcessor.improved.test.ts",
+          "src/__tests__/gain-control-integration.test.tsx"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "afterEach(() => {\n    vi.clearAllMocks();\n  }...",
+        "patternType": "test-pattern-3",
+        "recommendation": "Create shared afterEach cleanup function"
+      },
+      {
+        "hash": "264b82c7666b82d516d6a6bb849d5852",
+        "severity": "high",
+        "occurrences": 35,
+        "files": [
+          "packages/murmuraba/src/__tests__/integration/audioEngine.integration.test.ts",
+          "packages/murmuraba/src/__tests__/integration/noiseProcessing.integration.test.ts",
+          "packages/murmuraba/src/__tests__/integration/react19-nextjs14.test.tsx",
+          "packages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts",
+          "src/__tests__/gain-control-integration.test.tsx"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "await act(async () => {\n        await result.current.initialize();\n      });...",
+        "patternType": "test-pattern-5",
+        "recommendation": "Create shared async act utility"
+      },
+      {
+        "hash": "a459d31e1dd8e25a08f29baef520b6eb",
+        "severity": "medium",
+        "occurrences": 20,
+        "files": [
+          "packages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx",
+          "src/__tests__/gain-control-integration.test.tsx"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "await waitFor(() => {\n        expect(result.current.isInitialized).toBe(true);\n      });...",
+        "patternType": "test-pattern-6",
+        "recommendation": "Create shared waitFor utility"
+      },
+      {
+        "hash": "cd448f167ad15bbfacc5630597191b89",
+        "severity": "medium",
+        "occurrences": 17,
+        "files": [
+          "packages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "await act(async () => {\n        await result.current.initializeAudioEngine();\n      });...",
+        "patternType": "test-pattern-5",
+        "recommendation": "Create shared async act utility"
+      },
+      {
+        "hash": "f3ffff194dc84983a5e4ea7d17ad4ff8",
+        "severity": "medium",
+        "occurrences": 8,
+        "files": [
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts",
+          "packages/murmuraba/src/core/__tests__/murmuraba-engine.gain.test.ts"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "beforeEach(() => {\n      engine = new MurmubaraEngine();\n    }...",
+        "patternType": "test-pattern-2",
+        "recommendation": "Create shared beforeEach setup function"
+      },
+      {
+        "hash": "3016df995c187e3373e86658bf5f1809",
+        "severity": "medium",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/__tests__/integration/audioEngine.integration.test.ts",
+          "packages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts",
+          "packages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "await act(async () => {\n        await result.current.startRecording();\n      });...",
+        "patternType": "test-pattern-5",
+        "recommendation": "Create shared async act utility"
+      },
+      {
+        "hash": "8f10bf62820221ed6d11567ed8e5bc20",
+        "severity": "low",
+        "occurrences": 25,
+        "files": [
+          "packages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts"
+        ],
+        "avgLinesOfCode": 1,
+        "sample": "renderHook(() => useAudioEngine())...",
+        "patternType": "test-pattern-0",
+        "recommendation": "Create shared test helper for renderHook patterns"
+      },
+      {
+        "hash": "f0300d24ba24cb57d1246af076b7e9d6",
+        "severity": "low",
+        "occurrences": 24,
+        "files": [
+          "packages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts"
+        ],
+        "avgLinesOfCode": 1,
+        "sample": "const { result } = renderHook(() => useAudioEngine());...",
+        "patternType": "test-pattern-4",
+        "recommendation": "Extract renderHook result destructuring to helper"
+      },
+      {
+        "hash": "03ccf0aef3a727c66856c2b0a2187269",
+        "severity": "low",
+        "occurrences": 14,
+        "files": [
+          "packages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts",
+          "packages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx"
+        ],
+        "avgLinesOfCode": 1,
+        "sample": "renderHook(() => useMurmubaraEngine({ autoInitialize: true }))...",
+        "patternType": "test-pattern-0",
+        "recommendation": "Create shared test helper for renderHook patterns"
+      },
+      {
+        "hash": "d1360aa89c8534666ea0b6c15c661d58",
+        "severity": "low",
+        "occurrences": 14,
+        "files": [
+          "packages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts",
+          "packages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx"
+        ],
+        "avgLinesOfCode": 1,
+        "sample": "const { result } = renderHook(() => useMurmubaraEngine({ autoInitialize: true }));...",
+        "patternType": "test-pattern-4",
+        "recommendation": "Extract renderHook result destructuring to helper"
+      },
+      {
+        "hash": "a451649b3d20b832e335206f25ebfa96",
+        "severity": "low",
+        "occurrences": 14,
+        "files": [
+          "src/__tests__/engine-integration.test.tsx"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "await act(async () => {\n      render(<TestEngineComponent />);\n    });...",
+        "patternType": "test-pattern-5",
+        "recommendation": "Create shared async act utility"
+      },
+      {
+        "hash": "639dd6a98a535b98a7a1ad8af3b81910",
+        "severity": "low",
+        "occurrences": 14,
+        "files": [
+          "src/core/store/__tests__/useAppStore.test.ts"
+        ],
+        "avgLinesOfCode": 1,
+        "sample": "renderHook(() => useAppStore())...",
+        "patternType": "test-pattern-0",
+        "recommendation": "Create shared test helper for renderHook patterns"
+      },
+      {
+        "hash": "d768c1d8285d61daf2a9431c829d01db",
+        "severity": "low",
+        "occurrences": 13,
+        "files": [
+          "src/core/store/__tests__/useAppStore.test.ts"
+        ],
+        "avgLinesOfCode": 1,
+        "sample": "const { result } = renderHook(() => useAppStore());...",
+        "patternType": "test-pattern-4",
+        "recommendation": "Extract renderHook result destructuring to helper"
+      },
+      {
+        "hash": "713414f05d6b3edf519452ac8fc84ae2",
+        "severity": "low",
+        "occurrences": 7,
+        "files": [
+          "src/__tests__/App.startup.test.tsx"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "await act(async () => {\n      render(<App />);\n    });...",
+        "patternType": "test-pattern-5",
+        "recommendation": "Create shared async act utility"
+      },
+      {
+        "hash": "714c97fa162205db89dde66e4722ef35",
+        "severity": "low",
+        "occurrences": 4,
+        "files": [
+          "packages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "await act(async () => {\n        await waitForAsync();\n      });...",
+        "patternType": "test-pattern-5",
+        "recommendation": "Create shared async act utility"
+      },
+      {
+        "hash": "4a4ab71b67e1d6be0eff8e96344584c9",
+        "severity": "low",
+        "occurrences": 4,
+        "files": [
+          "src/__tests__/gain-control-integration.test.tsx"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "const { result } = renderHook(() => \n        useMurmubaraEngine({ autoInitialize: true })\n      );...",
+        "patternType": "test-pattern-4",
+        "recommendation": "Extract renderHook result destructuring to helper"
+      },
+      {
+        "hash": "5f2d38865505fe4378dcd4a2d43a6283",
+        "severity": "low",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts",
+          "packages/murmuraba/src/hooks/murmuraba-engine/__tests__/use-murmubara-engine.gain.test.tsx"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "await act(async () => {\n        await result.current.processStream(mockStream);\n      });...",
+        "patternType": "test-pattern-5",
+        "recommendation": "Create shared async act utility"
+      },
+      {
+        "hash": "353002edfd49347ac354ff488488ed2f",
+        "severity": "low",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/__tests__/integration/audioEngine.integration.test.ts",
+          "packages/murmuraba/src/__tests__/integration/noiseProcessing.integration.test.ts"
+        ],
+        "avgLinesOfCode": 4,
+        "sample": "await act(async () => {\n        await result.current.initialize();\n        await result.current.startRecording();\n      });...",
+        "patternType": "test-pattern-5",
+        "recommendation": "Create shared async act utility"
+      },
+      {
+        "hash": "8b83cad3b18e10cef975b21403e66667",
+        "severity": "low",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/__tests__/unit/hooks/audioExporter.test.ts"
+        ],
+        "avgLinesOfCode": 2,
+        "sample": "beforeEach(() => {\n      audioExporter.setAudioConverter({}...",
+        "patternType": "test-pattern-2",
+        "recommendation": "Create shared beforeEach setup function"
+      },
+      {
+        "hash": "414f05d5c649a9d4eb8d745888d2e68f",
+        "severity": "low",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts",
+          "src/__tests__/gain-control-integration.test.tsx"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "await act(async () => {\n        await result.current.destroy();\n      });...",
+        "patternType": "test-pattern-5",
+        "recommendation": "Create shared async act utility"
+      },
+      {
+        "hash": "4d6df33470679de55571b747d79618fa",
+        "severity": "low",
+        "occurrences": 3,
+        "files": [
+          "src/__tests__/engine-integration.test.tsx"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "await act(async () => {\n      fireEvent.click(initBtn);\n    });...",
+        "patternType": "test-pattern-5",
+        "recommendation": "Create shared async act utility"
+      },
+      {
+        "hash": "b4db008eac8c871276122ac28132f3c9",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/integration/audioEngine.integration.test.ts",
+          "packages/murmuraba/src/__tests__/integration/noiseProcessing.integration.test.ts"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "renderHook(() => useMurmubaraEngine({\n        defaultChunkDuration: 2, // 2-second chunks for faster test\n      }))...",
+        "patternType": "test-pattern-0",
+        "recommendation": "Create shared test helper for renderHook patterns"
+      },
+      {
+        "hash": "3c58e173c30f38c42cf1767186ae8b8a",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/integration/audioEngine.integration.test.ts",
+          "packages/murmuraba/src/__tests__/integration/noiseProcessing.integration.test.ts"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "const { result } = renderHook(() => useMurmubaraEngine({\n        defaultChunkDuration: 2, // 2-second chunks for faster test\n      }));...",
+        "patternType": "test-pattern-4",
+        "recommendation": "Extract renderHook result destructuring to helper"
+      },
+      {
+        "hash": "7c12a4dc0ba4c3a4c16c6094f60c9d69",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/integration/audioEngine.integration.test.ts",
+          "packages/murmuraba/src/__tests__/integration/noiseProcessing.integration.test.ts"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "await act(async () => {\n        await result.current.cleanup();\n      });...",
+        "patternType": "test-pattern-5",
+        "recommendation": "Create shared async act utility"
+      },
+      {
+        "hash": "b0d1a6dc802927e458237ccb6aefedfa",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/integration/audioEngine.integration.test.ts",
+          "packages/murmuraba/src/__tests__/integration/noiseProcessing.integration.test.ts"
+        ],
+        "avgLinesOfCode": 4,
+        "sample": "await act(async () => {\n        await result.current.initialize();\n        await result.current.startRecording(2);\n      });...",
+        "patternType": "test-pattern-5",
+        "recommendation": "Create shared async act utility"
+      },
+      {
+        "hash": "800e3ef938c5055f6aa1f900ce2a8369",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/integration/noiseProcessing.integration.test.ts"
+        ],
+        "avgLinesOfCode": 2,
+        "sample": "await act(async () => {\n          mockRecorder.ondataavailable({ data: blob });...",
+        "patternType": "test-pattern-5",
+        "recommendation": "Create shared async act utility"
+      },
+      {
+        "hash": "8b8cf05d20537343ea2f13d298190c6a",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/managers/ChunkProcessor.test.ts",
+          "packages/murmuraba/src/__tests__/unit/hooks/audioExporter.test.ts"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "afterEach(() => {\n    vi.useRealTimers();\n  }...",
+        "patternType": "test-pattern-3",
+        "recommendation": "Create shared afterEach cleanup function"
+      },
+      {
+        "hash": "085942500d6fecb3798799e618b65d31",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts"
+        ],
+        "avgLinesOfCode": 1,
+        "sample": "renderHook(() => useMurmubaraEngine(config))...",
+        "patternType": "test-pattern-0",
+        "recommendation": "Create shared test helper for renderHook patterns"
+      },
+      {
+        "hash": "61a19a7740424c5013b57092c2360de5",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "await act(async () => {\n        await expect(result.current.initialize()).rejects.toThrow('Init failed');\n      });...",
+        "patternType": "test-pattern-5",
+        "recommendation": "Create shared async act utility"
+      },
+      {
+        "hash": "a28aaaf2c79c506dd0dd84ada7ba4007",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/core/__tests__/murmuraba-engine.gain.test.ts"
+        ],
+        "avgLinesOfCode": 9,
+        "sample": "vi.mock('../../utils/rnnoise-loader', () => ({\n        loadRNNoiseModule: vi.fn().mockResolvedValue({\n          _rnnoise_create: vi.fn().mockReturnVal...",
+        "patternType": "test-pattern-1",
+        "recommendation": "Extract common vi.mock configurations to setup files"
+      },
+      {
+        "hash": "c6f0f16ff3eb0d78933daebcff260200",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "src/__tests__/gain-control-integration.test.tsx"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "await act(async () => {\n        await new Promise(resolve => setTimeout(resolve, 100));\n      });...",
+        "patternType": "test-pattern-5",
+        "recommendation": "Create shared async act utility"
+      },
+      {
+        "hash": "0dbbab3d67d03e061c15b02f5f13ac5c",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "src/features/audio-recording/__tests__/AudioRecorder.improved.test.tsx"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "await waitFor(() => {\n        expect(props.onStartRecording).toHaveBeenCalledTimes(1);\n      });...",
+        "patternType": "test-pattern-6",
+        "recommendation": "Create shared waitFor utility"
+      }
+    ],
+    "mockPatterns": [
+      {
+        "hash": "2c5df0961bbb6fe1524ba7dedcc7e8ac",
+        "severity": "critical",
+        "occurrences": 63,
+        "files": [
+          "packages/murmuraba/src/__tests__/api.test.ts",
+          "packages/murmuraba/src/__tests__/components/AudioPlayer.test.tsx",
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/core/StateManager.test.ts",
+          "packages/murmuraba/src/__tests__/engines/AudioWorkletEngine.complete.test.ts",
+          "packages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts",
+          "packages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts",
+          "packages/murmuraba/src/__tests__/integration/audioworklet-integration.test.ts",
+          "packages/murmuraba/src/__tests__/managers/ChunkProcessor.test.ts",
+          "packages/murmuraba/src/__tests__/mocks/webAudioMocks.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts",
+          "packages/murmuraba/src/__tests__/unit/hooks/audioExporter.test.ts",
+          "packages/murmuraba/src/__tests__/unit/hooks/playbackManager.test.ts",
+          "packages/murmuraba/src/__tests__/unit/hooks/useMurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/vitest.setup.ts",
+          "packages/murmuraba/src/components/__tests__/AdvancedMetricsPanel.test.tsx",
+          "src/__tests__/App.startup.test.tsx",
+          "src/shared/components/__tests__/ErrorBoundary.test.tsx"
+        ],
+        "sample": "vi.fn()",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "3723cde8c85d3aaa1c3f59704ebdb7d4",
+        "severity": "critical",
+        "occurrences": 54,
+        "files": [
+          "packages/murmuraba/src/__tests__/hooks/murmuraba-engine/chunkManager.test.ts",
+          "packages/murmuraba/src/components/chunk-processing-results/__tests__/chunk-processing-results.e2e.test.tsx"
+        ],
+        "sample": "createMockChunk",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "8bb1f322c343490df7166980a5883411",
+        "severity": "critical",
+        "occurrences": 18,
+        "files": [
+          "packages/murmuraba/src/__tests__/api.test.ts",
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts",
+          "packages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts",
+          "packages/murmuraba/src/__tests__/managers/ChunkProcessor.test.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts",
+          "packages/murmuraba/src/__tests__/utils/MurmurabaProcessor.test.ts"
+        ],
+        "sample": "vi.fn()\n      }",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "d3f582f162f5242006ca82a8377375d5",
+        "severity": "high",
+        "occurrences": 31,
+        "files": [
+          "packages/murmuraba/src/components/__tests__/AdvancedMetricsPanel.test.tsx"
+        ],
+        "sample": "createMockDiagnostics",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "ddad6480e80873460e3d25e3ecc523ed",
+        "severity": "high",
+        "occurrences": 14,
+        "files": [
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts",
+          "packages/murmuraba/src/__tests__/utils/MurmurabaProcessor.test.ts",
+          "packages/murmuraba/src/core/__tests__/murmuraba-engine.gain.test.ts"
+        ],
+        "sample": "vi.fn(),\n    disconnect: vi.fn()\n  }",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "2c979457b0737feee409bf1575ba345b",
+        "severity": "high",
+        "occurrences": 5,
+        "files": [
+          "packages/murmuraba/src/__tests__/engines/AudioWorkletEngine.complete.test.ts",
+          "packages/murmuraba/src/__tests__/engines/AudioWorkletEngine.test.ts",
+          "packages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts",
+          "packages/murmuraba/src/__tests__/unit/hooks/playbackManager.test.ts"
+        ],
+        "sample": "vi.fn().mockResolvedValue(undefined)",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "f266cc9688ea798695be0b2bb3c62da9",
+        "severity": "high",
+        "occurrences": 5,
+        "files": [
+          "packages/murmuraba/src/__tests__/mocks/webAudioMocks.ts",
+          "packages/murmuraba/src/__tests__/setup/audio-mocks.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts",
+          "packages/murmuraba/src/__tests__/utils/audio-context-utils.ts"
+        ],
+        "sample": "createMockAudioContext",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "29310c65c1b8dfdf045729c442b1c04c",
+        "severity": "medium",
+        "occurrences": 17,
+        "files": [
+          "packages/murmuraba/src/__tests__/hooks/murmuraba-engine/chunkManager.test.ts",
+          "src/features/audio-recording/__tests__/AudioRecorder.improved.test.tsx"
+        ],
+        "sample": "createMockRecordingState",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "fdd4e7a1e4498f1eb62472a222abaf52",
+        "severity": "medium",
+        "occurrences": 17,
+        "files": [
+          "src/features/audio-recording/__tests__/AudioRecorder.improved.test.tsx"
+        ],
+        "sample": "createMockProps",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "af08ca680e26555da44d51840623fe69",
+        "severity": "medium",
+        "occurrences": 7,
+        "files": [
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts",
+          "src/__tests__/App.startup.test.tsx"
+        ],
+        "sample": "vi.fn()\n}))",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "ae665744ed67e61e6f799fd97279693f",
+        "severity": "medium",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/managers/ChunkProcessor.test.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts"
+        ],
+        "sample": "vi.fn(),\n      info: vi.fn(),\n      warn: vi.fn(),\n      error: vi.fn(),\n      setLevel: vi.fn(),\n      setLogHandler: vi.fn()\n    } as any",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "aa85e5475c2c9db53cbcd0e87dd7b3c0",
+        "severity": "low",
+        "occurrences": 9,
+        "files": [
+          "packages/murmuraba/src/__tests__/setup/audio-mocks.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts"
+        ],
+        "sample": "createMockMediaStream",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "53d37e5a0679b9420d4d5c8d159339de",
+        "severity": "low",
+        "occurrences": 8,
+        "files": [
+          "packages/murmuraba/src/__tests__/utils/MurmurabaProcessor.test.ts"
+        ],
+        "sample": "vi.fn(() => inputData)\n        },\n        outputBuffer: {\n          getChannelData: vi.fn(() => outputData)\n        }\n      } as any",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "ead5bea09b24b3157869b0f71957a7ad",
+        "severity": "low",
+        "occurrences": 7,
+        "files": [
+          "packages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts"
+        ],
+        "sample": "vi.fn(() => [])\n      } as any",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "da65f71bf4ab8b44117fe44e8bc2f873",
+        "severity": "low",
+        "occurrences": 7,
+        "files": [
+          "packages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts"
+        ],
+        "sample": "vi.fn().mockImplementation((frame) => frame)",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "2be0ce98f436dc972deb0ba1c555925d",
+        "severity": "low",
+        "occurrences": 7,
+        "files": [
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts"
+        ],
+        "sample": "createMockWAVBuffer",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "2246ffb44157e92bfc8031b5142c8243",
+        "severity": "low",
+        "occurrences": 5,
+        "files": [
+          "packages/murmuraba/src/__tests__/engines/RNNoiseEngine.critical.test.ts",
+          "packages/murmuraba/src/__tests__/engines/RNNoiseEngine.test.ts"
+        ],
+        "sample": "vi.fn(() => Promise.resolve(mockModule))\n      }))",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "968bd68586a960afc03a482dae9e13b5",
+        "severity": "low",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts"
+        ],
+        "sample": "vi.fn().mockResolvedValue(mockWasmModule)\n}))",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "02be6e403ab451962096196c40cc2058",
+        "severity": "low",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/__tests__/engines/AudioWorkletEngine.rnnoise.test.ts"
+        ],
+        "sample": "vi.fn().mockResolvedValue(undefined)\n        },\n        sampleRate: 48000\n      }",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "100cadd363ed4492f2c8d1373e608f5f",
+        "severity": "low",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts"
+        ],
+        "sample": "vi.fn(() => {\n          recorder.state = 'recording';\n        })",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "fa1d5d2aee61a25d4e4924749a965f97",
+        "severity": "low",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts"
+        ],
+        "sample": "vi.fn().mockImplementation(() => {\n        recorderInstance = {\n          start: vi.fn(() => { recorderInstance.state = 'recording'",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "f49ceec7cdf973860d54c207f92f0df6",
+        "severity": "low",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts"
+        ],
+        "sample": "vi.fn())",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "55d4a1673701950fc84719f4a7d6cbae",
+        "severity": "low",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/__tests__/integration/noiseProcessing.integration.test.ts"
+        ],
+        "sample": "createMockAudioData",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "e6a2abe4ba2b6042056461835f665402",
+        "severity": "low",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/__tests__/mocks/webAudioMocks.ts"
+        ],
+        "sample": "createMockAudioTrack",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "395b05d453a04292dc34457bf8921444",
+        "severity": "low",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/__tests__/mocks/webAudioMocks.ts",
+          "targeted-duplication-analysis.js"
+        ],
+        "sample": "MockMediaRecorder",
+        "recommendation": "Extract to shared test utilities"
+      },
+      {
+        "hash": "109cc62df621e62d2dd4fc7d3bf41caa",
+        "severity": "low",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/core/__tests__/murmuraba-engine.gain.test.ts",
+          "src/__tests__/gain-control-integration.test.tsx"
+        ],
+        "sample": "vi.fn().mockResolvedValue({\n          _rnnoise_create: vi.fn().mockReturnValue(1),\n          _rnnoise_destroy: vi.fn(),\n          _rnnoise_process_frame: vi.fn().mockReturnValue(0.5),\n          _malloc: vi.fn().mockReturnValue(1000),\n          _free: vi.fn(),\n          HEAPF32: new Float32Array(10000)\n        })\n      }))",
+        "recommendation": "Extract to shared test utilities"
+      }
+    ],
+    "imports": [
+      {
+        "normalized": "import React from 'react';",
+        "severity": "medium",
+        "occurrences": 20,
+        "files": [
+          "debug/test-simple-app.tsx",
+          "packages/murmuraba/src/__tests__/integration/react19-nextjs14.test.tsx",
+          "packages/murmuraba/src/components/__tests__/SyncedWaveforms.test.tsx",
+          "packages/murmuraba/src/components/__tests__/WaveformAnalyzer.test.tsx",
+          "packages/murmuraba/src/components/chunk-results/__tests__/AudioControls.integration.test.tsx"
+        ],
+        "totalFiles": 20,
+        "sample": "import React from 'react';",
+        "recommendation": "Consider creating a barrel export file"
+      },
+      {
+        "normalized": "import { vi } from 'vitest';",
+        "severity": "medium",
+        "occurrences": 19,
+        "files": [
+          "packages/murmuraba/src/__tests__/api.test.ts",
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/core/StateManager.test.ts",
+          "packages/murmuraba/src/__tests__/engines/AudioWorkletEngine.rnnoise.test.ts",
+          "packages/murmuraba/src/__tests__/engines/AudioWorkletEngine.test.ts"
+        ],
+        "totalFiles": 19,
+        "sample": "import { vi } from 'vitest';",
+        "recommendation": "Consider creating a barrel export file"
+      },
+      {
+        "normalized": "import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';",
+        "severity": "medium",
+        "occurrences": 19,
+        "files": [
+          "packages/murmuraba/src/__tests__/components/AudioPlayer.test.tsx",
+          "packages/murmuraba/src/__tests__/engines/AudioWorkletEngine.complete.test.ts",
+          "packages/murmuraba/src/__tests__/engines/RNNoiseEngine.critical.test.ts",
+          "packages/murmuraba/src/__tests__/engines/RNNoiseEngine.test.ts",
+          "packages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts"
+        ],
+        "totalFiles": 19,
+        "sample": "import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';",
+        "recommendation": "Consider creating a barrel export file"
+      },
+      {
+        "normalized": "import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';",
+        "severity": "medium",
+        "occurrences": 7,
+        "files": [
+          "packages/murmuraba/src/__tests__/api.gain.test.ts",
+          "packages/murmuraba/src/__tests__/integration/audioEngine.integration.test.ts",
+          "packages/murmuraba/src/__tests__/integration/audioworklet-integration.test.ts",
+          "packages/murmuraba/src/components/chunk-processing-results/__tests__/chunk-processing-results.e2e.test.tsx",
+          "packages/murmuraba/src/core/__tests__/murmuraba-engine.gain.test.ts"
+        ],
+        "totalFiles": 7,
+        "sample": "import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';",
+        "recommendation": "Consider creating a barrel export file"
+      },
+      {
+        "normalized": "import userEvent from '@testing-library/user-event';",
+        "severity": "medium",
+        "occurrences": 6,
+        "files": [
+          "packages/murmuraba/src/components/chunk-processing-results/__tests__/chunk-processing-results.e2e.test.tsx",
+          "packages/murmuraba/src/components/chunk-results/__tests__/ChunkHeader.test.tsx",
+          "packages/murmuraba/src/components/chunk-results/__tests__/ChunkProcessingResults.test.tsx",
+          "src/__tests__/gain-control-integration.test.tsx",
+          "src/features/audio-recording/__tests__/AudioRecorder.gain.test.tsx"
+        ],
+        "totalFiles": 6,
+        "sample": "import userEvent from '@testing-library/user-event';",
+        "recommendation": "Consider creating a barrel export file"
+      }
+    ],
+    "utilityFunctions": [
+      {
+        "hash": "c5e4694b2079003b9ad1c97eb38e85c5",
+        "severity": "high",
+        "occurrences": 11,
+        "files": [
+          "packages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingFunctions.test.ts"
+        ],
+        "avgLinesOfCode": 11,
+        "sample": "const functions = createRecordingFunctions({\n        isInitialized: true,\n        recordingState: mockRecordingState,\n        recordingStateHook: mockRecordingStateHook,\n        currentStream: null,\n ...",
+        "recommendation": "Review for potential consolidation"
+      },
+      {
+        "hash": "688e0650b7844de7386869907267cfbb",
+        "severity": "medium",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts"
+        ],
+        "avgLinesOfCode": 4,
+        "sample": "const inputBuffer = new Float32Array(4096);\n      for (let i = 0; i < 4096; i++) {\n        inputBuffer[i] = Math.sin(i * 0.01) * 0.5;\n      }...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "55051dff6ae3eae9c116fe61839d36dd",
+        "severity": "medium",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts"
+        ],
+        "avgLinesOfCode": 4,
+        "sample": "const outputBuffer = new Float32Array(4096);\n      \n      const mockEvent = {\n        inputBuffer: { getChannelData: () => inputBuffer }...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "f829427f86037aec5d978a6d55a7d750",
+        "severity": "medium",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/managers/__tests__/ChunkProcessor.improved.test.ts",
+          "packages/murmuraba/src/utils/__tests__/AudioConverter.improved.test.ts",
+          "src/__tests__/e2e/audio-engine.e2e.test.ts"
+        ],
+        "avgLinesOfCode": 5,
+        "sample": "const audioData = new Float32Array(1024);\n      // Fill with mock audio data\n      for (let i = 0; i < audioData.length; i++) {\n        audioData[i] = Math.sin(2 * Math.PI * 440 * i / 44100) * 0.5;\n  ...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "ec8862276c7d942c1af5c345e62bc8bb",
+        "severity": "low",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/__tests__/api.gain.test.ts"
+        ],
+        "avgLinesOfCode": 4,
+        "sample": "const engine = getEngine();\n      \n      // Mock the gain value persistence\n      let currentGain = 1.0;\n      engine.setInputGain = vi.fn((gain) => { currentGain = gain; }...",
+        "recommendation": "Review for potential consolidation"
+      },
+      {
+        "hash": "a4914d6c857d7ba56e2fb17b8f3c1332",
+        "severity": "low",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/__tests__/engines/AudioWorkletEngine.rnnoise.test.ts"
+        ],
+        "avgLinesOfCode": 4,
+        "sample": "const mockAudioContext = {\n        audioWorklet: {\n          addModule: vi.fn().mockResolvedValue(undefined)\n        }...",
+        "recommendation": "Review for potential consolidation"
+      },
+      {
+        "hash": "c4f9aa73359d4516319d147d82dbfb41",
+        "severity": "low",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/__tests__/hooks/useAudioEngine.test.ts"
+        ],
+        "avgLinesOfCode": 9,
+        "sample": "const inputBuffer = new Float32Array(4096);\n      inputBuffer.fill(0.5);\n      const outputBuffer = new Float32Array(4096);\n      \n      // Mock the engine process to return input unchanged\n      mock...",
+        "recommendation": "Review for potential consolidation"
+      },
+      {
+        "hash": "7baa73a3556fe6cc9aa83014749b6f3f",
+        "severity": "low",
+        "occurrences": 3,
+        "files": [
+          "packages/murmuraba/src/components/chunk-processing-results/__tests__/chunk-processing-results.e2e.test.tsx"
+        ],
+        "avgLinesOfCode": 6,
+        "sample": "const chunks = [createMockChunk(0)];\n      const user = userEvent.setup();\n      \n      render(\n        <ChunkProcessingResults\n          chunks={chunks}...",
+        "recommendation": "Review for potential consolidation"
+      },
+      {
+        "hash": "f39c91f9e61f368f6fd876b9db1a3792",
+        "severity": "low",
+        "occurrences": 3,
+        "files": [
+          "src/features/audio-recording/__tests__/AudioRecorder.test.tsx"
+        ],
+        "avgLinesOfCode": 6,
+        "sample": "const recordingProps = {\n      ...mockProps,\n      recordingState: {\n        ...mockRecordingState,\n        isRecording: true\n      }...",
+        "recommendation": "Review for potential consolidation"
+      },
+      {
+        "hash": "516fb5e0d4910b1edc76b434306babdd",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/scripts/check-coverage-simple.js",
+          "packages/murmuraba/scripts/check-coverage.js"
+        ],
+        "avgLinesOfCode": 11,
+        "sample": "const __filename = fileURLToPath(import.meta.url);\nconst __dirname = dirname(__filename);\nconst packageRoot = join(__dirname, '..');\n\nconst MINIMUM_COVERAGE = 90;\nconst COVERAGE_THRESHOLDS = {\n  state...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "ef867eb12f22054547ff8aa27fe7892f",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/scripts/check-coverage-simple.js",
+          "packages/murmuraba/scripts/check-coverage.js"
+        ],
+        "avgLinesOfCode": 10,
+        "sample": "const coverageFinal = JSON.parse(readFileSync(coverageFinalPath, 'utf8'));\n  \n  // Calcular totales de coverage-final.json (versión simplificada)\n  let totalStatements = 0, coveredStatements = 0;\n  le...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "c7886700a0844f83b5546894c9693838",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/scripts/check-coverage-simple.js",
+          "packages/murmuraba/scripts/check-coverage.js"
+        ],
+        "avgLinesOfCode": 4,
+        "sample": "const failures = [];\n  \n  if (totals.statements.pct < COVERAGE_THRESHOLDS.statements) {\n    failures.push(`Statements: ${totals.statements.pct}...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "ccde866307879dd7c32826f3bfeb4f8e",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts"
+        ],
+        "avgLinesOfCode": 10,
+        "sample": "const mockAnalyser = {\n    fftSize: 2048,\n    frequencyBinCount: 1024,\n    getFloatFrequencyData: vi.fn(),\n    getByteFrequencyData: vi.fn(),\n    getFloatTimeDomainData: vi.fn(),\n    getByteTimeDomain...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "c55592e26e217830e83666b5fc44b47d",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts"
+        ],
+        "avgLinesOfCode": 12,
+        "sample": "const config: MurmubaraConfig = {\n        logLevel: 'debug',\n        noiseReductionLevel: 'high',\n        bufferSize: 2048,\n        algorithm: 'rnnoise',\n        autoCleanup: true,\n        cleanupDela...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "664bb61d49c339cb9b794c1ecd1e8aa5",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts"
+        ],
+        "avgLinesOfCode": 2,
+        "sample": "const setTimeoutSpy = vi.spyOn(global, 'setTimeout');\n      engine = new MurmubaraEngine({ autoCleanup: false }...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "8ffd0bafc524472cf1030d4722b10b53",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts"
+        ],
+        "avgLinesOfCode": 15,
+        "sample": "const promise1 = engine.initialize();\n      const promise2 = engine.initialize();\n      \n      await Promise.all([promise1, promise2]);\n      \n      // Should only initialize once\n      expect(mockWas...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "30625eea27b077c71c3acda736f1197b",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts"
+        ],
+        "avgLinesOfCode": 15,
+        "sample": "const controller = await engine.processStream(mockStream);\n      \n      expect(mockAudioContext.createMediaStreamSource).toHaveBeenCalledWith(mockStream);\n      expect(mockAudioContext.createScriptPro...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "2affa5877c12660cb8a884d4d961eef4",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts"
+        ],
+        "avgLinesOfCode": 5,
+        "sample": "const onChunkProcessed = vi.fn();\n      const controller = await engine.processStream(mockStream, {\n        chunkDuration: 1000,\n        onChunkProcessed\n      }...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "f94b1f3d363e95ebd6cfadba6ecdce3d",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "const controller1 = await engine.processStream(mockStream);\n      \n      const mockStream2 = { ...mockStream, id: 'stream-2' }...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "974710cc66ebb104323e553d1b250cec",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts"
+        ],
+        "avgLinesOfCode": 19,
+        "sample": "const controller2 = await engine.processStream(mockStream2);\n      \n      const diagnostics = engine.getDiagnostics();\n      expect(diagnostics.activeProcessors).toBe(2);\n      \n      await controller...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "683b24f197d5e4a9975b7436413bb72a",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts"
+        ],
+        "avgLinesOfCode": 4,
+        "sample": "const setTimeoutSpy = vi.spyOn(global, 'setTimeout');\n      const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout');\n      \n      engine = new MurmubaraEngine({ autoCleanup: true }...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "f50f7e88b0371eff30617607de813257",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts"
+        ],
+        "avgLinesOfCode": 11,
+        "sample": "const diagnostics = engine.getDiagnostics();\n      \n      expect(diagnostics).toMatchObject({\n        engineState: 'ready',\n        wasmLoaded: true,\n        processingTime: expect.any(Number),\n      ...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "8a8bcc0b94b5bf46f1aa2514b8346f15",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts"
+        ],
+        "avgLinesOfCode": 14,
+        "sample": "const diagnostics = engine.getDiagnostics();\n      \n      expect(diagnostics.browserInfo.name).toBe('Chrome');\n      expect(diagnostics.browserInfo.version).toBe('120.0.0.0');\n      expect(diagnostics...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "c7db3acd9a4cd746cddcd506cd5c2f07",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/core/MurmubaraEngine.test.ts",
+          "packages/murmuraba/src/__tests__/unit/core/murmubara-engine.test.ts"
+        ],
+        "avgLinesOfCode": 5,
+        "sample": "const errorHandler = vi.fn();\n      engine.on('error', errorHandler);\n      \n      // Trigger error\n      const { loadRNNoiseModule }...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "09215660457603f9f1b03d76a39bb806",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/engines/AudioWorkletEngine.complete.test.ts"
+        ],
+        "avgLinesOfCode": 4,
+        "sample": "const customEngine = new AudioWorkletEngine({\n        enableRNNoise: false,\n        rnnoiseWasmUrl: '/custom/rnnoise.wasm'\n      }...",
+        "recommendation": "Review for potential consolidation"
+      },
+      {
+        "hash": "bcfa8bc63f8a25f397d47f210cf47230",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/hooks/murmuraba-engine/recordingManager.test.ts"
+        ],
+        "avgLinesOfCode": 15,
+        "sample": "const chunks: ProcessedChunk[] = [];\n      const onChunkProcessed = (chunk: ProcessedChunk) => chunks.push(chunk);\n\n      await recordingManager.startCycle(\n        processedStream,\n        originalSt...",
+        "recommendation": "Review for potential consolidation"
+      },
+      {
+        "hash": "255715ade220c8950f3662fc175d50fd",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/managers/ChunkProcessor.test.ts"
+        ],
+        "avgLinesOfCode": 4,
+        "sample": "const config: ChunkConfig = {\n        chunkDuration: 1000,\n        onChunkProcessed: vi.fn()\n      }...",
+        "recommendation": "Review for potential consolidation"
+      },
+      {
+        "hash": "c8154515f15f6df0460aeb32a3c4163e",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/unit/hooks/audioExporter.test.ts"
+        ],
+        "avgLinesOfCode": 2,
+        "sample": "const link = mockCreateElement.mock.results[0].value;\n      expect(link.download).toMatch(/^enhanced_\\d{4}...",
+        "recommendation": "Review for potential consolidation"
+      },
+      {
+        "hash": "646217c1f3d2485ff5eb6484f3ed0866",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/__tests__/unit/hooks/audioExporter.test.ts"
+        ],
+        "avgLinesOfCode": 2,
+        "sample": "const link = mockCreateElement.mock.results[0].value;\n      expect(link.download).toMatch(/^original_\\d{4}...",
+        "recommendation": "Review for potential consolidation"
+      },
+      {
+        "hash": "c7f2e711e1c24da17687bd9185b7a3cc",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/components/chunk-processing-results/__tests__/chunk-processing-results.e2e.test.tsx"
+        ],
+        "avgLinesOfCode": 5,
+        "sample": "const chunks = [createMockChunk(0)];\n      \n      render(\n        <ChunkProcessingResults\n          chunks={chunks}...",
+        "recommendation": "Review for potential consolidation"
+      },
+      {
+        "hash": "9f3fa88b794743faca35febda00aa86e",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/components/chunk-processing-results/__tests__/chunk-processing-results.e2e.test.tsx"
+        ],
+        "avgLinesOfCode": 5,
+        "sample": "const user = userEvent.setup();\n      \n      render(\n        <ChunkProcessingResults\n          chunks={chunks}...",
+        "recommendation": "Review for potential consolidation"
+      },
+      {
+        "hash": "8fb91876a6014e8948f3a0035f92e2e2",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/components/chunk-results/__tests__/ChunkProcessingResults.test.tsx",
+          "packages/murmuraba/src/components/chunk-results/__tests__/integration.test.tsx"
+        ],
+        "avgLinesOfCode": 11,
+        "sample": "const createChunkWithVAD = (id: string, averageVad: number): ProcessedChunk => ({\n    id,\n    startTime: Date.now() - 10000,\n    endTime: Date.now(),\n    duration: 10000,\n    originalSize: 1024000,\n  ...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "1597ac1f999696d3a28e3196c401acb9",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/hooks/murmuraba-engine/audio-exporter.ts"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "const audioUrl = audioType === 'processed' ? chunk.processedAudioUrl : chunk.originalAudioUrl;\n    if (!audioUrl) {\n      throw new Error(`No ${audioType}...",
+        "recommendation": "Review for potential consolidation"
+      },
+      {
+        "hash": "c126fbdc18ff8482916598cf6f9bdfca",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "packages/murmuraba/src/hooks/murmuraba-engine/playback-manager.ts"
+        ],
+        "avgLinesOfCode": 4,
+        "sample": "const keyChunkId = key.split('-')[0];\n        if (this.stateChangeCallback) {\n          this.stateChangeCallback(keyChunkId, false);\n        }...",
+        "recommendation": "Review for potential consolidation"
+      },
+      {
+        "hash": "bdfb1a8994b0c9034b63616a9db562b2",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "public/sw.js"
+        ],
+        "avgLinesOfCode": 4,
+        "sample": "const responseClone = response.clone();\n            caches.open(CACHE_NAME).then((cache) => {\n              cache.put(request, responseClone);\n            }...",
+        "recommendation": "Review for potential consolidation"
+      },
+      {
+        "hash": "1f9ca222824d99a7fdeea9be4b68443f",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "scripts/gandalf-enhanced-ux-analysis.js",
+          "scripts/gandalf-ux-analysis.js"
+        ],
+        "avgLinesOfCode": 5,
+        "sample": "const lines = content.split('\\n');\n    for (let i = 0; i < lines.length; i++) {\n      if (regex.test(lines[i])) {\n        return i + 1;\n      }...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "ede315279aac5b0be71cddebf8f67744",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "src/__tests__/engine-integration.test.tsx"
+        ],
+        "avgLinesOfCode": 4,
+        "sample": "const initBtn = screen.getByTestId('initialize-btn');\n    await act(async () => {\n      fireEvent.click(initBtn);\n    }...",
+        "recommendation": "Review for potential consolidation"
+      },
+      {
+        "hash": "7d52ce5d294f0c56be85b1c0a3f3ad9f",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "src/__tests__/gain-control-integration.test.tsx",
+          "src/features/audio-recording/__tests__/AudioRecorder.gain.test.tsx"
+        ],
+        "avgLinesOfCode": 2,
+        "sample": "const slider = screen.getByRole('slider');\n      fireEvent.change(slider, { target: { value: '2.0' }...",
+        "recommendation": "Consider consolidating into single shared utility"
+      },
+      {
+        "hash": "cd9f98d20e3471836abc6bca2644e8c2",
+        "severity": "low",
+        "occurrences": 2,
+        "files": [
+          "src/features/audio-recording/__tests__/AudioRecorder.gain.test.tsx"
+        ],
+        "avgLinesOfCode": 3,
+        "sample": "const slider = screen.getByRole('slider');\n      \n      fireEvent.change(slider, { target: { value: '1.5' }...",
+        "recommendation": "Review for potential consolidation"
+      }
+    ]
+  },
+  "actionableRecommendations": [
+    {
+      "priority": "high",
+      "category": "Test Infrastructure",
+      "title": "Create Centralized Test Utilities",
+      "description": "Found 36 duplicated test patterns. Create a shared test utilities module.",
+      "actions": [
+        "Create /src/test-utils/setup.ts for common test setup patterns",
+        "Create /src/test-utils/mocks.ts for shared mock configurations",
+        "Create /src/test-utils/helpers.ts for renderHook and async utilities",
+        "Update test files to import from centralized utilities"
+      ],
+      "estimatedImpact": "Reduce test code by 20-30%, improve test maintainability",
+      "filesAffected": 91
+    },
+    {
+      "priority": "high",
+      "category": "Code Duplication",
+      "title": "Extract Duplicated Utility Functions",
+      "description": "Found 1 high-impact duplicated utility functions.",
+      "actions": [
+        "Create /src/utils/ directory structure",
+        "Extract audio processing utilities",
+        "Extract validation utilities",
+        "Extract type conversion utilities",
+        "Update imports across affected files"
+      ],
+      "estimatedImpact": "Bundle size reduction: 10-15%, improved maintainability",
+      "filesAffected": 1
+    },
+    {
+      "priority": "medium",
+      "category": "Test Mocks",
+      "title": "Standardize Mock Patterns",
+      "description": "Found 26 duplicated mock patterns.",
+      "actions": [
+        "Create /src/__tests__/shared-mocks/ directory",
+        "Extract AudioContext mocks to shared module",
+        "Extract MediaRecorder mocks to shared module",
+        "Standardize vi.fn() usage patterns"
+      ],
+      "estimatedImpact": "Improve test consistency and reduce mock maintenance",
+      "filesAffected": 69
+    }
+  ]
+}

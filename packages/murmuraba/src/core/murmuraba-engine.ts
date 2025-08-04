@@ -7,6 +7,9 @@ import { MetricsManager } from '../managers/metrics-manager';
 import { ChunkProcessor } from '../managers/chunk-processor';
 import { SimpleAGC } from '../utils/simple-agc';
 import { AudioWorkletEngine } from '../engines/audio-worklet-engine';
+import { SecureEventBridge } from './secure-event-bridge';
+import { AudioLogger, ProcessingLogger } from '../utils/logger';
+import { ErrorFactory, ErrorType, throwIf, throwIfNot } from '../utils/error-handler';
 import {
   MurmubaraConfig,
   EngineEvents,
@@ -41,6 +44,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
   private useAudioWorklet = false;
   private inputGainNode?: GainNode;
   private inputGain: number = 1.0;
+  private eventBridge: SecureEventBridge;
+  private bridgeToken: string = '';
   
   constructor(config: MurmubaraConfig = {}) {
     super();
@@ -72,6 +77,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     this.stateManager = new StateManager();
     this.workerManager = new WorkerManager(this.logger);
     this.metricsManager = new MetricsManager();
+    this.eventBridge = SecureEventBridge.getInstance();
+    this.bridgeToken = this.eventBridge.getAccessToken();
     
     this.setupEventForwarding();
     this.setupAutoCleanup();
@@ -138,7 +145,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       
       // Check environment support first
       if (!this.checkEnvironmentSupport()) {
-        throw new Error('Environment not supported: Missing required APIs');
+        const missing = this.getMissingFeatures();
+        throw ErrorFactory.browserNotSupported(missing);
       }
       
       // Create audio context with fallbacks
@@ -198,6 +206,19 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     return hasAudioContext && hasWebAssembly;
   }
   
+  private getMissingFeatures(): string[] {
+    const missing: string[] = [];
+    
+    if (!(window.AudioContext || (window as any).webkitAudioContext)) {
+      missing.push('AudioContext');
+    }
+    if (!window.WebAssembly) {
+      missing.push('WebAssembly');
+    }
+    
+    return missing;
+  }
+  
   private async initializeAudioContext(): Promise<void> {
     try {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -213,7 +234,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         this.emit('user-gesture-required');
       }
     } catch (error) {
-      throw new Error(`Failed to create AudioContext: ${error instanceof Error ? error.message : String(error)}`);
+      throw ErrorFactory.audioContextCreationFailed(error as Error);
     }
   }
 
@@ -321,9 +342,10 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     this.logger.debug('Loading WASM module...');
     
     // Check WebAssembly support
-    if (typeof WebAssembly === 'undefined') {
-      throw new Error('WebAssembly is not supported in this environment');
-    }
+    throwIfNot(
+      typeof WebAssembly !== 'undefined',
+      () => ErrorFactory.featureNotSupported('WebAssembly')
+    );
     
     try {
       // Dynamic import the RNNoise loader
@@ -336,27 +358,28 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         
         // Check for the specific WASM loading error
         if (errorMsg.includes('Aborted') && errorMsg.includes('wasm')) {
-          throw new Error(
-            `Failed to load WASM file. This usually means the rnnoise.wasm file is not accessible at /dist/rnnoise.wasm. ` +
-            `Please ensure: 1) The file exists in the public/dist directory, 2) Your server is configured to serve .wasm files with the correct MIME type (application/wasm). ` +
-            `Original error: ${errorMsg}`
-          );
+          throw ErrorFactory.wasmModuleLoadFailed(wasmError, {
+            suggestion: 'Ensure rnnoise.wasm file exists in public/dist/ and server serves .wasm files correctly',
+            expectedPath: '/dist/rnnoise.wasm',
+            mimeType: 'application/wasm'
+          });
         }
         
-        throw new Error(`Failed to initialize WASM module: ${errorMsg}`);
+        throw ErrorFactory.wasmModuleLoadFailed(wasmError);
       }
       
       // Create RNNoise state
       this.rnnoiseState = this.wasmModule._rnnoise_create(0);
-      if (!this.rnnoiseState) {
-        throw new Error('Failed to create RNNoise state');
-      }
+      throwIfNot(
+        !!this.rnnoiseState,
+        () => ErrorFactory.wasmProcessingFailed(new Error('RNNoise state creation returned null'))
+      );
     } catch (error) {
       // Re-throw with proper context
       if (error instanceof Error) {
         throw error;
       }
-      throw new Error(`Unexpected error loading WASM: ${String(error)}`);
+      throw ErrorFactory.wrapError(new Error(String(error)), ErrorType.WASM_MODULE, 'Unexpected error loading WASM');
     }
     
     // Allocate memory
@@ -388,9 +411,10 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
   
   private processFrame(frame: Float32Array): { output: Float32Array; vad: number } {
     // REGLA 1: Verificar 480 samples exactos
-    if (frame.length !== 480) {
-      throw new Error(`Frame must be exactly 480 samples, got ${frame.length}`);
-    }
+    throwIf(
+      frame.length !== 480,
+      () => ErrorFactory.invalidAudioFormat('480 samples', `${frame.length} samples`)
+    );
     
     // Check if we're in degraded mode (no WASM)
     if (!this.wasmModule || !this.rnnoiseState) {
@@ -417,15 +441,17 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     }
     
     // Normal WASM processing
-    if (!this.inputPtr || !this.outputPtr) {
-      throw new Error('WASM module not properly initialized');
-    }
+    throwIfNot(
+      !!(this.inputPtr && this.outputPtr),
+      () => ErrorFactory.wasmModuleNotLoaded({ inputPtr: !!this.inputPtr, outputPtr: !!this.outputPtr })
+    );
     
     // REGLA 15: Verificar datos válidos (no NaN, no undefined)
     for (let i = 0; i < frame.length; i++) {
-      if (isNaN(frame[i]) || frame[i] === undefined) {
-        throw new Error(`Invalid sample at index ${i}: ${frame[i]}`);
-      }
+      throwIf(
+        isNaN(frame[i]) || frame[i] === undefined,
+        () => ErrorFactory.invalidParameter('frame sample', 'number', frame[i], { index: i })
+      );
     }
     
     // REGLA 6: ESCALAR CORRECTAMENTE - Entrada: valor * 32768
@@ -501,9 +527,10 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     streamId: string,
     chunkConfig?: ChunkConfig
   ): Promise<StreamController> {
-    if (!this.audioContext) {
-      throw new Error('Audio context not initialized');
-    }
+    throwIfNot(
+      !!this.audioContext,
+      () => ErrorFactory.initializationFailed('AudioContext', new Error('Audio context not initialized'))
+    );
     
     // Try to use AudioWorklet if available and enabled
     if (this.audioWorkletEngine && this.useAudioWorklet) {
@@ -552,24 +579,25 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         chunkProcessor.on('period-complete', (aggregatedMetrics) => {
           this.logger.info(`🎯 [TDD-INTEGRATION] Period complete: ${aggregatedMetrics.totalFrames} frames, ${aggregatedMetrics.averageNoiseReduction.toFixed(1)}% avg reduction`);
           
-          // Make aggregated metrics available to RecordingManager
-          if ((global as any).__murmurabaTDDBridge) {
-            (global as any).__murmurabaTDDBridge.notifyMetrics(aggregatedMetrics);
-          }
+          // Convert aggregated metrics to ProcessingMetrics format
+          const processingMetrics: ProcessingMetrics = {
+            noiseReductionLevel: aggregatedMetrics.averageNoiseReduction,
+            processingLatency: aggregatedMetrics.averageLatency,
+            inputLevel: 0.5, // Default value
+            outputLevel: 0.5, // Default value
+            frameCount: aggregatedMetrics.totalFrames,
+            droppedFrames: 0, // Default value
+            timestamp: aggregatedMetrics.endTime,
+            vadLevel: 0.5, // Default value
+            isVoiceActive: false // Default value
+          };
+          
+          // Pass metrics through secure event bridge
+          this.eventBridge.notifyMetrics(processingMetrics, this.bridgeToken);
         });
         
-        // TDD Integration: Store ChunkProcessor reference globally for RecordingManager access  
-        (global as any).__murmurabaTDDBridge = {
-          chunkProcessor,
-          notifyMetrics: (metrics: any) => {
-            if ((global as any).__murmurabaTDDBridge.recordingManagers) {
-              (global as any).__murmurabaTDDBridge.recordingManagers.forEach((rm: any) => {
-                rm.receiveMetrics(metrics);
-              });
-            }
-          },
-          recordingManagers: new Set()
-        };
+        // Register chunk processor with secure event bridge
+        this.eventBridge.registerChunkProcessor(chunkProcessor, this.bridgeToken);
       }
 
       let isPaused = false;
@@ -591,10 +619,17 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
             chunkProcessor.flush();
           }
           
+          // CRITICAL: Stop all tracks in the stream to release the microphone
+          stream.getTracks().forEach(track => {
+            track.stop();
+            this.logger.info(`🔇 Stopped stream track: ${track.kind} (${track.label})`);
+          });
+          
+          // Disconnect audio nodes
           pipeline.workletNode.disconnect();
           pipeline.input.disconnect();
           this.activeStreams.delete(streamId);
-          this.logger.info(`AudioWorklet stream ${streamId} stopped`);
+          this.logger.info(`AudioWorklet stream ${streamId} stopped and microphone released`);
           
           if (this.activeStreams.size === 0) {
             this.stateManager.transitionTo('ready');
@@ -627,9 +662,10 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     streamId: string,
     chunkConfig?: ChunkConfig
   ): Promise<StreamController> {
-    if (!this.audioContext) {
-      throw new Error('Audio context not initialized');
-    }
+    throwIfNot(
+      !!this.audioContext,
+      () => ErrorFactory.initializationFailed('AudioContext', new Error('Audio context not initialized'))
+    );
     
     const source = this.audioContext.createMediaStreamSource(stream);
     const destination = this.audioContext.createMediaStreamDestination();
@@ -689,30 +725,6 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         this.metricsManager.recordChunk(metrics);
       });
 
-      // TDD Integration: Forward period-complete events for RecordingManager integration
-      chunkProcessor.on('period-complete', (aggregatedMetrics) => {
-        this.logger.info(`🎯 [TDD-INTEGRATION] Period complete: ${aggregatedMetrics.totalFrames} frames, ${aggregatedMetrics.averageNoiseReduction.toFixed(1)}% avg reduction`);
-        
-        // Make aggregated metrics available to RecordingManager
-        // This will be accessed via the global bridge
-        if ((global as any).__murmurabaTDDBridge) {
-          (global as any).__murmurabaTDDBridge.notifyMetrics(aggregatedMetrics);
-        }
-      });
-
-      // TDD Integration: Store ChunkProcessor reference globally for RecordingManager access  
-      (global as any).__murmurabaTDDBridge = {
-        chunkProcessor,
-        notifyMetrics: (metrics: any) => {
-          // Broadcast to all registered RecordingManager instances
-          if ((global as any).__murmurabaTDDBridge.recordingManagers) {
-            (global as any).__murmurabaTDDBridge.recordingManagers.forEach((rm: any) => {
-              rm.receiveMetrics(metrics);
-            });
-          }
-        },
-        recordingManagers: new Set()
-      };
     }
     
     let debugLogCount = 0;
@@ -728,7 +740,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       // Debug: Log primeros frames para verificar audio
       if (debugLogCount < 5) {
         const maxInput = Math.max(...input.map(Math.abs));
-        console.log(`MurmubaraEngine: Audio frame ${debugLogCount}:`, {
+        AudioLogger.debug('Audio frame received', {
+          frameNumber: debugLogCount,
           inputLength: input.length,
           maxInputLevel: maxInput.toFixed(6),
           hasAudio: maxInput > 0.0001,
@@ -828,7 +841,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       // Debug: Log output frames con audio
       if (debugLogCount < 5 && outputFramesWritten > 0) {
         const maxOutput = Math.max(...output.map(Math.abs));
-        console.log(`MurmubaraEngine: Output frame ${debugLogCount}:`, {
+        ProcessingLogger.debug('Audio frame processed', {
+          frameNumber: debugLogCount,
           outputLength: output.length,
           framesWithAudio: outputFramesWritten,
           maxOutputLevel: maxOutput.toFixed(6),
@@ -875,7 +889,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     processor.connect(destination);
     
     // Debug: Verificar el stream de destino
-    console.log('MurmubaraEngine: Destination stream created:', {
+    AudioLogger.debug('Destination stream created', {
       streamId: destination.stream.id,
       audioTracks: destination.stream.getAudioTracks().map(t => ({
         id: t.id,
@@ -902,10 +916,25 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
           chunkProcessor.flush();
         }
         
+        // CRITICAL: Stop all tracks in the stream to release the microphone
+        stream.getTracks().forEach(track => {
+          track.stop();
+          this.logger.info(`🔇 Stopped stream track: ${track.kind} (${track.label})`);
+        });
+        
+        // Also stop the destination stream tracks if any
+        if (destination.stream) {
+          destination.stream.getTracks().forEach(track => {
+            track.stop();
+            this.logger.debug(`🔇 Stopped destination track: ${track.kind}`);
+          });
+        }
+        
+        // Disconnect audio nodes
         processor.disconnect();
         source.disconnect();
         this.activeStreams.delete(streamId);
-        this.logger.info(`Stream ${streamId} stopped`);
+        this.logger.info(`Stream ${streamId} stopped and microphone released`);
         
         if (this.activeStreams.size === 0) {
           this.stateManager.transitionTo('ready');

@@ -2,6 +2,7 @@ import { EventEmitter } from '../core/event-emitter';
 import { Logger } from '../core/logger';
 import { ChunkMetrics, ChunkConfig, ProcessingMetrics } from '../types';
 import { MetricsManager } from './metrics-manager';
+import { SecureEventBridge } from '../core/secure-event-bridge';
 
 interface ChunkEvents {
   'chunk-ready': (chunk: AudioChunk) => void;
@@ -40,6 +41,8 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
   private currentSampleCount: number = 0;
   private overlapBuffer: Float32Array[] = [];
   private metricsManager: MetricsManager;
+  private eventBridge!: SecureEventBridge;
+  private bridgeToken!: string;
 
   // Metrics accumulation for TDD integration
   private accumulatedMetrics: {
@@ -68,6 +71,11 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
     this.logger = logger;
     this.sampleRate = sampleRate;
     this.metricsManager = metricsManager;
+    
+    // Initialize secure event bridge
+    this.eventBridge = SecureEventBridge.getInstance();
+    this.bridgeToken = this.eventBridge.getAccessToken();
+    this.eventBridge.registerChunkProcessor(this, this.bridgeToken);
     
     this.config = {
       chunkDuration: config.chunkDuration,
@@ -404,6 +412,25 @@ export class ChunkProcessor extends EventEmitter<ChunkEvents> {
 
     // Emit period-complete event
     this.emit('period-complete', aggregatedMetrics);
+
+    // Send metrics through secure event bridge
+    const processingMetrics: ProcessingMetrics = {
+      noiseReductionLevel: aggregatedMetrics.averageNoiseReduction,
+      processingLatency: aggregatedMetrics.averageLatency,
+      inputLevel: 0.5, // Default value - should be calculated from actual audio levels
+      outputLevel: 0.5, // Default value - should be calculated from actual audio levels
+      frameCount: aggregatedMetrics.totalFrames,
+      droppedFrames: 0, // Default value - should track actual dropped frames
+      timestamp: aggregatedMetrics.endTime,
+      vadLevel: this.accumulatedMetrics.vadReadings.length > 0 
+        ? this.accumulatedMetrics.vadReadings.reduce((a, b) => a + b, 0) / this.accumulatedMetrics.vadReadings.length
+        : 0.5,
+      isVoiceActive: false // Default value - should be based on VAD analysis
+    };
+    
+    // Notify through secure bridge
+    this.eventBridge.notifyMetrics(processingMetrics, this.bridgeToken);
+    this.logger.debug('Metrics sent through secure event bridge');
 
     // Reset accumulator for next period
     this.resetAccumulator();

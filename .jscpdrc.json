@@ -1,0 +1,18 @@
+{
+  "threshold": 20,
+  "minLines": 5,
+  "format": [
+    "json",
+    "console"
+  ],
+  "output": "./reports/jscpd",
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.next/**"
+  ],
+  "reporters": [
+    "json",
+    "console"
+  ]
+}

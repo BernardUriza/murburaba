@@ -1,4 +1,6 @@
 // Removed wasm-loader import - using direct implementation
+import { WASMLogger } from './logger';
+import { ErrorFactory, ErrorType } from './error-handler';
 
 export interface RNNoiseModule {
   _malloc: (size: number) => number;
@@ -27,14 +29,14 @@ export async function loadRNNoiseModule({
   try {
     return await modulePromise;
   } catch (error) {
-    console.error('[RNNoise] Primary WASM load failed:', error);
+    WASMLogger.error('Primary WASM load failed', error);
     
     if (fallbackImplementation) {
-      console.warn('[RNNoise] Attempting fallback implementation');
+      WASMLogger.warn('Attempting fallback implementation');
       return fallbackImplementation();
     }
     
-    throw error;
+    throw ErrorFactory.wrapError(error as Error, ErrorType.WASM_MODULE, 'Failed to load RNNoise module');
   }
 }
 
@@ -48,7 +50,7 @@ async function loadWASMOptimized(retriesLeft = 2): Promise<RNNoiseModule> {
       locateFile: (filename: string) => {
         if (filename.endsWith('.wasm')) {
           const wasmPath = getOptimizedWASMPath(filename);
-          console.log('[RNNoise Loader] Loading WASM from:', wasmPath);
+          WASMLogger.debug('Loading WASM from path', { wasmPath });
           return wasmPath;
         }
         return filename;
@@ -59,7 +61,10 @@ async function loadWASMOptimized(retriesLeft = 2): Promise<RNNoiseModule> {
           const response = await fetch(wasmPath);
           
           if (!response.ok) {
-            throw new Error(`Failed to fetch WASM: ${response.status}`);
+            throw ErrorFactory.wasmModuleLoadFailed(
+              new Error(`HTTP ${response.status}`), 
+              { url: wasmPath, status: response.status }
+            );
           }
           
           if ('instantiateStreaming' in WebAssembly) {
@@ -129,7 +134,7 @@ export async function preloadRNNoiseWASM(options: {
       ]);
       
       const loadTime = performance.now() - preloadStart;
-      console.log(`[RNNoise] WASM preloaded in ${loadTime.toFixed(2)}ms`);
+      WASMLogger.info('WASM module preloaded', { loadTime: `${loadTime.toFixed(2)}ms` });
     } catch (error) {
       console.warn('[RNNoise] Preload failed:', error);
     }

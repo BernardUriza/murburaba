@@ -3,6 +3,9 @@ import { processFileWithMetrics } from '../../api/process-file-with-metrics';
 import { MIN_VALID_BLOB_SIZE, LOG_PREFIX } from './constants';
 import { URLManager } from './url-manager';
 import { AudioConverter } from '../../utils/audio-converter';
+import { SecureEventBridge } from '../../core/secure-event-bridge';
+import { ProcessingMetrics } from '../../types';
+import { RecordingLogger, ProcessingLogger, UILogger } from '../../utils/logger';
 
 interface ChunkRecording {
   processed: Blob[];
@@ -18,6 +21,9 @@ export class RecordingManager {
   private stopCycleFlag = false;
   private cycleCount = 0;
   private cycleTimeout: NodeJS.Timeout | null = null;
+  private eventBridge: SecureEventBridge;
+  private bridgeToken: string;
+  private managerId: string;
 
   // TDD Integration: Metrics provider from ChunkProcessor
   private metricsProvider: {
@@ -26,15 +32,24 @@ export class RecordingManager {
   private currentMetrics: any = null;
 
   constructor(private urlManager: URLManager) {
-    // TDD Integration: Register with global bridge for ChunkProcessor communication
-    if ((global as any).__murmurabaTDDBridge) {
-      if (!((global as any).__murmurabaTDDBridge.recordingManagers)) {
-        (global as any).__murmurabaTDDBridge.recordingManagers = new Set();
-      }
-      (global as any).__murmurabaTDDBridge.recordingManagers.add(this);
-      
-      console.log(`🔗 [TDD-INTEGRATION] RecordingManager registered with ChunkProcessor bridge`);
-    }
+    // Use secure event bridge instead of global state
+    this.eventBridge = SecureEventBridge.getInstance();
+    this.bridgeToken = this.eventBridge.getAccessToken();
+    this.managerId = this.generateId();
+    
+    // Register with secure event bridge
+    this.eventBridge.registerRecordingManager(this.managerId, this, this.bridgeToken);
+    
+    // Subscribe to metrics events
+    this.eventBridge.on('metrics', (metrics) => {
+      this.notifyMetrics(metrics);
+    });
+    
+    RecordingLogger.info('RecordingManager registered with secure event bridge');
+  }
+  
+  private generateId(): string {
+    return `rm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
   /**
@@ -51,7 +66,27 @@ export class RecordingManager {
    */
   receiveMetrics(metrics: any): void {
     this.currentMetrics = metrics;
-    console.log(`📊 [RECORDING-INTEGRATION] Received real metrics: ${metrics.averageNoiseReduction.toFixed(1)}% avg reduction`);
+    RecordingLogger.debug('Received real metrics', {
+      averageNoiseReduction: metrics.averageNoiseReduction?.toFixed(1) || 0,
+      unit: 'percent'
+    });
+  }
+  
+  /**
+   * Secure Integration: Notify metrics received from secure event bridge
+   */
+  public notifyMetrics(metrics: ProcessingMetrics): void {
+    // Convert ProcessingMetrics to the format expected by recording manager
+    this.currentMetrics = {
+      averageNoiseReduction: metrics.noiseReductionLevel,
+      averageLatency: metrics.processingLatency,
+      totalFrames: metrics.frameCount,
+      timestamp: metrics.timestamp
+    };
+    RecordingLogger.debug('Received metrics via secure bridge', {
+      noiseReductionLevel: metrics.noiseReductionLevel.toFixed(1),
+      unit: 'percent'
+    });
   }
 
   /**
@@ -95,7 +130,7 @@ export class RecordingManager {
       
       this.cycleCount++;
       const cycleStartTime = Date.now();
-      console.log(`🔄 ${LOG_PREFIX.CONCAT_STREAM} Starting recording cycle #${this.cycleCount}`);
+      RecordingLogger.info('Starting recording cycle', { cycleNumber: this.cycleCount });
       
       // Create chunk ID for this cycle
       const chunkId = `chunk-${cycleStartTime}-${Math.random().toString(36).substr(2, 9)}`;
@@ -116,7 +151,11 @@ export class RecordingManager {
           const chunkRecording = this.chunkRecordings.get(chunkId);
           if (chunkRecording && !chunkRecording.finalized) {
             chunkRecording.processed.push(event.data);
-            console.log(`💾 ${LOG_PREFIX.CONCAT_STREAM} Cycle #${this.cycleCount} - Processed data: ${event.data.size} bytes`);
+            ProcessingLogger.debug('Recording cycle processed data', {
+              cycleNumber: this.cycleCount,
+              dataSize: event.data.size,
+              type: 'processed'
+            });
           }
         } else {
           console.warn(`⚠️ ${LOG_PREFIX.CONCAT_STREAM} Invalid blob size detected! Size: ${event.data.size} bytes (minimum: ${MIN_VALID_BLOB_SIZE} bytes)`, {
@@ -358,10 +397,10 @@ export class RecordingManager {
   }
 
   /**
-   * Stop recording
+   * Stop recording and release all audio resources
    */
   stopRecording(): void {
-    console.log(`🛑 ${LOG_PREFIX.CONCAT_STREAM} Stopping concatenated streaming...`);
+    console.log(`🛑 ${LOG_PREFIX.CONCAT_STREAM} Stopping concatenated streaming and releasing all audio resources...`);
     
     this.stopCycleFlag = true;
     
@@ -379,22 +418,68 @@ export class RecordingManager {
     // Stop recorders and wait for final chunks
     const promises: Promise<void>[] = [];
     
-    if (this.mediaRecorder?.state === 'recording') {
-      const stopPromise = new Promise<void>((resolve) => {
-        const originalOnStop = this.mediaRecorder!.onstop;
-        this.mediaRecorder!.onstop = (event) => {
-          if (originalOnStop && this.mediaRecorder) {
-            originalOnStop.call(this.mediaRecorder, event);
-          }
-          resolve();
-        };
-        this.mediaRecorder!.stop();
-      });
-      promises.push(stopPromise);
+    // Stop and clean up the processed stream recorder
+    if (this.mediaRecorder) {
+      if (this.mediaRecorder.state !== 'inactive') {
+        const stopPromise = new Promise<void>((resolve) => {
+          const originalOnStop = this.mediaRecorder!.onstop;
+          this.mediaRecorder!.onstop = (event) => {
+            if (originalOnStop && this.mediaRecorder) {
+              originalOnStop.call(this.mediaRecorder, event);
+            }
+            // CRITICAL: Release the stream tracks from the MediaRecorder
+            if (this.mediaRecorder?.stream) {
+              this.mediaRecorder.stream.getTracks().forEach(track => {
+                track.stop();
+                console.log(`🔇 ${LOG_PREFIX.CONCAT_STREAM} Stopped MediaRecorder track:`, track.kind);
+              });
+            }
+            resolve();
+          };
+          this.mediaRecorder!.stop();
+        });
+        promises.push(stopPromise);
+      } else {
+        // Even if inactive, still release the stream tracks
+        if (this.mediaRecorder.stream) {
+          this.mediaRecorder.stream.getTracks().forEach(track => {
+            track.stop();
+            console.log(`🔇 ${LOG_PREFIX.CONCAT_STREAM} Stopped inactive MediaRecorder track:`, track.kind);
+          });
+        }
+      }
     }
     
-    if (this.originalRecorder?.state === 'recording') {
-      this.originalRecorder.stop();
+    // Stop and clean up the original stream recorder
+    if (this.originalRecorder) {
+      if (this.originalRecorder.state !== 'inactive') {
+        const stopPromise = new Promise<void>((resolve) => {
+          const originalOnStop = this.originalRecorder!.onstop;
+          this.originalRecorder!.onstop = (event) => {
+            if (originalOnStop && this.originalRecorder) {
+              originalOnStop.call(this.originalRecorder, event);
+            }
+            // CRITICAL: Release the original stream tracks
+            if (this.originalRecorder?.stream) {
+              this.originalRecorder.stream.getTracks().forEach(track => {
+                track.stop();
+                console.log(`🔇 ${LOG_PREFIX.CONCAT_STREAM} Stopped original recorder track:`, track.kind);
+              });
+            }
+            resolve();
+          };
+          this.originalRecorder!.stop();
+        });
+        promises.push(stopPromise);
+      } else {
+        // Even if inactive, still release the stream tracks
+        if (this.originalRecorder.stream) {
+          this.originalRecorder.stream.getTracks().forEach(track => {
+            track.stop();
+            console.log(`🔇 ${LOG_PREFIX.CONCAT_STREAM} Stopped inactive original recorder track:`, track.kind);
+          });
+        }
+      }
     }
     
     // Wait for all stop handlers to complete before cleanup
@@ -402,11 +487,19 @@ export class RecordingManager {
       // Clear recordings after processing
       this.chunkRecordings.clear();
       
-      // Reset recorders
+      // Reset recorders and clear all references
       this.mediaRecorder = null;
       this.originalRecorder = null;
+      this.stopCycleFlag = false;
+      this.cycleCount = 0;
       
-      console.log(`✅ ${LOG_PREFIX.CONCAT_STREAM} Recording stopped completely`);
+      console.log(`✅ ${LOG_PREFIX.CONCAT_STREAM} Recording stopped completely and all audio resources released`);
+    }).catch(error => {
+      console.error(`❌ ${LOG_PREFIX.CONCAT_STREAM} Error during recording cleanup:`, error);
+      // Still reset everything even if there was an error
+      this.mediaRecorder = null;
+      this.originalRecorder = null;
+      this.chunkRecordings.clear();
     });
   }
 
@@ -459,5 +552,30 @@ export class RecordingManager {
    */
   isPaused(): boolean {
     return this.mediaRecorder?.state === 'paused' || this.originalRecorder?.state === 'paused';
+  }
+  
+  /**
+   * Clean up and unregister from the secure event bridge
+   */
+  cleanup(): void {
+    // Unregister from secure event bridge
+    this.eventBridge.unregisterRecordingManager(this.managerId, this.bridgeToken);
+    this.eventBridge.removeAllListeners('metrics');
+    
+    // Clean up any remaining recordings
+    this.chunkRecordings.clear();
+    
+    // Clear intervals
+    if (this.processChunkInterval) {
+      clearInterval(this.processChunkInterval);
+      this.processChunkInterval = null;
+    }
+    
+    if (this.cycleTimeout) {
+      clearTimeout(this.cycleTimeout);
+      this.cycleTimeout = null;
+    }
+    
+    console.log(`🧹 [SECURE-INTEGRATION] RecordingManager cleaned up and unregistered`);
   }
 }

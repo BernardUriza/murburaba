@@ -12,6 +12,8 @@
     "build": "npm run generate-build-info && vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext .ts,.tsx",
+    "lint:duplication": "node scripts/duplication-detector.js",
+    "lint:duplication:ci": "node scripts/duplication-detector.js --strict",
     "generate-build-info": "node scripts/generate-build-info.js",
     "test": "npm run test --workspace=murmuraba",
     "test:watch": "npm run test:watch --workspace=murmuraba",
@@ -23,7 +25,14 @@
     "test:gain:coverage": "vitest run --coverage 'gain.test'",
     "test:e2e": "vitest run --config ./vitest.e2e.config.ts",
     "test:e2e:watch": "vitest watch --config ./vitest.e2e.config.ts",
-    "test:all": "npm run test && npm run test:e2e"
+    "test:all": "npm run test && npm run test:e2e",
+    "analyze:duplication": "npm run lint:duplication && echo 'Check ./reports/duplication/ for detailed analysis'",
+    "setup:pre-commit": "pip install pre-commit && pre-commit install",
+    "check:duplication-thresholds": "node scripts/check-duplication-thresholds.js",
+    "check:test-patterns": "node scripts/validate-test-patterns.js",
+    "check:console-logs": "node scripts/check-console-logs.js",
+    "check:error-patterns": "node scripts/check-error-patterns.js",
+    "quality:check": "npm run check:duplication-thresholds && npm run check:test-patterns && npm run check:console-logs && npm run check:error-patterns"
   },
   "dependencies": {
     "murmuraba": "workspace:*",

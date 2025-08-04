@@ -1,0 +1,8 @@
+Pattern,Files,Occurrences,Priority
+useState duplications,3,7,Medium
+useEffect duplications,4,18,High
+vi.fn() mocks,7,264,High
+AudioContext mocks,1,2,Low
+Console.log statements,11,106,High
+Error throwing patterns,11,49,High
+RMS calculations,0,0,Low

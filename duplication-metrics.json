@@ -1,0 +1,106 @@
+{
+  "timestamp": "2025-08-03T23:41:00Z",
+  "analysis_type": "code_duplication",
+  "summary": {
+    "total_lines": 8314,
+    "duplicated_lines": 36,
+    "duplication_percentage": 0.43,
+    "total_tokens": 67091,
+    "duplicated_tokens": 374,
+    "token_duplication_percentage": 0.56,
+    "files_analyzed": 52,
+    "duplicate_patterns": 24
+  },
+  "quality_score": {
+    "overall": "B+",
+    "duplication_score": 94.4,
+    "maintainability_impact": "Low",
+    "risk_level": "Low"
+  },
+  "hotspots": [
+    {
+      "file": "hooks/murmuraba-engine/audio-exporter.ts",
+      "duplication_percentage": 10.64,
+      "lines_duplicated": 12,
+      "severity": "Medium"
+    },
+    {
+      "file": "utils/validation.ts",
+      "duplication_percentage": 13.87,
+      "lines_duplicated": 18,
+      "severity": "Medium"
+    },
+    {
+      "file": "core/secure-event-bridge.ts",
+      "duplication_percentage": 8.41,
+      "lines_duplicated": 18,
+      "severity": "Medium"
+    },
+    {
+      "file": "hooks/murmuraba-engine/recording-manager.ts",
+      "duplication_percentage": 3.01,
+      "lines_duplicated": 12,
+      "severity": "Low"
+    }
+  ],
+  "patterns": {
+    "event_handlers": {
+      "count": 2,
+      "locations": ["recording-manager.ts"],
+      "recommendation": "Extract to factory function"
+    },
+    "export_functions": {
+      "count": 2,
+      "locations": ["audio-exporter.ts"],
+      "recommendation": "Create generic export function"
+    },
+    "validation_logic": {
+      "count": 2,
+      "locations": ["secure-event-bridge.ts", "validation.ts"],
+      "recommendation": "Centralize validation utilities"
+    },
+    "rms_calculation": {
+      "count": 2,
+      "locations": ["use-audio-engine.ts", "murmuraba-processor.ts"],
+      "recommendation": "Extract to shared math utility"
+    },
+    "console_logging": {
+      "count": 210,
+      "locations": "37 files",
+      "recommendation": "Implement structured logging"
+    }
+  },
+  "test_coverage": {
+    "files_with_duplication_tested": 2,
+    "files_with_duplication_untested": 3,
+    "coverage_percentage": 40,
+    "critical_gaps": [
+      "audio-exporter.ts",
+      "secure-event-bridge.ts",
+      "validation.ts"
+    ]
+  },
+  "recommendations": {
+    "immediate": [
+      "Extract recording event handlers to factory function",
+      "Consolidate export functions in audio-exporter",
+      "Add tests for audio-exporter module"
+    ],
+    "short_term": [
+      "Centralize RMS calculation utility",
+      "Consolidate validation functions",
+      "Add tests for validation utilities"
+    ],
+    "long_term": [
+      "Implement structured logging system",
+      "Refactor state management patterns in hooks",
+      "Comprehensive test coverage for all duplicated areas"
+    ]
+  },
+  "estimated_impact": {
+    "maintenance_reduction": "20-30%",
+    "test_coverage_improvement": "15-20%",
+    "code_reduction": "200-300 lines",
+    "complexity_reduction": "Moderate"
+  }
+}

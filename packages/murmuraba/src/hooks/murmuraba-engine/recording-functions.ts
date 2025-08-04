@@ -139,24 +139,50 @@ export function createRecordingFunctions({
   const stopRecording = () => {
     logger.info('Stopping recording');
     
+    // First stop the recording manager
     recordingManager.stopRecording();
     
+    // Stop all tracks in the processed stream
     if (currentStream) {
-      currentStream.getTracks().forEach(track => track.stop());
+      currentStream.getTracks().forEach(track => {
+        track.stop();
+        logger.debug('Stopped processed track', { kind: track.kind, id: track.id });
+      });
       setCurrentStream(null);
     }
     
+    // CRITICAL: Stop all tracks in the original microphone stream
+    // This is what releases the microphone and removes the recording indicator
     if (originalStream) {
-      originalStream.getTracks().forEach(track => track.stop());
+      originalStream.getTracks().forEach(track => {
+        track.stop();
+        logger.debug('Stopped original track', { kind: track.kind, id: track.id });
+      });
       setOriginalStream(null);
     }
     
-    setStreamController(null);
+    // Clean up the stream controller if it exists
+    if (setStreamController) {
+      setStreamController(prevController => {
+        if (prevController) {
+          // Call the stop method on the controller if it exists
+          if (typeof prevController.stop === 'function') {
+            try {
+              prevController.stop();
+              logger.debug('Stopped stream controller');
+            } catch (error) {
+              logger.warn('Error stopping stream controller', { error });
+            }
+          }
+        }
+        return null;
+      });
+    }
     
     // Use hook's state management
     stopRecordingState();
     
-    logger.info('Recording stopped');
+    logger.info('Recording stopped and all audio resources released');
   };
   
   /**

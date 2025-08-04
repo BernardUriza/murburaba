@@ -1,26 +1,19 @@
 import { AudioWorkletEngine } from '../../engines/audio-worklet-engine';
 import { vi } from 'vitest';
+import { createFullTestEnvironment, MockFactories } from '../shared/test-utils';
 
 describe('AudioWorkletEngine', () => {
-  let originalAudioContext: any;
-  let originalAudioWorklet: any;
-  let originalBlob: any;
-  let originalURL: any;
+  let testEnv: ReturnType<typeof createFullTestEnvironment>;
 
   beforeEach(() => {
-    // Save original values
-    originalAudioContext = (global as any).AudioContext;
-    originalAudioWorklet = (global as any).AudioWorklet;
-    originalBlob = (global as any).Blob;
-    originalURL = (global as any).URL;
+    testEnv = createFullTestEnvironment();
     
-    // Mock Blob
+    // Mock additional AudioWorklet-specific globals
     (global as any).Blob = vi.fn((content, options) => ({
       content,
       options
     }));
     
-    // Mock URL
     (global as any).URL = {
       createObjectURL: vi.fn(() => 'blob://mock-url'),
       revokeObjectURL: vi.fn()
@@ -28,21 +21,17 @@ describe('AudioWorkletEngine', () => {
   });
 
   afterEach(() => {
-    // Restore original values
-    (global as any).AudioContext = originalAudioContext;
-    (global as any).AudioWorklet = originalAudioWorklet;
-    (global as any).Blob = originalBlob;
-    (global as any).URL = originalURL;
+    testEnv.cleanup();
   });
 
   describe('AudioWorklet Support Detection', () => {
     it('should detect when AudioWorklet is supported', () => {
-      // Mock AudioContext with audioWorklet support
-      const mockAudioContext = {
+      // Create AudioContext with audioWorklet support
+      const mockAudioContext = MockFactories.createAudioContextMock({
         audioWorklet: {
           addModule: vi.fn()
         }
-      };
+      });
       (global as any).AudioContext = vi.fn(() => mockAudioContext);
       (global as any).AudioWorklet = vi.fn();
 
@@ -51,10 +40,10 @@ describe('AudioWorkletEngine', () => {
     });
 
     it('should detect when AudioWorklet is not supported', () => {
-      // Mock AudioContext without audioWorklet
-      const mockAudioContext = {};
+      // Create AudioContext without audioWorklet support
+      const mockAudioContext = MockFactories.createAudioContextMock({});
       (global as any).AudioContext = vi.fn(() => mockAudioContext);
-      (global as any).AudioWorklet = undefined;
+      delete (global as any).AudioWorklet;
 
       const engine = new AudioWorkletEngine();
       expect(engine.isAudioWorkletSupported()).toBe(false);
@@ -62,8 +51,8 @@ describe('AudioWorkletEngine', () => {
 
     it('should handle when AudioContext is not available', () => {
       // Remove AudioContext entirely
-      (global as any).AudioContext = undefined;
-      (global as any).AudioWorklet = undefined;
+      delete (global as any).AudioContext;
+      delete (global as any).AudioWorklet;
 
       const engine = new AudioWorkletEngine();
       expect(engine.isAudioWorkletSupported()).toBe(false);
