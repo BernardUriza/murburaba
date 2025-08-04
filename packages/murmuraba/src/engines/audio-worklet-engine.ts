@@ -110,34 +110,39 @@ export class AudioWorkletEngine implements AudioEngine {
           switch (message.type) {
             case 'initialize':
               if (message.data.enableRNNoise) {
-                this.initializeRNNoise(message.data.wasmUrl);
+                // Use wasmData if available, otherwise try wasmUrl (will warn)
+                this.initializeRNNoise(message.data.wasmData || message.data.wasmUrl);
               }
               break;
             case 'updateSettings':
               // Handle settings updates
               break;
             case 'loadWASM':
-              this.initializeRNNoise(message.data.wasmUrl);
+              // Expects wasmData to be ArrayBuffer, not URL
+              this.initializeRNNoise(message.data.wasmData || message.data.wasmUrl);
               break;
           }
         }
         
-        async initializeRNNoise(wasmUrl) {
+        async initializeRNNoise(wasmData) {
           try {
-            // In AudioWorklet context, we need to load WASM differently
-            if (wasmUrl) {
-              const response = await fetch(wasmUrl);
-              const wasmBuffer = await response.arrayBuffer();
+            // wasmData should be an ArrayBuffer passed from main thread
+            // since fetch is not available in AudioWorklet context
+            if (wasmData && wasmData instanceof ArrayBuffer) {
+              // This is where we would instantiate the WASM module
+              // For now, we just mark it as ready
+              console.log('RNNoise WASM data received in AudioWorklet:', wasmData.byteLength, 'bytes');
               
-              // This is a simplified version - in reality, we'd need to
-              // properly instantiate the WASM module in the worklet context
-              console.log('RNNoise WASM loaded in AudioWorklet');
-              
-              // Mark as ready (in real implementation, after WASM is loaded)
+              // Mark as ready (in real implementation, after WASM is instantiated)
               this.isRNNoiseReady = true;
+            } else if (typeof wasmData === 'string') {
+              // Legacy path - warn that fetch is not available
+              console.warn('AudioWorklet: Cannot use fetch() to load WASM. Pass ArrayBuffer from main thread instead.');
+              this.isRNNoiseReady = false;
             }
           } catch (error) {
             console.error('Failed to initialize RNNoise in AudioWorklet:', error);
+            this.isRNNoiseReady = false;
           }
         }
         
@@ -260,7 +265,7 @@ export class AudioWorkletEngine implements AudioEngine {
     return inputBuffer;
   }
   
-  createWorkletNode(): AudioWorkletNode {
+  async createWorkletNode(): Promise<AudioWorkletNode> {
     if (!this.isInitialized || !this.audioContext) {
       throw new Error('AudioWorkletEngine not initialized');
     }
@@ -286,12 +291,26 @@ export class AudioWorkletEngine implements AudioEngine {
       }
     };
     
-    // Send initialization message
+    // Load WASM data in main thread if URL is provided
+    let wasmData = null;
+    if (this.config.enableRNNoise && this.config.rnnoiseWasmUrl) {
+      try {
+        const response = await fetch(this.config.rnnoiseWasmUrl);
+        if (response.ok) {
+          wasmData = await response.arrayBuffer();
+          console.log('Loaded RNNoise WASM in main thread:', wasmData.byteLength, 'bytes');
+        }
+      } catch (error) {
+        console.warn('Failed to load RNNoise WASM in main thread:', error);
+      }
+    }
+    
+    // Send initialization message with ArrayBuffer instead of URL
     this.workletNode.port.postMessage({
       type: 'initialize',
       data: {
         enableRNNoise: this.config.enableRNNoise,
-        wasmUrl: this.config.rnnoiseWasmUrl
+        wasmData: wasmData // Send ArrayBuffer, not URL
       }
     });
     
@@ -360,7 +379,7 @@ export class AudioWorkletEngine implements AudioEngine {
     }
     
     if (!this.workletNode) {
-      this.createWorkletNode();
+      await this.createWorkletNode(); // Now properly await the async function
     }
     
     // Create media stream source
@@ -411,7 +430,7 @@ export class AudioWorkletEngine implements AudioEngine {
     const destination = this.audioContext.createMediaStreamDestination();
     
     if (!this.workletNode) {
-      this.createWorkletNode();
+      await this.createWorkletNode(); // Now properly await the async function
     }
     
     // Connect pipeline
