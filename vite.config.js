@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 export default defineConfig({
   plugins: [react()],
@@ -48,44 +52,14 @@ export default defineConfig({
     }
   },
   define: {
-    global: 'globalThis',
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
-    'process.env': JSON.stringify({}),
-  },
-  optimizeDeps: {
-    exclude: ['@jitsi/rnnoise-wasm', 'rnnoise.wasm'],
-    // Explicitly configure WASM handling
-    esbuildOptions: {
-      target: 'es2020', // Modern browser support
-    }
-  },
-  assetsInclude: ['**/*.wasm'],
-  worker: {
-    format: 'es',
-    plugins: () => [react()]
+    __BUILD_VERSION__: JSON.stringify(process.env.npm_package_version || '3.0.0'),
+    __BUILD_DATE__: JSON.stringify(new Date().toLocaleString())
   },
   server: {
     port: 3000,
-    open: true,
-    fs: {
-      // Allow serving files from node_modules for WASM
-      allow: ['..']
-    },
-    // Add aggressive cache-busting headers for development
-    headers: {
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0',
-      'Surrogate-Control': 'no-store',
-      'X-Content-Type-Options': 'nosniff',
-      'X-Frame-Options': 'DENY',
-      'X-XSS-Protection': '1; mode=block'
-    },
-    // Force full page reload on file changes
-    hmr: {
-      overlay: true,
-      protocol: 'ws',
-      host: 'localhost'
-    }
+    strictPort: false
+  },
+  optimizeDeps: {
+    exclude: ['@jitsi/rnnoise-wasm']
   }
 })
