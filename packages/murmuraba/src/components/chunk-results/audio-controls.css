@@ -28,6 +28,7 @@
 /* Desktop: Two column layout */
 @media (min-width: 768px) {
   .audio-controls-grid {
+    margin-top: 20px;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--space-8);

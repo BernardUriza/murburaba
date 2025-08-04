@@ -30,7 +30,7 @@ interface IWaveformColumn {
 export const SyncedWaveforms: React.FC<ISyncedWaveformsProps> = ({
   originalAudioUrl,
   processedAudioUrl,
-  isPlaying = false,
+  // isPlaying = false, // Reserved for future use
   onPlayingChange,
   className = '',
   'aria-label': ariaLabel,
@@ -54,15 +54,16 @@ export const SyncedWaveforms: React.FC<ISyncedWaveformsProps> = ({
     }
   }, [disabled, onPlayingChange]);
 
-  const handleOriginalVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Math.max(0, Math.min(1, parseFloat(e.target.value)));
-    setOriginalVolume(value);
-  }, []);
+  // Volume change handlers - reserved for future volume control implementation
+  // const handleOriginalVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const value = Math.max(0, Math.min(1, parseFloat(e.target.value)));
+  //   setOriginalVolume(value);
+  // }, []);
 
-  const handleProcessedVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Math.max(0, Math.min(1, parseFloat(e.target.value)));
-    setProcessedVolume(value);
-  }, []);
+  // const handleProcessedVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const value = Math.max(0, Math.min(1, parseFloat(e.target.value)));
+  //   setProcessedVolume(value);
+  // }, []);
 
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
     if (disabled) return;
@@ -79,21 +80,22 @@ export const SyncedWaveforms: React.FC<ISyncedWaveformsProps> = ({
     pointerEvents: disabled ? 'none' as const : 'auto' as const,
   }), [disabled]);
 
-  const volumeControlsStyle = useMemo(() => ({
-    display: 'flex',
-    gap: '2rem',
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-    marginBottom: '1rem',
-    flexWrap: 'wrap' as const,
-  }), []);
+  // Styles reserved for future volume controls implementation
+  // const volumeControlsStyle = useMemo(() => ({
+  //   display: 'flex',
+  //   gap: '2rem',
+  //   justifyContent: 'center' as const,
+  //   alignItems: 'center' as const,
+  //   marginBottom: '1rem',
+  //   flexWrap: 'wrap' as const,
+  // }), []);
 
-  const volumeControlStyle = useMemo(() => ({
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    minWidth: '200px',
-  }), []);
+  // const volumeControlStyle = useMemo(() => ({
+  //   display: 'flex',
+  //   alignItems: 'center',
+  //   gap: '0.5rem',
+  //   minWidth: '200px',
+  // }), []);
 
   const buttonStyle = useMemo(() => ({
     padding: '8px 24px',
@@ -143,7 +145,6 @@ export const SyncedWaveforms: React.FC<ISyncedWaveformsProps> = ({
         flexDirection: 'column',
         gap: '1.5rem',
         padding: '1.5rem',
-        background: 'linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%)',
         borderRadius: '16px',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
       }}
@@ -167,7 +168,6 @@ export const SyncedWaveforms: React.FC<ISyncedWaveformsProps> = ({
               display: 'flex',
               flexDirection: 'column',
               gap: '1rem',
-              background: 'white',
               padding: '1.25rem',
               borderRadius: '12px',
               boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',

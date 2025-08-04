@@ -5,7 +5,7 @@ import { ProcessingMetrics } from '../chunk-results/processing-metrics/processin
 import { FileInfo } from '../chunk-results/file-info/file-info';
 import { VadTimeline } from '../chunk-results/vad-timeline/vad-timeline';
 import { AudioControls } from '../chunk-results/audio-controls/audio-controls';
-import { formatTime, formatPercentage, calculateChunkStats } from '../chunk-results/formatters';
+import { formatDuration, formatPercentage, calculateChunkStats } from '../chunk-results/formatters';
 import './chunk-processing-results.css';
 
 export interface IChunkProcessingResultsProps {
@@ -117,7 +117,7 @@ export function ChunkProcessingResults({
               <strong>{chunks.length}</strong> chunks
             </span>
             <span className="stat-badge">
-              <strong>{formatTime(chunkStats?.totalDuration || 0)}</strong> total
+              <strong>{formatDuration(chunkStats?.totalDuration || 0)}</strong> total
             </span>
             <span className="stat-badge stat-badge--highlight">
               <strong>{formatPercentage(averageNoiseReduction)}</strong> avg noise reduction
@@ -169,7 +169,7 @@ export function ChunkProcessingResults({
                 onTogglePlayback={() => handlePlaybackToggle(chunk.id, 'processed')}
                 onToggleExpansion={() => onToggleExpansion(chunk.id)}
                 onKeyDown={handleKeyDown}
-                formatTime={formatTime}
+                formatTime={formatDuration}
                 formatPercentage={formatPercentage}
               />
 

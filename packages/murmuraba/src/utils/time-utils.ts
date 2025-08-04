@@ -63,7 +63,7 @@ export const formatDuration = (
       return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
       
     case 'mm:ss':
-    default:
+    default: {
       if (showHours && hours > 0) {
         return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
       }
@@ -76,6 +76,7 @@ export const formatDuration = (
       }
       
       return `${totalMinutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
   }
 };
 

@@ -5,7 +5,7 @@ import { URLManager } from './url-manager';
 import { AudioConverter } from '../../utils/audio-converter';
 import { SecureEventBridge } from '../../core/secure-event-bridge';
 import { ProcessingMetrics } from '../../types';
-import { RecordingLogger, ProcessingLogger, UILogger } from '../../utils/logger';
+import { RecordingLogger, ProcessingLogger } from '../../utils/logger';
 
 interface ChunkRecording {
   processed: Blob[];
@@ -367,7 +367,7 @@ export class RecordingManager {
       index: this.cycleCount - 1, // Use cycleCount as index
       startTime: cycleStartTime,
       endTime: cycleEndTime,
-      duration: actualDuration / 1000, // Convert milliseconds to seconds
+      duration: actualDuration, // Keep duration in milliseconds
       processedAudioUrl: processedUrl,
       originalAudioUrl: originalUrl,
       isPlaying: false,

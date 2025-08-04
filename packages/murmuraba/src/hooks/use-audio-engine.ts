@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { createAudioEngine, AudioEngine, AudioEngineConfig } from '../engines';
 import { ProcessingMetrics } from '../engines/types';
 
