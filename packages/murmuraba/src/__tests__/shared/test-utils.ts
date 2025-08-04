@@ -205,24 +205,25 @@ export class TestEnvironment {
     // Setup Audio Context
     if (config.audio) {
       const mockAudioContext = MockFactories.createAudioContextMock();
-      global.AudioContext = vi.fn().mockImplementation(() => mockAudioContext);
-      global.webkitAudioContext = vi.fn().mockImplementation(() => mockAudioContext);
+      (global as any).AudioContext = vi.fn().mockImplementation(() => mockAudioContext);
+      (global as any).webkitAudioContext = vi.fn().mockImplementation(() => mockAudioContext);
       this.mocks.audioContext = mockAudioContext;
       
       this.cleanupFunctions.push(() => {
-        delete (global as any).AudioContext;
-        delete (global as any).webkitAudioContext;
+        delete (globalThis as any).AudioContext;
+        delete (globalThis as any).webkitAudioContext;
       });
     }
 
     // Setup MediaRecorder
     if (config.mediaRecorder) {
       const mockMediaRecorder = MockFactories.createMediaRecorderMock();
-      global.MediaRecorder = vi.fn().mockImplementation(() => mockMediaRecorder);
+      (global as any).MediaRecorder = vi.fn().mockImplementation(() => mockMediaRecorder) as any;
+      ((global as any).MediaRecorder as any).isTypeSupported = vi.fn().mockReturnValue(true);
       this.mocks.mediaRecorder = mockMediaRecorder;
       
       this.cleanupFunctions.push(() => {
-        delete (global as any).MediaRecorder;
+        delete (globalThis as any).MediaRecorder;
       });
     }
 

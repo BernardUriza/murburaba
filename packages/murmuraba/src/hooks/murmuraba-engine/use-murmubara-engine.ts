@@ -81,11 +81,28 @@ export function useMurmubaraEngine(
   const [streamController, setStreamController] = useState<StreamController | null>(null);
   
   // Initialize managers
-  const urlManagerRef = useRef(new URLManager());
-  const chunkManagerRef = useRef(new ChunkManager(urlManagerRef.current));
-  const recordingManagerRef = useRef(new RecordingManager(urlManagerRef.current));
-  const audioExporterRef = useRef(new AudioExporter());
-  const playbackManagerRef = useRef(new PlaybackManager());
+  const urlManagerRef = useRef<URLManager | null>(null);
+  const chunkManagerRef = useRef<ChunkManager | null>(null);
+  const recordingManagerRef = useRef<RecordingManager | null>(null);
+  const audioExporterRef = useRef<AudioExporter | null>(null);
+  const playbackManagerRef = useRef<PlaybackManager | null>(null);
+  
+  // Lazy initialize managers
+  if (!urlManagerRef.current) {
+    urlManagerRef.current = new URLManager();
+  }
+  if (!chunkManagerRef.current) {
+    chunkManagerRef.current = new ChunkManager(urlManagerRef.current);
+  }
+  if (!recordingManagerRef.current) {
+    recordingManagerRef.current = new RecordingManager(urlManagerRef.current);
+  }
+  if (!audioExporterRef.current) {
+    audioExporterRef.current = new AudioExporter();
+  }
+  if (!playbackManagerRef.current) {
+    playbackManagerRef.current = new PlaybackManager();
+  }
   
   // Other refs
   const metricsUnsubscribeRef = useRef<(() => void) | null>(null);
@@ -196,7 +213,7 @@ export function useMurmubaraEngine(
         
         // Initialize audio converter
         audioConverterRef.current = getAudioConverter();
-        audioExporterRef.current.setAudioConverter(audioConverterRef.current);
+        audioExporterRef.current!.setAudioConverter(audioConverterRef.current);
         
         setIsInitialized(true);
         setEngineState('ready');
@@ -234,7 +251,7 @@ export function useMurmubaraEngine(
       // Stop any ongoing recording
       if (recordingState.isRecording) {
         console.log(`🛑 ${LOG_PREFIX.LIFECYCLE} Stopping ongoing recording before destroy`);
-        recordingManagerRef.current.stopRecording();
+        recordingManagerRef.current?.stopRecording();
       }
       
       // Clean up event listeners
@@ -247,7 +264,7 @@ export function useMurmubaraEngine(
       destroyAudioConverter();
       
       // Clean up all URLs
-      urlManagerRef.current.revokeAllUrls();
+      urlManagerRef.current!.revokeAllUrls();
       
       await destroyEngine({ force });
       setIsInitialized(false);
@@ -267,10 +284,10 @@ export function useMurmubaraEngine(
     chunkId: string,
     audioType: 'processed' | 'original'
   ): Promise<Blob> => {
-    const chunk = chunkManagerRef.current.findChunk(recordingState.chunks, chunkId);
+    const chunk = chunkManagerRef.current!.findChunk(recordingState.chunks, chunkId);
     if (!chunk) throw new Error(`Chunk not found: ${chunkId}`);
     
-    return audioExporterRef.current.exportChunkAsWav(chunk, audioType);
+    return audioExporterRef.current!.exportChunkAsWav(chunk, audioType);
   }, [recordingState.chunks]);
   
   const exportChunkAsMp3 = useCallback(async (
@@ -278,10 +295,10 @@ export function useMurmubaraEngine(
     audioType: 'processed' | 'original',
     bitrate?: number
   ): Promise<Blob> => {
-    const chunk = chunkManagerRef.current.findChunk(recordingState.chunks, chunkId);
+    const chunk = chunkManagerRef.current!.findChunk(recordingState.chunks, chunkId);
     if (!chunk) throw new Error(`Chunk not found: ${chunkId}`);
     
-    return audioExporterRef.current.exportChunkAsMp3(chunk, audioType, bitrate);
+    return audioExporterRef.current!.exportChunkAsMp3(chunk, audioType, bitrate);
   }, [recordingState.chunks]);
   
   const downloadChunk = useCallback(async (
@@ -289,16 +306,16 @@ export function useMurmubaraEngine(
     format: 'webm' | 'wav' | 'mp3',
     audioType: 'processed' | 'original'
   ): Promise<void> => {
-    const chunk = chunkManagerRef.current.findChunk(recordingState.chunks, chunkId);
+    const chunk = chunkManagerRef.current!.findChunk(recordingState.chunks, chunkId);
     if (!chunk) throw new Error(`Chunk not found: ${chunkId}`);
     
-    return audioExporterRef.current.downloadChunk(chunk, format, audioType);
+    return audioExporterRef.current!.downloadChunk(chunk, format, audioType);
   }, [recordingState.chunks]);
 
   const downloadAllChunksAsZip = useCallback(async (
     audioType: 'processed' | 'original' | 'both' = 'both'
   ): Promise<void> => {
-    return audioExporterRef.current.downloadAllChunksAsZip(recordingState.chunks, audioType);
+    return audioExporterRef.current!.downloadAllChunksAsZip(recordingState.chunks, audioType);
   }, [recordingState.chunks]);
   
   // Utility functions
@@ -348,7 +365,7 @@ export function useMurmubaraEngine(
   }, [isInitialized, inputGain]);
   
   const getAverageNoiseReduction = useCallback(() => {
-    return chunkManagerRef.current.getAverageNoiseReduction(recordingState.chunks);
+    return chunkManagerRef.current!.getAverageNoiseReduction(recordingState.chunks);
   }, [recordingState.chunks]);
   
   // Create recording functions
@@ -383,10 +400,10 @@ export function useMurmubaraEngine(
     chunkId: string,
     audioType: 'processed' | 'original'
   ): Promise<void> => {
-    const chunk = chunkManagerRef.current.findChunk(recordingState.chunks, chunkId);
+    const chunk = chunkManagerRef.current!.findChunk(recordingState.chunks, chunkId);
     if (!chunk) return;
     
-    await playbackManagerRef.current.toggleChunkPlayback(
+    await playbackManagerRef.current!.toggleChunkPlayback(
       chunk,
       audioType,
       (id, isPlaying) => {
@@ -440,6 +457,7 @@ export function useMurmubaraEngine(
     // Capture refs for cleanup
     const urlManager = urlManagerRef.current;
     const playbackManager = playbackManagerRef.current;
+    const recordingManager = recordingManagerRef.current;
     
     return () => {
       console.log(`👋 ${LOG_PREFIX.LIFECYCLE} Component unmounting, cleaning up...`);
@@ -447,11 +465,14 @@ export function useMurmubaraEngine(
       // CRITICAL: Destroy audio converter to prevent memory leaks
       destroyAudioConverter();
       
+      // Clean up recording manager
+      recordingManager?.cleanup();
+      
       // Clean up all URLs
-      urlManager.revokeAllUrls();
+      urlManager?.revokeAllUrls();
       
       // Clean up audio elements
-      playbackManager.cleanup();
+      playbackManager?.cleanup();
     };
   }, []);
   

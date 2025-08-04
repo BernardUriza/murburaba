@@ -10,7 +10,9 @@ describe('AudioRecorder - Gain Control', () => {
       isRecording: false,
       isPaused: false,
       recordingTime: 0,
-      chunks: []
+      chunks: [],
+      playingChunks: {},
+      expandedChunk: null
     } as RecordingState,
     isInitialized: true,
     isLoading: false,

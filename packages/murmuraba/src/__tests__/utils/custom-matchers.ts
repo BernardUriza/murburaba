@@ -1,5 +1,9 @@
 import { expect } from 'vitest';
-import type { ProcessedChunk, EngineMetrics } from '../../types';
+import type { ChunkData, ProcessingMetrics } from '../../types';
+
+// Type aliases for backward compatibility
+type ProcessedChunk = ChunkData;
+type EngineMetrics = ProcessingMetrics;
 
 /**
  * Custom Vitest matchers for better test assertions
@@ -18,7 +22,7 @@ declare module 'vitest' {
     toBePlayingChunk(): void;
     toBeExpandedChunk(): void;
     toHaveNoiseReduction(percentage: number, tolerance?: number): void;
-    toHaveMetricsInRange(metric: keyof EngineMetrics, min: number, max: number): void;
+    toHaveMetricsInRange(metric: keyof ProcessingMetrics, min: number, max: number): void;
   }
 }
 
@@ -159,8 +163,8 @@ export function setupCustomMatchers() {
      * Check if chunk has VAD values in range
      */
     toHaveVADInRange(received: ProcessedChunk, min: number, max: number) {
-      const vadValues = received?.vadData?.map(d => d.vad) || [];
-      const outOfRange = vadValues.filter(v => v < min || v > max);
+      const vadValues = received?.vadData?.map((d: any) => d.vad) || [];
+      const outOfRange = vadValues.filter((v: any) => v < min || v > max);
       const avgVad = received?.averageVad || 0;
 
       const pass = 
@@ -285,7 +289,7 @@ export function setupCustomMatchers() {
      */
     toHaveMetricsInRange(
       received: ProcessedChunk,
-      metric: keyof EngineMetrics,
+      metric: keyof ProcessingMetrics,
       min: number,
       max: number
     ) {
@@ -294,7 +298,7 @@ export function setupCustomMatchers() {
       if (value === undefined) {
         return {
           pass: false,
-          message: () => `expected chunk to have metric "${metric}" but it was undefined`,
+          message: () => `expected chunk to have metric "${String(metric)}" but it was undefined`,
         };
       }
 
@@ -304,8 +308,8 @@ export function setupCustomMatchers() {
         pass,
         message: () => 
           pass
-            ? `expected metric "${metric}" (${value}) not to be in range [${min}, ${max}]`
-            : `expected metric "${metric}" (${value}) to be in range [${min}, ${max}]`,
+            ? `expected metric "${String(metric)}" (${value}) not to be in range [${min}, ${max}]`
+            : `expected metric "${String(metric)}" (${value}) to be in range [${min}, ${max}]`,
       };
     },
   });

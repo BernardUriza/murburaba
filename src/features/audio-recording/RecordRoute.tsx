@@ -11,7 +11,9 @@ const RecordRoute: React.FC = () => {
     stopRecording,
     pauseRecording,
     resumeRecording,
-    clearRecordings
+    clearRecordings,
+    inputGain,
+    setInputGain
   } = useMurmubaraEngine();
 
   return (
@@ -19,11 +21,13 @@ const RecordRoute: React.FC = () => {
       recordingState={recordingState}
       isInitialized={isInitialized}
       isLoading={isLoading}
+      inputGain={inputGain}
       onStartRecording={startRecording}
       onStopRecording={stopRecording}
       onPauseRecording={pauseRecording}
       onResumeRecording={resumeRecording}
       onClearRecordings={clearRecordings}
+      onSetInputGain={setInputGain}
     />
   );
 };

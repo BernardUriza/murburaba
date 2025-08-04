@@ -61,7 +61,7 @@ vi.mock('murmuraba/src/core/murmuraba-engine', () => {
       return this.inputGain;
     }
 
-    async processStream(stream: MediaStream) {
+    async processStream(_stream: MediaStream) {
       return {
         stream: new MediaStream(),
         stop: vi.fn(),
@@ -82,7 +82,7 @@ vi.mock('murmuraba/src/core/murmuraba-engine', () => {
       return { engineState: 'ready' };
     }
 
-    onMetricsUpdate(callback: Function) {
+    onMetricsUpdate(_callback: Function) {
       return () => {};
     }
 
@@ -119,9 +119,13 @@ describe('Gain Control - Integration Tests', () => {
     vi.clearAllMocks();
     
     // Mock getUserMedia
-    global.navigator.mediaDevices = {
-      getUserMedia: vi.fn().mockResolvedValue(new MediaStream())
-    } as any;
+    Object.defineProperty(global.navigator, 'mediaDevices', {
+      value: {
+        getUserMedia: vi.fn().mockResolvedValue(new MediaStream())
+      },
+      writable: true,
+      configurable: true
+    });
     
     // Mock AudioContext
     global.AudioContext = vi.fn().mockImplementation(() => ({
@@ -157,16 +161,17 @@ describe('Gain Control - Integration Tests', () => {
     global.WebAssembly = {
       instantiate: vi.fn(),
       compile: vi.fn(),
+      compileStreaming: vi.fn(),
+      instantiateStreaming: vi.fn(),
+      validate: vi.fn(),
       Module: vi.fn() as any,
       Instance: vi.fn() as any,
       Memory: vi.fn() as any,
       Table: vi.fn() as any,
       Global: vi.fn() as any,
-      Tag: vi.fn() as any,
       CompileError: Error as any,
       LinkError: Error as any,
-      RuntimeError: Error as any,
-      instantiateStreaming: vi.fn()
+      RuntimeError: Error as any
     };
   });
 

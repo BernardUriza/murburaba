@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { act } from 'react';
 import App from '../App';
+import type { UseMurmubaraEngineReturn, BufferSize } from 'murmuraba';
 
 // Mock all external dependencies that might cause startup issues
 vi.mock('sweetalert2', () => ({
@@ -10,39 +11,68 @@ vi.mock('sweetalert2', () => ({
   }
 }));
 
+// Helper to create complete mock engine return
+const createMockEngineReturn = (overrides: Partial<UseMurmubaraEngineReturn> = {}): UseMurmubaraEngineReturn => ({
+  // State
+  isInitialized: false,
+  isLoading: true,
+  error: null,
+  engineState: 'idle' as any,
+  metrics: null,
+  diagnostics: null,
+  
+  // Recording State
+  recordingState: { 
+    isRecording: false, 
+    isPaused: false, 
+    recordingTime: 0, 
+    chunks: [], 
+    playingChunks: {}, 
+    expandedChunk: null 
+  },
+  currentStream: null,
+  streamController: null,
+  
+  // Actions
+  initialize: vi.fn(() => Promise.resolve()),
+  destroy: vi.fn(() => Promise.resolve()),
+  processStream: vi.fn(() => Promise.resolve({} as any)),
+  processStreamChunked: vi.fn(() => Promise.resolve({} as any)),
+  processFile: vi.fn(() => Promise.resolve(new ArrayBuffer(0))),
+  
+  // Recording Actions
+  startRecording: vi.fn(() => Promise.resolve()),
+  stopRecording: vi.fn(),
+  pauseRecording: vi.fn(),
+  resumeRecording: vi.fn(),
+  clearRecordings: vi.fn(),
+  
+  // Audio Playback Actions
+  toggleChunkPlayback: vi.fn(() => Promise.resolve()),
+  toggleChunkExpansion: vi.fn(),
+  
+  // Export Actions
+  exportChunkAsWav: vi.fn(() => Promise.resolve(new Blob())),
+  exportChunkAsMp3: vi.fn(() => Promise.resolve(new Blob())),
+  downloadChunk: vi.fn(() => Promise.resolve()),
+  downloadAllChunksAsZip: vi.fn(() => Promise.resolve()),
+  
+  // Gain Control
+  inputGain: 1.0,
+  setInputGain: vi.fn(),
+  getInputGain: vi.fn(() => 1.0),
+  
+  // Utility
+  getDiagnostics: vi.fn(() => null),
+  resetError: vi.fn(),
+  formatTime: vi.fn((seconds: number) => `${seconds}s`),
+  getAverageNoiseReduction: vi.fn(() => 0.5),
+  
+  ...overrides
+});
+
 vi.mock('murmuraba', () => ({
-  useMurmubaraEngine: vi.fn(() => ({
-    // Engine State
-    isInitialized: false,
-    isLoading: true,
-    error: null,
-    metrics: null,
-    diagnostics: null,
-    
-    // Recording State
-    recordingState: { isRecording: false, isPaused: false },
-    currentStream: null,
-    
-    // Actions
-    initialize: vi.fn(() => Promise.resolve()),
-    processFile: vi.fn(() => Promise.resolve()),
-    
-    // Recording Actions
-    startRecording: vi.fn(),
-    stopRecording: vi.fn(),
-    pauseRecording: vi.fn(),
-    resumeRecording: vi.fn(),
-    clearRecordings: vi.fn(),
-    
-    // Audio Playback Actions
-    toggleChunkPlayback: vi.fn(),
-    toggleChunkExpansion: vi.fn(),
-    
-    // Export Actions
-    exportChunkAsWav: vi.fn(),
-    exportChunkAsMp3: vi.fn(),
-    downloadAllChunksAsZip: vi.fn()
-  })),
+  useMurmubaraEngine: vi.fn(() => createMockEngineReturn()),
   getEngineStatus: vi.fn(() => 'idle'),
   AdvancedMetricsPanel: vi.fn(() => <div data-testid="metrics-panel">Metrics Panel</div>)
 }));
@@ -51,17 +81,40 @@ vi.mock('murmuraba', () => ({
 const mockStoreState = {
   // Engine Configuration
   engineConfig: {
-    bufferSize: 4096,
+    bufferSize: 4096 as BufferSize,
     processWindow: 2048,
     hopSize: 512,
     spectralFloorDb: -60,
     noiseFloorDb: -40,
     denoiseStrength: 0.5,
-    enableMetrics: false,
-    enableDebugLogs: false,
+    spectralGateThreshold: 0.4,
+    smoothingFactor: 0.8,
+    frequencyBands: 10,
     adaptiveNoiseReduction: true,
     enableSpectralGating: false,
-    workletProcessorPath: '/worklets/audio-processor.js'
+    enableDynamicRangeCompression: false,
+    compressionRatio: 4.0,
+    compressionThreshold: -18,
+    compressionKnee: 5,
+    compressionAttack: 5,
+    compressionRelease: 100,
+    webAudioLatencyHint: 'interactive' as const,
+    workletProcessorPath: '/worklets/audio-processor.js',
+    enableDebugLogs: false,
+    enableMetrics: false,
+    metricsUpdateInterval: 1000,
+    maxChunkRetries: 3,
+    chunkRetryDelay: 500,
+    enableAutoGainControl: false,
+    targetLUFS: -23,
+    maxGainBoost: 12,
+    enableHighFrequencyRecovery: false,
+    highFrequencyThreshold: 8000,
+    enableTransientPreservation: false,
+    transientThreshold: 0.7,
+    enablePsychoacousticModel: false,
+    psychoacousticMaskingCurve: 'fletcher-munson' as const,
+    workerInitializationTimeout: 5000
   },
   updateEngineConfig: vi.fn(),
   
@@ -207,34 +260,11 @@ describe('App Startup Tests', () => {
     const { useMurmubaraEngine } = await import('murmuraba');
     
     // Mock engine with error
-    vi.mocked(useMurmubaraEngine).mockReturnValue({
+    vi.mocked(useMurmubaraEngine).mockReturnValue(createMockEngineReturn({
       isInitialized: false,
       isLoading: false,
-      error: 'WASM loading failed',
-      metrics: null,
-      diagnostics: null,
-      recordingState: { 
-        isRecording: false, 
-        isPaused: false, 
-        recordingTime: 0, 
-        chunks: [], 
-        playingChunks: {}, 
-        expandedChunk: null 
-      },
-      currentStream: null,
-      initialize: vi.fn(),
-      processFile: vi.fn(),
-      startRecording: vi.fn(),
-      stopRecording: vi.fn(),
-      pauseRecording: vi.fn(),
-      resumeRecording: vi.fn(),
-      clearRecordings: vi.fn(),
-      toggleChunkPlayback: vi.fn(),
-      toggleChunkExpansion: vi.fn(),
-      exportChunkAsWav: vi.fn(),
-      exportChunkAsMp3: vi.fn(),
-      downloadAllChunksAsZip: vi.fn()
-    });
+      error: 'WASM loading failed'
+    }));
 
     await act(async () => {
       render(<App />);
@@ -248,34 +278,11 @@ describe('App Startup Tests', () => {
     const { useMurmubaraEngine } = await import('murmuraba');
     
     // Mock engine as initialized
-    vi.mocked(useMurmubaraEngine).mockReturnValue({
+    vi.mocked(useMurmubaraEngine).mockReturnValue(createMockEngineReturn({
       isInitialized: true,
       isLoading: false,
-      error: null,
-      metrics: null,
-      diagnostics: null,
-      recordingState: { 
-        isRecording: false, 
-        isPaused: false, 
-        recordingTime: 0, 
-        chunks: [], 
-        playingChunks: {}, 
-        expandedChunk: null 
-      },
-      currentStream: null,
-      initialize: vi.fn(),
-      processFile: vi.fn(),
-      startRecording: vi.fn(),
-      stopRecording: vi.fn(),
-      pauseRecording: vi.fn(),
-      resumeRecording: vi.fn(),
-      clearRecordings: vi.fn(),
-      toggleChunkPlayback: vi.fn(),
-      toggleChunkExpansion: vi.fn(),
-      exportChunkAsWav: vi.fn(),
-      exportChunkAsMp3: vi.fn(),
-      downloadAllChunksAsZip: vi.fn()
-    });
+      error: null
+    }));
 
     await act(async () => {
       render(<App />);
@@ -294,11 +301,13 @@ describe('App Startup Tests', () => {
     });
 
     expect(useAppStore).toHaveBeenCalled();
-    const selectorFunction = vi.mocked(useAppStore).mock.calls[0][0];
+    const mockCalls = vi.mocked(useAppStore).mock.calls;
+    expect(mockCalls.length).toBeGreaterThan(0);
+    const selectorFunction = mockCalls[0]?.[0];
     expect(typeof selectorFunction).toBe('function');
     
     // Test that selector returns expected shape
-    const result = selectorFunction(mockStoreState);
+    const result = selectorFunction!(mockStoreState);
     expect(result).toHaveProperty('isDarkMode');
     expect(result).toHaveProperty('engineConfig');
     expect(result).toHaveProperty('toggleChat');
@@ -317,7 +326,9 @@ describe('App Startup Tests', () => {
       render(<App />);
     });
 
-    const appElement = screen.getByTestId('error-boundary').firstChild as HTMLElement;
+    const errorBoundary = screen.getByTestId('error-boundary');
+    const appElement = errorBoundary.firstChild as HTMLElement | null;
+    expect(appElement).not.toBeNull();
     expect(appElement).toHaveClass('app', 'dark');
   });
 

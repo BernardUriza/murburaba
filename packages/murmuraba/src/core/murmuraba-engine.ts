@@ -461,20 +461,22 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     }
     
     // REGLA 7: Escribir en HEAPF32
-    this.wasmModule.HEAPF32.set(scaledInput, this.inputPtr >> 2);
+    const heap = this.wasmModule!.HEAPF32!;
+    heap.set(scaledInput, this.inputPtr! >> 2);
     
     // REGLA 11: CAPTURAR EL VAD! Process with RNNoise
     // REGLA 13: Procesar in-place (usar mismo puntero para entrada y salida)
-    const vad = this.wasmModule._rnnoise_process_frame(
+    const vad = this.wasmModule!._rnnoise_process_frame(
       this.rnnoiseState,
-      this.inputPtr,  // In-place: output = input
-      this.inputPtr   // In-place: usar mismo buffer
+      this.inputPtr!,  // In-place: output = input
+      this.inputPtr!   // In-place: usar mismo buffer
     );
     
     // Get output from the same buffer (in-place processing)
     const scaledOutput = new Float32Array(480);
+    const outputHeap = this.wasmModule!.HEAPF32!;
     for (let i = 0; i < 480; i++) {
-      scaledOutput[i] = this.wasmModule.HEAPF32[(this.inputPtr >> 2) + i];
+      scaledOutput[i] = outputHeap[(this.inputPtr! >> 2) + i];
     }
     
     // REGLA 6: ESCALAR CORRECTAMENTE - Salida: valor / 32768
@@ -667,32 +669,32 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       () => ErrorFactory.initializationFailed('AudioContext', new Error('Audio context not initialized'))
     );
     
-    const source = this.audioContext.createMediaStreamSource(stream);
-    const destination = this.audioContext.createMediaStreamDestination();
-    const processor = this.audioContext.createScriptProcessor(this.config.bufferSize, 1, 1);
+    const source = this.audioContext!.createMediaStreamSource(stream);
+    const destination = this.audioContext!.createMediaStreamDestination();
+    const processor = this.audioContext!.createScriptProcessor(this.config.bufferSize, 1, 1);
     
     // Create input gain node for volume control
-    this.inputGainNode = this.audioContext.createGain();
+    this.inputGainNode = this.audioContext!.createGain();
     this.inputGainNode.gain.value = this.inputGain;
     this.logger.info(`Input gain set to ${this.inputGain}x`);
     
     // Create pre-filters for medical equipment noise
-    const notchFilter1 = this.audioContext.createBiquadFilter();
+    const notchFilter1 = this.audioContext!.createBiquadFilter();
     notchFilter1.type = 'notch';
     notchFilter1.frequency.value = 1000; // Common medical equipment beep frequency
     notchFilter1.Q.value = 30; // Narrow notch
     
-    const notchFilter2 = this.audioContext.createBiquadFilter();
+    const notchFilter2 = this.audioContext!.createBiquadFilter();
     notchFilter2.type = 'notch';
     notchFilter2.frequency.value = 2000; // Harmonics of beeps
     notchFilter2.Q.value = 30;
     
-    const highPassFilter = this.audioContext.createBiquadFilter();
+    const highPassFilter = this.audioContext!.createBiquadFilter();
     highPassFilter.type = 'highpass';
     highPassFilter.frequency.value = 80; // Remove low-frequency rumble from machines
     highPassFilter.Q.value = 0.7;
     
-    const lowShelfFilter = this.audioContext.createBiquadFilter();
+    const lowShelfFilter = this.audioContext!.createBiquadFilter();
     lowShelfFilter.type = 'lowshelf';
     lowShelfFilter.frequency.value = 200; // Reduce echo/room resonance
     lowShelfFilter.gain.value = -3; // Gentle reduction
@@ -700,7 +702,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     // Create AGC if enabled
     let agc: SimpleAGC | undefined;
     if (this.agcEnabled) {
-      agc = new SimpleAGC(this.audioContext, 0.3);
+      agc = new SimpleAGC(this.audioContext!, 0.3);
       this.agc = agc;
     }
     
@@ -713,7 +715,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     let chunkProcessor: ChunkProcessor | undefined;
     if (chunkConfig) {
       chunkProcessor = new ChunkProcessor(
-        this.audioContext.sampleRate,
+        this.audioContext!.sampleRate,
         chunkConfig,
         this.logger,
         this.metricsManager

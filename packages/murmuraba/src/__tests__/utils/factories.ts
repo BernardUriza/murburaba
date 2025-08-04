@@ -1,5 +1,9 @@
 import { vi } from 'vitest';
-import type { ProcessedChunk, EngineMetrics } from '../../types';
+import type { ChunkData, ProcessingMetrics } from '../../types';
+
+// Type aliases for backward compatibility
+type ProcessedChunk = ChunkData;
+type EngineMetrics = ProcessingMetrics;
 
 /**
  * Test data factories for creating consistent test objects
@@ -94,6 +98,7 @@ export class ChunkFactory {
     
     return {
       id,
+      index: 0,
       startTime: now - duration,
       endTime: now,
       duration,

@@ -31,7 +31,6 @@ interface TabContentProps {
   onTogglePlayback: (chunkId: string, audioType?: 'processed' | 'original') => Promise<void>;
   onToggleExpansion: (chunkId: string) => void;
   onExportChunk: (chunkId: string, format: 'wav' | 'mp3') => Promise<void>;
-  onDownloadAll: () => void;
   onFileProcessed: (result: any) => void;
   onProcessFile: (buffer: ArrayBuffer) => Promise<any>;
   onSetInputGain: (gain: number) => void;
@@ -57,7 +56,6 @@ export const TabContent = memo(function TabContent({
   onTogglePlayback,
   onToggleExpansion,
   onExportChunk,
-  onDownloadAll,
   onFileProcessed,
   onProcessFile,
   onSetInputGain,
@@ -117,7 +115,6 @@ export const TabContent = memo(function TabContent({
                   onToggleExpansion={onToggleExpansion}
                   onExportWav={(id) => onExportChunk(id, 'wav')}
                   onExportMp3={(id) => onExportChunk(id, 'mp3')}
-                  onDownloadAll={onDownloadAll}
                   onClearChunks={onClearRecordings}
                   ChunkProcessingResults={ChunkProcessingResults}
                 />

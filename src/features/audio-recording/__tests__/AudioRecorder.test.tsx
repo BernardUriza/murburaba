@@ -17,11 +17,13 @@ describe('AudioRecorder', () => {
     recordingState: mockRecordingState,
     isInitialized: true,
     isLoading: false,
+    inputGain: 1.0,
     onStartRecording: vi.fn().mockResolvedValue(undefined),
     onStopRecording: vi.fn().mockResolvedValue(undefined),
     onPauseRecording: vi.fn(),
     onResumeRecording: vi.fn(),
-    onClearRecordings: vi.fn()
+    onClearRecordings: vi.fn(),
+    onSetInputGain: vi.fn()
   };
 
   beforeEach(() => {

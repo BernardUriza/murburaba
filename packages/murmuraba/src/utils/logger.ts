@@ -212,11 +212,12 @@ class Logger {
       }
     } else {
       // Node.js environment - use ANSI colors
-      const colors = {
+      const colors: Record<LogLevel, string> = {
         [LogLevel.DEBUG]: '\x1b[36m', // Cyan
         [LogLevel.INFO]: '\x1b[32m',   // Green
         [LogLevel.WARN]: '\x1b[33m',   // Yellow
         [LogLevel.ERROR]: '\x1b[31m',  // Red
+        [LogLevel.SILENT]: '\x1b[37m', // White/Default
       };
       const reset = '\x1b[0m';
       const color = colors[level] || '';
@@ -237,7 +238,7 @@ class Logger {
     const match = callerLine.match(/at\s+(.+)\s+\((.+):(\d+):(\d+)\)/);
     if (match) {
       const [, , file, line] = match;
-      const fileName = file.split('/').pop() || file;
+      const fileName = file?.split('/').pop() || file || 'unknown';
       return `${fileName}:${line}`;
     }
     

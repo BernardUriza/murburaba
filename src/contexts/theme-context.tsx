@@ -32,6 +32,7 @@ export function ThemeProvider({ children, defaultTheme = Theme.SYSTEM }: IThemeP
       return () => mediaQuery.removeEventListener('change', handler);
     } else {
       setResolvedTheme(theme as Theme.LIGHT | Theme.DARK);
+      return undefined;
     }
   }, [theme]);
   
@@ -43,7 +44,7 @@ export function ThemeProvider({ children, defaultTheme = Theme.SYSTEM }: IThemeP
 }
 
 // Traditional hook for comparison
-export function useTheme() {
+export function useTheme(): IThemeContext {
   const context = useContext(ThemeContext);
   if (!context) {
     throw new Error('useTheme must be used within a ThemeProvider');

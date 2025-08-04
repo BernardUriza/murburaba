@@ -80,7 +80,6 @@ const App = memo(function App() {
     // Export Actions
     exportChunkAsWav,
     exportChunkAsMp3,
-    downloadAllChunksAsZip,
     
     // Gain Control
     inputGain,
@@ -144,7 +143,6 @@ const App = memo(function App() {
   const handleTogglePlayback = useCallback((chunkId: string, audioType: 'processed' | 'original' = 'processed') => 
     toggleChunkPlayback(chunkId, audioType), [toggleChunkPlayback]);
 
-  const handleDownloadAll = useCallback(() => downloadAllChunksAsZip('both'), [downloadAllChunksAsZip]);
 
   // Memoized computed values
   const appClassName = useMemo(() => `app ${isDarkMode ? 'dark' : ''}`, [isDarkMode]);
@@ -191,7 +189,6 @@ const App = memo(function App() {
               onTogglePlayback={handleTogglePlayback}
               onToggleExpansion={toggleChunkExpansion}
               onExportChunk={handleExportChunk}
-              onDownloadAll={handleDownloadAll}
               onFileProcessed={setProcessedFileResult}
               onProcessFile={handleProcessFile}
               onSetInputGain={setInputGain}

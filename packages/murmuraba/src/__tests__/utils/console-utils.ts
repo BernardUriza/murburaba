@@ -1,4 +1,4 @@
-import { vi, SpyInstance } from 'vitest';
+import { vi, beforeEach, afterEach, expect, type MockInstance } from 'vitest';
 
 /**
  * Centralized console mocking utilities
@@ -6,15 +6,15 @@ import { vi, SpyInstance } from 'vitest';
  */
 
 export interface ConsoleMocks {
-  log: SpyInstance;
-  error: SpyInstance;
-  warn: SpyInstance;
-  info: SpyInstance;
-  debug: SpyInstance;
-  trace: SpyInstance;
-  table: SpyInstance;
-  group: SpyInstance;
-  groupEnd: SpyInstance;
+  log: MockInstance;
+  error: MockInstance;
+  warn: MockInstance;
+  info: MockInstance;
+  debug: MockInstance;
+  trace: MockInstance;
+  table: MockInstance;
+  group: MockInstance;
+  groupEnd: MockInstance;
 }
 
 export interface ConsoleMockOptions {

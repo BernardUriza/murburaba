@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AudioRecorder } from '../AudioRecorder';
 import { RecordingState } from 'murmuraba';
@@ -30,11 +30,13 @@ const createMockProps = (overrides = {}) => ({
   recordingState: createMockRecordingState(),
   isInitialized: true,
   isLoading: false,
+  inputGain: 1.0,
   onStartRecording: vi.fn().mockResolvedValue(undefined),
   onStopRecording: vi.fn().mockResolvedValue(undefined),
   onPauseRecording: vi.fn(),
   onResumeRecording: vi.fn(),
   onClearRecordings: vi.fn(),
+  onSetInputGain: vi.fn(),
   ...overrides
 });
 

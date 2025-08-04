@@ -11,13 +11,7 @@ const ThrowError: React.FC<{ shouldThrow: boolean }> = ({ shouldThrow }) => {
   return <div>No error</div>;
 };
 
-// Component that throws an error in useEffect
-const ThrowErrorInEffect: React.FC = () => {
-  React.useEffect(() => {
-    throw new Error('Effect error');
-  }, []);
-  return <div>Should not render</div>;
-};
+// ThrowErrorInEffect component removed as it was unused
 
 describe('ErrorBoundary', () => {
   const originalConsoleError = console.error;

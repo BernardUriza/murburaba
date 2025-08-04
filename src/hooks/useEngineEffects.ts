@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
 import { Logger } from '../core/services/Logger';
 

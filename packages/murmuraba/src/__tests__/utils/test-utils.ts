@@ -3,6 +3,8 @@
  * Import everything from here for a clean, organized test setup
  */
 
+import { describe, afterEach, expect } from 'vitest';
+
 // Re-export all utilities
 export * from './audio-context-utils';
 export * from './console-utils';
@@ -57,7 +59,7 @@ export function setupTestEnvironment(options: TestEnvironmentOptions = {}): Test
   env.audioContext = audioMock.context;
 
   // Setup WASM mocks if needed
-  if (options.wasm !== false) {
+  if (options.wasm) {
     env.wasmModule = setupWASMMocks(options.wasm);
   }
 

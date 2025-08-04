@@ -3,18 +3,18 @@
  * Replaces the insecure global __murmurabaTDDBridge
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from './event-emitter';
 import { ProcessingMetrics } from '../types';
 import { ChunkProcessor } from '../managers/chunk-processor';
 
-interface BridgeEvents {
+interface BridgeEvents extends Record<string, (...args: any[]) => void> {
   'metrics': (metrics: ProcessingMetrics) => void;
   'chunk-processed': (chunkId: string) => void;
   'recording-manager-registered': (id: string) => void;
   'recording-manager-unregistered': (id: string) => void;
 }
 
-class SecureEventBridge extends EventEmitter {
+class SecureEventBridge extends EventEmitter<BridgeEvents> {
   private static instance: SecureEventBridge | null = null;
   private chunkProcessor: ChunkProcessor | null = null;
   private recordingManagers: Map<string, any> = new Map();
