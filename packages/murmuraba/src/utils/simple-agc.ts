@@ -19,12 +19,12 @@ export class SimpleAGC {
   private readonly maxGain: number;
   private readonly audioContext: AudioContext;
   
-  constructor(audioContext: AudioContext, targetLevel = 0.3) {
+  constructor(audioContext: AudioContext, targetLevel = 0.5) {
     this.audioContext = audioContext;
     this.targetLevel = targetLevel;
-    this.attackTime = 0.1;  // 100ms attack
-    this.releaseTime = 0.5; // 500ms release (from WebSearch)
-    this.maxGain = 10.0;    // Safety limit
+    this.attackTime = 0.08;  // 80ms attack - balanced response for voice
+    this.releaseTime = 0.4; // 400ms release - smooth adaptation
+    this.maxGain = 3.5;     // 3.5x maximum gain for safe louder output
     
     // Create nodes as per WebSearch recommendation
     this.analyser = audioContext.createAnalyser();

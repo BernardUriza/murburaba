@@ -1,5 +1,28 @@
 import { getEngine } from '../api';
 
+/**
+ * Apply gain to WAV audio buffer
+ */
+function applyGainToBuffer(arrayBuffer: ArrayBuffer, gain: number): ArrayBuffer {
+  const view = new DataView(arrayBuffer);
+  const newBuffer = new ArrayBuffer(arrayBuffer.byteLength);
+  const newView = new DataView(newBuffer);
+  
+  // Copy WAV header (first 44 bytes)
+  for (let i = 0; i < 44; i++) {
+    newView.setUint8(i, view.getUint8(i));
+  }
+  
+  // Apply gain to audio samples (16-bit PCM)
+  for (let i = 44; i < arrayBuffer.byteLength - 1; i += 2) {
+    const sample = view.getInt16(i, true);
+    const amplified = Math.max(-32768, Math.min(32767, sample * gain));
+    newView.setInt16(i, amplified, true);
+  }
+  
+  return newBuffer;
+}
+
 export interface ProcessingMetrics {
   vad: number;
   frame: number;
@@ -18,7 +41,8 @@ export interface ProcessFileWithMetricsResult {
  */
 export async function processFileWithMetrics(
   arrayBuffer: ArrayBuffer,
-  onFrameProcessed?: (metrics: ProcessingMetrics) => void
+  onFrameProcessed?: (metrics: ProcessingMetrics) => void,
+  outputGain: number = 2.5  // Apply 2.5x gain to processed audio for balanced louder output
 ): Promise<ProcessFileWithMetricsResult> {
   const engine = getEngine();
   const metrics: ProcessingMetrics[] = [];
@@ -56,7 +80,12 @@ export async function processFileWithMetrics(
   
   try {
     // Process the file
-    const processedBuffer = await engine.processFile(arrayBuffer);
+    let processedBuffer = await engine.processFile(arrayBuffer);
+    
+    // Apply output gain to make audio louder
+    if (outputGain !== 1.0) {
+      processedBuffer = applyGainToBuffer(processedBuffer, outputGain);
+    }
     
     // Restore original method
     engine['processFrame'] = originalProcessFrame;

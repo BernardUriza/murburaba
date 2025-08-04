@@ -398,7 +398,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
     
     try {
       for (let i = 0; i < 10; i++) {
-        const { output, vad } = this.processFrame(silentFrame);
+        const { vad } = this.processFrame(silentFrame);
         // Silent frame should have VAD close to 0
         if (i === 9) {
           this.logger.debug(`Warmup complete. Silent frame VAD: ${vad.toFixed(3)}`);
@@ -602,7 +602,9 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
         this.eventBridge.registerChunkProcessor(chunkProcessor, this.bridgeToken);
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       let isPaused = false;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       let isStopped = false;
 
       const controller: StreamController = {
@@ -753,7 +755,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       }
       
       // Update metrics
-      const inputLevel = this.metricsManager.calculateRMS(input);
+      // const inputLevel = this.metricsManager.calculateRMS(input);  // Reserved for future metrics
       const inputPeak = this.metricsManager.calculatePeak(input);
       this.metricsManager.updateInputLevel(inputPeak);
       
@@ -853,7 +855,7 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
       }
       
       // Update output metrics
-      const outputLevel = this.metricsManager.calculateRMS(output);
+      // const outputLevel = this.metricsManager.calculateRMS(output);  // Reserved for future metrics
       const outputPeak = this.metricsManager.calculatePeak(output);
       this.metricsManager.updateOutputLevel(outputPeak);
       
@@ -971,8 +973,8 @@ export class MurmubaraEngine extends EventEmitter<EngineEvents> {
   
   getAGCConfig(): { targetLevel: number; maxGain: number; enabled: boolean } {
     return {
-      targetLevel: 0.3,
-      maxGain: 6.0,
+      targetLevel: 0.5,  // Balanced target for clear louder output
+      maxGain: 3.5,      // 3.5x maximum gain for safe amplification
       enabled: this.agcEnabled
     };
   }
