@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { formatDuration as formatDurationCore } from '../../utils/time-utils';
 
 export interface IAudioPlayerProps {
   /** Audio source URL */
@@ -63,13 +64,11 @@ export function AudioPlayer({
     }
   }, []);
 
-  // Format time with proper validation and edge case handling
-  const formatTime = useCallback((time: number): string => {
-    if (!isFinite(time) || time < 0) return '0:00';
-    
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  // Use unified time formatting utilities
+  const formatTime = useCallback((timeInSeconds: number): string => {
+    // Convert seconds to milliseconds for the unified formatter
+    const milliseconds = timeInSeconds * 1000;
+    return formatDurationCore(milliseconds);
   }, []);
 
   // Calculate progress with safety checks

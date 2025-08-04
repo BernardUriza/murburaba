@@ -3,6 +3,7 @@ import { VadDisplay } from '../vad-display/vad-display';
 
 interface IChunkHeaderProps {
   index: number;
+  /** Duration in milliseconds */
   duration: number;
   noiseReduction: number;
   processingLatency: number;
@@ -15,7 +16,8 @@ interface IChunkHeaderProps {
   onTogglePlayback: () => void;
   onToggleExpansion: () => void;
   onKeyDown: (event: React.KeyboardEvent, action: () => void) => void;
-  formatTime: (seconds: number) => string;
+  /** Function to format duration from milliseconds to display string */
+  formatTime: (milliseconds: number) => string;
   formatPercentage: (value: number) => string;
 }
 

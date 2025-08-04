@@ -1,9 +1,23 @@
+import { 
+  formatDuration as formatDurationCore, 
+  formatTime as formatTimeCore,
+  calculateDurationStats 
+} from '../../utils/time-utils';
+
+/**
+ * Format duration from milliseconds to MM:SS format
+ * This is the primary duration formatter for the chunk results
+ */
+export const formatDuration = (milliseconds: number): string => {
+  return formatDurationCore(milliseconds);
+};
+
+/**
+ * Legacy formatter for seconds to MM:SS format
+ * @deprecated Use formatDuration with milliseconds instead
+ */
 export const formatTime = (seconds: number): string => {
-  if (!isFinite(seconds) || seconds < 0) return '0:00';
-  
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.floor(seconds % 60);
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  return formatTimeCore(seconds);
 };
 
 export const formatPercentage = (value: number): string => {
@@ -29,8 +43,10 @@ export const formatFileSize = (bytes: number): string => {
 export const calculateChunkStats = (chunks: Array<{ duration: number; isValid?: boolean; metrics: { processingLatency: number } }>) => {
   if (chunks.length === 0) return null;
   
-  const totalDuration = chunks.reduce((sum, chunk) => sum + chunk.duration, 0);
   const validChunks = chunks.filter(chunk => chunk.isValid !== false);
+  const durations = chunks.map(chunk => chunk.duration);
+  const durationStats = calculateDurationStats(durations);
+  
   const averageLatency = validChunks.length > 0 
     ? validChunks.reduce((sum, chunk) => sum + chunk.metrics.processingLatency, 0) / validChunks.length 
     : 0;
@@ -38,7 +54,8 @@ export const calculateChunkStats = (chunks: Array<{ duration: number; isValid?: 
   return {
     totalChunks: chunks.length,
     validChunks: validChunks.length,
-    totalDuration,
+    totalDuration: durationStats.total,
     averageLatency,
+    durationStats,
   };
 };

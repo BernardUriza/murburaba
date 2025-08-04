@@ -65,8 +65,11 @@ export interface ChunkMetrics {
   processedSize: number;
   noiseRemoved: number;
   metrics: ProcessingMetrics;
+  /** Duration in milliseconds */
   duration: number;
+  /** Start time in milliseconds */
   startTime: number;
+  /** End time in milliseconds */
   endTime: number;
   vadData?: Array<{ time: number; vad: number; }>;
   averageVad?: number;

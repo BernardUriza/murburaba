@@ -51,7 +51,7 @@ export const AudioProcessor: React.FC<AudioProcessorProps> = ({
         // Core chunk properties
         id: chunk.id,
         index: chunk.index, // Add missing index property
-        duration: chunk.duration / 1000, // Convert ms to seconds for display
+        duration: chunk.duration, // Keep duration in milliseconds
         
         // Audio URLs
         originalAudioUrl: chunk.originalAudioUrl,
