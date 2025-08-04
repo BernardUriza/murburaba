@@ -57,7 +57,7 @@ export interface UseMurmubaraEngineReturn {
   
   // Recording Actions
   startRecording: (chunkDuration?: number) => Promise<void>;
-  stopRecording: () => void;
+  stopRecording: () => Promise<void>;
   pauseRecording: () => void;
   resumeRecording: () => void;
   clearRecordings: () => void;

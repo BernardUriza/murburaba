@@ -7,8 +7,9 @@ interface AudioRecorderProps {
   isLoading: boolean;
   inputGain: number;
   agcEnabled: boolean;
+  onInitialize: () => Promise<void>;
   onStartRecording: (chunkDuration?: number) => Promise<void>;
-  onStopRecording: () => void;
+  onStopRecording: () => Promise<void>;
   onPauseRecording: () => void;
   onResumeRecording: () => void;
   onClearRecordings: () => void;
@@ -22,6 +23,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   isLoading,
   inputGain,
   agcEnabled,
+  onInitialize,
   onStartRecording,
   onStopRecording,
   onPauseRecording,
@@ -33,7 +35,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   const [showGainControl, setShowGainControl] = useState(false);
   const handleRecordClick = async () => {
     if (recordingState.isRecording) {
-      onStopRecording();
+      await onStopRecording();
     } else {
       await onStartRecording();
     }
@@ -50,23 +52,43 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   return (
     <div className="audio-recorder-container">
       <div className="recorder-controls">
-        <button
-          onClick={handleRecordClick}
-          disabled={!isInitialized || isLoading}
-          className={`btn ${recordingState.isRecording ? 'btn-danger' : 'btn-primary'} btn-record`}
-        >
-          {recordingState.isRecording ? (
-            <>
-              <span className="btn-icon">⏹</span>
-              <span>Stop Recording</span>
-            </>
-          ) : (
-            <>
-              <span className="btn-icon">🎙️</span>
-              <span>Start Recording</span>
-            </>
-          )}
-        </button>
+        {!isInitialized ? (
+          <button
+            onClick={onInitialize}
+            disabled={isLoading}
+            className="btn btn-primary btn-record"
+          >
+            {isLoading ? (
+              <>
+                <span className="btn-icon">⏳</span>
+                <span>Initializing...</span>
+              </>
+            ) : (
+              <>
+                <span className="btn-icon">🚀</span>
+                <span>Initialize Engine</span>
+              </>
+            )}
+          </button>
+        ) : (
+          <button
+            onClick={handleRecordClick}
+            disabled={!isInitialized || isLoading}
+            className={`btn ${recordingState.isRecording ? 'btn-danger' : 'btn-primary'} btn-record`}
+          >
+            {recordingState.isRecording ? (
+              <>
+                <span className="btn-icon">⏹</span>
+                <span>Stop Recording</span>
+              </>
+            ) : (
+              <>
+                <span className="btn-icon">🎙️</span>
+                <span>Start Recording</span>
+              </>
+            )}
+          </button>
+        )}
 
         {recordingState.isRecording && (
           <button
@@ -121,7 +143,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
           aria-label={`${showGainControl ? 'Hide' : 'Show'} microphone gain controls`}
         >
           <span className="btn-icon" aria-hidden="true">🎚️</span>
-          <span>Microphone Gain</span>
+          <span>Microphone Gain: {inputGain}x</span>
           <span className="sr-only">{showGainControl ? '(expanded)' : '(collapsed)'}</span>
         </button>
 
@@ -142,49 +164,8 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
                 id="gain-control-heading"
                 style={{ fontSize: '1rem', marginBottom: '10px', fontWeight: 'bold' }}
               >
-                Audio Input Gain Control
+                Select Gain Level
               </h3>
-              <label 
-                htmlFor="gain-slider"
-                style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}
-              >
-                Input Gain: <span aria-live="polite" aria-atomic="true">{inputGain.toFixed(1)}x</span>
-              </label>
-              <input
-                id="gain-slider"
-                type="range"
-                min="0.5"
-                max="3.0"
-                step="0.1"
-                value={inputGain}
-                onChange={(e) => onSetInputGain(parseFloat(e.target.value))}
-                onKeyDown={(e) => {
-                  // Add keyboard navigation
-                  const step = 0.1;
-                  if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    onSetInputGain(Math.max(0.5, inputGain - step));
-                  } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    onSetInputGain(Math.min(3.0, inputGain + step));
-                  } else if (e.key === 'Home') {
-                    e.preventDefault();
-                    onSetInputGain(0.5);
-                  } else if (e.key === 'End') {
-                    e.preventDefault();
-                    onSetInputGain(3.0);
-                  }
-                }}
-                style={{
-                  width: '100%',
-                  marginBottom: '10px'
-                }}
-                aria-label="Audio input gain slider. Use arrow keys to adjust."
-                aria-valuemin={0.5}
-                aria-valuemax={3.0}
-                aria-valuenow={inputGain}
-                aria-valuetext={`${inputGain.toFixed(1)} times normal volume`}
-              />
             </div>
 
             {/* AGC Toggle */}
@@ -214,46 +195,67 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
               </p>
             </div>
 
-            {/* Gain Presets */}
+            {/* Gain Level Buttons */}
             <div 
               role="group" 
-              aria-label="Gain preset buttons"
-              style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <button
-                onClick={() => onSetInputGain(0.7)}
-                className={`btn btn-ghost ${inputGain === 0.7 ? 'active' : ''}`}
-                style={{ fontSize: '14px', minWidth: '80px' }}
-                aria-label="Set gain to low (0.7x)"
-                aria-pressed={inputGain === 0.7}
-              >
-                <span aria-hidden="true">🔇</span> Low
-              </button>
+              aria-label="Gain level buttons"
+              style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(4, 1fr)', 
+                gap: '10px',
+                marginBottom: '15px'
+              }}>
               <button
                 onClick={() => onSetInputGain(1.0)}
-                className={`btn btn-ghost ${inputGain === 1.0 ? 'active' : ''}`}
-                style={{ fontSize: '14px', minWidth: '80px' }}
-                aria-label="Set gain to normal (1.0x)"
+                className={`btn ${inputGain === 1.0 ? 'btn-primary' : 'btn-ghost'}`}
+                style={{ 
+                  fontSize: '16px', 
+                  padding: '12px',
+                  fontWeight: inputGain === 1.0 ? 'bold' : 'normal'
+                }}
+                aria-label="Set gain to 1x (normal)"
                 aria-pressed={inputGain === 1.0}
               >
-                <span aria-hidden="true">🔊</span> Normal
+                1x
               </button>
               <button
-                onClick={() => onSetInputGain(1.5)}
-                className={`btn btn-ghost ${inputGain === 1.5 ? 'active' : ''}`}
-                style={{ fontSize: '14px', minWidth: '80px' }}
-                aria-label="Set gain to high (1.5x)"
-                aria-pressed={inputGain === 1.5}
+                onClick={() => onSetInputGain(3.0)}
+                className={`btn ${inputGain === 3.0 ? 'btn-primary' : 'btn-ghost'}`}
+                style={{ 
+                  fontSize: '16px', 
+                  padding: '12px',
+                  fontWeight: inputGain === 3.0 ? 'bold' : 'normal'
+                }}
+                aria-label="Set gain to 3x"
+                aria-pressed={inputGain === 3.0}
               >
-                <span aria-hidden="true">📢</span> High
+                3x
               </button>
               <button
-                onClick={() => onSetInputGain(2.0)}
-                className={`btn btn-ghost ${inputGain === 2.0 ? 'active' : ''}`}
-                style={{ fontSize: '14px', minWidth: '80px' }}
-                aria-label="Set gain to boost (2.0x)"
-                aria-pressed={inputGain === 2.0}
+                onClick={() => onSetInputGain(5.0)}
+                className={`btn ${inputGain === 5.0 ? 'btn-primary' : 'btn-ghost'}`}
+                style={{ 
+                  fontSize: '16px', 
+                  padding: '12px',
+                  fontWeight: inputGain === 5.0 ? 'bold' : 'normal'
+                }}
+                aria-label="Set gain to 5x"
+                aria-pressed={inputGain === 5.0}
               >
-                <span aria-hidden="true">🚀</span> Boost
+                5x
+              </button>
+              <button
+                onClick={() => onSetInputGain(10.0)}
+                className={`btn ${inputGain === 10.0 ? 'btn-primary' : 'btn-ghost'}`}
+                style={{ 
+                  fontSize: '16px', 
+                  padding: '12px',
+                  fontWeight: inputGain === 10.0 ? 'bold' : 'normal'
+                }}
+                aria-label="Set gain to 10x (maximum)"
+                aria-pressed={inputGain === 10.0}
+              >
+                10x
               </button>
             </div>
 
@@ -267,24 +269,24 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
                 fontSize: '14px', 
                 padding: '8px',
                 borderRadius: '4px',
-                backgroundColor: inputGain > 2.0 ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
-                color: inputGain > 2.0 ? '#ef4444' : '#666'
+                backgroundColor: inputGain >= 10.0 ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
+                color: inputGain >= 10.0 ? '#ef4444' : '#666'
               }}
             >
-              {inputGain < 1.0 && (
-                <><span aria-hidden="true">⬇️</span> Reduced input level</>  
-              )}
               {inputGain === 1.0 && (
-                <><span aria-hidden="true">✅</span> Normal input level</>  
+                <><span aria-hidden="true">✅</span> Normal input level (1x)</>  
               )}
-              {inputGain > 1.0 && inputGain <= 1.5 && (
-                <><span aria-hidden="true">⬆️</span> Increased input level</>  
+              {inputGain === 3.0 && (
+                <><span aria-hidden="true">📢</span> Moderate boost (3x)</>  
               )}
-              {inputGain > 1.5 && inputGain <= 2.0 && (
-                <><span aria-hidden="true">📈</span> High input level</>  
+              {inputGain === 5.0 && (
+                <><span aria-hidden="true">📈</span> High boost (5x)</>  
               )}
-              {inputGain > 2.0 && (
-                <><span aria-hidden="true">⚠️</span> <strong>Warning:</strong> Maximum boost - watch for audio clipping</>  
+              {inputGain === 10.0 && (
+                <><span aria-hidden="true">⚠️</span> <strong>Maximum boost (10x)</strong> - watch for audio clipping</>  
+              )}
+              {![1.0, 3.0, 5.0, 10.0].includes(inputGain) && (
+                <><span aria-hidden="true">🎚️</span> Custom gain level: {inputGain}x</>
               )}
             </div>
           </div>

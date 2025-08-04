@@ -88,8 +88,8 @@ export function setInputGain(gain: number): void {
     throw new RangeError('Input gain cannot be negative');
   }
   
-  // Clamp to safe range
-  const safeGain = Math.max(0.5, Math.min(3.0, gain));
+  // Clamp to safe range (allowing up to 10x for more noticeable effect)
+  const safeGain = Math.max(0.5, Math.min(10.0, gain));
   
   const engine = getEngine();
   engine.setInputGain(safeGain);

@@ -424,7 +424,8 @@ export function useMurmubaraEngine(
     setError,
     chunkManager: chunkManagerRef.current,
     recordingManager: recordingManagerRef.current,
-    initialize
+    initialize,
+    destroy
   });
   
   // Playback functions

@@ -24,6 +24,7 @@ interface TabContentProps {
   processedFileResult: any;
   inputGain: number;
   agcEnabled: boolean;
+  onInitialize: () => Promise<void>;
   onStartRecording: (chunkDuration?: number) => Promise<void>;
   onStopRecording: () => Promise<void>;
   onPauseRecording: () => void;
@@ -51,6 +52,7 @@ export const TabContent = memo(function TabContent({
   processedFileResult,
   inputGain,
   agcEnabled,
+  onInitialize,
   onStartRecording,
   onStopRecording,
   onPauseRecording,
@@ -76,6 +78,7 @@ export const TabContent = memo(function TabContent({
               isLoading={isLoading}
               inputGain={inputGain}
               agcEnabled={agcEnabled}
+              onInitialize={onInitialize}
               onStartRecording={onStartRecording}
               onStopRecording={onStopRecording}
               onPauseRecording={onPauseRecording}

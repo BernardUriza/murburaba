@@ -186,6 +186,7 @@ const App = memo(function App() {
               processedFileResult={processedFileResult}
               inputGain={inputGain}
               agcEnabled={agcEnabled}
+              onInitialize={initialize}
               onStartRecording={startRecording}
               onStopRecording={handleStopRecording}
               onPauseRecording={pauseRecording}
