@@ -8,7 +8,6 @@ import { EnergyVAD } from './algorithms/energy-vad';
 import { ZCRVAD } from './algorithms/zcr-vad';
 import { SegmentDetector } from './algorithms/segment-detector';
 import { RNNoiseEngine } from '../engines/rnnoise-engine';
-import { AudioConverter } from '../utils/audio-converter';
 
 export async function murmubaraVAD(
   buffer: ArrayBuffer, 

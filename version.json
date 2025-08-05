@@ -1,6 +1,6 @@
 {
-  "version": "3.0.0",
+  "version": "3.0.3",
   "name": "Murmuraba Studio",
-  "description": "Next-Generation Neural Audio Processing with Modern UI",
-  "releaseDate": "2025-08-02"
+  "description": "Next-Generation Neural Audio Processing with Modern UI and Advanced VAD",
+  "releaseDate": "2025-08-05"
 }

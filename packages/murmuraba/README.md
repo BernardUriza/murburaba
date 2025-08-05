@@ -5,7 +5,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> Professional-grade real-time audio streaming with neural noise reduction using RNNoise WASM. Process long recordings efficiently with automatic chunking - no need to wait for recording completion.
+> Professional-grade real-time audio streaming with neural noise reduction using RNNoise WASM. Process long recordings efficiently with automatic chunking - no need to wait for recording completion. Now with advanced Voice Activity Detection (VAD) capabilities!
 
 ## 🚀 Why Murmuraba?
 
@@ -362,6 +362,83 @@ function VoiceDetector() {
     </div>
   );
 }
+```
+
+### Pattern 4: Advanced VAD Analysis (NEW in v3.0.3)
+
+```typescript
+import { murmubaraVAD, extractAudioMetadata } from 'murmuraba';
+
+function AdvancedVADAnalysis() {
+  const analyzeAudio = async (audioBuffer: ArrayBuffer) => {
+    // Get accurate audio metadata
+    const metadata = extractAudioMetadata(audioBuffer);
+    console.log(`Duration: ${metadata.duration}s, Format: ${metadata.format}`);
+    
+    // Perform detailed VAD analysis
+    const vadResult = await murmubaraVAD(audioBuffer);
+    console.log(`Voice Activity: ${(vadResult.average * 100).toFixed(1)}%`);
+    console.log(`Voice Segments: ${vadResult.voiceSegments?.length || 0}`);
+    
+    // Analyze voice segments
+    vadResult.voiceSegments?.forEach((segment, i) => {
+      console.log(`Segment ${i + 1}: ${segment.startTime}s - ${segment.endTime}s (confidence: ${segment.confidence})`);
+    });
+    
+    return vadResult;
+  };
+  
+  return (
+    <div>
+      {/* Use with recorded chunks */}
+      <button onClick={async () => {
+        const response = await fetch(chunk.processedAudioUrl!);
+        const arrayBuffer = await response.arrayBuffer();
+        const analysis = await analyzeAudio(arrayBuffer);
+        // Display results...
+      }}>
+        Analyze VAD
+      </button>
+    </div>
+  );
+}
+```
+
+## 🎯 New in v3.0.3: Advanced Voice Activity Detection
+
+Murmuraba now includes powerful VAD analysis functions for detailed audio inspection:
+
+### `murmubaraVAD(buffer: ArrayBuffer): Promise<VADResult>`
+
+Analyzes audio for voice activity using multiple algorithms:
+- **Energy-based detection** with adaptive noise floor
+- **Zero-crossing rate analysis** for voiced/unvoiced classification
+- **RNNoise integration** when available
+- **Temporal smoothing** for stable results
+
+Returns:
+```typescript
+{
+  average: number;              // Average VAD score (0.0-1.0)
+  scores: number[];             // Frame-by-frame VAD scores
+  metrics: VADMetric[];         // Detailed metrics per frame
+  voiceSegments: VoiceSegment[]; // Detected voice segments
+}
+```
+
+### `extractAudioMetadata(buffer: ArrayBuffer): AudioMetadata`
+
+Extracts accurate metadata from audio files:
+- Supports WAV, MP3, WebM/Opus formats
+- Returns precise duration, sample rate, channels, bit depth
+- No more guessing audio duration!
+
+Example:
+```typescript
+const metadata = extractAudioMetadata(audioBuffer);
+console.log(`Duration: ${metadata.duration}s`);
+console.log(`Format: ${metadata.format}`);
+console.log(`Sample Rate: ${metadata.sampleRate}Hz`);
 ```
 
 ## ⚙️ Configuration Options
