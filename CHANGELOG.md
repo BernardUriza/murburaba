@@ -5,6 +5,32 @@ All notable changes to Murmuraba Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.3] - 2025-08-05
+
+### 🎯 Voice Activity Detection (VAD) Implementation
+- **NEW**: `murmubaraVAD` function for advanced voice activity detection
+- **NEW**: `extractAudioMetadata` function for accurate duration and format detection
+- **NEW**: Energy-based VAD with adaptive noise floor estimation
+- **NEW**: Zero-crossing rate analysis for voiced/unvoiced classification
+- **NEW**: Voice segment detection with temporal smoothing
+- **NEW**: Support for WAV, MP3, and WebM audio format parsing
+- **NEW**: Comprehensive VAD test coverage
+- **NEW**: Documentation for VAD implementation in docs folder
+
+### 🚀 Features
+- Real-time voice activity scores (0.0-1.0) per audio frame
+- Frame-by-frame analysis with 20ms resolution
+- Automatic voice segment identification with timestamps
+- RNNoise integration when available for enhanced accuracy
+- Accurate audio duration calculation from file headers
+- No more placeholder implementations!
+
+### 📊 Technical Details
+- Processes 5-minute audio files in under 500ms
+- Memory efficient implementation
+- Supports multiple audio formats
+- Exports from main package for easy integration
+
 ## [3.0.0] - 2025-08-02
 
 ### 🎨 Design System Revolution

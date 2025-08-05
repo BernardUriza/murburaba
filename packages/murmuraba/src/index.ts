@@ -77,6 +77,16 @@ export { useAudioEngine } from './hooks/use-audio-engine';
 // Audio converter utility export
 export { AudioConverter, getAudioConverter } from './utils/audio-converter';
 
+// VAD exports
+export { murmubaraVAD, extractAudioMetadata } from './vad';
+export type { 
+  VADResult, 
+  VADMetric, 
+  VoiceSegment, 
+  AudioMetadata,
+  VADConfig 
+} from './vad';
+
 // Export types from the hook
 export type { 
   ProcessedChunk, 
